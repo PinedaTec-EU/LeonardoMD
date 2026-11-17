@@ -335,7 +335,9 @@ Home separates **Projects** from **Documents**, with Favorites and Recents for e
 
 Open a folder with ⇧⌘O. Expand its folders in the sidebar; children load as you expand them. Use New note and New folder, or an item's context menu to rename, move or delete. Check the target before deleting and keep a backup or Git history for valuable material.
 
-Drag one file or folder row onto a folder in the same project to move it. Hold ⌥ (Option) while releasing to copy it instead. The target folder highlights and shows **Move** or **Copy**. Leonardo keeps the original when copying and does not overwrite an existing destination. A folder cannot be moved or copied into itself or one of its subfolders. Dragging a Markdown file from Finder still opens it in a tab. Only one item can be dragged at a time.
+Click a row to select it and keep the current open/expand behavior. ⌘-click adds or removes a row; ⇧-click selects the visible range from the last selection anchor. A range can include both folders and files. Drag a selected row onto a folder in the same project to move the selected items together. If the dragged row is not selected, only that row moves. When a selected folder contains another selected row, Leonardo transfers the folder once and skips that descendant.
+
+Hold ⌥ (Option) while releasing to copy the selected items instead. The target folder highlights and shows **Move** or **Copy**. Copying keeps every original. Leonardo checks the full batch before changing it: if a destination already exists, two selected items would have the same name, or a folder would enter itself or one of its subfolders, the batch is rejected without overwriting existing content. Dragging Markdown from Finder still opens it in a tab.
 
 A single click opens a supported file in the active tab. Double-click or choose **Open in new tab** to keep the original tab and its draft. An already open document selects its existing tab. New project tabs preserve navigation, expanded folders and file filters; ⌘T creates an empty tab. Close the active tab with ⌘W, or the window with ⇧⌘W. Save, Discard and Cancel decisions protect pending edits.
 

@@ -6,16 +6,20 @@ enum DocumentDropProviders {
     static let projectTreeItemTypeIdentifier = "eu.pinedatec.LeonardoMD.project-tree-item"
 
     static func isProjectMove(_ url: URL, in root: URL) -> Bool {
-        url.isFileURL && url.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path + "/")
+        let rootPath = root.standardizedFileURL.path
+        let path = url.standardizedFileURL.path
+        return url.isFileURL && path != rootPath && path.hasPrefix(rootPath == "/" ? "/" : rootPath + "/")
     }
 
-    static func projectTreeItemProvider(for url: URL) -> NSItemProvider {
-        let provider = NSItemProvider(object: url as NSURL)
+    static func projectTreeItemProvider(for primaryURL: URL, selecting urls: [URL]) -> NSItemProvider {
+        let selectedURLs = urls.contains(primaryURL) ? urls : [primaryURL]
+        let payload = try? JSONEncoder().encode(selectedURLs)
+        let provider = NSItemProvider(object: primaryURL as NSURL)
         provider.registerDataRepresentation(
             forTypeIdentifier: projectTreeItemTypeIdentifier,
             visibility: .ownProcess
         ) { completion in
-            completion(Data(), nil)
+            completion(payload, nil)
             return nil
         }
         return provider
@@ -27,6 +31,31 @@ enum DocumentDropProviders {
 
     static func isProjectTreeDrop(_ providers: [NSItemProvider]) -> Bool {
         !providers.isEmpty && providers.allSatisfy(isProjectTreeItem)
+    }
+
+    static func startLoadingProjectTreeURLs(_ providers: [NSItemProvider]) -> Task<[URL]?, Never> {
+        guard isProjectTreeDrop(providers) else { return Task { nil } }
+        let streams = providers.map { provider in
+            AsyncStream<[URL]> { continuation in
+                provider.loadDataRepresentation(forTypeIdentifier: projectTreeItemTypeIdentifier) { data, _ in
+                    if let data,
+                       let urls = try? JSONDecoder().decode([URL].self, from: data),
+                       !urls.isEmpty, urls.allSatisfy(\.isFileURL) {
+                        continuation.yield(urls)
+                    }
+                    continuation.finish()
+                }
+            }
+        }
+        return Task {
+            var result: [URL] = []
+            for stream in streams {
+                var iterator = stream.makeAsyncIterator()
+                guard let urls = await iterator.next() else { return nil }
+                for url in urls where !result.contains(url) { result.append(url) }
+            }
+            return result.isEmpty ? nil : result
+        }
     }
 
     static func canLoad(_ providers: [NSItemProvider]) -> Bool {

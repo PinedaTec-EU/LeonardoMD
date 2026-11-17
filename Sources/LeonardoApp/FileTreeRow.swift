@@ -4,15 +4,17 @@ import AppKit
 struct FileTreeRow: View {
     let entry: NavigationEntry
     @Bindable var session: AppSession
+    let tree: ProjectFileTree
     let depth: Int
     let expanded: Bool
     let toggle: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @State private var dropState = ProjectFolderDropState.idle
-    var selected: Bool {
+    private var isActiveDocument: Bool {
         !entry.isDirectory && session.displayDocumentURL?.resolvingSymlinksInPath().path ==
             entry.url.resolvingSymlinksInPath().path
     }
+    private var isMultiSelected: Bool { tree.selection.contains(entry.url) }
     private var isColoredLeonardo: Bool {
         session.colorLeonardoFiles && !entry.isDirectory &&
         AppDocumentKind.classify(entry.url).isLeonardo
@@ -28,9 +30,9 @@ struct FileTreeRow: View {
                     if entry.isDirectory {
                         Image(systemName: expanded ? "chevron.down" : "chevron.right").font(.caption2).frame(width: 10)
                     } else { Color.clear.frame(width: 10, height: 1) }
-                    Image(systemName: entry.symbol).foregroundStyle(selected ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .secondary)
+                    Image(systemName: entry.symbol).foregroundStyle(isActiveDocument ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .secondary)
                     Text(entry.name).lineLimit(1)
-                        .foregroundStyle(selected ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .primary)
+                        .foregroundStyle(isActiveDocument ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .primary)
                     Spacer(minLength: 0)
                     if let label = dropState.label, let symbol = dropState.symbol {
                         Label(L10n.text(label), systemImage: symbol)
@@ -39,14 +41,16 @@ struct FileTreeRow: View {
                             .fixedSize()
                     }
                 }.padding(.vertical, 6).padding(.horizontal, 6)
-                    .modifier(FileRowHighlight(accent: session.accentColor, selected: selected,
+                    .modifier(FileRowHighlight(accent: session.accentColor, selected: isActiveDocument,
+                                               multiSelected: isMultiSelected,
                                                dropTarget: dropState.isTarget))
-                    .background(selected ? Color(nsColor: .selectedContentBackgroundColor) : .clear,
+                    .background(isActiveDocument ? Color(nsColor: .selectedContentBackgroundColor) : .clear,
                                 in: RoundedRectangle(cornerRadius: 6))
             }
                 .highPriorityGesture(
                     TapGesture(count: 2).exclusively(before: TapGesture())
                         .onEnded { value in
+                            if selectUsingCurrentModifiers() { return }
                             switch value {
                             case .first:
                                 if !entry.isDirectory {
@@ -82,7 +86,9 @@ struct FileTreeRow: View {
                 // Include the context menu in the plain-style scope so it cannot
                 // inherit the sidebar's stateful PremiumButtonStyle.
                 .buttonStyle(.plain)
-                .modifier(ProjectTreeDragSource(url: entry.url))
+                .modifier(ProjectTreeDragSource(url: entry.url) {
+                    tree.dragSelection(startingAt: entry.url, rows: tree.rows(roots: session.rootEntries))
+                })
                 .onDrop(of: [.fileURL], delegate: ProjectFolderDropDelegate(
                     folder: entry.url,
                     session: session,
@@ -91,6 +97,21 @@ struct FileTreeRow: View {
         }
         .padding(.leading, CGFloat(depth) * 16)
         .accessibilityIdentifier("project-file-" + entry.url.path)
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        .accessibilityAddTraits(isActiveDocument || isMultiSelected ? [.isSelected] : [])
+    }
+
+    private func selectUsingCurrentModifiers() -> Bool {
+        let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+        let rows = tree.rows(roots: session.rootEntries)
+        if modifiers.contains(.shift) {
+            tree.select(entry.url, among: rows, gesture: .extend(additive: modifiers.contains(.command)))
+            return true
+        }
+        if modifiers.contains(.command) {
+            tree.select(entry.url, among: rows, gesture: .toggle)
+            return true
+        }
+        tree.select(entry.url, among: rows, gesture: .replace)
+        return false
     }
 }

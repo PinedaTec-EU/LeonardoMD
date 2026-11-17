@@ -207,47 +207,71 @@ extension AppSession {
     }
     @discardableResult
     func move(_ url: URL, into parent: URL) -> Task<Void, Never>? {
-        transfer(url, into: parent, operation: .move)
+        move([url], into: parent)
+    }
+
+    @discardableResult
+    func move(_ urls: [URL], into parent: URL) -> Task<Void, Never>? {
+        transfer(urls, into: parent, operation: .move)
     }
 
     @discardableResult
     func copy(_ url: URL, into parent: URL) -> Task<Void, Never>? {
-        transfer(url, into: parent, operation: .copy)
+        copy([url], into: parent)
     }
 
-    private enum ProjectItemTransferOperation {
+    @discardableResult
+    func copy(_ urls: [URL], into parent: URL) -> Task<Void, Never>? {
+        transfer(urls, into: parent, operation: .copy)
+    }
+
+    private enum ProjectItemTransferOperation: Equatable {
         case move
         case copy
     }
 
     private func transfer(
-        _ url: URL,
+        _ urls: [URL],
         into parent: URL,
         operation: ProjectItemTransferOperation
     ) -> Task<Void, Never>? {
-        guard let root = projectURL else { return nil }
-        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
+        guard let root = projectURL, !urls.isEmpty else { return nil }
+        let transferURLs = urls.filter { url in
+            operation == .copy || url.standardizedFileURL.deletingLastPathComponent() != parent.standardizedFileURL
+        }
+        guard !transferURLs.isEmpty else { return nil }
+        let identity = SessionFileOperationIdentity(sourceURL: transferURLs[0], session: self)
         return Task {
             guard identity.isCurrent(in: self) else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
-                  identity.isCurrent(in: self) else { return }
+            guard await prepareNavigation(), identity.isCurrent(in: self) else { return }
+            for url in transferURLs {
+                guard await prepareRelatedFileOperation?(url) ?? true, identity.isCurrent(in: self) else { return }
+            }
             do {
-                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
-                try await authorizePath(url, intent)
-                guard identity.isCurrent(in: self) else { return }
-                try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
-                guard identity.isCurrent(in: self) else { return }
+                for url in transferURLs {
+                    let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
+                    try await authorizePath(url, intent)
+                    guard identity.isCurrent(in: self) else { return }
+                    try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
+                    guard identity.isCurrent(in: self) else { return }
+                }
                 let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
+                let nodes: [FileNode]
                 switch operation {
                 case .move:
-                    let node = try await files.move(relative(url), in: project, to: relative(parent))
-                    await updateMovedDocument(from: url, to: node.url)
-                    await relatedPathMoved?(url, node.url)
+                    nodes = try await files.move(transferURLs.map(relative), in: project, to: relative(parent))
                 case .copy:
-                    _ = try await files.copy(relative(url), in: project, to: relative(parent))
+                    nodes = try await files.copy(transferURLs.map(relative), in: project, to: relative(parent))
                 }
+                if operation == .move {
+                    for (source, node) in zip(transferURLs, nodes) {
+                        await updateMovedDocument(from: source, to: node.url)
+                        await relatedPathMoved?(source, node.url)
+                    }
+                }
+                projectFileTree.clearSelection()
                 await refreshTree()
             } catch { report(error) }
         }
@@ -272,16 +296,14 @@ extension AppSession {
         let internalCount = providers.filter(DocumentDropProviders.isProjectTreeItem).count
         guard internalCount == 0 || internalCount == providers.count else { return false }
         let isProjectTreeDrop = internalCount == providers.count
-        let urlLoad = DocumentDropProviders.startLoadingURLs(providers)
+        let urlLoad = isProjectTreeDrop
+            ? DocumentDropProviders.startLoadingProjectTreeURLs(providers)
+            : DocumentDropProviders.startLoadingURLs(providers)
         Task {
             guard let urls = await urlLoad.value else { return }
             if isProjectTreeDrop {
-                guard urls.count == 1, let url = urls.first, let root = projectURL,
-                      DocumentDropProviders.isProjectMove(url, in: root) else { return }
-                if !copy && url.standardizedFileURL.deletingLastPathComponent() == parent.standardizedFileURL {
-                    return
-                }
-                let operation = copy ? self.copy(url, into: parent) : self.move(url, into: parent)
+                guard let root = projectURL, urls.allSatisfy({ DocumentDropProviders.isProjectMove($0, in: root) }) else { return }
+                let operation = copy ? self.copy(urls, into: parent) : self.move(urls, into: parent)
                 await operation?.value
             } else if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
                 await openDroppedDocuments(urls)

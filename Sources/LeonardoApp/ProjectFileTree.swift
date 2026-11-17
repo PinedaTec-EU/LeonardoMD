@@ -18,6 +18,11 @@ final class ProjectFileTree {
         let url: URL
         fileprivate let context: Context
     }
+    enum SelectionGesture {
+        case replace
+        case toggle
+        case extend(additive: Bool)
+    }
     enum RevealOutcome: Equatable {
         case revealed(Reveal)
         case unavailable
@@ -31,8 +36,10 @@ final class ProjectFileTree {
     private enum LoadPurpose: Equatable { case manualExpansion, refresh, reveal }
 
     private(set) var expanded: Set<URL> = []
+    private(set) var selection: Set<URL> = []
     private var children: [URL: [NavigationEntry]] = [:]
     private var projectRoot: URL?
+    private var selectionAnchor: URL?
     private var projectGeneration = 0
     private var interactionRevision = 0
     private var nextLoadGeneration = 0
@@ -53,6 +60,8 @@ final class ProjectFileTree {
             projectRoot = root
             projectGeneration += 1
             expanded.removeAll()
+            selection.removeAll()
+            selectionAnchor = nil
             children.removeAll()
             loadGenerations.removeAll()
         }
@@ -84,11 +93,55 @@ final class ProjectFileTree {
         return flatten(roots, depth: 0)
     }
 
+    func select(_ url: URL, among rows: [Row], gesture: SelectionGesture) {
+        let visibleURLs = rows.map(\.id)
+        guard visibleURLs.contains(url) else { return }
+        switch gesture {
+        case .replace:
+            selection = [url]
+            selectionAnchor = url
+        case .toggle:
+            if selection.contains(url) { selection.remove(url) }
+            else { selection.insert(url) }
+            selectionAnchor = url
+        case .extend(let additive):
+            guard let anchor = selectionAnchor,
+                  let anchorIndex = visibleURLs.firstIndex(of: anchor),
+                  let targetIndex = visibleURLs.firstIndex(of: url) else {
+                selection = [url]
+                selectionAnchor = url
+                return
+            }
+            let start = min(anchorIndex, targetIndex)
+            let end = max(anchorIndex, targetIndex)
+            let range = Set(visibleURLs[start...end])
+            selection = additive ? selection.union(range) : range
+        }
+    }
+
+    func dragSelection(startingAt url: URL, rows: [Row]) -> [URL] {
+        if !selection.contains(url) { select(url, among: rows, gesture: .replace) }
+        let selectedRows = rows.filter { selection.contains($0.id) }
+        return selectedRows.filter { candidate in
+            !selectedRows.contains { parent in
+                parent.entry.isDirectory && isDescendant(candidate.entry.url, of: parent.entry.url)
+            }
+        }.map(\.entry.url)
+    }
+
+    func clearSelection() {
+        selection.removeAll()
+        selectionAnchor = nil
+    }
+
     func toggle(_ entry: NavigationEntry, session: AppSession) async {
         guard let context = context(for: session), entry.isDirectory,
               belongsToProject(entry.url, root: context.root) else { return }
         interactionRevision += 1
-        if expanded.contains(entry.url) { collapse(entry.url) }
+        if expanded.contains(entry.url) {
+            collapse(entry.url)
+            retainVisibleSelection(roots: session.rootEntries)
+        }
         else {
             expanded.insert(entry.url)
             _ = await loadFolder(entry.url, context: context, purpose: .manualExpansion, session: session)
@@ -102,6 +155,20 @@ final class ProjectFileTree {
         expanded = Set(expanded.filter(keep))
         children = children.filter { keep($0.key) }
         loadGenerations = loadGenerations.filter { keep($0.key) }
+    }
+
+    private func retainVisibleSelection(roots: [NavigationEntry]) {
+        let visible = Set(rows(roots: roots).map(\.id))
+        selection.formIntersection(visible)
+        if let selectionAnchor, !visible.contains(selectionAnchor) {
+            self.selectionAnchor = selection.first
+        }
+    }
+
+    private func isDescendant(_ url: URL, of parent: URL) -> Bool {
+        let parentPath = parent.standardizedFileURL.path
+        let urlPath = url.standardizedFileURL.path
+        return urlPath.hasPrefix(parentPath == "/" ? "/" : parentPath + "/")
     }
 
     private func loadFolder(_ folder: URL, context: Context, purpose: LoadPurpose,
@@ -144,6 +211,7 @@ final class ProjectFileTree {
     func refreshAndReveal(_ target: URL?, session: AppSession) async -> RevealOutcome {
         guard let context = context(for: session) else { return .unavailable }
         guard await refreshExpandedFolders(context: context, session: session) else { return .superseded }
+        retainVisibleSelection(roots: session.rootEntries)
         guard let target, belongsToProject(target, root: context.root) else { return .unavailable }
         var entries = session.rootEntries
         while let ancestor = entries.first(where: {

@@ -35,7 +35,7 @@ struct ProjectFileList: View {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     if session.searchQuery.isEmpty {
                         ForEach(tree.rows(roots: session.rootEntries)) { row in
-                            FileTreeRow(entry: row.entry, session: session, depth: row.depth,
+                            FileTreeRow(entry: row.entry, session: session, tree: tree, depth: row.depth,
                                         expanded: tree.expanded.contains(row.id)) {
                                 Task { await tree.toggle(row.entry, session: session) }
                             }.id(row.id)

@@ -34,9 +34,11 @@ Como usuario quiero navegar mis proyectos mediante un explorador de carpetas mod
 7. El usuario puede eliminar elementos con confirmación explícita.
 8. La UI refleja cambios externos realizados en el sistema de archivos.
 9. El árbol no bloquea la app al cargar proyectos con muchos archivos.
-10. El usuario puede arrastrar un fichero o carpeta del árbol a otra carpeta del proyecto; al soltar se mueve y, si mantiene ⌥, se copia.
-11. El destino se identifica durante el arrastre; las colisiones y los destinos dentro de la propia carpeta no sobrescriben ni alteran el origen.
-12. Los cambios de árbol se reflejan al terminar y los documentos abiertos conservan su sesión al moverlos.
+10. El usuario puede seleccionar varias filas con ⌘-clic y rangos con ⇧-clic; la selección puede mezclar ficheros y carpetas.
+11. Al arrastrar una fila seleccionada se transfieren juntas las filas seleccionadas; si se arrastra una no seleccionada, solo se transfiere esa fila. Las carpetas seleccionadas absorben sus descendientes seleccionados para evitar duplicados.
+12. Al soltar el lote en una carpeta del proyecto se mueve; si mantiene ⌥, se copia sin alterar los originales.
+13. El destino se identifica durante el arrastre; una colisión o destino inseguro rechaza el lote antes de modificarlo y nunca sobrescribe elementos.
+14. Los cambios del árbol se reflejan al terminar y los documentos abiertos conservan su sesión al moverlos.
 
 ## Flujo Principal
 

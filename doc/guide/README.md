@@ -1,16 +1,20 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v94-en.mdlz` and `Guide-v94-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v95-en.mdlz` and `Guide-v95-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v94/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v95/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v94 adds project-tree drag/drop instructions: dropping a file or folder
-moves it, while holding ⌥ copies it. It carries forward v93's Preview recovery
-and Little Leonardo guidance. Existing personal copies and practice answers
-through v93 remain untouched. Fresh bundled Help and practice-form acceptance
-for v94 is pending under [issue #261](https://github.com/PinedaTec-EU/LeonardoMD/issues/261).
+Guide v95 documents mixed multi-selection in the project tree: ⌘-click toggles
+rows, ⇧-click selects a visible range, and dragging a selected row transfers
+selected files and folders together. Holding ⌥ copies. It carries forward v94's
+project-tree drag/drop guidance and v93's Preview recovery and Little Leonardo
+guidance. Existing personal copies and practice answers through v94 remain
+untouched. Fresh bundled Help and practice-form acceptance for v95 is pending
+under [issue #261](https://github.com/PinedaTec-EU/LeonardoMD/issues/261).
+Guide v95 EN SHA-256: `4b96b84bc89f83fd3347e6ccb6e621e21e8d3b73abfbe54c7ccedc5f30e65848`
+and ES SHA-256: `cdfbe9adbe90ef95402636c6171243cd25643fb48feada5de3a6e7136b6fb0df`.
 Guide v94 EN SHA-256: `151bda467f3bdf81965d2f961ed31031eba5b9a1b0d59be32785e927f47dbb4e`
 and ES SHA-256: `10259c7f5a7c64f4a738704e398481d7965b738c3fb25a95f6742bd4110cb8fb`.
 
@@ -36,14 +40,14 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v94 with a new
+historical review record. The current app resources use Guide v95 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
 record is in
 [packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
-It does not establish acceptance for the current Guide v94 package. The
+It does not establish acceptance for the current Guide v95 package. The
 previous iOS capture bundles are historical; refreshed simulator evidence is
 recorded separately under `doc/validation/`.
 
@@ -53,7 +57,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v93 introduced the current document-search, remote-project review and offline-catalogue guidance, grouped Dock/app-switcher instances, synchronization status and helper recovery. Guide v94 carries that guidance forward alongside the new project-tree drag/drop instructions. Existing guide copies and their separate practice answers remain preserved.
+Guide v93 introduced the current document-search, remote-project review and offline-catalogue guidance, grouped Dock/app-switcher instances, synchronization status and helper recovery. Guide v94 carried that guidance forward alongside project-tree drag/drop instructions; Guide v95 adds mixed multi-selection. Existing guide copies and their separate practice answers remain preserved.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
