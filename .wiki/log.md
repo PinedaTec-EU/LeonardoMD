@@ -315,3 +315,13 @@ head CI, exact-source alert captures and strict review are pending; Beta Help
 and tab/window/app-quit acceptance remain required after integration because
 local screen capture again returned `ScreenCaptureKit -3811`. See
 `doc/validation/preview-sync/448/README.md`.
+Little Leonardo built-in extensions (#464, 17 Nov 2026, [PR #465](https://github.com/PinedaTec-EU/LeonardoMD/pull/465)): moved the renderer-ID to
+`MarkdownFeatures` catalog into `LeonardoCore`; added device-local switches and
+detected-feature consent recommendations to on-demand and offline readers. The
+bundled Demo v2 adds examples for all five extensions and creates a separate
+practice copy so existing answers remain intact. Received documents stay
+read-only and remote images stay blocked. English and Spanish bundled guides
+advanced to v94 and were regenerated. iPhone 17 UI evidence and the fresh
+packaged macOS bilingual Help/form smoke are recorded in
+`doc/validation/pr-465/README.md`. Simulator and Help acceptance passed; physical
+TestFlight acceptance remains pending under [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343). The source archive preflight then exposed [#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467): the local recorder rejected the nested delta accepted by the pinned central ledger before Xcode ran. The recorder now accepts both ledger entry forms, preserves the summary and optional PR identity, and increments only after success; its 9 focused tests and the 7 central-ledger contract tests pass. A separate hosted macOS CI failure in the linked-document preview integration test is registered as [#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468); the focused test passes locally on macOS 27.0.1/Xcode 27.1, but fails twice on GitHub's macos-15/Xcode 26.3 runner. The CI/harness correction and source archive remain delivery gates.

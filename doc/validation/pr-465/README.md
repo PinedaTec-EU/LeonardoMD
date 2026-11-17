@@ -28,10 +28,41 @@ the test app, then opened the Spanish copy. The separate passing
 Spanish source/answer separation and persistence. Both are Simulator checks;
 they do not establish physical-device or TestFlight acceptance.
 
-The PR compilation delta records four successful compiler-bearing invocations
-from this validation round: `swift test`; the two named iPhone 17 UI-test
-invocations above; and `swift build -c release` from `./launch.sh --qa`. A full
-iOS UI-suite attempt timed out and is not counted as a successful invocation.
+Before the source distribution archive, the PR compilation delta records five
+successful compiler-bearing invocations: `swift test`; the two named iPhone 17
+UI-test invocations above; `swift build -c release` from `./launch.sh --qa`;
+and the focused `swift test --filter
+testLinkedDocumentFailureUsesItsDiagnosticPresenter` run below. A full iOS
+UI-suite attempt timed out and is not counted. The source archive is a separate
+compiler invocation and is recorded only if `xcodebuild archive` succeeds.
+
+## Recorder and ledger regression
+
+The archive preflight initially stopped before Xcode because
+`scripts/compile-and-record.py` rejected the nested delta entry used by this
+PR and accepted by the pinned ledger engine. No count or archive was produced
+by that failed attempt. Issue [#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467)
+tracks the mismatch. The recorder now supports the engine's nested and
+top-level segment forms, validates an optional PR identity, preserves summary
+metadata, and increments only successful builds.
+
+* `python3 scripts/tests/test_compile_and_record.py`: 9 tests pass, including
+  both supported entry shapes, malformed entries, concurrent updates and
+  summary preservation.
+* `LEDGER_ENGINE_ROOT=<pinned checkout> python3
+  scripts/tests/test_release_ledger.py`: 7 tests pass against the pinned
+  central engine.
+
+## Hosted linked-document test
+
+The focused linked-document diagnostic test passes locally on macOS 27.0.1,
+Xcode 27.1 (one test, 0.710 seconds; recorded as build delta 5). The earlier
+PR head `d00d6d804d5285b8f5dda240b95ffa3ec54ba6ec` failed the same assertions in
+both the push and pull-request GitHub Actions runs on macos-15/Xcode 26.3. The
+linked link is present in the WKWebView DOM, but the diagnostic presenter is
+not called on that runner. This CI-specific failure is tracked in
+[#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468); it does not
+establish a defect in the packaged app. A correction is pending.
 
 ## Packaged macOS Help smoke
 
