@@ -206,7 +206,17 @@ final class OnDemandSyncUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
         app.launch()
         let demoProject = app.buttons["open-demo-project"]
-        XCTAssertTrue(demoProject.waitForExistence(timeout: 10), "The fixture must start with the bundled local Demo")
+        if !demoProject.waitForExistence(timeout: 3) {
+            app.buttons["open-sync-settings"].tap()
+            let restoreDemo = app.buttons["restore-demo-project"]
+            XCTAssertTrue(restoreDemo.waitForExistence(timeout: 5),
+                          "The bundled Demo can be restored to prepare the local-section check")
+            restoreDemo.tap()
+            dismissSyncSettings(in: app)
+        }
+        XCTAssertTrue(demoProject.waitForExistence(timeout: 10), "The test must prepare the bundled local Demo")
+        XCTAssertTrue(app.staticTexts["En este dispositivo"].exists,
+                      "A local Demo must make its section visible before removal")
         demoProject.swipeLeft()
         let deleteDemo = app.buttons["delete-demo-project"]
         XCTAssertTrue(deleteDemo.waitForExistence(timeout: 5), "Removing the local Demo requires the explicit action")
