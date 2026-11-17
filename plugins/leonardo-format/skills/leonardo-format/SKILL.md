@@ -74,6 +74,12 @@ and can be stopped earlier with Ctrl+C in its own terminal session. Start a
 new preview after changes to the source document. The preview is read-only
 and does not require choosing an extraction destination, even for MDLZ.
 
+For a file delivery in Codex, start the same preview before replying and
+include a clickable Markdown link labeled **Vista previa de Leonardo**
+beside each original local Leonardo document link. Use the actual loopback
+URL printed by the script. Let the user open that link by clicking it.
+The plugin's trusted Stop hook can request this step once if it was missed.
+
 ## Safe MDLZ helper
 
 Use the script shipped beside this skill. In Claude Code, `${CLAUDE_SKILL_DIR}`
