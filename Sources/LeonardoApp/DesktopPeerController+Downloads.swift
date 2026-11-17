@@ -13,6 +13,7 @@ extension DesktopPeerController {
         guard !connection.revoked else { return [] }
         let live = (available[connection.id] ?? []).filter { descriptor in
             connection.grants[descriptor.id] != nil
+                && !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(descriptor.id)
                 && reviewStore.acceptsProject(connectionID: connection.id, projectID: descriptor.id)
         }
         var projectIDs = Set(live.map(\.id))
@@ -20,6 +21,7 @@ extension DesktopPeerController {
             let descriptor = cached.descriptor
             guard cached.id == Self.downloadID(connectionID: connection.id, projectID: descriptor.id),
                   connection.grants[descriptor.id] != nil,
+                  !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(descriptor.id),
                   reviewStore.acceptsProject(connectionID: connection.id, projectID: descriptor.id),
                   projectIDs.insert(descriptor.id).inserted else { return nil }
             return descriptor
@@ -29,17 +31,25 @@ extension DesktopPeerController {
 
     func restoreDownloads() async throws {
         let granted = Set(connections.filter { !$0.revoked }.flatMap { connection in
-            connection.grants.keys.map { Self.downloadID(connectionID: connection.id, projectID: $0) }
+            connection.grants.keys.compactMap { projectID in
+                reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(projectID)
+                    ? nil : Self.downloadID(connectionID: connection.id, projectID: projectID)
+            }
         })
+        let quarantined = downloadQuarantineIDs()
 
         // Preserve projects that the previous version already exposed. New
         // grants stay in review until the user explicitly adds them.
         if !reviewStore.hasMigratedExistingProjects {
             try await downloads.restore(allowedIDs: granted,
-                                        authorizations: downloadAuthorizations(for: granted))
+                                        authorizations: downloadAuthorizations(for: granted),
+                                        quarantinedIDs: quarantined)
             for connection in connections where !connection.revoked {
                 let copiedProjectIDs = Set(copies.filter { $0.connectionID == connection.id }.map(\.remoteProjectID))
                 let cachedProjectIDs = Set(connection.grants.keys.filter { projectID in
+                    guard !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(projectID) else {
+                        return false
+                    }
                     copiedProjectIDs.contains(projectID) || downloads.projects.contains {
                         $0.id == Self.downloadID(connectionID: connection.id, projectID: projectID)
                     }
@@ -51,14 +61,24 @@ extension DesktopPeerController {
 
         let allowed = Set(connections.filter { !$0.revoked }.flatMap { connection in
             connection.grants.keys.compactMap { projectID in
-                reviewStore.acceptsProject(connectionID: connection.id, projectID: projectID)
+                !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(projectID)
+                    && reviewStore.acceptsProject(connectionID: connection.id, projectID: projectID)
                     ? Self.downloadID(connectionID: connection.id, projectID: projectID) : nil
             }
         })
         let denied = downloads.projects.filter { !allowed.contains($0.id) }.map(\.id)
         for id in denied { try await downloads.remove(id: id) }
         try await downloads.restore(allowedIDs: allowed,
-                                    authorizations: downloadAuthorizations(for: allowed))
+                                    authorizations: downloadAuthorizations(for: allowed),
+                                    quarantinedIDs: quarantined)
+    }
+
+    func downloadQuarantineIDs() -> Set<UUID> {
+        Set(connections.filter { !$0.revoked }.flatMap { connection in
+            reviewStore.authorizationRequiredProjects(connectionID: connection.id).map {
+                Self.downloadID(connectionID: connection.id, projectID: $0)
+            }
+        })
     }
 
     func downloadAuthorizations(for allowedIDs: Set<UUID>) -> [UUID: RemoteDownloadAuthorization] {
@@ -66,7 +86,8 @@ extension DesktopPeerController {
         for connection in connections where !connection.revoked {
             for (projectID, selection) in connection.grants {
                 let id = Self.downloadID(connectionID: connection.id, projectID: projectID)
-                guard allowedIDs.contains(id) else { continue }
+                guard allowedIDs.contains(id),
+                      !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(projectID) else { continue }
                 result[id] = RemoteDownloadAuthorization(selection: selection)
             }
         }

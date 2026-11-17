@@ -134,6 +134,14 @@ import XCTest
         try await library.restore(allowedIDs: [fixture.project.id], authorizations: [:])
         XCTAssertTrue(library.projects.isEmpty,
                       "A descriptor-less legacy connection is hidden until authenticated revalidation")
+        await library.setLimit(bytes: 1_000_000)
+        await library.clearTemporary()
+        XCTAssertTrue(library.projects.isEmpty,
+                      "Cache-settings refreshes must preserve the missing-authorization filter")
+        do {
+            _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+            XCTFail("A cache-settings refresh must not make a legacy project readable")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
         let persisted = try await fixture.cache.projects()
         let retained = try XCTUnwrap(persisted.first)
         XCTAssertTrue(retained.keeps(fixture.file.path))
@@ -146,6 +154,43 @@ import XCTest
         XCTAssertEqual(reopened, fixture.file, "Authenticated status restores the retained offline copy")
     }
 
+    func testOlderAuthorizedRestoreCannotReplaceNewerDescriptorlessState() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+
+        let gate = CacheReadGate()
+        await fixture.cache.holdNextProjects(at: gate)
+        let staleRestore = Task {
+            try await library.restore(allowedIDs: [fixture.project.id],
+                authorizations: [fixture.project.id: RemoteDownloadAuthorization(descriptor: fixture.project)])
+        }
+        await gate.waitUntilEntered()
+        try await library.restore(allowedIDs: [fixture.project.id], authorizations: [:])
+        await gate.release()
+        try await staleRestore.value
+
+        XCTAssertTrue(library.projects.isEmpty,
+                      "A completed older restore must not replace a newer authorization-less state")
+        do {
+            _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+            XCTFail("A superseded restore must not reauthorize a retained cache hit")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
+
+        let retainedProjects = try await fixture.cache.projects()
+        let retained = try XCTUnwrap(retainedProjects.first)
+        XCTAssertTrue(retained.keeps(fixture.file.path))
+        try await library.restore(allowedIDs: [fixture.project.id],
+            authorizations: [fixture.project.id: RemoteDownloadAuthorization(descriptor: fixture.project)])
+        let reopened = try await library.open(id: fixture.project.id, path: fixture.file.path)
+        XCTAssertEqual(reopened, fixture.file)
+    }
+
     func testQuarantinedRestoreKeepsRetainedCacheHiddenUntilAuthorizationReturns() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }
@@ -156,7 +201,9 @@ import XCTest
         await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
         _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
 
-        try await library.restore(allowedIDs: [], authorizations: [:], quarantinedIDs: [fixture.project.id])
+        try await library.restore(allowedIDs: [fixture.project.id],
+            authorizations: [fixture.project.id: RemoteDownloadAuthorization(descriptor: fixture.project)],
+            quarantinedIDs: [fixture.project.id])
         XCTAssertTrue(library.projects.isEmpty, "Quarantined projects must not enter the reader")
         do {
             _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
@@ -1225,6 +1272,7 @@ private actor CacheReadGate {
 /// Real persistence with controlled completion boundaries, without timing sleeps.
 private actor GatedDownloadCache: RemoteDownloadCache {
     let base: OnDemandCache
+    private var projectsGates: [CacheReadGate] = []
     private var usageGate: CacheReadGate?
     private var staleReadGate: CacheReadGate?
     private var storeGate: CacheReadGate?
@@ -1234,13 +1282,20 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     private var failDeniedPathChange = false
     init(base: OnDemandCache) { self.base = base }
     func holdNextUsage(at gate: CacheReadGate) { usageGate = gate }
+    func holdNextProjects(at gate: CacheReadGate) { projectsGates.append(gate) }
     func holdNextStaleRead(at gate: CacheReadGate) { staleReadGate = gate }
     func holdNextStore(at gate: CacheReadGate) { storeGate = gate }
     func holdNextFreshRead(at gate: CacheReadGate) { freshReadGates.append(gate) }
     func failNextFreshRead() { nextFreshReadFailure = .unavailable }
     func failNextLimitChange() { nextLimitFailure = .unavailable }
     func failNextDeniedPathChange() { failDeniedPathChange = true }
-    func projects() async throws -> [CachedRemoteProject] { try await base.projects() }
+    func projects() async throws -> [CachedRemoteProject] {
+        if !projectsGates.isEmpty {
+            let gate = projectsGates.removeFirst()
+            await gate.hold()
+        }
+        return try await base.projects()
+    }
     func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
         try await base.update(id: id, descriptor: descriptor, catalogue: catalogue)
     }

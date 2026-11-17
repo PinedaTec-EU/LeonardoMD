@@ -55,7 +55,9 @@ final class DesktopPeerController {
         downloads = downloadLibrary
         workingRoot = root.appendingPathComponent("Working", isDirectory: true)
         self.revoker = revoker
+        let peerReviewStore = reviewStore
         revoker.denyDownloads = { connectionID, projectIDs in
+            peerReviewStore.requireAuthorization(connectionID: connectionID, projectIDs: projectIDs)
             for projectID in projectIDs {
                 downloadLibrary.deny(id: Self.downloadID(connectionID: connectionID, projectID: projectID))
             }
@@ -155,6 +157,11 @@ final class DesktopPeerController {
                 reviewStore.reconcileProjects(status.projects, connectionID: id)
             }
             try await reload()
+            if status.access != .pending {
+                reviewStore.clearAuthorizationRequirement(
+                    connectionID: id,
+                    projectIDs: reviewStore.authorizationRequiredProjects(connectionID: id))
+            }
             try await restoreDownloads()
             for descriptor in status.projects where reviewStore.acceptsProject(connectionID: id, projectID: descriptor.id) {
                 let downloadID = Self.downloadID(connectionID: id, projectID: descriptor.id)
@@ -184,6 +191,7 @@ final class DesktopPeerController {
 
     func addRemoteProject(connectionID: UUID, projectID: UUID) async {
         guard !InstanceRuntime.isAdditional, !busy,
+              !reviewStore.authorizationRequiredProjects(connectionID: connectionID).contains(projectID),
               !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID),
               available[connectionID]?.contains(where: { $0.id == projectID }) == true else { return }
         busy = true; defer { busy = false }
@@ -192,13 +200,16 @@ final class DesktopPeerController {
             try authorizeStorage()
             let allowed = Set(connections.filter { !$0.revoked }.flatMap { connection in
                 connection.grants.keys.compactMap { candidate in
-                    reviewStore.acceptsProject(connectionID: connection.id, projectID: candidate)
+                    let selected = reviewStore.acceptsProject(connectionID: connection.id, projectID: candidate)
                         || (connection.id == connectionID && candidate == projectID)
+                    !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(candidate)
+                        && selected
                         ? Self.downloadID(connectionID: connection.id, projectID: candidate) : nil
                 }
             })
             try await downloads.restore(allowedIDs: allowed,
-                                        authorizations: downloadAuthorizations(for: allowed))
+                                        authorizations: downloadAuthorizations(for: allowed),
+                                        quarantinedIDs: downloadQuarantineIDs())
             let catalogue = try await library.catalogue(connectionID: connectionID, projectID: projectID)
             guard let shared = available[connectionID]?.first(where: { $0.id == projectID }) else { throw SyncError.revoked }
             guard !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID) else {

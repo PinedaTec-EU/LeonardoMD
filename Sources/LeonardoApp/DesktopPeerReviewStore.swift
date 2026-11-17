@@ -2,7 +2,8 @@ import Foundation
 import Observation
 import LeonardoSync
 
-/// Local choices for what this Mac shows from each linked source.
+/// Local choices for what this Mac shows from each linked source, plus a
+/// durable fail-closed barrier while authenticated grants are being reconciled.
 /// These choices never change the host's grants or the downloaded file cache.
 @MainActor @Observable
 final class DesktopPeerReviewStore {
@@ -12,19 +13,22 @@ final class DesktopPeerReviewStore {
         var ignoredProjects: Set<UUID> = []
         var ignoredProjectDescriptors: [UUID: SharedProjectDescriptor] = [:]
         var newFilePaths: [UUID: Set<String>] = [:]
+        var authorizationRequiredProjects: Set<UUID> = []
 
         private enum CodingKeys: String, CodingKey {
             case hostName, acceptedProjects, ignoredProjects, ignoredProjectDescriptors, newFilePaths
+            case authorizationRequiredProjects
         }
 
         init(hostName: String? = nil, acceptedProjects: Set<UUID> = [], ignoredProjects: Set<UUID> = [],
              ignoredProjectDescriptors: [UUID: SharedProjectDescriptor] = [:],
-             newFilePaths: [UUID: Set<String>] = [:]) {
+             newFilePaths: [UUID: Set<String>] = [:], authorizationRequiredProjects: Set<UUID> = []) {
             self.hostName = hostName
             self.acceptedProjects = acceptedProjects
             self.ignoredProjects = ignoredProjects
             self.ignoredProjectDescriptors = ignoredProjectDescriptors
             self.newFilePaths = newFilePaths
+            self.authorizationRequiredProjects = authorizationRequiredProjects
         }
 
         init(from decoder: Decoder) throws {
@@ -35,6 +39,8 @@ final class DesktopPeerReviewStore {
             ignoredProjectDescriptors = try container.decodeIfPresent(
                 [UUID: SharedProjectDescriptor].self, forKey: .ignoredProjectDescriptors) ?? [:]
             newFilePaths = try container.decodeIfPresent([UUID: Set<String>].self, forKey: .newFilePaths) ?? [:]
+            authorizationRequiredProjects = try container.decodeIfPresent(
+                Set<UUID>.self, forKey: .authorizationRequiredProjects) ?? []
         }
     }
 
@@ -78,6 +84,27 @@ final class DesktopPeerReviewStore {
 
     func ignoredProject(connectionID: UUID, projectID: UUID) -> Bool {
         state.connections[connectionID]?.ignoredProjects.contains(projectID) == true
+    }
+
+    func authorizationRequiredProjects(connectionID: UUID) -> Set<UUID> {
+        state.connections[connectionID]?.authorizationRequiredProjects ?? []
+    }
+
+    /// Persist the barrier before a fallible grant snapshot is saved. Retained
+    /// bytes stay on disk, but restore must quarantine them until STATUS succeeds.
+    func requireAuthorization(connectionID: UUID, projectIDs: [UUID]) {
+        guard !projectIDs.isEmpty else { return }
+        var connection = state.connections[connectionID] ?? ConnectionState()
+        connection.authorizationRequiredProjects.formUnion(projectIDs)
+        state.connections[connectionID] = connection
+        save()
+    }
+
+    func clearAuthorizationRequirement(connectionID: UUID, projectIDs: Set<UUID>) {
+        guard !projectIDs.isEmpty, var connection = state.connections[connectionID] else { return }
+        connection.authorizationRequiredProjects.subtract(projectIDs)
+        state.connections[connectionID] = connection
+        save()
     }
 
     func acceptProject(connectionID: UUID, projectID: UUID) {

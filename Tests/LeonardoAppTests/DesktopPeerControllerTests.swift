@@ -81,6 +81,15 @@ final class DesktopPeerControllerTests: XCTestCase {
             _ = try await controller.downloads.open(id: downloadID, path: file.path)
         }
 
+        await controller.revoker.denyReaderCaches(connectionID: connectionID, projectIDs: ownedProjectIDs)
+        XCTAssertEqual(controller.reviewStore.authorizationRequiredProjects(connectionID: connectionID),
+                       Set(ownedProjectIDs),
+                       "The revocation bridge persists each project barrier before a later save can fail")
+        let restoredReviewStore = DesktopPeerReviewStore(defaults: defaults)
+        XCTAssertEqual(restoredReviewStore.authorizationRequiredProjects(connectionID: connectionID),
+                       Set(ownedProjectIDs),
+                       "A restarted controller must retain the project barriers")
+
         let connection = try DesktopPeerConnection(id: connectionID, remoteDeviceID: UUID(),
             endpoint: URL(string: "https://example.test")!, fingerprint: Data(repeating: 7, count: 32),
             grants: Dictionary(uniqueKeysWithValues: ownedProjectIDs.map { ($0, selection) }))

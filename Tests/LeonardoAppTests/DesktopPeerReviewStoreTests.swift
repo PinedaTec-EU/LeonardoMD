@@ -50,6 +50,26 @@ final class DesktopPeerReviewStoreTests: XCTestCase {
         XCTAssertFalse(store.ignoredProject(connectionID: connectionID, projectID: projectID),
                        "The migrated baseline must allow a later grant change to reopen review")
     }
+
+    func testAuthorizationBarrierSurvivesReloadUntilAuthenticatedReconciliation() throws {
+        let suite = "DesktopPeerReviewStoreAuthorizationTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let connectionID = UUID()
+        let projectID = UUID()
+
+        DesktopPeerReviewStore(defaults: defaults).requireAuthorization(
+            connectionID: connectionID, projectIDs: [projectID])
+
+        let restored = DesktopPeerReviewStore(defaults: defaults)
+        XCTAssertEqual(restored.authorizationRequiredProjects(connectionID: connectionID), [projectID],
+                       "A failed grant write must not restore the old project authorization after restart")
+
+        restored.clearAuthorizationRequirement(connectionID: connectionID, projectIDs: [projectID])
+        let reconciled = DesktopPeerReviewStore(defaults: defaults)
+        XCTAssertTrue(reconciled.authorizationRequiredProjects(connectionID: connectionID).isEmpty,
+                      "Only an authenticated successful reconciliation clears the barrier")
+    }
 }
 
 private struct LegacyState: Encodable {

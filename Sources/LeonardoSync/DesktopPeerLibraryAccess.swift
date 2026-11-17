@@ -54,10 +54,6 @@ public protocol DesktopPeerAccessRevoker: Sendable {
     func closeCopies(_ ids: [UUID]) async
 }
 
-public extension DesktopPeerAccessRevoker {
-    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async {}
-}
-
 public protocol DesktopPeerLibraryAccess: Sendable {
     func connections() async throws -> [DesktopPeerConnection]
     func copies() async throws -> [DesktopPeerCopy]

@@ -58,10 +58,14 @@ public final class DownloadLibrary {
     public var error: String?
     private let cache: any RemoteDownloadCache
     private var allowed: Set<UUID> = []
+    private var authorizationRequired: Set<UUID> = []
+    private var authorizations: [UUID: RemoteDownloadAuthorization] = [:]
     private var deniedPaths: [UUID: Set<String>] = [:]
     private var generations: [UUID: UInt64] = [:]
+    private var authorizationRevisions: [UUID: UInt64] = [:]
     private var pathGenerations: [String: UInt64] = [:]
     private var usageRevision: UInt64 = 0
+    private var restoreRevision: UInt64 = 0
     @MainActor private final class ActiveDownload {
         let identity: UUID
         let generation: UInt64
@@ -93,16 +97,24 @@ public final class DownloadLibrary {
     public func restore(allowedIDs: Set<UUID>,
                         authorizations: [UUID: RemoteDownloadAuthorization],
                         quarantinedIDs: Set<UUID> = []) async throws {
-        for id in allowed.subtracting(allowedIDs) { deny(id: id) }
-        allowed = allowedIDs
+        let reconciledAllowedIDs = allowedIDs.subtracting(quarantinedIDs)
+        for id in allowed.subtracting(reconciledAllowedIDs) { deny(id: id) }
+        restoreRevision &+= 1
+        let expectedRestoreRevision = restoreRevision
+        allowed = reconciledAllowedIDs
+        self.authorizations = authorizations.filter { reconciledAllowedIDs.contains($0.key) }
+        authorizationRequired = reconciledAllowedIDs.subtracting(self.authorizations.keys)
+        for id in reconciledAllowedIDs { authorizationRevisions[id, default: 0] &+= 1 }
         projects = projects.compactMap { project in
-            guard allowedIDs.contains(project.id), let authorization = authorizations[project.id] else { return nil }
+            guard reconciledAllowedIDs.contains(project.id),
+                  let authorization = self.authorizations[project.id] else { return nil }
             var filtered = project
             filtered.descriptor = authorization.descriptor ?? project.descriptor
             filtered.catalogue = authorization.filter(project.catalogue)
             return filtered
         }
         let values = try await cache.projects()
+        guard restoreRevision == expectedRestoreRevision else { return }
         var visible: [CachedRemoteProject] = []
         var filtered: [CachedRemoteProject] = []
         var unauthorizedIDs: [UUID] = []
@@ -138,38 +150,57 @@ public final class DownloadLibrary {
         // Publish the filtered catalogue before yielding to persistence. A concurrent
         // open can never observe a path outside the current saved grant.
         projects = visible
-        for id in unauthorizedIDs { try await cache.remove(id: id) }
+        for id in unauthorizedIDs {
+            guard restoreRevision == expectedRestoreRevision else { return }
+            try await cache.remove(id: id)
+            guard restoreRevision == expectedRestoreRevision else { return }
+        }
         for value in filtered {
+            guard restoreRevision == expectedRestoreRevision,
+                  allowed.contains(value.id), !authorizationRequired.contains(value.id),
+                  let authorization = self.authorizations[value.id] else { return }
             guard let source = values.first(where: { $0.id == value.id }) else { continue }
-            let descriptor = authorizations[value.id]?.descriptor ?? source.descriptor
+            let descriptor = authorization.descriptor ?? source.descriptor
             try await cache.update(id: value.id, descriptor: descriptor,
                                    catalogue: value.catalogue)
         }
+        guard restoreRevision == expectedRestoreRevision else { return }
         try await refreshUsage()
     }
 
     public func restrict(id: UUID, authorizedBy descriptor: SharedProjectDescriptor) async throws {
         guard allowed.contains(id), let index = projects.firstIndex(where: { $0.id == id }) else { return }
         let catalogue = RemoteDownloadAuthorization(descriptor: descriptor).filter(projects[index].catalogue)
-        projects[index].descriptor = descriptor
-        projects[index].catalogue = catalogue
+        let authorizationRevision = requireAuthorization(for: id)
         try await cache.update(id: id, descriptor: descriptor, catalogue: catalogue)
-        guard allowed.contains(id) else {
-            try await cache.remove(id: id)
+        guard allowed.contains(id), self.authorizationRevisions[id] == authorizationRevision else {
+            if !allowed.contains(id) { try await cache.remove(id: id) }
             throw SyncError.revoked
         }
+        authorizations[id] = RemoteDownloadAuthorization(descriptor: descriptor)
+        authorizationRequired.remove(id)
         try await refreshAll()
     }
 
     public func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
         allowed.insert(id)
+        let authorizationRevision = requireAuthorization(for: id)
         try await cache.update(id: id, descriptor: descriptor, catalogue: catalogue)
-        guard allowed.contains(id) else { try await cache.remove(id: id); throw SyncError.revoked }
+        guard allowed.contains(id), self.authorizationRevisions[id] == authorizationRevision else {
+            if !allowed.contains(id) { try await cache.remove(id: id) }
+            throw SyncError.revoked
+        }
+        authorizations[id] = RemoteDownloadAuthorization(descriptor: descriptor)
+        authorizationRequired.remove(id)
         try await refreshAll()
     }
 
     public func deny(id: UUID) {
         allowed.remove(id); generations[id, default: 0] &+= 1
+        authorizationRevisions[id, default: 0] &+= 1
+        authorizationRequired.remove(id)
+        authorizations[id] = nil
+        restoreRevision &+= 1
         deniedPaths[id] = nil
         usageRevision &+= 1
         projects.removeAll { $0.id == id }
@@ -235,7 +266,8 @@ public final class DownloadLibrary {
     public func openResult(id: UUID, path: String,
                            presentation: (@MainActor (Error) -> String)?,
                            diagnosticPresentation: RemoteDownloadDiagnosticPresentation?) async throws -> RemoteDownloadResult {
-        guard allowed.contains(id), let project = projects.first(where: { $0.id == id }),
+        guard allowed.contains(id), !authorizationRequired.contains(id), authorizations[id] != nil,
+              let project = projects.first(where: { $0.id == id }),
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
         let key = Self.key(id: id, path: path)
@@ -433,7 +465,8 @@ public final class DownloadLibrary {
 
     /// No suspension may separate this check from delivery to the caller.
     private func requireAccess(id: UUID, generation: UInt64) throws {
-        guard allowed.contains(id), generations[id, default: 0] == generation else { throw SyncError.revoked }
+        guard allowed.contains(id), !authorizationRequired.contains(id),
+              authorizations[id] != nil, generations[id, default: 0] == generation else { throw SyncError.revoked }
         try Task.checkCancellation()
     }
 
@@ -448,9 +481,23 @@ public final class DownloadLibrary {
         }
     }
 
+    @discardableResult
+    private func requireAuthorization(for id: UUID) -> UInt64 {
+        authorizationRequired.insert(id)
+        authorizations[id] = nil
+        projects.removeAll { $0.id == id }
+        authorizationRevisions[id, default: 0] &+= 1
+        restoreRevision &+= 1
+        return authorizationRevisions[id, default: 0]
+    }
+
+    private func hasCurrentAuthorization(for id: UUID) -> Bool {
+        allowed.contains(id) && !authorizationRequired.contains(id) && authorizations[id] != nil
+    }
+
     public func retain(id: UUID, path: String, isFolder: Bool, keep: Bool) async {
         do {
-            guard allowed.contains(id) else { throw SyncError.revoked }
+            guard hasCurrentAuthorization(for: id) else { throw SyncError.revoked }
             try await cache.setRetained(id: id, path: path, isFolder: isFolder, keep: keep)
             try await refreshAll()
             if keep { await downloadRetained(id: id) }
@@ -461,7 +508,7 @@ public final class DownloadLibrary {
         var attempted = Set<String>()
         while let project = projects.first(where: { $0.id == id }),
               let entry = project.pendingOfflineFiles.first(where: { !attempted.contains($0.path) }) {
-            guard allowed.contains(id), !Task.isCancelled else { return }
+            guard hasCurrentAuthorization(for: id), !Task.isCancelled else { return }
             attempted.insert(entry.path)
             do { _ = try await open(id: id, path: entry.path) }
             catch { if !allowed.contains(id) { return } }
@@ -478,18 +525,26 @@ public final class DownloadLibrary {
     }
     public func release(id: UUID, path: String, isFolder: Bool) async {
         do {
-            guard allowed.contains(id) else { throw SyncError.revoked }
+            guard hasCurrentAuthorization(for: id) else { throw SyncError.revoked }
             try await cache.release(id: id, path: path, isFolder: isFolder); try await refreshAll()
         } catch { self.error = errorMessage(for: error) }
     }
     public func removeRule(id: UUID, ruleID: String) async {
         do {
-            guard allowed.contains(id) else { throw SyncError.revoked }
+            guard hasCurrentAuthorization(for: id) else { throw SyncError.revoked }
             try await cache.removeRetentionRule(id: id, ruleID: ruleID); try await refreshAll()
         } catch { self.error = errorMessage(for: error) }
     }
     private func refreshAll() async throws {
-        projects = try await cache.projects().filter { allowed.contains($0.id) }
+        let values = try await cache.projects()
+        projects = values.compactMap { value in
+            guard hasCurrentAuthorization(for: value.id),
+                  let authorization = authorizations[value.id] else { return nil }
+            var projection = value
+            projection.descriptor = authorization.descriptor ?? value.descriptor
+            projection.catalogue = authorization.filter(value.catalogue)
+            return projection
+        }
         try await refreshUsage()
     }
     private func refreshUsage() async throws {
