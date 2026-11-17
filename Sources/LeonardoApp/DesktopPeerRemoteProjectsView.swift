@@ -11,6 +11,11 @@ struct DesktopPeerRemoteProjectsView: View {
     @State private var renamingConnection: DesktopPeerConnection?
     @State private var hostNameDraft = ""
 
+    init(controller: DesktopPeerController, showNonDocumentFiles: Bool = false) {
+        self.controller = controller
+        self.showNonDocumentFiles = showNonDocumentFiles
+    }
+
     private var connections: [DesktopPeerConnection] {
         controller.connections.sorted {
             controller.reviewStore.hostName(for: $0).localizedStandardCompare(
