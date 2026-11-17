@@ -333,6 +333,12 @@ final class DesktopPeerLibraryTests: XCTestCase {
                 invitation: nil, name: "MacBook")
             await fixture.remote.setAccess(.authorized)
             _ = try await fixture.library.refresh(connectionID: connection.id)
+            let copy = try await fixture.library.importProject(connectionID: connection.id,
+                projectID: fixture.remote.project.id)
+            let workspace = try await fixture.library.open(copyID: copy.id)
+            let localFile = workspace.appendingPathComponent("docs/note.md")
+            try Data("local draft".utf8).write(to: localFile)
+            _ = try await fixture.library.send(copyID: copy.id, buffers: [])
             let authorized = try await fixture.connections.load(id: connection.id)
             let previousGrant = try XCTUnwrap(authorized).grants[fixture.remote.project.id]
 
@@ -367,6 +373,122 @@ final class DesktopPeerLibraryTests: XCTestCase {
             let deniedProjects = await fixture.revoker.readerDeniedProjects(for: connection.id)
             XCTAssertEqual(deniedProjects, [fixture.remote.project.id],
                            "Reader caches are denied before the failed connection write for \(transition)")
+            let authorizationRequired = await fixture.revoker.authorizationRequired(
+                connectionID: connection.id, projectID: fixture.remote.project.id)
+            XCTAssertTrue(authorizationRequired,
+                          "The durable project barrier must protect editable copies for \(transition)")
+            XCTAssertEqual(try Data(contentsOf: localFile), Data("local draft".utf8),
+                           "A failed connection save must not discard local edits for \(transition)")
+            let immediateCopies = try await library.copies()
+            XCTAssertFalse(immediateCopies.contains { $0.id == copy.id },
+                           "A denied editable copy must disappear from the live list for \(transition)")
+            do {
+                _ = try await library.open(copyID: copy.id)
+                XCTFail("A denied editable copy must not reopen for \(transition)")
+            } catch {
+                XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+            }
+
+            let persistedBarrier = await fixture.revoker.authorizationBarrierStore()
+            let restartedRevoker = PeerRevokerFixture(authorizationBarrier: persistedBarrier)
+            let restarted = DesktopPeerLibrary(connections: fixture.connections, copies: fixture.copies,
+                workspace: fixture.workspace, credentials: fixture.credentials, remote: fixture.remote,
+                revoker: restartedRevoker, outbox: fixture.outbox)
+            let restartedCopies = try await restarted.copies()
+            XCTAssertFalse(restartedCopies.contains { $0.id == copy.id },
+                           "A restarted library must continue hiding the denied copy for \(transition)")
+            do {
+                _ = try await restarted.open(copyID: copy.id)
+                XCTFail("A restarted library must not reopen a denied copy for \(transition)")
+            } catch {
+                XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+            }
+            XCTAssertEqual(try Data(contentsOf: localFile), Data("local draft".utf8),
+                           "The workspace remains intact after library recreation for \(transition)")
+        }
+    }
+
+    func testProjectGrantChangesBlockRemoteCopyAndPreserveLocalEdits() async throws {
+        for transition in PeerGrantFailureTransition.allCases {
+            let fixture = try PeerLibraryFixture()
+            defer { try? FileManager.default.removeItem(at: fixture.root) }
+            let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil,
+                invitation: nil, name: "MacBook")
+            await fixture.remote.setAccess(.authorized)
+            _ = try await fixture.library.refresh(connectionID: connection.id)
+            let copy = try await fixture.library.importProject(connectionID: connection.id,
+                projectID: fixture.remote.project.id)
+            let workspace = try await fixture.library.open(copyID: copy.id)
+            let localFile = workspace.appendingPathComponent("docs/note.md")
+            try Data("local draft".utf8).write(to: localFile)
+            _ = try await fixture.library.send(copyID: copy.id, buffers: [])
+
+            switch transition {
+            case .pending:
+                await fixture.remote.setAccess(.pending)
+            case .removed:
+                await fixture.remote.withdrawProject()
+            case .narrowed:
+                let narrowed = SharedProjectDescriptor(id: fixture.remote.project.id,
+                    name: fixture.remote.project.name, scope: fixture.remote.project.scope,
+                    selection: try CorpusSelection(folders: [], documents: ["docs/other.md"]))
+                await fixture.remote.replaceProject(narrowed)
+            }
+
+            _ = try await fixture.library.refresh(connectionID: connection.id)
+            let stored = try await fixture.connections.load(id: connection.id)
+            XCTAssertEqual(try XCTUnwrap(stored).copies[copy.remoteProjectID], copy.id,
+                           "Project-level status changes retain the editable-copy identity for \(transition)")
+            let retainedCopy = try await fixture.copies.load(id: copy.id)
+            XCTAssertNotNil(retainedCopy,
+                            "The local copy archive remains available for a later authorized retry")
+            XCTAssertEqual(try Data(contentsOf: localFile), Data("local draft".utf8),
+                           "A project-level status change must preserve local disk edits for \(transition)")
+            let closedIDs = await fixture.revoker.closedIDs
+            XCTAssertFalse(closedIDs.contains(copy.id),
+                           "Project-level denial must not force-close a local editor with unsaved changes")
+            let retainedProposal = try await fixture.outbox.load(copyID: copy.id)
+            XCTAssertNil(retainedProposal,
+                         "A stale proposal must not replay after authorization is restored")
+
+            let hiddenWhileBarriered = try await fixture.library.copies()
+            XCTAssertFalse(hiddenWhileBarriered.contains { $0.id == copy.id },
+                           "The project barrier hides the copy after successful STATUS for \(transition)")
+            do {
+                _ = try await fixture.library.open(copyID: copy.id)
+                XCTFail("The project barrier must block new access for \(transition)")
+            } catch {
+                XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+            }
+
+            await fixture.revoker.clearAuthorizationRequirement(connectionID: connection.id,
+                                                                 projectIDs: [copy.remoteProjectID])
+            let stillHidden = try await fixture.library.copies()
+            XCTAssertFalse(stillHidden.contains { $0.id == copy.id },
+                           "Withdrawn or narrowed grants cannot expose an out-of-scope copy after barrier clear")
+            if transition == .narrowed {
+                do {
+                    _ = try await fixture.library.open(copyID: copy.id)
+                    XCTFail("An older, broader copy must stay unavailable under the narrowed grant")
+                } catch {
+                    XCTAssertEqual(error as? DesktopPeerLibraryError, .selectionChanged)
+                }
+            }
+            XCTAssertEqual(try Data(contentsOf: localFile), Data("local draft".utf8),
+                           "Blocking remote access still preserves local edits")
+
+            await fixture.remote.setAccess(.authorized)
+            if transition == .removed { await fixture.remote.restoreProject() }
+            if transition == .narrowed { await fixture.remote.replaceProject(fixture.remote.project) }
+            _ = try await fixture.library.refresh(connectionID: connection.id)
+            await fixture.revoker.clearAuthorizationRequirement(connectionID: connection.id,
+                                                                 projectIDs: [copy.remoteProjectID])
+            let restored = try await fixture.library.copies()
+            XCTAssertTrue(restored.contains { $0.id == copy.id },
+                          "A matching grant restores the retained copy after authenticated reconciliation")
+            let reopened = try await fixture.library.open(copyID: copy.id)
+            XCTAssertEqual(try Data(contentsOf: reopened.appendingPathComponent("docs/note.md")),
+                           Data("local draft".utf8))
         }
     }
 
@@ -615,12 +737,37 @@ private struct PeerLibraryFixture {
 private actor PeerRevokerFixture: DesktopPeerAccessRevoker {
     private(set) var closedIDs: Set<UUID> = []
     private var deniedReaderProjects: [UUID: Set<UUID>] = [:]
-    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) {
+    private let authorizationBarrier: PeerAuthorizationBarrierFixture
+    init(authorizationBarrier: PeerAuthorizationBarrierFixture = PeerAuthorizationBarrierFixture()) {
+        self.authorizationBarrier = authorizationBarrier
+    }
+    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async {
         deniedReaderProjects[connectionID, default: []].formUnion(projectIDs)
+        await authorizationBarrier.require(connectionID: connectionID, projectIDs: projectIDs)
+    }
+    func authorizationRequired(connectionID: UUID, projectID: UUID) async -> Bool {
+        await authorizationBarrier.contains(connectionID: connectionID, projectID: projectID)
     }
     func closeCopies(_ ids: [UUID]) { closedIDs.formUnion(ids) }
+    func authorizationBarrierStore() -> PeerAuthorizationBarrierFixture { authorizationBarrier }
+    func clearAuthorizationRequirement(connectionID: UUID, projectIDs: [UUID]) async {
+        await authorizationBarrier.clear(connectionID: connectionID, projectIDs: projectIDs)
+    }
     func readerDeniedProjects(for connectionID: UUID) -> Set<UUID> {
         deniedReaderProjects[connectionID, default: []]
+    }
+}
+
+private actor PeerAuthorizationBarrierFixture {
+    private var requiredProjects: [UUID: Set<UUID>] = [:]
+    func require(connectionID: UUID, projectIDs: [UUID]) {
+        requiredProjects[connectionID, default: []].formUnion(projectIDs)
+    }
+    func contains(connectionID: UUID, projectID: UUID) -> Bool {
+        requiredProjects[connectionID, default: []].contains(projectID)
+    }
+    func clear(connectionID: UUID, projectIDs: [UUID]) {
+        requiredProjects[connectionID]?.subtract(projectIDs)
     }
 }
 
@@ -699,6 +846,7 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
     }
     func setAccess(_ value: DeviceAccess) { access = value }
     func withdrawProject() { projectShared = false }
+    func restoreProject() { projectShared = true }
     func replaceProject(_ descriptor: SharedProjectDescriptor) { currentProject = descriptor }
     func setReachable(_ value: Bool) { reachable = value }
     func setNextCatalogueMutation(_ mutation: PeerAccessMutation) { nextCatalogueMutation = mutation }

@@ -9,9 +9,13 @@ import LeonardoDesktopSync
 final class DesktopPeerEditorRevoker: DesktopPeerAccessRevoker {
     var close: @MainActor ([UUID]) async -> Void = { _ in }
     var denyDownloads: @MainActor (UUID, [UUID]) async -> Void = { _, _ in }
+    var requiresAuthorization: @MainActor (UUID, UUID) -> Bool = { _, _ in true }
     func closeCopies(_ ids: [UUID]) async { await close(ids) }
     func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async {
         await denyDownloads(connectionID, projectIDs)
+    }
+    func authorizationRequired(connectionID: UUID, projectID: UUID) async -> Bool {
+        requiresAuthorization(connectionID, projectID)
     }
 }
 
@@ -61,6 +65,9 @@ final class DesktopPeerController {
             for projectID in projectIDs {
                 downloadLibrary.deny(id: Self.downloadID(connectionID: connectionID, projectID: projectID))
             }
+        }
+        revoker.requiresAuthorization = { connectionID, projectID in
+            peerReviewStore.authorizationRequiredProjects(connectionID: connectionID).contains(projectID)
         }
         if let library { self.library = library }
         else {
@@ -161,6 +168,7 @@ final class DesktopPeerController {
                 reviewStore.clearAuthorizationRequirement(
                     connectionID: id,
                     projectIDs: reviewStore.authorizationRequiredProjects(connectionID: id))
+                try await reload()
             }
             try await restoreDownloads()
             for descriptor in status.projects where reviewStore.acceptsProject(connectionID: id, projectID: descriptor.id) {

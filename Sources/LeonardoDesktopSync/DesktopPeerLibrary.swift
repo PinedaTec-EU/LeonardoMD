@@ -43,8 +43,13 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         for id in try await connectionStore.connectionIDs() {
             guard let connection = try await currentConnection(id: id), !connection.revoked else { continue }
             for (projectID, copyID) in connection.copies {
-                guard connection.grants[projectID] != nil, let copy = try await copyStore.load(id: copyID) else { continue }
+                guard let grant = connection.grants[projectID],
+                      let copy = try await copyStore.load(id: copyID),
+                      grant == copy.selection else { continue }
                 try checkOwnership(copy, connection: connection)
+                let authorizationRequired = await revoker.authorizationRequired(
+                    connectionID: connection.id, projectID: projectID)
+                guard !authorizationRequired else { continue }
                 result.append(copy)
             }
         }
@@ -303,13 +308,28 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     }
 
     private func cleanupDenied(_ connection: inout DesktopPeerConnection) async throws {
-        let denied = connection.copies.filter { connection.revoked || connection.grants[$0.key] == nil }
-        let deniedReaderProjects = Array(Set(denied.keys)).sorted { $0.uuidString < $1.uuidString }
+        guard connection.revoked else {
+            // A project-level STATUS change blocks remote operations, but the
+            // local editable copy and any open editor remain intact. Discard
+            // only an unreviewed remote proposal so reauthorization cannot
+            // replay an outdated submission automatically.
+            for (projectID, copyID) in connection.copies {
+                let currentGrant = connection.grants[projectID]
+                let copy = try await copyStore.load(id: copyID)
+                let authorizationRequired = await revoker.authorizationRequired(
+                    connectionID: connection.id, projectID: projectID)
+                guard authorizationRequired || currentGrant != copy?.selection else { continue }
+                try await outbox?.remove(copyID: copyID)
+            }
+            return
+        }
+
+        let deniedReaderProjects = Array(connection.copies.keys).sorted { $0.uuidString < $1.uuidString }
         if !deniedReaderProjects.isEmpty {
             await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: deniedReaderProjects)
         }
-        if !denied.isEmpty { await revoker.closeCopies(Array(denied.values)) }
-        for (projectID, copyID) in connection.copies where connection.revoked || connection.grants[projectID] == nil {
+        if !connection.copies.isEmpty { await revoker.closeCopies(Array(connection.copies.values)) }
+        for (projectID, copyID) in connection.copies {
             if let copy = try await copyStore.load(id: copyID) {
                 guard copy.connectionID == connection.id, copy.remoteProjectID == projectID else { throw SyncError.invalidSnapshot }
             }
@@ -385,6 +405,9 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     private func requireCopy(_ id: UUID) async throws -> DesktopPeerCopy {
         guard let copy = try await copyStore.load(id: id) else { throw DesktopPeerLibraryError.unknownCopy }
         try await checkOwnership(copy, connection: requireConnection(copy.connectionID))
+        let authorizationRequired = await revoker.authorizationRequired(connectionID: copy.connectionID,
+                                                                         projectID: copy.remoteProjectID)
+        guard !authorizationRequired else { throw DesktopPeerLibraryError.unauthorizedProject }
         return copy
     }
     private func checkOwnership(_ copy: DesktopPeerCopy, connection: DesktopPeerConnection) throws {

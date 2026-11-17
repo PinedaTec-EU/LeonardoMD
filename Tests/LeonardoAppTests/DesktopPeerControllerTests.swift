@@ -85,10 +85,24 @@ final class DesktopPeerControllerTests: XCTestCase {
         XCTAssertEqual(controller.reviewStore.authorizationRequiredProjects(connectionID: connectionID),
                        Set(ownedProjectIDs),
                        "The revocation bridge persists each project barrier before a later save can fail")
-        let restoredReviewStore = DesktopPeerReviewStore(defaults: defaults)
+        for projectID in ownedProjectIDs {
+            let required = await controller.revoker.authorizationRequired(connectionID: connectionID,
+                                                                            projectID: projectID)
+            XCTAssertTrue(required, "The library access gate must read the persisted review barrier")
+        }
+        let restartedController = DesktopPeerController(preferencesURL: root.appendingPathComponent("preferences.json"),
+                                                         defaults: defaults)
+        defer { restartedController.stop() }
+        let restoredReviewStore = restartedController.reviewStore
         XCTAssertEqual(restoredReviewStore.authorizationRequiredProjects(connectionID: connectionID),
                        Set(ownedProjectIDs),
                        "A restarted controller must retain the project barriers")
+        for projectID in ownedProjectIDs {
+            let required = await restartedController.revoker.authorizationRequired(connectionID: connectionID,
+                                                                                    projectID: projectID)
+            XCTAssertTrue(required,
+                          "A new library adapter must read the barrier from its reconstructed review store")
+        }
 
         let connection = try DesktopPeerConnection(id: connectionID, remoteDeviceID: UUID(),
             endpoint: URL(string: "https://example.test")!, fingerprint: Data(repeating: 7, count: 32),

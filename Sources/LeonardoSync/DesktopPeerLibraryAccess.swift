@@ -51,6 +51,7 @@ public protocol RemoteContentAccessDenied: Error, Sendable {
 
 public protocol DesktopPeerAccessRevoker: Sendable {
     func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async
+    func authorizationRequired(connectionID: UUID, projectID: UUID) async -> Bool
     func closeCopies(_ ids: [UUID]) async
 }
 

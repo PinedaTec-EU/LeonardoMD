@@ -3,10 +3,14 @@
 `DesktopPeerLibrary` refreshes device authorization before reading or changing a
 linked project. A source Mac revoking the **device** durably revokes the local
 connection, purges its managed copies/outbox and removes its stored credential;
-the recipient must pair again and obtain owner approval. A removed **project
-grant** leaves the device paired, purges only denied project copies and asks the
-owner to restore that project's access before refreshing the list. Preserve the
-difference as `SyncError.revoked` versus
+the recipient must pair again and obtain owner approval. A pending, removed or
+narrowed **project grant** leaves the device paired. Its durable project barrier
+hides editable copies and blocks open/compare/send until authenticated
+reconciliation, while preserving the working directory and any open local
+editor. A stale outbound proposal is dropped so it cannot replay after retry.
+The same project and selection becoming authorized makes the retained copy
+available again; a narrower selection keeps the broader copy blocked. Preserve
+the difference as `SyncError.revoked` versus
 `DesktopPeerLibraryError.unauthorizedProject` so the UI gives the correct
 recovery action. See [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368),
 [`DesktopPeerLibrary.swift`](../Sources/LeonardoDesktopSync/DesktopPeerLibrary.swift),
@@ -23,9 +27,14 @@ PR #369 treats missing local credentials as a durable revoked-state witness if
 the connection snapshot cannot be saved after a confirmed revocation. It removes
 the credential before writing the revoked snapshot and keeps an in-process denial
 barrier, so a later library load cannot reopen the old grant from stale metadata.
-Project catalogues restored from disk are filtered through each current grant
-before they are exposed. See [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368)
-and [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
+Project grant transitions write a separate durable authorization barrier before
+the fallible connection snapshot save. The desktop library checks that barrier
+before exposing or opening editable copies, including after restart. Failed
+grant persistence therefore cannot reopen an old copy; successful reconciliation
+clears the barrier only after the current connection reloads. Project catalogues
+restored from disk are filtered through each current grant before they are
+exposed. See [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368) and
+[PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
 
 Keep async callback defaults in the public generic
 `DirectEnrollmentClient.withRevocationRecheck` API as optional `nil` parameters

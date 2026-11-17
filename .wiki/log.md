@@ -284,3 +284,14 @@ failure copy. Registered this separate P2 localization defect as #462 and
 recorded the mixed-language screenshot in its issue evidence; it is outside
 the retry behavior accepted for #458.
 Packaged macOS Guide v88 Help/practice acceptance remains pending for Beta.
+
+PR #369 authorization recovery follow-up (17 Nov 2026): a separate durable
+project barrier now protects editable-copy listing/opening when authenticated
+STATUS changes project grants but connection metadata cannot be saved. Project
+pending/removed/narrowed states preserve the local working directory and open
+editor, block remote copy operations, and discard any stale queued proposal;
+device-wide revocation retains its existing full-copy cleanup. Same-scope
+reauthorization restores the retained copy, while a narrower scope keeps an
+older broader copy hidden. EN/ES Guide v91 documents this recovery. Exact-head
+CI, current-source dialog captures, packaged Help acceptance and fresh strict
+review remain required before integration.
