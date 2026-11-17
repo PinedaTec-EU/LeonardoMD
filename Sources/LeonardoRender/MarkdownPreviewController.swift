@@ -10,6 +10,7 @@ public final class MarkdownPreviewController: ObservableObject {
     public var onDetectedExtensions: ((String, [String]) -> Void)?
     public var onEdit: ((String, String) -> Bool)?
     public var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
+    public var onRejectedTableResize: (() -> Void)?
     public var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
     public var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
     public var onRejectedObjectAction: (() -> Void)?
@@ -96,6 +97,7 @@ public final class MarkdownPreviewController: ObservableObject {
     func refreshCallbacks(on host: MarkdownPreviewHost) {
         host.onDetectedExtensions = onDetectedExtensions
         host.onTableResize = onTableResize
+        host.onRejectedTableResize = onRejectedTableResize
         host.onEdit = onEdit
         host.onFormEdit = onFormEdit
         host.onFieldHelp = onFieldHelp

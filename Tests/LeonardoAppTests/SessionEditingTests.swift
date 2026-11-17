@@ -47,6 +47,9 @@ final class SessionEditingTests: XCTestCase {
         session.renderer.onRejectedObjectAction = { [weak session] in
             session?.recordRejectedClosePreviewAction()
         }
+        session.renderer.onRejectedTableResize = { [weak session] in
+            session?.recordRejectedClosePreviewAction()
+        }
         session.renderer.onTableResize = { [weak session] expected, resize in
             guard let session else { return false }
             return await session.resizePreviewTable(expected: expected, resize: resize)
@@ -372,6 +375,139 @@ final class SessionEditingTests: XCTestCase {
             XCTAssertTrue(askedToSave, "The normal Save/Discard/Cancel decision must receive the accepted Preview edit")
             XCTAssertTrue(closeApproved)
             XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), pendingSource)
+            XCTAssertNil(owner.attachedSheet)
+        }
+    }
+
+    func testTabWindowAndAppCloseDrainOrRecoverTableResizeAcrossMessageBarriers() async throws {
+        let table = "| Item | Notes |\n| --- | --- |\n| Example | A longer cell. |\n"
+        let resize = LeonardoTableResize(occurrence: 1, source: table, widths: [120, 210], heights: [42, 68])
+        let scenarios: [(path: String, injectAfterBarrier: Int, expectsRecovery: Bool)] = [
+            ("tab", 1, false),
+            ("window", 3, true),
+            ("application", 1, false),
+        ]
+
+        for scenario in scenarios {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let file = root.appendingPathComponent("table.mdlf")
+            let originalSource = try LeonardoFormatParser.serialize(
+                LeonardoDocument(body: "# Table\n\n" + table, metadata: .init())
+            )
+            try originalSource.write(to: file, atomically: true, encoding: .utf8)
+
+            let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("settings.json"))
+            let owner = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
+                                 styleMask: [.titled], backing: .buffered, defer: false)
+            owner.isReleasedWhenClosed = false
+            owner.makeKeyAndOrderFront(nil)
+            tabs.presentationWindow = owner
+            let tabID = try XCTUnwrap(tabs.activeID)
+            let session = tabs.activeSession
+            session.authorizePath = { _, _ in }
+            await session.open(file)
+            session.mode = .preview
+            await session.toggleProtection()
+            let (host, webView) = try await installEditablePreview(session, in: owner)
+
+            let expectedJSON = try JSONEncoder().encode(originalSource)
+            let resizeJSON = try JSONEncoder().encode(resize)
+            let expectedLiteral = try XCTUnwrap(String(data: expectedJSON, encoding: .utf8))
+            let resizeLiteral = try XCTUnwrap(String(data: resizeJSON, encoding: .utf8))
+            let message = "{\"expected\":\(expectedLiteral),\"resize\":\(resizeLiteral)}"
+            var barrierCount = 0
+            var injected = false
+            host.afterObjectMessageBarrierForTesting = { web in
+                barrierCount += 1
+                guard barrierCount == scenario.injectAfterBarrier, !injected else { return }
+                injected = true
+                _ = try await web.evaluateJavaScript(
+                    "window.webkit.messageHandlers.leonardoTableResize.postMessage(\(message)); true"
+                )
+            }
+
+            let resizeStarted = expectation(description: "Late table resize reaches its native task")
+            var releaseResize: CheckedContinuation<Void, Never>?
+            let nativeResize = try XCTUnwrap(host.onTableResize)
+            host.onTableResize = { expected, change in
+                resizeStarted.fulfill()
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    releaseResize = continuation
+                }
+                return await nativeResize(expected, change)
+            }
+
+            var askedToSave = false
+            session.unsavedChangesDecision = { _ in
+                askedToSave = true
+                XCTAssertTrue(session.isClosing)
+                XCTAssertFalse(session.isClosePreviewSyncPending)
+                XCTAssertTrue(session.isDirty,
+                              "The table resize must reach the ordinary unsaved-change decision")
+                return .save
+            }
+            defer {
+                let continuation = releaseResize
+                releaseResize = nil
+                continuation?.resume()
+                if let sheet = owner.attachedSheet { owner.endSheet(sheet, returnCode: .alertFirstButtonReturn) }
+                tabs.cancelPreparedClose()
+                host.teardown()
+                tabs.stop()
+                owner.close()
+                try? FileManager.default.removeItem(at: root)
+            }
+
+            let closeTask = Task { @MainActor in
+                switch scenario.path {
+                case "tab":
+                    await tabs.close(tabID)
+                    return true
+                case "window", "application":
+                    // DocumentWindow.windowShouldClose and
+                    // ApplicationDelegate.applicationShouldTerminate both
+                    // prepare each affected DocumentTabs instance here.
+                    return await tabs.prepareClose()
+                default:
+                    return false
+                }
+            }
+
+            if scenario.expectsRecovery {
+                for _ in 0..<200 where owner.attachedSheet == nil {
+                    try await Task.sleep(for: .milliseconds(10))
+                }
+                let recoverySheet = try XCTUnwrap(owner.attachedSheet,
+                                                  "A resize rejected after the close snapshot must offer recovery")
+                owner.endSheet(recoverySheet, returnCode: .alertFirstButtonReturn)
+                let closeApproved = await closeTask.value
+                XCTAssertFalse(closeApproved, "Keep Open must veto window close")
+                XCTAssertFalse(askedToSave)
+                XCTAssertFalse(session.stopped)
+                XCTAssertEqual(session.content, originalSource)
+                XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), originalSource)
+                XCTAssertTrue(injected)
+            } else {
+                await fulfillment(of: [resizeStarted], timeout: 5)
+                XCTAssertFalse(askedToSave,
+                               "Close must wait for the late table resize before presenting Save/Discard/Cancel")
+                let continuation = releaseResize
+                releaseResize = nil
+                continuation?.resume()
+                let closeApproved = await closeTask.value
+                XCTAssertTrue(closeApproved)
+                XCTAssertTrue(askedToSave)
+                XCTAssertTrue(injected)
+
+                if scenario.path == "application" { await tabs.finishPreparedClose() }
+                let saved = try LeonardoFormatParser.parse(String(contentsOf: file, encoding: .utf8))
+                let layout = try XCTUnwrap(saved.metadata.layout?.tables.first)
+                XCTAssertEqual(layout.width?.value, 330)
+                XCTAssertEqual(layout.rowHeights, [42, 68])
+            }
+
+            XCTAssertGreaterThanOrEqual(barrierCount, scenario.injectAfterBarrier)
             XCTAssertNil(owner.attachedSheet)
         }
     }

@@ -15,6 +15,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     var onDetectedExtensions: ((String, [String]) -> Void)?
     var onEdit: ((String, String) -> Bool)?
     var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
+    var onRejectedTableResize: (() -> Void)?
     private var tableResizeTask: Task<Bool, Never>?
     var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
     var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
@@ -23,6 +24,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     var onFieldHelp: ((String) -> Void)?
     private var formState = MarkdownFormState()
     var onReady: ((Bool) -> Void)?
+    var afterObjectMessageBarrierForTesting: ((WKWebView) async -> Void)?
     var onScrollProgress: ((Double) -> Void)?
     private(set) var tagHandler: ((String) -> Void)?
     private(set) var linkHandler: ((URL) -> Void)?
@@ -34,6 +36,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     private var readinessWaiters: [CheckedContinuation<Void, Error>] = []
     private var objectMessageBarrierWaiters: [UUID: CheckedContinuation<Bool, Never>] = [:]
     private var objectMessageBarrierTimeouts: [UUID: Task<Void, Never>] = [:]
+    private var tableResizeBarrierWaiters: [UUID: CheckedContinuation<Bool, Never>] = [:]
+    private var tableResizeBarrierTimeouts: [UUID: Task<Void, Never>] = [:]
     private var pdfDiagramWaiters: [CheckedContinuation<Void, Error>] = []
     private let pdfExports = MarkdownPDFExportCoordinator()
     private var hasState = false
@@ -141,43 +145,43 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     }
 
     func flushEdits() async -> Bool {
-        await flushEdits(drainObjectMessages: false)
+        await flushEdits(drainPreviewMessages: false)
     }
 
     func flushCloseEdits() async -> Bool {
-        await flushEdits(drainObjectMessages: true)
+        await flushEdits(drainPreviewMessages: true)
     }
 
-    private func flushEdits(drainObjectMessages: Bool) async -> Bool {
+    private func flushEdits(drainPreviewMessages: Bool) async -> Bool {
         if let task = tableResizeTask, !(await task.value) { return false }
         guard ready, let webView else {
-            return drainObjectMessages && (configuration.allowsEditing || configuration.allowsFormFilling) ? false : true
+            return drainPreviewMessages && (configuration.allowsEditing || configuration.allowsFormFilling) ? false : true
         }
         _ = try? await webView.evaluateJavaScript("window.LeonardoTableResizing?.cancel()")
         if let task = tableResizeTask, !(await task.value) { return false }
-        guard self.webView === webView else { return !drainObjectMessages }
-        if drainObjectMessages {
-            guard await waitForPendingObjectMessages(in: webView), self.webView === webView else { return false }
+        guard self.webView === webView else { return !drainPreviewMessages }
+        if drainPreviewMessages {
+            guard await waitForPendingPreviewMessages(in: webView), self.webView === webView else { return false }
         }
         if configuration.allowsFormFilling {
             guard renderWorkItem == nil else {
-                return drainObjectMessages ? await waitForPendingObjectMessages(in: webView) : true
+                return drainPreviewMessages ? await waitForPendingPreviewMessages(in: webView) : true
             }
             do {
                 guard let snapshot = try await webView.evaluateJavaScript("window.LeonardoForms.snapshot()") else { return false }
                 guard self.webView === webView, configuration.allowsFormFilling else { return false }
                 let applied = applyFormSnapshot(snapshot)
                 guard applied else { return false }
-                return drainObjectMessages ? await waitForPendingObjectMessages(in: webView) : true
+                return drainPreviewMessages ? await waitForPendingPreviewMessages(in: webView) : true
             } catch { return false }
         }
         guard configuration.allowsEditing else {
-            return drainObjectMessages ? await waitForPendingObjectMessages(in: webView) : true
+            return drainPreviewMessages ? await waitForPendingPreviewMessages(in: webView) : true
         }
         // A pending native-to-DOM update makes the raw buffer authoritative.
         // Reading the previous page here would overwrite a recent raw edit.
         guard renderWorkItem == nil else {
-            return drainObjectMessages ? await waitForPendingObjectMessages(in: webView) : true
+            return drainPreviewMessages ? await waitForPendingPreviewMessages(in: webView) : true
         }
         let expected = content
         do {
@@ -188,7 +192,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                       onEdit?(expected, replacement) == true else { return false }
                 content = replacement
             }
-            return drainObjectMessages ? await waitForPendingObjectMessages(in: webView) : true
+            return drainPreviewMessages ? await waitForPendingPreviewMessages(in: webView) : true
         } catch { return false }
     }
 
@@ -203,7 +207,19 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             )
         } catch { return false }
         guard self.webView === webView else { return false }
-        return await waitForPendingObjectMessages(in: webView)
+        return await waitForPendingPreviewMessages(in: webView)
+    }
+
+    private func waitForPendingPreviewMessages(in webView: WKWebView) async -> Bool {
+        guard await waitForPendingObjectMessages(in: webView), self.webView === webView else { return false }
+        if let afterObjectMessageBarrierForTesting {
+            await afterObjectMessageBarrierForTesting(webView)
+        }
+        guard await waitForPendingTableResizeMessages(in: webView), self.webView === webView else { return false }
+        while let task = tableResizeTask {
+            guard await task.value else { return false }
+        }
+        return true
     }
 
     private func waitForPendingObjectMessages(in webView: WKWebView) async -> Bool {
@@ -228,6 +244,31 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     private func completeObjectMessageBarrier(_ identifier: UUID, succeeded: Bool) {
         guard let continuation = objectMessageBarrierWaiters.removeValue(forKey: identifier) else { return }
         objectMessageBarrierTimeouts.removeValue(forKey: identifier)?.cancel()
+        continuation.resume(returning: succeeded)
+    }
+
+    private func waitForPendingTableResizeMessages(in webView: WKWebView) async -> Bool {
+        let identifier = UUID()
+        return await withCheckedContinuation { continuation in
+            tableResizeBarrierWaiters[identifier] = continuation
+            tableResizeBarrierTimeouts[identifier] = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { return }
+                self?.completeTableResizeMessageBarrier(identifier, succeeded: false)
+            }
+            let script = "window.webkit?.messageHandlers?.leonardoTableResize?.postMessage({flushBarrier: '\(identifier.uuidString)'})"
+            webView.evaluateJavaScript(script) { [weak self] _, error in
+                guard error != nil else { return }
+                Task { @MainActor [weak self] in
+                    self?.completeTableResizeMessageBarrier(identifier, succeeded: false)
+                }
+            }
+        }
+    }
+
+    private func completeTableResizeMessageBarrier(_ identifier: UUID, succeeded: Bool) {
+        guard let continuation = tableResizeBarrierWaiters.removeValue(forKey: identifier) else { return }
+        tableResizeBarrierTimeouts.removeValue(forKey: identifier)?.cancel()
         continuation.resume(returning: succeeded)
     }
 
@@ -674,27 +715,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         case "leonardoObject":
             handleObjectMessage(message)
         case "leonardoTableResize":
-            guard message.webView === webView, message.frameInfo.isMainFrame,
-                  configuration.allowsEditing, !configuration.allowsFormFilling,
-                  tableResizeTask == nil, renderWorkItem == nil,
-                  let body = message.body as? [String: Any],
-                  let expected = body["expected"] as? String, expected == content,
-                  let raw = body["resize"], JSONSerialization.isValidJSONObject(raw),
-                  let data = try? JSONSerialization.data(withJSONObject: raw),
-                  let resize = try? JSONDecoder().decode(LeonardoTableResize.self, from: data) else {
-                scheduleContentUpdate(immediately: true)
-                return
-            }
-            let callback = onTableResize
-            tableResizeTask = Task { @MainActor [weak self] in
-                let success = await callback?(expected, resize) == true
-                guard let self else { return success }
-                self.tableResizeTask = nil
-                // Native migration can replace the view entirely. Never redraw
-                // a replacement view on behalf of a retired document bridge.
-                if message.webView === self.webView { self.scheduleContentUpdate(immediately: true) }
-                return success
-            }
+            handleTableResizeMessage(message)
         case "leonardoForm":
             guard message.webView === webView, message.frameInfo.isMainFrame,
                   applyFormSnapshot(message.body) else {
@@ -772,6 +793,36 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             }
         default:
             break
+        }
+    }
+
+    private func handleTableResizeMessage(_ message: WKScriptMessage) {
+        guard message.webView === webView, message.frameInfo.isMainFrame,
+              let body = message.body as? [String: Any] else { return }
+        if let barrier = body["flushBarrier"] as? String, let identifier = UUID(uuidString: barrier) {
+            completeTableResizeMessageBarrier(identifier, succeeded: true)
+            return
+        }
+        guard configuration.allowsEditing, !configuration.allowsFormFilling,
+              tableResizeTask == nil, renderWorkItem == nil,
+              let expected = body["expected"] as? String, expected == content,
+              let raw = body["resize"], JSONSerialization.isValidJSONObject(raw),
+              let data = try? JSONSerialization.data(withJSONObject: raw),
+              let resize = try? JSONDecoder().decode(LeonardoTableResize.self, from: data) else {
+            onRejectedTableResize?()
+            scheduleContentUpdate(immediately: true)
+            return
+        }
+        let callback = onTableResize
+        tableResizeTask = Task { @MainActor [weak self] in
+            let success = await callback?(expected, resize) == true
+            guard let self else { return success }
+            self.tableResizeTask = nil
+            if !success { self.onRejectedTableResize?() }
+            // Native migration can replace the view entirely. Never redraw
+            // a replacement view on behalf of a retired document bridge.
+            if message.webView === self.webView { self.scheduleContentUpdate(immediately: true) }
+            return success
         }
     }
 

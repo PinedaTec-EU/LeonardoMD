@@ -16,6 +16,9 @@ extension AppSession {
             guard let self, self.documentURL == previewDocumentURL else { return false }
             return await self.resizePreviewTable(expected: expected, resize: resize)
         }
+        renderer.onRejectedTableResize = { [weak self] in
+            self?.recordRejectedClosePreviewAction()
+        }
         renderer.onEdit = { [weak self] expected, replacement in
             guard let self, self.documentURL == previewDocumentURL else { return false }
             return self.editPreviewDocument(expected: expected, replacement: replacement)
