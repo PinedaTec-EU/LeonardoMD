@@ -16,7 +16,8 @@
 - XcodeBuildMCP `snapshot_ui` confirmed the rendered host accessibility label `Mac QA, 1 proyecto · 1 por revisar`. After the capture, Demo was restored.
 - Deterministic bilingual guide packaging tests: 3 passed, 0 failed. Guide v92 EN/ES hashes are recorded in [`doc/guide/README.md`](../../guide/README.md).
 - Fresh packaged macOS Guide v92 Help passed in English and Spanish: representative Mermaid, math (including disabled-extension fallback and the tagged box-counting equation), chart, image, table, literal code and practice-form save/reopen checks. Exact instance identity, bundle hashes and teardown are in [the packaged Help manifest](../little-leonardo/packaged-help-v92-20261117-pr445.json).
-- The source PR compilation delta is `build: 27`; failed compile/test attempts were not counted.
+- The source PR compilation delta is `build: 28`; failed compile/test attempts were not counted.
+- The signed Release distribution archive succeeded for source `d55a8f46458e233283af64b25c98f179cf4e351c`, using Little Leonardo `0.3.1818` / build `1818`, the expected bundle identifier and Apple team. Archive SHA-256: `9946801f4ca7e4af06554f6f7c721307c8adb309f884544f8182e80f735876da`; app bundle SHA-256: `dc8f50bf85f40c37833f976a6c850e2556b06c5c483bb485cb5d4e600408af75`. Full provenance is retained outside the repository. This is pre-integration validation only; it has not been uploaded to TestFlight.
 
 The simulator could not route its own `127.0.0.1` to the Mac. The successful fixture used `LEONARDO_ON_DEMAND_QA_HOST` with an active Mac interface reachable from the simulator, ad-hoc simulator signing (`CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-`), a fresh `.qa-fixture-owned` directory and port 46987. The private interface address is intentionally omitted. Do not use production Mac data.
 
