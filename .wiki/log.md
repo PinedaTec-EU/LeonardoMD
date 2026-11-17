@@ -295,3 +295,13 @@ reauthorization restores the retained copy, while a narrower scope keeps an
 older broader copy hidden. EN/ES Guide v91 documents this recovery. Exact-head
 CI, current-source dialog captures, packaged Help acceptance and fresh strict
 review remain required before integration.
+
+Little Leonardo host identity follow-up (#445, 17 Nov 2026): paired Macs use a
+user-editable local display name while retaining hostname/IP as connection
+detail; the empty local-project section stays hidden because mobile projects
+are received from linked Macs and cannot be created in the app. Host → project
+→ file expansion and offline cache controls remain. The exact-source Spanish
+library capture verifies the alias, singular count and hidden local section;
+fresh packaged Guide v92 Help/practice acceptance passes in both locales and is
+recorded at `doc/validation/little-leonardo/packaged-help-v92-20261117-pr445.json`.
+Physical TestFlight acceptance remains outstanding.
