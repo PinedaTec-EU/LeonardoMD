@@ -139,7 +139,7 @@ final class MobileRevocationTests: XCTestCase {
         let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
         let quarantinedProjectID = UUID()
         let client = MobileRevocationClient(journal: journal)
-        let olderOperation = Task { @MainActor in
+        let olderOperation = Task<MobileRevocationClientError?, Never> { @MainActor in
             do {
                 _ = try await client.withAuthenticatedConnection(value, token: token,
                     credentials: credentials,
