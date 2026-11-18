@@ -87,6 +87,6 @@ struct ProjectFolderDropDelegate: DropDelegate {
 
     private func providers(for info: DropInfo) -> [NSItemProvider] {
         // SwiftUI only permits querying providers during performDrop(info:).
-        info.itemProviders(for: [.fileURL])
+        info.itemProviders(for: [DocumentDropProviders.projectTreeItemType, .fileURL])
     }
 }

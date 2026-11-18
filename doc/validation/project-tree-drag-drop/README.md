@@ -44,6 +44,16 @@ The `ProjectTabOpeningTests.testNativeFileRowsSupportModifierSelectionAcrossFile
 - PID 97545 (build 19) was gracefully quit and verified exited before build 21 launch. PID 5554 remains task-owned and must be used for the current live check and the required bilingual Help smoke, then gracefully quit and verified exited.
 - The branch still has uncommitted source changes based on `90b726fd`; exact-head CI, strict current-head judge and merge gates do not apply to this worktree state. Keep PR #471 in draft until live drag/drop acceptance is confirmed.
 
+## Internal drop-type routing follow-up — 2026-11-18
+
+- The owner tested an earlier packaged build 19 (PID 97545, source before the custom drop-type routing adjustment): the drag gesture started, but dropping a file on a folder opened that file instead of moving or copying it. This showed the target was following the external-file drop path.
+- Updated `FileTreeRow` to advertise both the private project-tree item type and `.fileURL` to SwiftUI, and updated `ProjectFolderDropDelegate` to query providers for both types. The existing `AppSession.acceptDrop` distinguishes the private batch and dispatches move/copy; external Finder file drops keep their open-document path.
+- Focused `ProjectTabOpeningTests` and `DocumentTabsTests` passed after this source adjustment (31 passed, 1 opt-in capture skipped, 0 failures). The subsequent packaged QA build compiled successfully; the PR build delta is 24.
+- QA bundle: `/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-74iufduj/LeonardoMDQA.app`, bundle identifier `eu.pinedatec.LeonardoMD.qa.77ddf3dc20494fb1a33fa5ac13cf8f55`, executable `LeonardoMD`, app 0.3.1884 stable. Fresh task-owned PID 28912 started 2026-11-18 23:48:46 Europe/Madrid from that bundle. `CFBundleExecutable` is the real `LeonardoMD`; `otool -L` shows Sparkle and no XCTest dependency. The fixture `leonardo-pr471-dnd-2zm0he4b` is open with `MoveSource.md`, `MoveFolder`, `CopySource.md` and `CopyFolder` visible.
+- CUA could not deliver the drag because pointer hit-testing returned `windowNotFoundAtPosition` for this window. The owner has been asked to test move, Option-copy and, if convenient, a mixed file/folder selection on this exact PID. Their prior report belongs to the older build and does not validate this adjustment.
+- The mandatory bilingual Help smoke has not yet been repeated in PID 28912. This instance must also open both bundled guides through Help, cover the required rendered examples/math fallback/practice-form save and reopen, and then be gracefully quit with the exact PID exit verified.
+- PID 5554 from the previous packaged build has exited. PID 28912 is currently task-owned and must be preserved until the pending interaction and Help checks are completed.
+
 Reproduce the captures from a disposable worktree at the recorded source revision:
 
 ```sh

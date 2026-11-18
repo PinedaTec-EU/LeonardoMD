@@ -98,7 +98,7 @@ struct FileTreeRow: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .allowsHitTesting(false)
         }
-        .onDrop(of: [.fileURL], delegate: ProjectFolderDropDelegate(
+        .onDrop(of: [DocumentDropProviders.projectTreeItemType, .fileURL], delegate: ProjectFolderDropDelegate(
             folder: entry.url,
             session: session,
             state: $dropState
