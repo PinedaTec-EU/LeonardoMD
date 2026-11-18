@@ -110,6 +110,49 @@ final class FileListTests: XCTestCase {
                           size: NSSize(width: 460, height: 200), root: root, name: "project-colors")
     }
 
+    func testProjectSearchVisibilityCaptures() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_FILE_LIST_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_FILE_LIST_EVIDENCE to export native search captures")
+        }
+        let previousLanguage = LanguageSettings.shared.language
+        LanguageSettings.shared.language = .english
+        defer { LanguageSettings.shared.language = previousLanguage }
+
+        let root = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let project = root.appendingPathComponent("Search fixture", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        try Data("A visible Markdown document".utf8).write(to: project.appendingPathComponent("note.md"))
+        try Data([137, 80, 78, 71]).write(to: project.appendingPathComponent("logo.png"))
+        let head = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local working tree"
+        try "Head: \(head)\nSurface: native macOS project search\nFixture: synthetic note.md and logo.png\nStates: Show non-document files off, then on\nViewport: 420x510 points\n"
+            .write(to: root.appendingPathComponent("search-provenance.txt"), atomically: true, encoding: .utf8)
+
+        let preferences = root.appendingPathComponent("search-preferences.json")
+        let session = AppSession(preferencesURL: preferences)
+        defer {
+            session.stop()
+            try? FileManager.default.removeItem(at: project)
+            try? FileManager.default.removeItem(at: preferences)
+        }
+        session.entryFilter = { _ in { _, _ in true } }
+        let opened = await session.openProject(project)
+        XCTAssertTrue(opened)
+        session.searchQuery = "logo.png"
+        session.scheduleSearch()
+        await session.searchTask?.value
+        XCTAssertTrue(session.searchResults.isEmpty)
+        try await capture(ProjectSidebar(session: session).modifier(SessionAppearance(session: session)),
+                          size: NSSize(width: 420, height: 510), root: root, name: "project-search-hidden")
+
+        session.setShowNonDocumentFiles(true)
+        await session.settingsTask?.value
+        await session.searchTask?.value
+        XCTAssertEqual(session.searchResults.map { $0.url.lastPathComponent }, ["logo.png"])
+        try await capture(ProjectSidebar(session: session).modifier(SessionAppearance(session: session)),
+                          size: NSSize(width: 420, height: 510), root: root, name: "project-search-visible")
+    }
+
     private func capture<V: View>(_ view: V, size: NSSize, root: URL, name: String) async throws {
         let host = NSHostingView(rootView: view)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),

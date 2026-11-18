@@ -1,4 +1,4 @@
 {
-  "build": 20,
+  "build": 21,
   "summary": "Adds a saved, off-by-default preference in macOS and Little Leonardo to hide non-document files from project lists while preserving embedded Markdown images and existing file access."
 }
