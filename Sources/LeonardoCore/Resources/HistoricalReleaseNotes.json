@@ -1,8 +1,8 @@
 [
   {
     "pr": 40,
-    "en": "Search across open documents by literal text or regular expression, with highlighted matches, counts and wraparound navigation.",
-    "es": "Busca en los documentos abiertos por texto literal o expresión regular, con coincidencias resaltadas, recuento y navegación circular."
+    "en": "Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs.",
+    "es": "Añade búsqueda literal y por regex en documentos abiertos, con resaltado, recuento y navegación circular. Unifica el estilo de los campos de búsqueda, commit y nombres, los interruptores de archivos ocultos y las pestañas de Preferencias."
   },
   {
     "pr": 207,
