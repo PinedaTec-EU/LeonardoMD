@@ -347,7 +347,7 @@ El menú de filtros de la barra lateral controla la visibilidad y el orden:
 
 | Control | Efecto |
 | --- | --- |
-| Mostrar todos los ficheros | Incluye archivos fuera de los documentos compatibles; inicialmente desactivado |
+| Mostrar archivos que no sean documentos | Incluye imágenes y otros archivos ajenos a documentos en el proyecto; inicialmente desactivado |
 | Mostrar archivos ocultos | Ajuste de visibilidad independiente |
 | Carpetas siempre arriba | Agrupa las carpetas antes de los archivos; inicialmente activado |
 | A–Z / Z–A | Ordena nombres, también en subcarpetas expandidas |

@@ -341,7 +341,7 @@ The sidebar filter menu controls visibility and order:
 
 | Control | Effect |
 | --- | --- |
-| Show all files | Include files beyond supported documents; initially off |
+| Show non-document files | Include images and other non-document files in the project list; initially off |
 | Show hidden files | Independent visibility setting |
 | Folders first | Group folders ahead of files; initially on |
 | A–Z / Z–A | Sort names, including expanded subfolders |

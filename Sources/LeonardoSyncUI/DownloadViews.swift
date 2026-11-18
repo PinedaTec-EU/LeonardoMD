@@ -81,7 +81,7 @@ public struct SyncCatalogueView: View {
     let open: (RemoteFileEntry) -> Void
     @State private var currentPath = ""
     public init(library: DownloadLibrary, projectID: UUID, spanish: Bool = false, rowBackground: Color? = nil,
-                showNonDocumentFiles: Bool = true,
+                showNonDocumentFiles: Bool = false,
                 fileVisibilitySurface: LeonardoProjectFileVisibility.Surface = .macOS,
                 open: @escaping (RemoteFileEntry) -> Void) {
         self.library = library; self.projectID = projectID; self.spanish = spanish; self.rowBackground = rowBackground
@@ -90,6 +90,20 @@ public struct SyncCatalogueView: View {
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private func t(_ en: String, _ es: String) -> String { spanish ? es : en }
+    static func visibleFiles(
+        _ files: [RemoteFileEntry],
+        showNonDocumentFiles: Bool,
+        on surface: LeonardoProjectFileVisibility.Surface
+    ) -> [RemoteFileEntry] {
+        files.filter {
+            LeonardoProjectFileVisibility.shouldShowFile(
+                at: $0.path,
+                showNonDocumentFiles: showNonDocumentFiles,
+                on: surface
+            )
+        }
+    }
+
     public var body: some View {
         if let project {
             VStack(alignment: .leading) {
@@ -110,11 +124,11 @@ public struct SyncCatalogueView: View {
                         folderRow(path: folder, project: project)
                     }
                     let files = project.catalogue.immediateFiles(at: currentPath)
-                    let visibleFiles = files.filter {
-                        LeonardoProjectFileVisibility.shouldShowFile(at: $0.path,
-                                                                     showNonDocumentFiles: showNonDocumentFiles,
-                                                                     on: fileVisibilitySurface)
-                    }
+                    let visibleFiles = Self.visibleFiles(
+                        files,
+                        showNonDocumentFiles: showNonDocumentFiles,
+                        on: fileVisibilitySurface
+                    )
                     if visibleFiles.isEmpty, !files.isEmpty {
                         Text(t("No supported document files are shown. Enable Show non-document files in app settings to see the rest.",
                                "No se muestran archivos con formato de documento compatible. Activa Mostrar archivos que no sean documentos en los ajustes de la app para ver el resto."))

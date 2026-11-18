@@ -40,6 +40,41 @@ final class FileListTests: XCTestCase {
         XCTAssertFalse(authorized.contains { $0.name == "other.base" })
     }
 
+    func testNonDocumentRowsDefaultToHiddenAndFollowTheSavedPreference() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for name in ["Note.md", "Diagram.png", "Data.json"] {
+            try Data().write(to: root.appendingPathComponent(name))
+        }
+
+        let preferencesURL = root.deletingLastPathComponent()
+            .appendingPathComponent(UUID().uuidString + "-preferences.json")
+        let session = AppSession(preferencesURL: preferencesURL)
+        defer {
+            session.stop()
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: preferencesURL)
+        }
+        session.entryFilter = { _ in { _, _ in true } }
+
+        let opened = await session.openProject(root)
+        XCTAssertTrue(opened)
+        XCTAssertFalse(session.showNonDocumentFiles)
+        XCTAssertEqual(Set(session.rootEntries.map(\.name)), Set(["Note.md"]))
+
+        session.setShowNonDocumentFiles(true)
+        await session.settingsTask?.value
+        let visible = await session.children(of: root)
+        XCTAssertEqual(Set(visible.map(\.name)), Set(["Note.md", "Diagram.png", "Data.json"]))
+        let persisted = try await ConfigurationStore().loadGlobalPreferences(at: preferencesURL)
+        XCTAssertTrue(persisted.showNonDocumentFiles)
+
+        session.setShowNonDocumentFiles(false)
+        await session.settingsTask?.value
+        let hidden = await session.children(of: root)
+        XCTAssertEqual(Set(hidden.map(\.name)), Set(["Note.md"]))
+    }
+
     func testSidebarAndPreferencesRendering() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_FILE_LIST_EVIDENCE"]
             ?? ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"].map({ $0 + "/file-list" }) else {
