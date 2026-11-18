@@ -118,6 +118,45 @@ final class SessionPackageLifecycleTests: XCTestCase {
         XCTAssertEqual(value, "Grace")
     }
 
+    func testMoveBatchTreatsSameTargetItemAsNoOpAndRejectsRealCollisionAtomically() async throws {
+        let fixture = try await fixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        session.monitorTask?.cancel()
+
+        let target = try await session.files.createFolder(named: "Target", in: fixture.project)
+        let sourceFolder = try await session.files.createFolder(named: "Source", in: fixture.project)
+        let alreadyInTarget = try await session.files.createMarkdown(
+            named: "already.md", in: fixture.project, at: target.relativePath, contents: "target"
+        )
+        let newItem = try await session.files.createMarkdown(
+            named: "new.md", in: fixture.project, at: sourceFolder.relativePath, contents: "new"
+        )
+
+        let noOpAndMove = try XCTUnwrap(session.move([alreadyInTarget.url, newItem.url], into: target.url))
+        await noOpAndMove.value
+        XCTAssertTrue(FileManager.default.fileExists(atPath: alreadyInTarget.url.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: newItem.url.path))
+        XCTAssertEqual(try String(contentsOf: target.url.appendingPathComponent("new.md"), encoding: .utf8), "new")
+
+        let collidingSource = try await session.files.createMarkdown(
+            named: "already.md", in: fixture.project, at: sourceFolder.relativePath, contents: "source collision"
+        )
+        let untouchedSource = try await session.files.createMarkdown(
+            named: "untouched.md", in: fixture.project, at: sourceFolder.relativePath, contents: "untouched"
+        )
+        let collidingBatch = try XCTUnwrap(
+            session.move([alreadyInTarget.url, collidingSource.url, untouchedSource.url], into: target.url)
+        )
+        await collidingBatch.value
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: collidingSource.url.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: untouchedSource.url.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: target.url.appendingPathComponent("untouched.md").path))
+        XCTAssertEqual(try String(contentsOf: alreadyInTarget.url, encoding: .utf8), "target")
+        XCTAssertNotNil(session.errorMessage)
+    }
+
     func testDeletingOwnerPackageClearsOnlyPackageTabAndPreservesExtractedTab() async throws {
         let fixture = try await fixture()
         let owner = fixture.session

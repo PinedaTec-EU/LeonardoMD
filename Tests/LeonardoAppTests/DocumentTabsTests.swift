@@ -455,6 +455,20 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertEqual(loaded, [first, folder])
     }
 
+    func testProjectTreeProviderPreservesBatchWhenDragSourceWasPruned() async throws {
+        let root = URL(fileURLWithPath: "/synthetic/project")
+        let selectedFolder = root.appendingPathComponent("assets", isDirectory: true)
+        let dragSource = selectedFolder.appendingPathComponent("icons", isDirectory: true)
+        let selectedSibling = root.appendingPathComponent("notes.md")
+        let provider = DocumentDropProviders.projectTreeItemProvider(
+            for: dragSource,
+            selecting: [selectedFolder, selectedSibling]
+        )
+
+        let loaded = await DocumentDropProviders.startLoadingProjectTreeURLs([provider]).value
+        XCTAssertEqual(loaded, [selectedFolder, selectedSibling])
+    }
+
     func testCloseSavesInactiveDraftAndLeavesSiblingContentUntouched() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

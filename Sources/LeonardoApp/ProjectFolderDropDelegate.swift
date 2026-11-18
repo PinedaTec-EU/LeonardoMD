@@ -39,10 +39,7 @@ struct ProjectFolderDropDelegate: DropDelegate {
         guard (try? folder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else {
             return false
         }
-        let providers = providers(for: info)
-        guard DocumentDropProviders.canLoad(providers) else { return false }
-        let internalItems = providers.filter(DocumentDropProviders.isProjectTreeItem)
-        return internalItems.isEmpty || internalItems.count == providers.count
+        return info.hasItemsConforming(to: [.fileURL])
     }
 
     func dropEntered(info: DropInfo) {
@@ -69,8 +66,7 @@ struct ProjectFolderDropDelegate: DropDelegate {
             state = .forbidden
             return .forbidden
         }
-        let providers = providers(for: info)
-        guard DocumentDropProviders.isProjectTreeDrop(providers) else {
+        guard info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType]) else {
             state = .open
             return .copy
         }
@@ -90,6 +86,7 @@ struct ProjectFolderDropDelegate: DropDelegate {
     }
 
     private func providers(for info: DropInfo) -> [NSItemProvider] {
+        // SwiftUI only permits querying providers during performDrop(info:).
         info.itemProviders(for: [.fileURL])
     }
 }

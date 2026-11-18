@@ -236,6 +236,8 @@ extension AppSession {
         operation: ProjectItemTransferOperation
     ) -> Task<Void, Never>? {
         guard let root = projectURL, !urls.isEmpty else { return nil }
+        // A move into the same parent is already satisfied. The repository
+        // still preflights every remaining destination as one batch.
         let transferURLs = urls.filter { url in
             operation == .copy || url.standardizedFileURL.deletingLastPathComponent() != parent.standardizedFileURL
         }

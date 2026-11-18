@@ -1,9 +1,11 @@
 import AppKit
+import UniformTypeIdentifiers
 
 /// The shared native item-provider boundary for document and sidebar drops.
 @MainActor
 enum DocumentDropProviders {
     static let projectTreeItemTypeIdentifier = "eu.pinedatec.LeonardoMD.project-tree-item"
+    static let projectTreeItemType = UTType(importedAs: projectTreeItemTypeIdentifier)
 
     static func isProjectMove(_ url: URL, in root: URL) -> Bool {
         let rootPath = root.standardizedFileURL.path
@@ -12,7 +14,9 @@ enum DocumentDropProviders {
     }
 
     static func projectTreeItemProvider(for primaryURL: URL, selecting urls: [URL]) -> NSItemProvider {
-        let selectedURLs = urls.contains(primaryURL) ? urls : [primaryURL]
+        // The primary row may be intentionally pruned when a selected ancestor
+        // folder already represents it. Preserve that normalized batch.
+        let selectedURLs = urls.isEmpty ? [primaryURL] : urls
         let payload = try? JSONEncoder().encode(selectedURLs)
         let provider = NSItemProvider(object: primaryURL as NSURL)
         provider.registerDataRepresentation(
