@@ -1149,6 +1149,16 @@
       "pr": 448,
       "summary": "Preview sync failures use one native alert. When closing, the alert identifies the affected document; users can keep its tab open to retry or discard its unapplied Preview edits. Both guides explain the choice.",
       "to_version": "0.3.1884"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.3.1884",
+      "merge_sha": "1d1ccad82ce71e6ac27b63da2bdc6f306b8ae0bc",
+      "pr": 482,
+      "summary": "Read offline summaries of the 59 merged pull requests through #207 in macOS Release notes and in Little Leonardo under About.",
+      "to_version": "0.3.1889"
     }
   ],
   "initial_version": "0.1.56",
@@ -1159,5 +1169,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1884"
+  "version": "0.3.1889"
 }
