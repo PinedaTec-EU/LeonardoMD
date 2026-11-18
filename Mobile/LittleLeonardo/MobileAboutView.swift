@@ -34,6 +34,8 @@ struct MobileAboutView: View {
                     LabeledContent("Versión", value: installedVersion)
                         .accessibilityIdentifier("about-version")
                     VStack(spacing: 0) {
+                        informationLink(.releaseNotes)
+                        Divider().padding(.vertical, 12)
                         informationLink(.help)
                         Divider().padding(.vertical, 12)
                         informationLink(.privacy)
