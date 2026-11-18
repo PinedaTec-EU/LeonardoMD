@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 enum DocumentDropProviders {
     static let projectTreeItemTypeIdentifier = "eu.pinedatec.LeonardoMD.project-tree-item"
     static let projectTreeItemType = UTType(importedAs: projectTreeItemTypeIdentifier)
+    static let projectTreeItemPasteboardType = NSPasteboard.PasteboardType(projectTreeItemTypeIdentifier)
 
     static func isProjectMove(_ url: URL, in root: URL) -> Bool {
         let rootPath = root.standardizedFileURL.path
@@ -27,6 +28,34 @@ enum DocumentDropProviders {
             return nil
         }
         return provider
+    }
+
+    static func projectTreePasteboardItem(for primaryURL: URL, selecting urls: [URL]) -> NSPasteboardItem {
+        let item = NSPasteboardItem()
+        item.setString(primaryURL.absoluteString, forType: .fileURL)
+        let selectedURLs = urls.isEmpty ? [primaryURL] : urls
+        if let payload = try? JSONEncoder().encode(selectedURLs) {
+            item.setData(payload, forType: projectTreeItemPasteboardType)
+        }
+        return item
+    }
+
+    static func itemProviders(from pasteboard: NSPasteboard) -> [NSItemProvider] {
+        let urls = (pasteboard.readObjects(forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]) as? [URL]) ?? []
+        guard !urls.isEmpty else { return [] }
+        let payload = pasteboard.data(forType: projectTreeItemPasteboardType)
+        return urls.map { url in
+            let provider = NSItemProvider(object: url as NSURL)
+            if let payload {
+                provider.registerDataRepresentation(forTypeIdentifier: projectTreeItemTypeIdentifier,
+                    visibility: .ownProcess) { completion in
+                        completion(payload, nil)
+                        return nil
+                    }
+            }
+            return provider
+        }
     }
 
     static func isProjectTreeItem(_ provider: NSItemProvider) -> Bool {

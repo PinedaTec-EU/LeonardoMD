@@ -455,6 +455,17 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertEqual(loaded, [first, folder])
     }
 
+    func testProjectTreePasteboardItemCarriesMixedSelectionBatch() throws {
+        let root = URL(fileURLWithPath: "/synthetic/project", isDirectory: true)
+        let file = root.appendingPathComponent("notes.md")
+        let folder = root.appendingPathComponent("assets", isDirectory: true)
+        let item = DocumentDropProviders.projectTreePasteboardItem(for: file, selecting: [file, folder])
+
+        XCTAssertEqual(item.string(forType: .fileURL), file.absoluteString)
+        let data = try XCTUnwrap(item.data(forType: DocumentDropProviders.projectTreeItemPasteboardType))
+        XCTAssertEqual(try JSONDecoder().decode([URL].self, from: data), [file, folder])
+    }
+
     func testProjectTreeProviderPreservesBatchWhenDragSourceWasPruned() async throws {
         let root = URL(fileURLWithPath: "/synthetic/project")
         let selectedFolder = root.appendingPathComponent("assets", isDirectory: true)
