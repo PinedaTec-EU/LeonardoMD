@@ -534,6 +534,8 @@ struct MobileProjectView: View {
 }
 
 struct MobileDocumentView: View {
+    private static let markdownPreviewExtensions: Set<String> = ["md", "markdown", "mdlf", "mdlr"]
+    private static let leonardoFormatExtensions: Set<String> = ["mdlf", "mdlr"]
     let library: MobileLibrary
     let projectID: UUID
     let file: CorpusFile
@@ -546,11 +548,13 @@ struct MobileDocumentView: View {
     @State private var didScrollToInitialAnchor = false
     @StateObject private var previewController = MarkdownPreviewController()
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
+    private var fileExtension: String { (file.path as NSString).pathExtension.lowercased() }
     private var previewConfiguration: MarkdownPreviewConfiguration {
         var configuration = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
             appearance: .leonardoClassic,
             localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
         configuration.compactFirstHeading = true
+        configuration.allowsLeonardoFormat = Self.leonardoFormatExtensions.contains(fileExtension)
         return configuration
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
@@ -562,7 +566,7 @@ struct MobileDocumentView: View {
                 ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
             } else if liveFile == nil {
                 ContentUnavailableView("Documento no disponible", systemImage: "doc", description: Text("El documento ya no está en la copia local."))
-            } else if !source, ["md", "markdown"].contains((file.path as NSString).pathExtension.lowercased()) {
+            } else if !source, Self.markdownPreviewExtensions.contains(fileExtension) {
                 MarkdownPreview(content: text,
                     baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
                     configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)

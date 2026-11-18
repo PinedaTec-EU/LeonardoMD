@@ -625,6 +625,8 @@ For example, a project named **Trip** is **Shared from this device** on the Mac 
 
 On iPhone and iPad, the bundled **Demo** is a **Local** project. Its Spanish and English files are documents inside that project. A received project keeps its origin while each file independently shows **Remote only**, **Cached** or **Available offline**; the project icon does not mean that every file has been downloaded. In **Sync settings → Project files**, enable **Show non-document files** to include images and other file types in project lists. It starts off. This changes row visibility only; file access and offline state are unchanged, and Markdown image links still load when their standalone files are hidden.
 
+Valid `.mdlf` and `.mdlr` files open in Little Leonardo's Leonardo-aware reader. Their saved text and form values are read-only: you cannot edit a document or fill and submit a received form. Use LeonardoMD on macOS to edit a template or complete a response.
+
 For rubric capture without document access, do not choose **Share current project**.
 In the pending-connection review, leave every project toggle off. When the sheet
 says **This Little Leonardo can receive rubrics without access to any project**,

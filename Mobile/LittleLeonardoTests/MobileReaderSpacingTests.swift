@@ -45,6 +45,95 @@ final class MobileReaderSpacingTests: XCTestCase {
         XCTFail("The synchronized document did not render")
     }
 
+    func testLeonardoDocumentsRenderReadOnlyInLittleLeonardo() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let corpus = root.appendingPathComponent("Corpus")
+        let projectID = UUID()
+        let note = CorpusFile(path: "note.mdlf", content: Data("""
+        ---
+        {"format":"mdlf","formatVersion":1,"document":{"kind":"document","title":"Portable note"}}
+        ---
+        # Portable note
+
+        MDLF content stays readable.
+        """.utf8))
+        let response = CorpusFile(path: "response.mdlr", content: Data("""
+        ---
+        {"format":"mdlf","formatVersion":1,"document":{"kind":"form","title":"Filled response"},"fields":{"name":{"type":"text","label":"Name"}},"values":{"name":"Ada Lovelace"}}
+        ---
+        # Filled response
+
+        Name: {{field:name}}
+        """.utf8))
+        let files = [note, response]
+        let project = try OfflineProject(id: projectID, name: "Format reader QA", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "format-reader", files: files))
+        try await OfflineCorpusStore(root: corpus).save(project)
+        let connection = MobileDirectConnection(deviceID: UUID(), endpoint: URL(string: "https://127.0.0.1:40882")!,
+            fingerprint: Data(repeating: 7, count: 32), projectIDs: [projectID], comparisonCode: nil, capabilities: [])
+        try MobileDirectConnectionStore(url: root.appendingPathComponent("connections.json")).save([connection])
+        let library = MobileLibrary(rootURL: corpus, credentials: ReaderSpacingCredentials())
+        await library.reload()
+        XCTAssertEqual(library.projects.count, 1)
+
+        for (file, expectedHeading, expectedValue) in [
+            (note, "Portable note", nil as String?),
+            (response, "Filled response", "Ada Lovelace")
+        ] {
+            try await assertReadOnlyMobilePreview(library: library, projectID: projectID, file: file,
+                                                  expectedHeading: expectedHeading, expectedValue: expectedValue)
+        }
+    }
+
+    private func assertReadOnlyMobilePreview(library: MobileLibrary, projectID: UUID, file: CorpusFile,
+                                             expectedHeading: String, expectedValue: String?) async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let priorWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        defer { window.isHidden = true; priorWindow?.makeKeyAndVisible() }
+        window.rootViewController = UIHostingController(rootView: NavigationStack {
+            MobileDocumentView(library: library, projectID: projectID, file: file)
+                .navigationBarTitleDisplayMode(.inline)
+        })
+        window.makeKeyAndVisible()
+
+        let deadline = ContinuousClock.now.advanced(by: .seconds(12))
+        var snapshot: [String: Any]?
+        repeat {
+            if let preview = findWebView(window),
+               let result = try? await preview.evaluateJavaScript("""
+                (() => ({
+                  heading: document.querySelector('h1')?.textContent || '',
+                  body: document.body.innerText,
+                  fieldCount: document.querySelectorAll('.leonardo-form-field').length,
+                  value: document.querySelector('.leonardo-field-output')?.textContent || '',
+                  controlsDisabled: Array.from(document.querySelectorAll('.leonardo-form-field input, .leonardo-form-field textarea, .leonardo-form-field select')).every(control => control.disabled)
+                }))()
+                """) as? [String: Any], result["heading"] as? String == expectedHeading {
+                snapshot = result
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        } while ContinuousClock.now < deadline
+
+        let rendered = try XCTUnwrap(snapshot, "Little Leonardo did not render \(file.path) through the Leonardo-aware reader")
+        let preview = try XCTUnwrap(findWebView(window))
+        XCTAssertTrue((rendered["body"] as? String)?.contains(expectedHeading) == true)
+        let previewImage = try await captureWebView(preview)
+        let attachment = XCTAttachment(image: previewImage)
+        attachment.name = "Little Leonardo read-only \((file.path as NSString).pathExtension.uppercased()) preview"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        if let expectedValue {
+            XCTAssertEqual(rendered["value"] as? String, expectedValue)
+            XCTAssertGreaterThan(rendered["fieldCount"] as? Int ?? 0, 0)
+            XCTAssertTrue(rendered["controlsDisabled"] as? Bool == true,
+                          "Received MDLR fields must stay read-only in Little Leonardo")
+        }
+    }
+
     func testCompactReaderKeepsFirstHeadingNearContentTopAndLaterSectionsSpaced() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let priorWindow = scene.windows.first(where: \.isKeyWindow)
@@ -142,6 +231,16 @@ final class MobileReaderSpacingTests: XCTestCase {
           scrollHeight: document.documentElement.scrollHeight, viewportHeight: window.innerHeight}))()
         """)
         return try XCTUnwrap(result as? [String: Double])
+    }
+
+    private func captureWebView(_ web: WKWebView) async throws -> UIImage {
+        try await withCheckedThrowingContinuation { continuation in
+            web.takeSnapshot(with: nil) { image, error in
+                if let error { continuation.resume(throwing: error) }
+                else if let image { continuation.resume(returning: image) }
+                else { continuation.resume(throwing: CocoaError(.fileReadUnknown)) }
+            }
+        }
     }
 
     private func attach(_ window: UIWindow, name: String) {

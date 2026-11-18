@@ -98,6 +98,29 @@ final class OnDemandCacheTests: XCTestCase {
         XCTAssertEqual(usage.offlineBytes, document.content.count + image.content.count)
     }
 
+    func testRetainedLeonardoDocumentRetainsReferencedImagesOutsideFolder() async throws {
+        let (root, cache, descriptor, _) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let document = CorpusFile(path: "docs/request.mdlf", content: Data("""
+        ---
+        {"format":"mdlf","formatVersion":1}
+        ---
+        ![Image](../images/photo.png)
+        """.utf8))
+        let image = CorpusFile(path: "images/photo.png", content: Data([1, 2, 3]))
+        let unused = CorpusFile(path: "images/unused.png", content: Data([4]))
+        try await cache.update(id: descriptor.id, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [document, image, unused].map(RemoteFileEntry.init)))
+        try await cache.setRetained(id: descriptor.id, path: document.path, isFolder: false, keep: true)
+        try await cache.store(id: descriptor.id, entry: RemoteFileEntry(file: document), file: document)
+        let afterDocument = try await cache.project(id: descriptor.id)
+        XCTAssertEqual(afterDocument?.pendingOfflineFiles.map(\.path), [image.path])
+        try await cache.store(id: descriptor.id, entry: RemoteFileEntry(file: image), file: image)
+        try await cache.clearTemporary()
+        let usage = try await cache.usage()
+        XCTAssertEqual(usage.offlineBytes, document.content.count + image.content.count)
+    }
+
     @MainActor func testOpenDownloadsOnceAndRetentionContinuesAfterFailure() async throws {
         let (root, cache, descriptor, files) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -1,6 +1,6 @@
 # Project file visibility
 
-`GlobalPreferences.showNonDocumentFiles` is a saved, off-by-default preference shared by macOS and Little Leonardo. `LeonardoProjectFileVisibility` owns the supported-extension policy for each surface. macOS treats `.mdlz` as a document; Little Leonardo does not.
+`GlobalPreferences.showNonDocumentFiles` is a saved, off-by-default preference shared by macOS and Little Leonardo. `LeonardoProjectFileVisibility` owns the supported-extension policy for each surface. macOS treats `.mdlz` as a document; Little Leonardo does not. Little Leonardo reads valid `.mdlf` and `.mdlr` files through the Leonardo-aware preview in read-only mode; received forms cannot be filled or submitted.
 
 The preference filters project tree rows, local project search results, remote catalogue browsers and pending remote “New files” notices. Search composes this visibility predicate with the existing project authorization filter; visibility never grants file access or changes synchronization. Markdown-linked local images remain available to document rendering even while their standalone files are hidden.
 

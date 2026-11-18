@@ -11,6 +11,19 @@ final class CachedDocumentLinkTests: XCTestCase {
         XCTAssertEqual(target?.anchor, "next heading")
     }
 
+    func testLeonardoFormatLinksResolveInsideTheAuthorizedCache() throws {
+        let root = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
+        let scope = try CorpusScope(folder: "docs")
+        let files = [CorpusFile(path: "docs/template.mdlf", content: Data("template".utf8)),
+                     CorpusFile(path: "docs/response.mdlr", content: Data("response".utf8))]
+
+        for file in files {
+            let target = CachedDocumentLink(url: root.appendingPathComponent(file.path), virtualRoot: root,
+                                            scope: scope, files: files)
+            XCTAssertEqual(target?.file, file)
+        }
+    }
+
     func testTraversalRootAliasesExternalAndUncachedLinksAreDenied() throws {
         let root = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
         let scope = try CorpusScope(folder: "docs")

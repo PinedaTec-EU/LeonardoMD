@@ -85,6 +85,6 @@ public struct CorpusScope: Codable, Equatable, Sendable {
         }
     }
 
-    private static let allowedExtensions: Set<String> = ["md", "markdown", "txt", "png", "jpg", "jpeg", "gif", "webp", "svg"]
+    private static let allowedExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr", "png", "jpg", "jpeg", "gif", "webp", "svg"]
     private static let excludedDirectories: Set<String> = ["build", "output", "deriveddata", "node_modules", "vendor", "pods"]
 }

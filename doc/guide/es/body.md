@@ -639,6 +639,8 @@ Por ejemplo, un proyecto llamado **Viaje** aparece como **Compartido desde este 
 
 En el iPhone y el iPad, **Demo** es un proyecto **Local** incluido en la app. Sus ficheros en español e inglés son documentos dentro de ese proyecto. Un proyecto recibido conserva su procedencia mientras cada fichero muestra por separado **Solo remoto**, **En caché** o **Disponible sin conexión**; el icono del proyecto no significa que todos sus ficheros estén descargados. En **Ajustes de sincronización → Archivos del proyecto**, activa **Mostrar archivos que no sean documentos** para incluir imágenes y otros tipos de archivo en los listados. Está desactivado inicialmente. Solo cambia las filas visibles; el acceso y el estado sin conexión no cambian, y Markdown sigue cargando las imágenes enlazadas aunque sus archivos estén ocultos.
 
+Los archivos `.mdlf` y `.mdlr` válidos se abren en el lector compatible con Leonardo de Little Leonardo. El texto y las respuestas guardadas son de solo lectura: no puedes editar el documento ni rellenar y enviar un formulario recibido. Usa LeonardoMD en macOS para editar una plantilla o completar una respuesta.
+
 Para capturar solo una rúbrica, sin acceso a documentos, no elijas **Compartir
 el proyecto actual**. En la revisión de la conexión pendiente deja sin marcar
 todos los proyectos. Cuando el panel diga **Este Little Leonardo puede recibir
