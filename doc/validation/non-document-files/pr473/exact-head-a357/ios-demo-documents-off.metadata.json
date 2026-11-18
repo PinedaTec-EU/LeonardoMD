@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-18T14:18:57+01:00",
+  "capture": {
+    "captured_at": "2026-11-18T14:10:24+01:00",
+    "route": "Little Leonardo > Biblioteca > Demo > archivos",
+    "screen": "Los dos documentos MDLR de demostración siguen visibles con la preferencia apagada",
+    "browser_name": "iOS Simulator",
+    "browser_version": "Little Leonardo 0.3.1884 (build 1884), iOS 27.0, iPhone 17e",
+    "state": "Demo-es.mdlr y Demo-en.mdlr aparecen en el proyecto local de demostración mientras Mostrar archivos que no sean documentos está apagado.",
+    "viewport_css": {
+      "width": 369,
+      "height": 800
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "locale": "es-ES",
+    "preference": "off",
+    "device": "iPhone 17e",
+    "simulator_id": "BAFCF426-B9C8-4514-A18E-CB1BE99139EE",
+    "source_timestamp_note": "XcodeBuildMCP returned an optimized simulator JPEG; captured_at records the staged file timestamp because the original timestamp was not retained."
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 369,
+    "height_px": 800,
+    "sha256": "5105e848fbd546a809653fe94123dcbd78aec36614c6375e31a8d91a9bff2c9f"
+  },
+  "source": {
+    "revision_at_collection": "a357aaeb0dbc4f7cf4f1fbf4f5ca3e0c6080dde0",
+    "product_source_revision": "a357aaeb0dbc4f7cf4f1fbf4f5ca3e0c6080dde0",
+    "tracked_changes_present": true,
+    "untracked_files_present": true,
+    "changed_paths": [
+      "deploy/version/entries/473.yaml"
+    ],
+    "untracked_evidence_path": "doc/validation/non-document-files/pr473/exact-head-a357",
+    "build_ledger_delta": 35
+  },
+  "app_instance": {
+    "pid": 62337,
+    "started_at": "2026-11-18T13:53:54+01:00",
+    "bundle_id": "eu.pinedatec.LittleLeonardo",
+    "version": "0.3.1884",
+    "build": "1884"
+  }
+}
