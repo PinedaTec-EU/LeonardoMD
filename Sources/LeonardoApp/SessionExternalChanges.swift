@@ -36,10 +36,12 @@ extension AppSession {
         if settingsTask == nil { do {
             let preferences = try await configurations.loadGlobalPreferences(at: globalPreferencesURL)
             if settingsTask == nil {
+                let fileVisibilityChanged = showNonDocumentFiles != preferences.showNonDocumentFiles
                 globalPreferences = preferences
                 globalBaseline = preferences
                 showHidden = preferences.showHiddenFiles
                 showNonDocumentFiles = preferences.showNonDocumentFiles
+                if fileVisibilityChanged { scheduleSearch() }
             }
             if let root = projectURL {
                 let project = try await configurations.loadProjectConfiguration(for: root)

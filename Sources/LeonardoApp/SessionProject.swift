@@ -135,7 +135,16 @@ extension AppSession {
                 let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
                 let include = try await self.entryFilter(root)
                 guard !self.stopped, !Task.isCancelled else { return }
-                let stream = await self.files.searchStream(in: project, query: query, showHidden: self.showHidden, include: include)
+                let showNonDocumentFiles = self.showNonDocumentFiles
+                let searchInclude: @Sendable (URL, Bool) -> Bool = { url, isDirectory in
+                    include(url, isDirectory) &&
+                        (isDirectory || LeonardoProjectFileVisibility.shouldShowFile(
+                            at: url.path,
+                            showNonDocumentFiles: showNonDocumentFiles
+                        ))
+                }
+                let stream = await self.files.searchStream(in: project, query: query,
+                                                           showHidden: self.showHidden, include: searchInclude)
                 for try await results in stream {
                     guard !self.stopped, !Task.isCancelled, self.projectURL == root, self.searchQuery == query else { return }
                     self.searchResults += results.map { SearchResult(url: $0.url, line: $0.lineNumber ?? 1, snippet: $0.snippet) }

@@ -62,6 +62,7 @@ extension AppSession {
         showNonDocumentFiles = value
         globalPreferences.showNonDocumentFiles = value
         persistSettings()
+        scheduleSearch()
     }
     func persistSettings() {
         let global = globalPreferences

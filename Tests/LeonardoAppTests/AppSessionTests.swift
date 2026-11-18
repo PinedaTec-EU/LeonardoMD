@@ -68,6 +68,29 @@ final class AppSessionTests: XCTestCase {
         XCTAssertTrue(session.searchQuery.isEmpty)
     }
 
+    func testProjectSearchHidesNonDocumentsUntilPreferenceIsEnabled() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let image = root.appendingPathComponent("logo.png")
+        try Data([137, 80, 78, 71]).write(to: image, options: .atomic)
+        await session.openProject(root)
+
+        session.searchQuery = "logo.png"
+        session.scheduleSearch()
+        await session.searchTask?.value
+        XCTAssertTrue(session.searchResults.isEmpty)
+
+        session.setShowNonDocumentFiles(true)
+        await session.settingsTask?.value
+        await session.searchTask?.value
+        XCTAssertEqual(session.searchResults.map { $0.url.lastPathComponent }, ["logo.png"])
+
+        session.setShowNonDocumentFiles(false)
+        await session.settingsTask?.value
+        await session.searchTask?.value
+        XCTAssertTrue(session.searchResults.isEmpty)
+    }
+
     func testGlobalExtensionChangesWhileProjectOpenPreserveProjectOverrides() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

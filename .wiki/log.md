@@ -315,3 +315,9 @@ head CI, exact-source alert captures and strict review are pending; Beta Help
 and tab/window/app-quit acceptance remain required after integration because
 local screen capture again returned `ScreenCaptureKit -3811`. See
 `doc/validation/preview-sync/448/README.md`.
+
+PR #473 visibility follow-up (18 Nov 2026): the strict review found local search
+and remote “New files” notices bypassed the shared non-document preference.
+Search now composes file visibility with the existing authorization filter and
+refreshes on local or external preference changes; remote review notices use
+the same surface policy. Both focused regressions pass. Tracking: [#472](https://github.com/PinedaTec-EU/LeonardoMD/issues/472), [#476](https://github.com/PinedaTec-EU/LeonardoMD/issues/476).

@@ -81,11 +81,19 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
 
         await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
         try fixture.write(fixture.source, "docs/future.md", "newly shared file")
+        try fixture.write(fixture.source, "docs/logo.png", "synthetic image bytes")
         await fixture.peer.refresh(connection.id)
         XCTAssertTrue(fixture.peer.reviewStore.acceptsProject(connectionID: connection.id, projectID: fixture.shared.id))
         XCTAssertFalse(fixture.peer.reviewStore.acceptsProject(connectionID: connection.id, projectID: incoming.id))
-        XCTAssertTrue(fixture.peer.reviewStore.pendingFilePaths(connectionID: connection.id, projectID: fixture.shared.id)
-            .contains("docs/future.md"))
+        let pendingPaths = fixture.peer.reviewStore.pendingFilePaths(connectionID: connection.id, projectID: fixture.shared.id)
+        XCTAssertTrue(pendingPaths.contains("docs/future.md"))
+        XCTAssertTrue(pendingPaths.contains("docs/logo.png"))
+        let hiddenNotices = DesktopPeerRemoteProjectsView(controller: fixture.peer)
+            .fileNotices(for: connection).map { $0.entry.path }
+        XCTAssertEqual(hiddenNotices, ["docs/future.md"])
+        let visibleNotices = DesktopPeerRemoteProjectsView(controller: fixture.peer, showNonDocumentFiles: true)
+            .fileNotices(for: connection).map { $0.entry.path }
+        XCTAssertEqual(visibleNotices, ["docs/future.md", "docs/logo.png"])
 
         guard let evidenceRoot = ProcessInfo.processInfo.environment["LEONARDO_REMOTE_PROJECTS_EVIDENCE"] else { return }
         let destination = URL(fileURLWithPath: evidenceRoot, isDirectory: true)
