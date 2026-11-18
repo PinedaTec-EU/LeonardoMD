@@ -91,16 +91,20 @@ struct FileTreeRow: View {
                 // Include the context menu in the plain-style scope so it cannot
                 // inherit the sidebar's stateful PremiumButtonStyle.
                 .buttonStyle(.plain)
-                .modifier(ProjectTreeDragSource(url: entry.url) {
-                    tree.dragSelection(startingAt: entry.url, rows: tree.rows(roots: session.rootEntries))
-                })
-                .onDrop(of: [.fileURL], delegate: ProjectFolderDropDelegate(
-                    folder: entry.url,
-                    session: session,
-                    state: $dropState
-                ))
         }
         .padding(.leading, CGFloat(depth) * 16)
+        // Keep drag and drop on the row container so its gestures are separate
+        // from the Button's click and double-click tracking.
+        .modifier(ProjectTreeDragSource(url: entry.url) {
+            tree.dragSelection(startingAt: entry.url, rows: tree.rows(roots: session.rootEntries))
+        })
+        .onDrop(of: [.fileURL], delegate: ProjectFolderDropDelegate(
+            folder: entry.url,
+            session: session,
+            state: $dropState
+        ))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
         .accessibilityIdentifier("project-file-" + entry.url.path)
         .accessibilityAddTraits(isActiveDocument || isMultiSelected ? [.isSelected] : [])
     }
