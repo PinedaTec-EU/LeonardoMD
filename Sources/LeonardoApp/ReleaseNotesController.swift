@@ -53,10 +53,12 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
             alert.beginSheetModal(for: parent)
             return
         }
-        present(notes, on: parent, session: session)
+        present(notes, on: parent, session: session, showFullHistory: true)
     }
 
-    private func present(_ notes: ReleaseChanges, on parent: NSWindow, session: AppSession) {
+    private func present(
+        _ notes: ReleaseChanges, on parent: NSWindow, session: AppSession, showFullHistory: Bool = false
+    ) {
         baseline = preferences.baseline(for: notes.version)
         suppress = preferences.suppressionDefault(for: notes.version)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 580),
@@ -66,7 +68,7 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
         window.minSize = NSSize(width: 620, height: 400)
         window.delegate = self
         window.contentView = NSHostingView(rootView: ReleaseNotesView(
-            notes: notes, baseline: baseline, suppress: suppress,
+            notes: notes, baseline: baseline, showFullHistory: showFullHistory, suppress: suppress,
             onSuppressionChange: { [weak self] value in self?.suppress = value },
             onClose: { [weak self] in self?.window?.close() }
         ).modifier(SessionAppearance(session: session)))

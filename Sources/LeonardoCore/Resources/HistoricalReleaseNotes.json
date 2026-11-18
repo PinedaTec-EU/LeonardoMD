@@ -1,0 +1,297 @@
+[
+  {
+    "pr": 40,
+    "en": "Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs.",
+    "es": "Añade búsqueda literal y por regex en documentos abiertos, con resaltado, recuento y navegación circular. Unifica el estilo de los campos de búsqueda, commit y nombres, los interruptores de archivos ocultos y las pestañas de Preferencias."
+  },
+  {
+    "pr": 207,
+    "en": "Edit form fields directly in the document and open contextual help for each field.",
+    "es": "Edita los campos de un formulario dentro del documento y consulta la ayuda de cada campo."
+  },
+  {
+    "pr": 205,
+    "en": "Save plain Leonardo documents without empty optional metadata, while retaining populated fields and values.",
+    "es": "Guarda documentos Leonardo sencillos sin metadatos opcionales vacíos y conserva los campos y valores que contienen datos."
+  },
+  {
+    "pr": 199,
+    "en": "Choose a checkbox or a switch for boolean fields in Leonardo forms.",
+    "es": "Elige entre una casilla y un interruptor para los campos booleanos de los formularios Leonardo."
+  },
+  {
+    "pr": 192,
+    "en": "Preserve Markdown front matter as metadata when converting to MDLF.",
+    "es": "Conserva la cabecera de Markdown como metadatos al convertir un archivo a MDLF."
+  },
+  {
+    "pr": 197,
+    "en": "Keep technical MDLF metadata out of the invoice preview so the layout starts where intended.",
+    "es": "Oculta los metadatos técnicos de MDLF en la vista previa de facturas para respetar el inicio del diseño."
+  },
+  {
+    "pr": 190,
+    "en": "Honor the opening-mode preference for MDLF documents and MDLZ packages.",
+    "es": "Respeta el modo de apertura elegido en Preferencias para documentos MDLF y paquetes MDLZ."
+  },
+  {
+    "pr": 184,
+    "en": "Keep format preferences in sync across windows and simplify the package choices.",
+    "es": "Sincroniza las preferencias de formato entre ventanas y simplifica las opciones de empaquetado."
+  },
+  {
+    "pr": 186,
+    "en": "Open the current tab’s preferences with the gear next to the new-tab button.",
+    "es": "Abre las preferencias de la pestaña activa con el engranaje junto al botón de nueva pestaña."
+  },
+  {
+    "pr": 168,
+    "en": "Open Leonardo documents, reusable forms and packages, with separate answers and authoring support for agents.",
+    "es": "Abre documentos, formularios reutilizables y paquetes Leonardo, con respuestas separadas y herramientas de autoría para agentes."
+  },
+  {
+    "pr": 179,
+    "en": "Show the LeonardoMD product artwork at the top of the project README.",
+    "es": "Muestra la imagen de LeonardoMD al principio del README del proyecto."
+  },
+  {
+    "pr": 174,
+    "en": "Keep the Global and This project controls inside their preferences panes so navigation stays in place.",
+    "es": "Mantiene los controles Global y Este proyecto dentro de sus paneles para que la navegación conserve su posición."
+  },
+  {
+    "pr": 164,
+    "en": "Count each successful compiler invocation once when allocating release builds.",
+    "es": "Cuenta una vez cada invocación correcta del compilador al asignar compilaciones de versión."
+  },
+  {
+    "pr": 162,
+    "en": "Promote validated beta 0.1.404 to stable, bringing the fix for duplicate recent items to stable users.",
+    "es": "Promueve la beta validada 0.1.404 a estable e incorpora la corrección de elementos recientes duplicados."
+  },
+  {
+    "pr": 161,
+    "en": "Keep one recent entry for a project or workspace opened through equivalent paths.",
+    "es": "Mantiene una sola entrada reciente por proyecto o espacio de trabajo aunque se abra mediante rutas equivalentes."
+  },
+  {
+    "pr": 159,
+    "en": "Restore the large Leonardo lettering behind the scrolling Home view.",
+    "es": "Recupera el rótulo grande de Leonardo bajo el contenido desplazable de Inicio."
+  },
+  {
+    "pr": 157,
+    "en": "Switch between recent documents, projects and workspaces in compact Home tabs while keeping favorites visible.",
+    "es": "Alterna entre documentos, proyectos y espacios recientes en pestañas compactas de Inicio con los favoritos a la vista."
+  },
+  {
+    "pr": 155,
+    "en": "Make the accepted 0.1.395 beta available on the stable channel.",
+    "es": "Lleva la beta aceptada 0.1.395 al canal estable."
+  },
+  {
+    "pr": 145,
+    "en": "Protect editing on open, unlock source or preview editing explicitly and save drafts manually.",
+    "es": "Protege la edición al abrir, permite desbloquear el texto o la vista previa y guardar los borradores manualmente."
+  },
+  {
+    "pr": 147,
+    "en": "Mark visible document metadata with a border in the active theme’s heading color.",
+    "es": "Marca los metadatos visibles con un borde del color de los títulos del tema activo."
+  },
+  {
+    "pr": 143,
+    "en": "Show the installed distribution channel beside the version in About and the main footer.",
+    "es": "Muestra el canal de distribución instalado junto a la versión en Acerca de y en el pie de la ventana."
+  },
+  {
+    "pr": 141,
+    "en": "Make the validated 0.1.369 beta available on the stable channel.",
+    "es": "Lleva la beta validada 0.1.369 al canal estable."
+  },
+  {
+    "pr": 138,
+    "en": "Keep favorites after clearing recents and show both lists on the welcome screen.",
+    "es": "Conserva los favoritos al limpiar los recientes y muestra ambas listas en la pantalla de bienvenida."
+  },
+  {
+    "pr": 139,
+    "en": "Prevent sidebar context menus from becoming unresponsive when opening actions such as Rename or Show in Finder.",
+    "es": "Evita que los menús contextuales de la barra lateral se bloqueen al ofrecer acciones como Renombrar o Mostrar en Finder."
+  },
+  {
+    "pr": 134,
+    "en": "Offer to make LeonardoMD the default app for Markdown files and expose the choice in General preferences.",
+    "es": "Ofrece usar LeonardoMD como app predeterminada para Markdown y permite gestionar la elección en las preferencias generales."
+  },
+  {
+    "pr": 131,
+    "en": "Set Markdown table column widths with an optional comment to keep long headers readable.",
+    "es": "Permite fijar los anchos de columnas Markdown con un comentario opcional para que los encabezados largos sigan siendo legibles."
+  },
+  {
+    "pr": 129,
+    "en": "Move the app-wide language selector into General preferences.",
+    "es": "Traslada el selector de idioma de toda la app a las preferencias generales."
+  },
+  {
+    "pr": 127,
+    "en": "Support assigning a higher build when promoting a validated beta to stable under the release process of the time.",
+    "es": "Permite asignar una compilación superior al promover una beta validada a estable según el proceso de aquella época."
+  },
+  {
+    "pr": 124,
+    "en": "Choose Stable or Beta in Updates preferences and manage manual and automatic checks there.",
+    "es": "Elige Estable o Beta en las preferencias de Actualizaciones y gestiona allí las comprobaciones manuales y automáticas."
+  },
+  {
+    "pr": 93,
+    "en": "Introduce Little Leonardo for iOS and direct synchronization between authorized devices, with offline copies and reconciliation between Macs.",
+    "es": "Presenta Little Leonardo para iOS y la sincronización directa entre equipos autorizados, con copias sin conexión y conciliación entre Macs."
+  },
+  {
+    "pr": 89,
+    "en": "Free space in the document outline by removing its redundant Preferences button.",
+    "es": "Libera espacio en el esquema del documento al retirar su botón de Preferencias duplicado."
+  },
+  {
+    "pr": 87,
+    "en": "Drag the project sidebar divider to adjust its width while keeping the document pane usable.",
+    "es": "Arrastra el divisor de la barra lateral del proyecto para ajustar su anchura y mantener espacio para el documento."
+  },
+  {
+    "pr": 79,
+    "en": "Open recent documents, projects and workspaces directly from the File menu.",
+    "es": "Abre documentos, proyectos y espacios de trabajo recientes desde el menú Archivo."
+  },
+  {
+    "pr": 76,
+    "en": "Add subtle Leonardo-inspired drawings to the empty welcome screen.",
+    "es": "Añade dibujos discretos inspirados en Leonardo a la pantalla de bienvenida vacía."
+  },
+  {
+    "pr": 82,
+    "en": "Build macOS QA copies from the actual app executable to avoid the XCTest startup crash.",
+    "es": "Genera copias de QA para macOS con el ejecutable real de la app y evita el fallo de arranque por XCTest."
+  },
+  {
+    "pr": 71,
+    "en": "Request central version-ledger processing after a source PR is merged.",
+    "es": "Solicita el procesamiento central del registro de versiones tras integrar una PR de código."
+  },
+  {
+    "pr": 54,
+    "en": "Enforce consistent numeric versions in app bundles, release tags and update feeds.",
+    "es": "Aplica versiones numéricas coherentes en los paquetes de la app, las etiquetas de versión y los canales de actualizaciones."
+  },
+  {
+    "pr": 48,
+    "en": "Simplify the project sidebar by removing its redundant Preferences button and divider.",
+    "es": "Simplifica la barra lateral del proyecto al retirar su botón de Preferencias duplicado y el separador."
+  },
+  {
+    "pr": 67,
+    "en": "Record the generated notes for the published 0.1.64 release.",
+    "es": "Registra las notas generadas para la versión publicada 0.1.64."
+  },
+  {
+    "pr": 58,
+    "en": "Switch the app interface and native menus between English and Spanish from Preferences.",
+    "es": "Cambia la interfaz de la app y sus menús nativos entre inglés y español desde Preferencias."
+  },
+  {
+    "pr": 66,
+    "en": "Pass verified notes proposals to the central publisher so it can create reviewable notes PRs.",
+    "es": "Entrega las propuestas de notas verificadas al publicador central para crear PRs de notas revisables."
+  },
+  {
+    "pr": 64,
+    "en": "Use a checkpoint-aware ledger engine and document how signed releases are prepared.",
+    "es": "Adopta un motor que reconoce los puntos de control del registro y documenta cómo preparar versiones firmadas."
+  },
+  {
+    "pr": 52,
+    "en": "Reorder document tabs by dragging their headers or using the tab context menu.",
+    "es": "Reordena las pestañas de documentos arrastrando sus cabeceras o desde su menú contextual."
+  },
+  {
+    "pr": 63,
+    "en": "Materialize version 0.1.64 from the ledger entry for PR #59.",
+    "es": "Materializa la versión 0.1.64 a partir de la entrada de la PR #59."
+  },
+  {
+    "pr": 62,
+    "en": "Materialize version 0.1.61 from the ledger entry for PR #50.",
+    "es": "Materializa la versión 0.1.61 a partir de la entrada de la PR #50."
+  },
+  {
+    "pr": 59,
+    "en": "Update the shared ledger engine and isolate stable-update fixtures from production release checks.",
+    "es": "Actualiza el motor compartido de versiones y aísla los datos de prueba del canal estable de las comprobaciones de producción."
+  },
+  {
+    "pr": 56,
+    "en": "Materialize version 0.1.60 from the ledger entry for PR #42.",
+    "es": "Materializa la versión 0.1.60 a partir de la entrada de la PR #42."
+  },
+  {
+    "pr": 50,
+    "en": "Run release-ledger policy checks through the trusted central dispatch workflow.",
+    "es": "Ejecuta las comprobaciones del registro de versiones mediante el flujo central autorizado."
+  },
+  {
+    "pr": 42,
+    "en": "Adopt the shared release ledger from 0.1.56 and derive the packaged version from its numeric checkpoint.",
+    "es": "Adopta el registro compartido desde la versión 0.1.56 y deriva la versión del paquete de su punto de control numérico."
+  },
+  {
+    "pr": 43,
+    "en": "Let development and QA copies share the app’s single-instance ownership even when bundle identifiers differ.",
+    "es": "Hace que las copias de desarrollo y QA compartan una sola instancia aunque tengan identificadores de paquete distintos."
+  },
+  {
+    "pr": 17,
+    "en": "Check for signed macOS updates through Sparkle, manually or periodically.",
+    "es": "Comprueba actualizaciones firmadas de macOS con Sparkle, de forma manual o periódica."
+  },
+  {
+    "pr": 36,
+    "en": "Show Markdown metadata tags above the preview and click a tag to search the project for that exact tag.",
+    "es": "Muestra las etiquetas Markdown encima de la vista previa y permite pulsarlas para buscar esa etiqueta exacta en el proyecto."
+  },
+  {
+    "pr": 37,
+    "en": "Open projects through macOS root paths that have equivalent aliases, such as /tmp and /private/tmp.",
+    "es": "Abre proyectos desde rutas raíz equivalentes de macOS, como /tmp y /private/tmp."
+  },
+  {
+    "pr": 30,
+    "en": "Manage Mermaid and math extensions in Preferences with explicit global or per-project scope.",
+    "es": "Gestiona Mermaid y matemáticas en Preferencias con un ámbito global o por proyecto."
+  },
+  {
+    "pr": 24,
+    "en": "Reuse the running editor for external document opens and add tabs without discarding edits already in progress.",
+    "es": "Reutiliza el editor abierto al recibir documentos externos y añade pestañas conservando las ediciones en curso."
+  },
+  {
+    "pr": 21,
+    "en": "Keep separate document tabs, accept dragged Markdown files and reveal the current file in Finder.",
+    "es": "Mantiene documentos en pestañas independientes, acepta archivos Markdown arrastrados y muestra el archivo activo en Finder."
+  },
+  {
+    "pr": 32,
+    "en": "Record startup diagnostics before AppKit initializes to help identify early crashes.",
+    "es": "Registra diagnósticos de arranque antes de inicializar AppKit para localizar fallos tempranos."
+  },
+  {
+    "pr": 28,
+    "en": "Add a native About window with the product artwork, the installed version and a link to PinedaTec.",
+    "es": "Añade una ventana nativa de Acerca de con la imagen del producto, la versión instalada y un enlace a PinedaTec."
+  },
+  {
+    "pr": 8,
+    "en": "Launch the native macOS Markdown editor and viewer with project navigation, search, optional Git and focus mode.",
+    "es": "Presenta el editor y visor Markdown nativo de macOS con navegación de proyectos, búsqueda, Git opcional y modo de concentración."
+  }
+]
