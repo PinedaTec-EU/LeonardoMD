@@ -13,7 +13,7 @@
       "height": 580
     },
     "capture_mode": "element",
-    "data_provenance": "synthetic"
+    "data_provenance": "live-redacted"
   },
   "image": {
     "format": "png",
