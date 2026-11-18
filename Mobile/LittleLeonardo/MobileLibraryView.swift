@@ -497,9 +497,21 @@ struct MobileProjectView: View {
                                                                          showNonDocumentFiles: showNonDocumentFiles,
                                                                          on: .littleLeonardo)
                         }, id: \.path) { file in
-                            NavigationLink(file.path) {
-                                MobileDocumentView(library: library, projectID: project.id, file: file)
-                            }.listRowBackground(MobileClassic.paper)
+                            if LeonardoProjectFileVisibility.isSupportedDocumentExtension(
+                                (file.path as NSString).pathExtension, on: .littleLeonardo) {
+                                NavigationLink(file.path) {
+                                    MobileDocumentView(library: library, projectID: project.id, file: file)
+                                }.listRowBackground(MobileClassic.paper)
+                            } else {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(file.path)
+                                    Text("Archivo conservado para exportación · \(ByteCountFormatter.string(fromByteCount: Int64(file.content.count), countStyle: .file))")
+                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                                }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityIdentifier("recovery-file-info")
+                                .listRowBackground(MobileClassic.paper)
+                            }
                         }
                     }
                 }
@@ -536,6 +548,7 @@ struct MobileProjectView: View {
 struct MobileDocumentView: View {
     private static let markdownPreviewExtensions: Set<String> = ["md", "markdown", "mdlf", "mdlr"]
     private static let leonardoFormatExtensions: Set<String> = ["mdlf", "mdlr"]
+    private static let previewableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
     let library: MobileLibrary
     let projectID: UUID
     let file: CorpusFile
@@ -566,6 +579,9 @@ struct MobileDocumentView: View {
                 ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
             } else if liveFile == nil {
                 ContentUnavailableView("Documento no disponible", systemImage: "doc", description: Text("El documento ya no está en la copia local."))
+            } else if !Self.previewableDocumentExtensions.contains(fileExtension) {
+                ContentUnavailableView("Archivo conservado", systemImage: "doc",
+                    description: Text("Este archivo se conserva en la copia de recuperación. Expórtala para abrirlo en un ordenador."))
             } else if !source, Self.markdownPreviewExtensions.contains(fileExtension) {
                 MarkdownPreview(content: text,
                     baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),

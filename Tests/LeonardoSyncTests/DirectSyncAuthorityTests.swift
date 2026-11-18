@@ -40,6 +40,58 @@ final class DirectSyncAuthorityTests: XCTestCase {
         } catch { XCTAssertEqual(error as? SyncError, .outsideScope) }
     }
 
+    func testOldPeerKeepsMarkdownAccessWhileNewPeerCanReadLeonardoFormats() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64)
+        let now = Date(timeIntervalSince1970: 1_000)
+        let fingerprint = Data(repeating: 1, count: 32)
+        let request = try registry.requestPairing(deviceName: "Little Leonardo", credential: credential,
+            serverFingerprint: fingerprint, now: now)
+        let markdown = CorpusFile(path: "docs/readme.md", content: Data("# Read me".utf8))
+        let form = CorpusFile(path: "docs/form.mdlf", content: Data("---\n{}\n---\n# Form".utf8))
+        let files = [markdown, form]
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Mixed documents",
+            scope: try CorpusScope(folder: ""),
+            selection: try CorpusSelection(folders: [], documents: files.map(\.path)))
+        _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode,
+                                 projects: [descriptor.id], now: now)
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: descriptor) {
+                CorpusSnapshot(revision: CorpusRevision.make(files: files), files: files)
+            }], serverFingerprint: fingerprint, persist: { _ in })
+
+        let legacyStatus = try await authority.status(deviceID: request.id, credential: credential, now: now)
+        XCTAssertEqual(legacyStatus.projects.first?.selection?.documents, [markdown.path])
+        let currentStatus = try await authority.status(deviceID: request.id, credential: credential, now: now,
+                                                       supportsLeonardoFormats: true)
+        XCTAssertEqual(currentStatus.projects.first?.selection, descriptor.selection)
+
+        let legacyCatalogue = try await authority.catalogue(deviceID: request.id, credential: credential,
+                                                             projectID: descriptor.id)
+        XCTAssertEqual(legacyCatalogue.files.map(\.path), [markdown.path])
+        let currentCatalogue = try await authority.catalogue(deviceID: request.id, credential: credential,
+            projectID: descriptor.id, supportsLeonardoFormats: true)
+        XCTAssertEqual(Set(currentCatalogue.files.map(\.path)), Set(files.map(\.path)))
+
+        let legacySnapshot = try await authority.snapshot(deviceID: request.id, credential: credential,
+                                                          projectID: descriptor.id)
+        XCTAssertEqual(legacySnapshot.files.map(\.path), [markdown.path])
+        let currentSnapshot = try await authority.snapshot(deviceID: request.id, credential: credential,
+            projectID: descriptor.id, supportsLeonardoFormats: true)
+        XCTAssertEqual(Set(currentSnapshot.files.map(\.path)), Set(files.map(\.path)))
+
+        do {
+            _ = try await authority.file(deviceID: request.id, credential: credential, projectID: descriptor.id,
+                request: RemoteFileRequest(path: form.path, revision: RemoteFileEntry(file: form).revision))
+            XCTFail("Legacy clients must not receive formats they cannot decode")
+        } catch { XCTAssertEqual(error as? SyncError, .excludedFile) }
+        let currentFile = try await authority.file(deviceID: request.id, credential: credential,
+            projectID: descriptor.id,
+            request: RemoteFileRequest(path: form.path, revision: RemoteFileEntry(file: form).revision),
+            supportsLeonardoFormats: true)
+        XCTAssertEqual(currentFile, form)
+    }
+
     func testRevocationDuringUploadCannotReturnAcknowledgement() async throws {
         var registry = PairingRegistry(); registry.setEnabled(true)
         let credential = String(repeating: "a", count: 64), now = Date()

@@ -22,9 +22,13 @@ public enum LeonardoLocalImagePolicy {
         return metadataReferences(in: document.metadata).contains(where: { isLocalReference($0) })
     }
 
-    /// Canonical Markdown/HTML image references, excluding code examples and remote URLs.
+    /// Local image references in Markdown/HTML bodies and validated Leonardo
+    /// layout metadata, excluding code examples and remote URLs.
     public static func localReferences(in source: String) -> [String] {
-        bodyReferences(in: source).map(\.value).filter { isLocalReference($0) }
+        let body = bodyReferences(in: source).map(\.value)
+        let metadata = (try? LeonardoFormatParser.parse(source)).map { metadataReferences(in: $0.metadata) } ?? []
+        var seen = Set<String>()
+        return (body + metadata).filter { isLocalReference($0) && seen.insert($0).inserted }
     }
 
     fileprivate struct BodyReference {

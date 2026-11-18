@@ -15,6 +15,13 @@ public struct SharedProjectDescriptor: Codable, Equatable, Sendable, Identifiabl
     }
 }
 
+/// Request-scoped read capability. It is carried in an HTTP header rather
+/// than the persisted pairing enum so an older peer can ignore the extension.
+public enum DirectReadCapability: String, Sendable {
+    case readOnlyLeonardoFormatsV1 = "mdlf-mdlr-readonly-v1"
+    public static let headerName = "x-leonardo-read-capability"
+}
+
 public struct SharedProjectSource: Sendable {
     public let descriptor: SharedProjectDescriptor
     public let rootURL: URL?
@@ -142,12 +149,16 @@ public actor DirectSyncAuthority {
 
     public func revoke(deviceID: UUID) async throws { try await mutate { try $0.revoke(deviceID: deviceID) } }
 
-    public func status(deviceID: UUID, credential: String, now: Date) throws -> DirectDeviceStatus {
+    public func status(deviceID: UUID, credential: String, now: Date,
+                       supportsLeonardoFormats: Bool = false) throws -> DirectDeviceStatus {
         guard !changing else { throw DirectAuthorityError.busy }
         let access = try registry.pairingStatus(requestID: deviceID, credential: credential, now: now)
         let granted = access == .authorized ? registry.devices.first(where: { $0.id == deviceID })?.projects ?? [] : []
+        let descriptors = granted.compactMap { projects[$0]?.descriptor }.compactMap { descriptor in
+            supportsLeonardoFormats ? descriptor : Self.legacyCompatibleDescriptor(descriptor)
+        }
         return DirectDeviceStatus(access: access,
-            projects: granted.compactMap { projects[$0]?.descriptor }.sorted { $0.name < $1.name },
+            projects: descriptors.sorted { $0.name < $1.name },
             capabilities: rubrics == nil ? [] : [.rubricExchangeV1])
     }
 
@@ -273,7 +284,8 @@ public actor DirectSyncAuthority {
         return project.descriptor
     }
 
-    public func snapshot(deviceID: UUID, credential: String, projectID: UUID) async throws -> CorpusSnapshot {
+    public func snapshot(deviceID: UUID, credential: String, projectID: UUID,
+                        supportsLeonardoFormats: Bool = false) async throws -> CorpusSnapshot {
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
         guard let project = projects[projectID] else { throw PairingError.invalidProject }
         let epoch = sourceEpoch
@@ -283,10 +295,17 @@ public actor DirectSyncAuthority {
         guard sourceEpoch == epoch else { throw DirectAuthorityError.busy }
         try snapshot.validate(scope: project.descriptor.scope, limits: CorpusLimits())
         try project.descriptor.selection?.validate(snapshot)
-        return snapshot
+        guard !supportsLeonardoFormats else { return snapshot }
+        let compatibleFiles = snapshot.files.filter { !Self.isLeonardoFormatPath($0.path) }
+        guard compatibleFiles.count != snapshot.files.count else { return snapshot }
+        let compatible = CorpusSnapshot(revision: CorpusRevision.make(files: compatibleFiles), files: compatibleFiles)
+        try compatible.validate(scope: project.descriptor.scope, limits: CorpusLimits())
+        try project.descriptor.selection?.validate(compatible)
+        return compatible
     }
 
-    public func catalogue(deviceID: UUID, credential: String, projectID: UUID) async throws -> RemoteProjectCatalogue {
+    public func catalogue(deviceID: UUID, credential: String, projectID: UUID,
+                          supportsLeonardoFormats: Bool = false) async throws -> RemoteProjectCatalogue {
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
         guard let source = projects[projectID] else { throw PairingError.invalidProject }
         let epoch = sourceEpoch
@@ -300,12 +319,19 @@ public actor DirectSyncAuthority {
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
         guard epoch == sourceEpoch else { throw DirectAuthorityError.busy }
         try catalogue.validate(descriptor: source.descriptor)
-        return catalogue
+        guard !supportsLeonardoFormats else { return catalogue }
+        let compatible = RemoteProjectCatalogue(
+            files: catalogue.files.filter { !Self.isLeonardoFormatPath($0.path) },
+            directories: catalogue.directories)
+        try compatible.validate(descriptor: source.descriptor)
+        return compatible
     }
 
     public func file(deviceID: UUID, credential: String, projectID: UUID,
-                     request: RemoteFileRequest) async throws -> CorpusFile {
+                     request: RemoteFileRequest,
+                     supportsLeonardoFormats: Bool = false) async throws -> CorpusFile {
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard supportsLeonardoFormats || !Self.isLeonardoFormatPath(request.path) else { throw SyncError.excludedFile }
         guard let source = projects[projectID] else { throw PairingError.invalidProject }
         try source.descriptor.scope.validate(request.path)
         try source.descriptor.selection?.validate(request.path)
@@ -327,6 +353,25 @@ public actor DirectSyncAuthority {
         guard try registry.access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else {
             throw SyncError.revoked
         }
+    }
+
+    private static func isLeonardoFormatPath(_ path: String) -> Bool {
+        ["mdlf", "mdlr"].contains((path as NSString).pathExtension.lowercased())
+    }
+
+    private static func legacyCompatibleDescriptor(_ descriptor: SharedProjectDescriptor) -> SharedProjectDescriptor? {
+        guard let selection = descriptor.selection else { return descriptor }
+        let documents = selection.documents.filter { !isLeonardoFormatPath($0) }
+        guard documents.count != selection.documents.count else {
+            return SharedProjectDescriptor(id: descriptor.id, name: descriptor.name,
+                scope: descriptor.scope, selection: selection)
+        }
+        guard !selection.folders.isEmpty || !documents.isEmpty,
+              let compatibleSelection = try? CorpusSelection(folders: selection.folders, documents: documents) else {
+            return nil
+        }
+        return SharedProjectDescriptor(id: descriptor.id, name: descriptor.name,
+            scope: descriptor.scope, selection: compatibleSelection)
     }
 
     private func checkReadOnlyAccess(deviceID: UUID, credential: String) throws {

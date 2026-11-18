@@ -41,6 +41,8 @@ public struct DirectHTTPSRouter: Sendable {
                 return HTTPResponse(status: 401)
             }
             let credential = String(header.dropFirst(7))
+            let supportsLeonardoFormats = request.headers[DirectReadCapability.headerName]
+                == DirectReadCapability.readOnlyLeonardoFormatsV1.rawValue
             if request.method == "POST", path.count == 5, path[4] == "capabilities" {
                 guard request.body.count <= 4 * 1_024 else { return HTTPResponse(status: 413) }
                 let update = try JSONDecoder().decode(DirectCapabilityUpdate.self, from: request.body)
@@ -48,7 +50,8 @@ public struct DirectHTTPSRouter: Sendable {
                                                                     update: update, now: now()))
             }
             if request.method == "GET", path.count == 5, path[4] == "status" {
-                return try json(await authority.status(deviceID: deviceID, credential: credential, now: now()))
+                return try json(await authority.status(deviceID: deviceID, credential: credential, now: now(),
+                                                       supportsLeonardoFormats: supportsLeonardoFormats))
             }
             if request.method == "GET", path.count == 6, path[4] == "rubrics", path[5] == "requests" {
                 return try json(await authority.rubricRequests(deviceID: deviceID, credential: credential, now: now()))
@@ -73,17 +76,19 @@ public struct DirectHTTPSRouter: Sendable {
             }
             if path.count == 7, path[4] == "projects", let projectID = UUID(uuidString: String(path[5])) {
                 if request.method == "GET", path[6] == "catalogue" {
-                    return try json(await authority.catalogue(deviceID: deviceID, credential: credential, projectID: projectID))
+                    return try json(await authority.catalogue(deviceID: deviceID, credential: credential,
+                        projectID: projectID, supportsLeonardoFormats: supportsLeonardoFormats))
                 }
                 if request.method == "POST", path[6] == "file" {
                     guard request.body.count <= 8 * 1_024 else { return HTTPResponse(status: 413) }
                     let input = try JSONDecoder().decode(RemoteFileRequest.self, from: request.body)
                     return try json(await authority.file(deviceID: deviceID, credential: credential,
-                                                         projectID: projectID, request: input))
+                        projectID: projectID, request: input, supportsLeonardoFormats: supportsLeonardoFormats))
                 }
             }
             if request.method == "GET", path.count == 7, path[4] == "projects", path[6] == "snapshot", let projectID = UUID(uuidString: String(path[5])) {
-                return try await snapshotResponse(deviceID: deviceID, credential: credential, projectID: projectID)
+                return try await snapshotResponse(deviceID: deviceID, credential: credential, projectID: projectID,
+                                                  supportsLeonardoFormats: supportsLeonardoFormats)
             }
             if request.method == "GET", path.count == 9, path[4] == "projects", path[6] == "proposals", path[8] == "receipt",
                let projectID = UUID(uuidString: String(path[5])), let proposalID = UUID(uuidString: String(path[7])) {
@@ -145,12 +150,14 @@ public struct DirectHTTPSRouter: Sendable {
         catch { return HTTPResponse(status: 500) }
     }
 
-    private func snapshotResponse(deviceID: UUID, credential: String, projectID: UUID) async throws -> HTTPResponse {
+    private func snapshotResponse(deviceID: UUID, credential: String, projectID: UUID,
+                                 supportsLeonardoFormats: Bool) async throws -> HTTPResponse {
         // Authorize before returning project-specific diagnostics. No source paths or sizes for denied clients.
         let authorizedDescriptor = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential,
                                                                            projectID: projectID)
         do {
-            return try json(await authority.snapshot(deviceID: deviceID, credential: credential, projectID: projectID))
+            return try json(await authority.snapshot(deviceID: deviceID, credential: credential,
+                projectID: projectID, supportsLeonardoFormats: supportsLeonardoFormats))
         } catch let failure as CorpusReadFailure {
             let descriptor = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
             let safe = Self.sanitizedSnapshotFailure(failure, authorizedBy: authorizedDescriptor,
