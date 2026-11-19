@@ -31,12 +31,13 @@ struct ProjectFileList: View {
 
     var body: some View {
         ScrollViewReader { proxy in
+            let visibleRows = session.searchQuery.isEmpty ? tree.rows(roots: session.rootEntries) : []
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     if session.searchQuery.isEmpty {
-                        ForEach(tree.rows(roots: session.rootEntries)) { row in
-                            FileTreeRow(entry: row.entry, session: session, depth: row.depth,
-                                        expanded: tree.expanded.contains(row.id)) {
+                        ForEach(visibleRows) { row in
+                            FileTreeRow(entry: row.entry, session: session, tree: tree, rows: visibleRows,
+                                        depth: row.depth, expanded: tree.expanded.contains(row.id)) {
                                 Task { await tree.toggle(row.entry, session: session) }
                             }.id(row.id)
                         }
@@ -101,5 +102,38 @@ struct ProjectFileList: View {
             }
             if session.searching { ProgressView().controlSize(.small) }
         }
+    }
+}
+
+struct ProjectFileSelectionSummary: View {
+    let tree: ProjectFileTree
+    let accent: Color
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(accent)
+                .accessibilityHidden(true)
+            Text("\(tree.selection.count)")
+                .font(.caption.weight(.semibold).monospacedDigit())
+            Text(L10n.text(tree.selection.count == 1 ? "item selected" : "items selected"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 4)
+            Button {
+                tree.clearSelection()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help(L10n.text("Clear selection"))
+            .accessibilityLabel(L10n.text("Clear selection"))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 6)
+        .padding(.top, 4)
     }
 }

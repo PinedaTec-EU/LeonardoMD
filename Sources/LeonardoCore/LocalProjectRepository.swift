@@ -243,27 +243,105 @@ public actor LocalProjectRepository {
         in project: ProjectDescriptor,
         to parentRelativePath: String
     ) throws -> FileNode {
+        try move([relativePath], in: project, to: parentRelativePath)[0]
+    }
+
+    @discardableResult
+    public func move(
+        _ relativePaths: [String],
+        in project: ProjectDescriptor,
+        to parentRelativePath: String
+    ) throws -> [FileNode] {
+        try transfer(relativePaths, in: project, to: parentRelativePath, copying: false)
+    }
+
+    @discardableResult
+    public func copy(
+        _ relativePath: String,
+        in project: ProjectDescriptor,
+        to parentRelativePath: String
+    ) throws -> FileNode {
+        try copy([relativePath], in: project, to: parentRelativePath)[0]
+    }
+
+    @discardableResult
+    public func copy(
+        _ relativePaths: [String],
+        in project: ProjectDescriptor,
+        to parentRelativePath: String
+    ) throws -> [FileNode] {
+        try transfer(relativePaths, in: project, to: parentRelativePath, copying: true)
+    }
+
+    private func transfer(
+        _ relativePaths: [String],
+        in project: ProjectDescriptor,
+        to parentRelativePath: String,
+        copying: Bool
+    ) throws -> [FileNode] {
+        guard !relativePaths.isEmpty else { return [] }
         let root = try validateProjectRoot(project.rootURL)
-        let source = try resolve(relativePath, under: root)
-        guard source != root else { throw FileSystemRepositoryError.cannotDeleteProjectRoot }
         let parent = try resolve(parentRelativePath, under: root)
         guard isDirectory(parent) else {
             throw FileSystemRepositoryError.projectIsNotDirectory(parent)
         }
-        let sourcePath = source.resolvingSymlinksInPath().path
         let parentPath = parent.resolvingSymlinksInPath().path
-        if isDirectory(source), parentPath == sourcePath || parentPath.hasPrefix(sourcePath + "/") {
-            throw FileSystemRepositoryError.cannotMoveIntoDescendant
+
+        let sources = try relativePaths.map { path -> URL in
+            let source = try resolve(path, under: root)
+            guard source != root else {
+                throw copying ? FileSystemRepositoryError.cannotCopyProjectRoot : .cannotDeleteProjectRoot
+            }
+            guard fileManager.fileExists(atPath: source.path) else {
+                throw FileSystemRepositoryError.projectDoesNotExist(source)
+            }
+            let sourcePath = source.resolvingSymlinksInPath().path
+            if isDirectory(source), parentPath == sourcePath || parentPath.hasPrefix(sourcePath + "/") {
+                throw copying ? FileSystemRepositoryError.cannotCopyIntoDescendant : .cannotMoveIntoDescendant
+            }
+            return source
         }
-        let destination = parent.appendingPathComponent(source.lastPathComponent)
-        guard !isSymbolicLink(destination) else {
-            throw FileSystemRepositoryError.pathEscapesProject
+
+        for (index, source) in sources.enumerated() where isDirectory(source) {
+            let sourcePath = source.standardizedFileURL.path
+            if sources.indices.contains(where: { otherIndex in
+                guard otherIndex != index else { return false }
+                let otherPath = sources[otherIndex].standardizedFileURL.path
+                return otherPath.hasPrefix(sourcePath + "/")
+            }) {
+                throw copying ? FileSystemRepositoryError.cannotCopyIntoDescendant : .cannotMoveIntoDescendant
+            }
         }
-        guard !fileManager.fileExists(atPath: destination.path) else {
-            throw FileSystemRepositoryError.itemAlreadyExists(destination)
+
+        let destinations = sources.map { parent.appendingPathComponent($0.lastPathComponent) }
+        let isCaseSensitive = (try? parent.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey])
+            .volumeSupportsCaseSensitiveNames) ?? false
+        let names = destinations.map { destination in
+            let name = destination.lastPathComponent.precomposedStringWithCanonicalMapping
+            return isCaseSensitive ? name : name.folding(options: [.caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
         }
-        try fileManager.moveItem(at: source, to: destination)
-        return makeNode(url: destination, projectRoot: root)
+        var seenNames: Set<String> = []
+        if let duplicateIndex = names.firstIndex(where: { !seenNames.insert($0).inserted }) {
+            throw FileSystemRepositoryError.itemAlreadyExists(destinations[duplicateIndex])
+        }
+        for destination in destinations {
+            guard !isSymbolicLink(destination) else {
+                throw FileSystemRepositoryError.pathEscapesProject
+            }
+            guard !fileManager.fileExists(atPath: destination.path) else {
+                throw FileSystemRepositoryError.itemAlreadyExists(destination)
+            }
+        }
+
+        let items = zip(sources, destinations).map { source, destination in
+            ProjectItemTransferBatch.Item(
+                source: source,
+                destination: destination
+            )
+        }
+        if copying { try ProjectItemTransferBatch.copy(items, into: parent, using: fileManager) }
+        else { try ProjectItemTransferBatch.move(items, using: fileManager) }
+        return destinations.map { makeNode(url: $0, projectRoot: root) }
     }
 
     public func trashAvailability(_ relativePath: String, in project: ProjectDescriptor) throws -> TrashAvailability {

@@ -146,7 +146,8 @@ final class ProjectTabOpeningTests: XCTestCase {
             newTabRequests += 1
         }
         let host = NSHostingView(rootView: FileTreeRow(entry: NavigationEntry(url: second, isDirectory: false),
-            session: session, depth: 0, expanded: false, toggle: { XCTFail("File cannot toggle a folder") }))
+            session: session, tree: ProjectFileTree(), depth: 0, expanded: false,
+            toggle: { XCTFail("File cannot toggle a folder") }))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 50),
             styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -162,7 +163,7 @@ final class ProjectTabOpeningTests: XCTestCase {
                     modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
                     windowNumber: window.windowNumber, context: nil, eventNumber: count,
                     clickCount: count, pressure: type == .leftMouseDown ? 1 : 0))
-                window.sendEvent(event)
+                NSApp.sendEvent(event)
             }
         }
         try click(1)
@@ -174,6 +175,70 @@ final class ProjectTabOpeningTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(700))
         XCTAssertEqual(newTabRequests, 1)
         XCTAssertEqual(session.documentURL, second)
+    }
+
+    func testNativeFileRowsSupportModifierSelectionAcrossFilesAndFolders() async throws {
+        _ = NSApplication.shared
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let folderURL = root.appendingPathComponent("Middle-folder", isDirectory: true)
+        try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+        try "first".write(to: root.appendingPathComponent("A-file.md"), atomically: true, encoding: .utf8)
+        try "nested".write(to: folderURL.appendingPathComponent("nested.md"), atomically: true, encoding: .utf8)
+        try "last".write(to: root.appendingPathComponent("Z-file.md"), atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let session = AppSession(preferencesURL: root.appendingPathComponent("prefs.json"))
+        defer { session.stop() }
+        _ = await session.openProject(root)
+        session.monitorTask?.cancel()
+        let tree = ProjectFileTree()
+        let visible = tree.rows(roots: session.rootEntries)
+        let firstFile = try XCTUnwrap(visible.first(where: { !$0.entry.isDirectory }))
+        let folder = try XCTUnwrap(visible.first(where: { $0.entry.isDirectory }))
+        let lastFile = try XCTUnwrap(visible.last(where: { !$0.entry.isDirectory }))
+        let folderIndex = try XCTUnwrap(visible.firstIndex(where: { $0.id == folder.id }))
+        let lastIndex = try XCTUnwrap(visible.firstIndex(where: { $0.id == lastFile.id }))
+        XCTAssertLessThan(folderIndex, lastIndex, "The synthetic visible order must leave room for a mixed Shift range")
+
+        func click(_ entry: NavigationEntry, modifiers: NSEvent.ModifierFlags,
+                   expectedAtMouseDown: Set<URL>? = nil) async throws {
+            let host = NSHostingView(rootView: FileTreeRow(entry: entry, session: session, tree: tree,
+                depth: 0, expanded: false, toggle: {}))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 50),
+                styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            window.makeKeyAndOrderFront(nil)
+            try await Task.sleep(for: .milliseconds(100))
+            host.layoutSubtreeIfNeeded()
+            let location = host.convert(NSPoint(x: 100, y: 25), to: nil)
+            let down = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseDown, location: location,
+                modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 1,
+                clickCount: 1, pressure: 1))
+            NSApp.sendEvent(down)
+            if let expectedAtMouseDown {
+                XCTAssertEqual(tree.selection, expectedAtMouseDown,
+                               "Selection feedback should update as soon as the mouse goes down")
+            }
+            let up = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseUp, location: location,
+                modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 1,
+                clickCount: 1, pressure: 0))
+            NSApp.sendEvent(up)
+            try await Task.sleep(for: .milliseconds(700))
+            window.close()
+        }
+
+        try await click(firstFile.entry, modifiers: [])
+        XCTAssertEqual(tree.selection, Set([firstFile.id]))
+        try await click(folder.entry, modifiers: .command,
+                        expectedAtMouseDown: [firstFile.id, folder.id])
+        XCTAssertEqual(tree.selection, Set([firstFile.id, folder.id]))
+        let expectedRange = Set(visible[folderIndex...lastIndex].map(\.id))
+        try await click(lastFile.entry, modifiers: .shift, expectedAtMouseDown: expectedRange)
+        XCTAssertEqual(tree.selection, expectedRange)
+        XCTAssertTrue(tree.selection.contains(folder.id))
+        XCTAssertTrue(tree.selection.contains(lastFile.id))
     }
 
     func testNativeProjectTabCapture() async throws {

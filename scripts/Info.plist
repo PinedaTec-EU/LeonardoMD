@@ -50,6 +50,11 @@
 </dict></array>
 <key>UTExportedTypeDeclarations</key><array>
 <dict>
+<key>UTTypeIdentifier</key><string>eu.pinedatec.LeonardoMD.project-tree-item</string>
+<key>UTTypeConformsTo</key><array><string>public.data</string></array>
+<key>UTTypeDescription</key><string>Leonardo project tree drag batch</string>
+</dict>
+<dict>
 <key>UTTypeIdentifier</key><string>eu.pinedatec.leonardomd.mdlf</string>
 <key>UTTypeConformsTo</key><array><string>public.plain-text</string></array>
 <key>UTTypeDescription</key><string>Leonardo document</string>
