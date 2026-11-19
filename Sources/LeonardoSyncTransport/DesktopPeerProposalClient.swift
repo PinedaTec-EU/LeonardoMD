@@ -17,8 +17,7 @@ public struct DesktopPeerProposalClient: Sendable {
     }
     public func receipt(proposalID: UUID, projectID: UUID, selection: CorpusSelection, deviceID: UUID, credential: String) async throws -> DesktopPeerProposalReceipt? {
         let path = "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/proposals/\(proposalID.uuidString)/receipt"
-        let response = try await receiptClient.request(method: "GET", path: path, credential: credential,
-            supportsReadOnlyLeonardoFormats: true)
+        let response = try await receiptClient.request(method: "GET", path: path, credential: credential)
         if response.status == 404 { return nil }
         if response.status == 403 { throw DesktopPeerProposalTransportError.accessDenied }
         guard response.status == 200 else { throw TransportError.unexpectedResponse }
@@ -39,7 +38,7 @@ public struct DesktopPeerProposalClient: Sendable {
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         let path = "/v1/devices/\(deviceID.uuidString)/projects/\(proposal.projectID.uuidString)/proposals/\(proposal.id.uuidString)/ack"
         let response = try await client.request(method: "POST", path: path, credential: credential,
-            body: encoder.encode(proof), supportsReadOnlyLeonardoFormats: true)
+            body: encoder.encode(proof))
         if response.status == 403 { throw DesktopPeerProposalTransportError.accessDenied }
         guard response.status == 200 || response.status == 204 else { throw TransportError.unexpectedResponse }
     }
@@ -50,20 +49,20 @@ public struct DesktopPeerProposalClient: Sendable {
             sha256: SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined())
         let base = "/v1/devices/\(deviceID.uuidString)/projects/\(proposal.projectID.uuidString)/proposals/"
         let started = try await client.request(method: "POST", path: base + "begin", credential: credential,
-            body: encoder.encode(upload), supportsReadOnlyLeonardoFormats: true)
+            body: encoder.encode(upload))
         var offset = try progress(started, expectedStatus: 200, upload: upload).receivedBytes
         while offset < bytes.count {
             try Task.checkCancellation()
             let end = min(bytes.count, offset + DesktopPeerUpload.maximumChunkBytes)
             let chunk = DesktopPeerUploadChunk(upload: upload, offset: offset, bytes: bytes.subdata(in: offset..<end))
             let response = try await client.request(method: "POST", path: base + "chunk", credential: credential,
-                body: encoder.encode(chunk), supportsReadOnlyLeonardoFormats: true)
+                body: encoder.encode(chunk))
             let next = try progress(response, expectedStatus: 200, upload: upload)
             guard next.receivedBytes == end else { throw TransportError.unexpectedResponse }
             offset = next.receivedBytes
         }
         let submitted = try await client.request(method: "POST", path: base + "submit", credential: credential,
-            body: encoder.encode(upload), supportsReadOnlyLeonardoFormats: true)
+            body: encoder.encode(upload))
         let completed = try progress(submitted, expectedStatus: 202, upload: upload)
         guard completed.submitted, completed.receivedBytes == bytes.count else { throw TransportError.unexpectedResponse }
     }

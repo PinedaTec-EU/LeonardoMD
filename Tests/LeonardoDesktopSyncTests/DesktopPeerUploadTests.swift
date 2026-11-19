@@ -11,10 +11,10 @@ final class DesktopPeerUploadTests: XCTestCase {
         let deviceID = UUID(), projectID = UUID()
         let grant = try CorpusSelection(folders: [], documents: ["docs/note.md", "docs/request.mdlf"])
         let legacySelection = try CorpusSelection(folders: [], documents: ["docs/note.md"])
-        let legacyView = DesktopPeerUploadView(grantSelection: grant, selection: legacySelection,
-                                               supportsLeonardoFormats: false)
         let modernView = DesktopPeerUploadView(grantSelection: grant, selection: grant,
                                                supportsLeonardoFormats: true)
+        XCTAssertEqual(modernView.excludedExtensions, DirectReadCapability.legacyExcludedExtensions,
+                       "A read-only renderer capability must not authorize peer writes to Leonardo files")
         let base = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/note.md", content: Data("base".utf8))])
         let proposed = CorpusSnapshot(revision: "proposal", files: [CorpusFile(path: "docs/note.md", content: Data("edit".utf8))])
         let proposal = try DesktopPeerProposal(projectID: projectID, selection: legacySelection,
@@ -23,12 +23,13 @@ final class DesktopPeerUploadTests: XCTestCase {
         let upload = try descriptor(proposal, bytes: bytes)
         let store = FileDesktopPeerUploadStore(root: root)
 
-        _ = try await store.begin(deviceID: deviceID, upload: upload, view: legacyView)
-        _ = try await store.append(deviceID: deviceID, upload: upload, offset: 0, bytes: bytes, view: legacyView)
-        try await store.submit(deviceID: deviceID, upload: upload, view: legacyView)
+        _ = try await store.begin(deviceID: deviceID, upload: upload, view: modernView)
+        _ = try await store.append(deviceID: deviceID, upload: upload, offset: 0, bytes: bytes, view: modernView)
+        try await store.submit(deviceID: deviceID, upload: upload, view: modernView)
         let pending = try await store.pending(deviceID: deviceID, projectID: projectID, grantSelection: grant)
-        XCTAssertEqual(pending?.view, legacyView)
-        let finished = try await store.finish(deviceID: deviceID, upload: upload, view: legacyView)
+        XCTAssertEqual(pending?.view.selection, legacySelection,
+                       "Submission pins the actual narrower selection from the proposal payload")
+        let finished = try await store.finish(deviceID: deviceID, upload: upload, view: modernView)
         XCTAssertEqual(finished, proposal)
 
         let resumedFinish = try await store.finish(deviceID: deviceID, upload: upload, view: modernView)

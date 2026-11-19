@@ -170,7 +170,7 @@ final class DirectSyncAuthorityTests: XCTestCase {
             XCTFail("Read-only client accessed reconciliation receipts")
         } catch { XCTAssertEqual(error as? SyncError, .readOnly) }
         let fetch = Task { try await authority.proposalReceipt(deviceID: peer.id, credential: credential,
-            projectID: project.id, proposalID: receipt.proposalID, supportsLeonardoFormats: true) }
+            projectID: project.id, proposalID: receipt.proposalID) }
         await gate.waitForRead()
         try await authority.revoke(deviceID: peer.id)
         await gate.finish()

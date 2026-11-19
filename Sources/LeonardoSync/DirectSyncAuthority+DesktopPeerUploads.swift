@@ -4,10 +4,8 @@ extension DirectSyncAuthority {
     /// An authenticated client may close only the exact proposal whose durable result it
     /// incorporated. Keep consent stable across storage awaits and retain the receipt.
     public func acknowledgeProposal(deviceID: UUID, credential: String, projectID: UUID,
-                                    proposalID: UUID, proof: DesktopPeerReceiptAcknowledgement,
-                                    supportsLeonardoFormats: Bool = false) async throws {
-        let expectedView = try uploadView(deviceID: deviceID, credential: credential, projectID: projectID,
-                                          supportsLeonardoFormats: supportsLeonardoFormats)
+                                    proposalID: UUID, proof: DesktopPeerReceiptAcknowledgement) async throws {
+        let expectedView = try uploadView(deviceID: deviceID, credential: credential, projectID: projectID)
         guard let receipts, let uploads else { throw DirectAuthorityError.busy }
         changing = true
         defer { changing = false }
@@ -29,55 +27,66 @@ extension DirectSyncAuthority {
     }
 
     /// Historical accepted result; authorization is rechecked after suspended storage reads.
-    public func proposalReceipt(deviceID: UUID, credential: String, projectID: UUID, proposalID: UUID,
-                               supportsLeonardoFormats: Bool = false) async throws -> DesktopPeerProposalReceipt? {
-        let expectedView = try uploadView(deviceID: deviceID, credential: credential, projectID: projectID,
-                                          supportsLeonardoFormats: supportsLeonardoFormats)
+    public func proposalReceipt(deviceID: UUID, credential: String, projectID: UUID,
+                                proposalID: UUID) async throws -> DesktopPeerProposalReceipt? {
+        let expectedView = try uploadView(deviceID: deviceID, credential: credential, projectID: projectID)
         guard let receipts else { throw DirectAuthorityError.busy }
-        // A client asks for a receipt before beginning its first upload. Authorization and
-        // selection are bound by expectedView; an upload slot is not required for lookup.
+        // A client checks for an accepted result before beginning an upload. The persisted
+        // view is authoritative after an update; a new proposal still needs no upload slot.
+        let persistedView = try await uploads?.view(deviceID: deviceID, projectID: projectID,
+            proposalID: proposalID, grantSelection: expectedView.grantSelection)
+        if let persistedView, !persistedView.acceptsResumeRequest(expectedView) { throw SyncError.outsideScope }
+        let lookupView = persistedView ?? expectedView
         let receipt = try await receipts.load(deviceID: deviceID, projectID: projectID,
-                                              proposalID: proposalID, selection: expectedView.selection)
-        guard try uploadView(deviceID: deviceID, credential: credential, projectID: projectID,
-                             supportsLeonardoFormats: supportsLeonardoFormats) == expectedView else { throw SyncError.outsideScope }
+                                              proposalID: proposalID, selection: lookupView.selection)
+        guard try uploadView(deviceID: deviceID, credential: credential, projectID: projectID) == expectedView else {
+            throw SyncError.outsideScope
+        }
+        if let persistedView {
+            guard let uploads,
+                  try await uploads.view(deviceID: deviceID, projectID: projectID,
+                    proposalID: proposalID, grantSelection: expectedView.grantSelection) == persistedView else {
+                throw SyncError.outsideScope
+            }
+        }
         if let receipt {
             guard receipt.projectID == projectID, receipt.proposalID == proposalID else { throw SyncError.invalidSnapshot }
-            return try Self.receipt(receipt, for: expectedView)
+            return try Self.receipt(receipt, for: lookupView)
         }
         return receipt
     }
 
-    public func beginUpload(deviceID: UUID, credential: String, upload: DesktopPeerUpload,
-                            supportsLeonardoFormats: Bool = false) async throws -> DesktopPeerUploadProgress {
-        let view = try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID,
-                                  supportsLeonardoFormats: supportsLeonardoFormats)
+    public func beginUpload(deviceID: UUID, credential: String,
+                            upload: DesktopPeerUpload) async throws -> DesktopPeerUploadProgress {
+        let view = try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID)
         guard let uploads else { throw DirectAuthorityError.busy }
         let count = try await uploads.begin(deviceID: deviceID, upload: upload, view: view)
-        guard try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID,
-                             supportsLeonardoFormats: supportsLeonardoFormats) == view else { throw SyncError.outsideScope }
+        guard try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID) == view else {
+            throw SyncError.outsideScope
+        }
         return DesktopPeerUploadProgress(proposalID: upload.proposalID, receivedBytes: count)
     }
 
-    public func appendUpload(deviceID: UUID, credential: String, chunk: DesktopPeerUploadChunk,
-                             supportsLeonardoFormats: Bool = false) async throws -> DesktopPeerUploadProgress {
-        let view = try uploadView(deviceID: deviceID, credential: credential, projectID: chunk.upload.projectID,
-                                  supportsLeonardoFormats: supportsLeonardoFormats)
+    public func appendUpload(deviceID: UUID, credential: String,
+                             chunk: DesktopPeerUploadChunk) async throws -> DesktopPeerUploadProgress {
+        let view = try uploadView(deviceID: deviceID, credential: credential, projectID: chunk.upload.projectID)
         guard let uploads else { throw DirectAuthorityError.busy }
         let count = try await uploads.append(deviceID: deviceID, upload: chunk.upload, offset: chunk.offset,
                                              bytes: chunk.bytes, view: view)
-        guard try uploadView(deviceID: deviceID, credential: credential, projectID: chunk.upload.projectID,
-                             supportsLeonardoFormats: supportsLeonardoFormats) == view else { throw SyncError.outsideScope }
+        guard try uploadView(deviceID: deviceID, credential: credential, projectID: chunk.upload.projectID) == view else {
+            throw SyncError.outsideScope
+        }
         return DesktopPeerUploadProgress(proposalID: chunk.upload.proposalID, receivedBytes: count)
     }
 
-    public func submitUpload(deviceID: UUID, credential: String, upload: DesktopPeerUpload,
-                             supportsLeonardoFormats: Bool = false) async throws -> DesktopPeerUploadProgress {
-        let view = try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID,
-                                  supportsLeonardoFormats: supportsLeonardoFormats)
+    public func submitUpload(deviceID: UUID, credential: String,
+                             upload: DesktopPeerUpload) async throws -> DesktopPeerUploadProgress {
+        let view = try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID)
         guard let uploads else { throw DirectAuthorityError.busy }
         try await uploads.submit(deviceID: deviceID, upload: upload, view: view)
-        guard try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID,
-                             supportsLeonardoFormats: supportsLeonardoFormats) == view else { throw SyncError.outsideScope }
+        guard try uploadView(deviceID: deviceID, credential: credential, projectID: upload.projectID) == view else {
+            throw SyncError.outsideScope
+        }
         return DesktopPeerUploadProgress(proposalID: upload.proposalID, receivedBytes: upload.byteCount, submitted: true)
     }
 
@@ -124,14 +133,13 @@ extension DirectSyncAuthority {
               let pending = try await uploads.pending(deviceID: deviceID, projectID: upload.projectID,
                 grantSelection: grantSelection), pending.upload == upload else { throw SyncError.invalidSnapshot }
         let epoch = sourceEpoch
-        let snapshot: CorpusSnapshot
-        if pending.view.supportsLeonardoFormats {
-            snapshot = try await source.snapshot()
-        } else if let filtered = source.snapshotExcludingExtensions {
-            snapshot = try await filtered(DirectReadCapability.legacyExcludedExtensions)
+        let captured: CorpusSnapshot
+        if let filtered = source.snapshotExcludingExtensions {
+            captured = try await filtered(pending.view.excludedExtensions)
         } else {
-            snapshot = Self.filterLeonardoFiles(try await source.snapshot())
+            captured = try await source.snapshot()
         }
+        let snapshot = Self.filter(captured, to: pending.view)
         guard sourceEpoch == epoch else { throw ReconciliationError.staleComparison }
         guard ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
         return try DesktopPeerProposalReview(proposal: proposal, source: snapshot, view: pending.view)
@@ -175,19 +183,13 @@ extension DirectSyncAuthority {
             $0.id == deviceID && !$0.revoked && $0.kind == .desktopPeer && $0.projects.contains(projectID)
         }
     }
-    private func uploadView(deviceID: UUID, credential: String, projectID: UUID,
-                            supportsLeonardoFormats: Bool) throws -> DesktopPeerUploadView {
+    private func uploadView(deviceID: UUID, credential: String, projectID: UUID) throws -> DesktopPeerUploadView {
         let descriptor = try reconciliationDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
         let grantSelection = try descriptor.selection ?? CorpusSelection(folders: [descriptor.scope.folder], documents: [])
-        let selection: CorpusSelection
-        if supportsLeonardoFormats {
-            selection = grantSelection
-        } else {
-            guard let compatible = Self.legacyCompatibleDescriptor(descriptor) else { throw SyncError.outsideScope }
-            selection = try compatible.selection ?? CorpusSelection(folders: [compatible.scope.folder], documents: [])
-        }
+        guard let compatible = Self.legacyCompatibleDescriptor(descriptor) else { throw SyncError.outsideScope }
+        let selection = try compatible.selection ?? CorpusSelection(folders: [compatible.scope.folder], documents: [])
         return DesktopPeerUploadView(grantSelection: grantSelection, selection: selection,
-                                     supportsLeonardoFormats: supportsLeonardoFormats)
+                                     supportsLeonardoFormats: false)
     }
 
     private static func filterLeonardoFiles(_ snapshot: CorpusSnapshot) -> CorpusSnapshot {
@@ -196,9 +198,14 @@ extension DirectSyncAuthority {
         return CorpusSnapshot(revision: CorpusRevision.make(files: files), files: files)
     }
 
+    private static func filter(_ snapshot: CorpusSnapshot, to view: DesktopPeerUploadView) -> CorpusSnapshot {
+        let files = snapshot.files.filter { view.selection.contains($0.path) &&
+            !view.excludedExtensions.contains(($0.path as NSString).pathExtension.lowercased()) }
+        return CorpusSnapshot(revision: CorpusRevision.make(files: files), files: files)
+    }
+
     private static func receipt(_ receipt: DesktopPeerProposalReceipt,
                                 for view: DesktopPeerUploadView) throws -> DesktopPeerProposalReceipt {
-        guard !view.supportsLeonardoFormats else { return receipt }
         let accepted = filterLeonardoFiles(receipt.accepted)
         return try DesktopPeerProposalReceipt(proposalID: receipt.proposalID, projectID: receipt.projectID,
                                               accepted: accepted)

@@ -93,8 +93,7 @@ public struct DirectHTTPSRouter: Sendable {
             if request.method == "GET", path.count == 9, path[4] == "projects", path[6] == "proposals", path[8] == "receipt",
                let projectID = UUID(uuidString: String(path[5])), let proposalID = UUID(uuidString: String(path[7])) {
                 guard let receipt = try await authority.proposalReceipt(deviceID: deviceID, credential: credential,
-                    projectID: projectID, proposalID: proposalID,
-                    supportsLeonardoFormats: supportsLeonardoFormats) else {
+                    projectID: projectID, proposalID: proposalID) else {
                     return HTTPResponse(status: 404)
                 }
                 return try json(receipt)
@@ -104,8 +103,7 @@ public struct DirectHTTPSRouter: Sendable {
                 guard request.body.count <= 8 * 1_024 else { return HTTPResponse(status: 413) }
                 let proof = try JSONDecoder().decode(DesktopPeerReceiptAcknowledgement.self, from: request.body)
                 try await authority.acknowledgeProposal(deviceID: deviceID, credential: credential,
-                    projectID: projectID, proposalID: proposalID, proof: proof,
-                    supportsLeonardoFormats: supportsLeonardoFormats)
+                    projectID: projectID, proposalID: proposalID, proof: proof)
                 return HTTPResponse(status: 204)
             }
             if request.method == "POST", path.count == 8, path[4] == "projects", path[6] == "proposals",
@@ -115,17 +113,17 @@ public struct DirectHTTPSRouter: Sendable {
                     let chunk = try JSONDecoder().decode(DesktopPeerUploadChunk.self, from: request.body)
                     guard chunk.upload.projectID == projectID else { return HTTPResponse(status: 400) }
                     return try json(await authority.appendUpload(deviceID: deviceID, credential: credential,
-                        chunk: chunk, supportsLeonardoFormats: supportsLeonardoFormats))
+                        chunk: chunk))
                 }
                 let upload = try JSONDecoder().decode(DesktopPeerUpload.self, from: request.body)
                 guard upload.projectID == projectID else { return HTTPResponse(status: 400) }
                 if path[7] == "begin" {
                     return try json(await authority.beginUpload(deviceID: deviceID, credential: credential,
-                        upload: upload, supportsLeonardoFormats: supportsLeonardoFormats))
+                        upload: upload))
                 }
                 if path[7] == "submit" {
                     return try json(await authority.submitUpload(deviceID: deviceID, credential: credential,
-                        upload: upload, supportsLeonardoFormats: supportsLeonardoFormats), status: 202)
+                        upload: upload), status: 202)
                 }
             }
             return HTTPResponse(status: 404)

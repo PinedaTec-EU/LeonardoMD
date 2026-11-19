@@ -124,7 +124,7 @@ public actor SyncHelperHost {
             return try encode(SyncHelperReview(proposal: review.proposal, source: review.source, view: review.view))
         case .apply(let value):
             let view = value.view ?? DesktopPeerUploadView(grantSelection: value.proposal.selection,
-                selection: value.proposal.selection, supportsLeonardoFormats: true)
+                selection: value.proposal.selection, supportsLeonardoFormats: false)
             let review = try DesktopPeerProposalReview(proposal: value.proposal, source: value.reviewedSource, view: view)
             return try await applications.apply(value.id) {
                 try await encode(runtime.applyIncomingProposal(deviceID: value.deviceID, upload: value.upload,

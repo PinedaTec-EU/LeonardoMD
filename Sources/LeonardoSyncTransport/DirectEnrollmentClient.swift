@@ -22,17 +22,21 @@ public struct DirectEnrollmentClient: Sendable {
     private let invitation: PairingInvitation?
     private let fingerprint: Data
     private let client: PinnedHTTPSClient
+    private let supportsReadOnlyLeonardoFormats: Bool
 
-    public init(qr: DirectPairingQR) throws {
+    public init(qr: DirectPairingQR, supportsReadOnlyLeonardoFormats: Bool = true) throws {
         invitation = qr.invitation
         fingerprint = qr.certificateFingerprint
+        self.supportsReadOnlyLeonardoFormats = supportsReadOnlyLeonardoFormats
         client = try PinnedHTTPSClient(endpoint: qr.endpoint, certificateFingerprint: qr.certificateFingerprint,
                                        allowPrivateOverlay: true)
     }
 
-    public init(endpoint: URL, certificateFingerprint: Data) throws {
+    public init(endpoint: URL, certificateFingerprint: Data,
+                supportsReadOnlyLeonardoFormats: Bool = true) throws {
         invitation = nil
         fingerprint = certificateFingerprint
+        self.supportsReadOnlyLeonardoFormats = supportsReadOnlyLeonardoFormats
         client = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: certificateFingerprint,
                                        allowPrivateOverlay: true)
     }
@@ -62,7 +66,7 @@ public struct DirectEnrollmentClient: Sendable {
 
     public func status(deviceID: UUID, credential: String) async throws -> DirectDeviceStatus {
         let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/status",
-            credential: credential, supportsReadOnlyLeonardoFormats: true,
+            credential: credential, supportsReadOnlyLeonardoFormats: supportsReadOnlyLeonardoFormats,
             returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         guard response.status == 200 else {
             if response.status == 401 || response.status == 403 {
@@ -96,7 +100,7 @@ public struct DirectEnrollmentClient: Sendable {
     public func project(_ descriptor: SharedProjectDescriptor, deviceID: UUID, credential: String) async throws -> OfflineProject {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot",
-            credential: credential, supportsReadOnlyLeonardoFormats: true,
+            credential: credential, supportsReadOnlyLeonardoFormats: supportsReadOnlyLeonardoFormats,
             returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         guard response.status == 200 else {
             if Self.authorizationFailureStatuses.contains(response.status) {
@@ -113,7 +117,7 @@ public struct DirectEnrollmentClient: Sendable {
                           credential: String) async throws -> RemoteProjectCatalogue {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/catalogue",
-            credential: credential, supportsReadOnlyLeonardoFormats: true,
+            credential: credential, supportsReadOnlyLeonardoFormats: supportsReadOnlyLeonardoFormats,
             returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         try OnDemandResponseStatus.requireSuccess(response.status, operation: .catalogue)
         let catalogue = try JSONDecoder().decode(RemoteProjectCatalogue.self, from: response.body)
@@ -126,7 +130,7 @@ public struct DirectEnrollmentClient: Sendable {
         let response = try await client.request(method: "POST",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/file", credential: credential,
             body: JSONEncoder().encode(RemoteFileRequest(path: entry.path, revision: entry.revision)),
-            supportsReadOnlyLeonardoFormats: true,
+            supportsReadOnlyLeonardoFormats: supportsReadOnlyLeonardoFormats,
             returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         try OnDemandResponseStatus.requireSuccess(response.status, operation: .file)
         let file = try JSONDecoder().decode(CorpusFile.self, from: response.body)

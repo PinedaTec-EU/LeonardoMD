@@ -34,6 +34,62 @@ final class ScopedDesktopTransactionTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.url(form.path).path))
     }
 
+    func testLegacyJournalRecoveryRecognizesCompletedChangesAndPreservesPreexistingLeonardoFiles() async throws {
+        let fixture = try TransactionFixture()
+        defer { fixture.remove() }
+        let leonardoFiles = [
+            ("docs/existing.mdlf", Data("form stays".utf8)),
+            ("docs/existing.mdlr", Data("reader stays".utf8))
+        ]
+        for (path, bytes) in leonardoFiles { try bytes.write(to: fixture.url(path)) }
+        let exclusions: Set<String> = ["mdlf", "mdlr"]
+        let before = try await ProjectCorpusReader().snapshot(root: fixture.project,
+            selection: fixture.selection, excludingExtensions: exclusions)
+        let after = fixture.after
+        let id = try await fixture.transaction.prepare(projectRoot: fixture.project,
+            selection: fixture.selection, before: before, after: after, excludingExtensions: exclusions)
+        try fixture.removeExcludedExtensionsField(id: id)
+
+        // Simulate a crash after all writes succeeded but before the old journal
+        // could record phase=applied. New files must not enter its historical view.
+        try Data("accepted".utf8).write(to: fixture.url("docs/a.md"))
+        try Data("added".utf8).write(to: fixture.url("docs/new.md"))
+        try FileManager.default.removeItem(at: fixture.url("docs/deleted.md"))
+
+        let reopened = ScopedDesktopTransaction(journals: fixture.journals)
+        let recovered = try await reopened.recover(id: id, projectRoot: fixture.project)
+        XCTAssertEqual(recovered, after)
+        XCTAssertEqual(try fixture.data("docs/a.md"), Data("accepted".utf8))
+        for (path, bytes) in leonardoFiles { XCTAssertEqual(try fixture.data(path), bytes) }
+    }
+
+    func testLegacyJournalPartialRecoveryRollsBackOnlyItsMarkdownIntent() async throws {
+        let fixture = try TransactionFixture()
+        defer { fixture.remove() }
+        let leonardoFiles = [
+            ("docs/existing.mdlf", Data("form stays".utf8)),
+            ("docs/existing.mdlr", Data("reader stays".utf8))
+        ]
+        for (path, bytes) in leonardoFiles { try bytes.write(to: fixture.url(path)) }
+        let exclusions: Set<String> = ["mdlf", "mdlr"]
+        let before = try await ProjectCorpusReader().snapshot(root: fixture.project,
+            selection: fixture.selection, excludingExtensions: exclusions)
+        let after = fixture.after
+        let id = try await fixture.transaction.prepare(projectRoot: fixture.project,
+            selection: fixture.selection, before: before, after: after, excludingExtensions: exclusions)
+        try fixture.removeExcludedExtensionsField(id: id)
+
+        // Simulate interruption after the first selected Markdown write.
+        try Data("accepted".utf8).write(to: fixture.url("docs/a.md"))
+        let reopened = ScopedDesktopTransaction(journals: fixture.journals)
+        let recovered = try await reopened.recover(id: id, projectRoot: fixture.project)
+        XCTAssertNil(recovered)
+        XCTAssertEqual(try fixture.data("docs/a.md"), Data("original".utf8))
+        XCTAssertEqual(try fixture.data("docs/deleted.md"), Data("remove me".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.url("docs/new.md").path))
+        for (path, bytes) in leonardoFiles { XCTAssertEqual(try fixture.data(path), bytes) }
+    }
+
     func testApprovedScopedChangesPreserveUnselectedBytesPermissionsAndLaterEdits() async throws {
         let fixture = try TransactionFixture()
         defer { fixture.remove() }
@@ -226,6 +282,12 @@ private struct TransactionFixture {
     func data(_ path: String) throws -> Data { try Data(contentsOf: url(path)) }
     func mode(_ path: String) throws -> Int { try XCTUnwrap(FileManager.default.attributesOfItem(atPath: url(path).path)[.posixPermissions] as? NSNumber).intValue }
     func snapshot() async throws -> CorpusSnapshot { try await ProjectCorpusReader().snapshot(root: project, selection: selection) }
+    func removeExcludedExtensionsField(id: UUID) throws {
+        let file = journals.appendingPathComponent(id.uuidString + ".json")
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        json.removeValue(forKey: "excludedExtensions")
+        try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys]).write(to: file)
+    }
     func remove() { try? FileManager.default.removeItem(at: root) }
 }
 #endif

@@ -446,7 +446,8 @@ final class DesktopSyncController {
         do {
             let grantSelection = try CorpusSelection(folders: project.folders, documents: project.documents)
             let view = value.item.view ?? value.review.view
-            guard view.grantSelection == grantSelection,
+            guard grantSelection.covers(view.grantSelection),
+                  grantSelection.covers(view.selection),
                   view.selection == value.review.proposal.selection,
                   value.review.view == view else { throw SyncError.outsideScope }
             _ = try await lease.run(projectRoot: project.rootURL, selection: grantSelection) {

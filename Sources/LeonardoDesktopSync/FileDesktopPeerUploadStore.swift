@@ -97,9 +97,19 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     }
 
     public func submit(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) throws {
-        _ = try finish(deviceID: deviceID, upload: upload, view: view)
+        let proposal = try finish(deviceID: deviceID, upload: upload, view: view)
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
-        try PrivateDesktopFile.write(JSONEncoder().encode(upload), to: directory.appendingPathComponent("submitted.json"))
+        let manifest = try requireManifest(at: directory, deviceID: deviceID, upload: upload)
+        let pinnedView = DesktopPeerUploadView(grantSelection: manifest.view.grantSelection,
+            selection: proposal.selection, supportsLeonardoFormats: manifest.view.supportsLeonardoFormats)
+        if pinnedView != manifest.view {
+            let pinnedManifest = Manifest(deviceID: manifest.deviceID, upload: manifest.upload, view: pinnedView)
+            let bytes = try JSONEncoder().encode(pinnedManifest)
+            guard bytes.count <= (try maximumManifestBytes()) else { throw SyncError.sizeLimitExceeded }
+            try PrivateDesktopFile.write(bytes, to: directory.appendingPathComponent("manifest.json"))
+        }
+        try PrivateDesktopFile.write(JSONEncoder().encode(upload),
+                                     to: directory.appendingPathComponent("submitted.json"))
     }
 
     public func pending(deviceID: UUID, projectID: UUID, grantSelection: CorpusSelection) throws -> DesktopPeerPendingUpload? {
@@ -131,9 +141,10 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         guard hash.finalize().map({ String(format: "%02x", $0) }).joined() == upload.sha256 else { throw SyncError.invalidSnapshot }
         let proposal = try JSONDecoder().decode(DesktopPeerProposal.self, from: Data(contentsOf: payload))
         guard proposal.id == upload.proposalID, proposal.projectID == upload.projectID,
-              proposal.selection == saved.view.selection else { throw SyncError.invalidSnapshot }
-        try saved.view.selection.validate(proposal.base)
-        try saved.view.selection.validate(proposal.proposed)
+              saved.view.selection.covers(proposal.selection),
+              saved.view.grantSelection.covers(proposal.selection) else { throw SyncError.invalidSnapshot }
+        try proposal.selection.validate(proposal.base)
+        try proposal.selection.validate(proposal.proposed)
         try Self.validate(proposal.base, excludingExtensions: saved.view.excludedExtensions)
         try Self.validate(proposal.proposed, excludingExtensions: saved.view.excludedExtensions)
         return proposal
@@ -194,7 +205,9 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     }
 
     private func requireManifest(at directory: URL, deviceID: UUID, upload: DesktopPeerUpload) throws -> Manifest {
-        guard let saved = try manifest(at: directory), saved.deviceID == deviceID, saved.upload == upload else { throw SyncError.invalidSnapshot }
+        guard let saved = try manifest(at: directory), saved.deviceID == deviceID, saved.upload == upload else {
+            throw SyncError.invalidSnapshot
+        }
         return saved
     }
     private func manifest(at directory: URL) throws -> Manifest? {
@@ -307,31 +320,31 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
 }
 
 /// Source-compatible convenience for local store tests and callers that already
-/// negotiated the current Leonardo-aware peer contract.
+/// negotiated the current peer contract. Leonardo-format reads stay separate from proposal writes.
 public extension FileDesktopPeerUploadStore {
     func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int {
         try begin(deviceID: deviceID, upload: upload,
-            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
     }
     func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data,
                 selection: CorpusSelection) async throws -> Int {
         try append(deviceID: deviceID, upload: upload, offset: offset, bytes: bytes,
-            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
     }
     func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws {
         try submit(deviceID: deviceID, upload: upload,
-            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
     }
     func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? {
         try pending(deviceID: deviceID, projectID: projectID, grantSelection: selection)?.upload
     }
     func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal {
         try finish(deviceID: deviceID, upload: upload,
-            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
     }
     func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws {
         try acknowledge(deviceID: deviceID, projectID: projectID, proposalID: proposalID,
-            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
     }
 }
 #endif

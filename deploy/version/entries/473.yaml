@@ -1,4 +1,4 @@
 {
-  "build": 55,
-  "summary": "Adds a default-off preference to show non-document files on macOS and Little Leonardo, keeps Markdown images visible and access controls intact, renders received .mdlf/.mdlr documents read-only in Little Leonardo, and localizes recovery archive guidance."
+  "build": 62,
+  "summary": "Adds default-off non-document visibility on macOS and Little Leonardo; reads .mdlf/.mdlr read-only in Little; preserves pinned proposals across grant expansion/restart; hardens legacy journals/tombstones; blocks peer writes to read-only formats; localizes archive guidance."
 }

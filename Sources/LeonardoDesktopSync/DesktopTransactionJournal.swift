@@ -36,7 +36,9 @@ struct DesktopTransactionJournal: Codable {
         id = try c.decode(UUID.self, forKey: .id)
         projectRoot = try c.decode(URL.self, forKey: .projectRoot)
         selection = try c.decode(CorpusSelection.self, forKey: .selection)
-        excludedExtensions = try c.decodeIfPresent(Set<String>.self, forKey: .excludedExtensions) ?? []
+        excludedExtensions = try c.contains(.excludedExtensions)
+            ? c.decode(Set<String>.self, forKey: .excludedExtensions)
+            : DirectReadCapability.legacyExcludedExtensions
         before = try c.decode(CorpusSnapshot.self, forKey: .before)
         after = try c.decode(CorpusSnapshot.self, forKey: .after)
         permissions = try c.decode([String: Int].self, forKey: .permissions)

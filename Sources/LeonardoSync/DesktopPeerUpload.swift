@@ -63,9 +63,8 @@ public struct DesktopPeerUploadView: Codable, Equatable, Sendable {
     public let grantSelection: CorpusSelection
     public let selection: CorpusSelection
     public let supportsLeonardoFormats: Bool
-    public var excludedExtensions: Set<String> {
-        supportsLeonardoFormats ? [] : DirectReadCapability.legacyExcludedExtensions
-    }
+    /// Read-only Leonardo-format access does not authorize peer writes to those files.
+    public var excludedExtensions: Set<String> { DirectReadCapability.legacyExcludedExtensions }
 
     public init(grantSelection: CorpusSelection, selection: CorpusSelection,
                 supportsLeonardoFormats: Bool) {
@@ -77,8 +76,7 @@ public struct DesktopPeerUploadView: Codable, Equatable, Sendable {
     /// A resumed request may use a newer, broader capability declaration, but it
     /// continues under the narrower view already pinned in the persisted manifest.
     public func acceptsResumeRequest(_ request: DesktopPeerUploadView) -> Bool {
-        (!supportsLeonardoFormats || request.supportsLeonardoFormats)
-            && request.grantSelection.covers(grantSelection)
+        request.grantSelection.covers(grantSelection)
             && request.selection.covers(selection)
             && grantSelection.covers(selection)
     }
