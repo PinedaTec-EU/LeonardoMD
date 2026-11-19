@@ -79,11 +79,18 @@ jobs:
           exit "$status"
       - name: Build and test
         id: full-suite
+        timeout-minutes: 20
+        shell: bash
         if: steps.isolated-file-list.outcome == 'success' && steps.isolated-file-list.outputs.executed == 'true' && steps.isolated-truncated-https.outcome == 'success' && steps.isolated-truncated-https.outputs.executed == 'true' && steps.isolated-project-https.outcome == 'success' && steps.isolated-project-https.outputs.executed == 'true'
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
-        run: swift test --verbose
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/swift-test-diagnostics"
+          python3 scripts/run-swift-test-with-timeout.py --seconds 900 \
+            --diagnostics "$RUNNER_TEMP/swift-test-diagnostics" 2>&1 \
+            | tee "$RUNNER_TEMP/swift-test-diagnostics/full-suite.log"
       - name: Summarize Swift test crash reports
         if: always()
         run: |
@@ -100,6 +107,16 @@ jobs:
           name: swift-test-crash-summary-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/swift-test-diagnostics/summary.txt
           if-no-files-found: error
+          retention-days: 3
+      - name: Upload unsuccessful Swift suite diagnostics
+        if: always() && (steps.full-suite.outcome == 'failure' || steps.full-suite.outcome == 'cancelled')
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-test-diagnostics-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/swift-test-diagnostics/full-suite.log
+            ${{ runner.temp }}/swift-test-diagnostics/timeout-processes.txt
+          if-no-files-found: warn
           retention-days: 3
       - name: Enforce Swift test results
         if: always()
