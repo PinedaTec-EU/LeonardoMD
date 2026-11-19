@@ -79,7 +79,7 @@ struct FileTreeRow: View {
                 .buttonStyle(.plain)
                 .focusable(!entry.isDirectory)
                 .focused($hasKeyboardFocus)
-                .onKeyPress(keys: [.delete, .deleteForward], phases: .down) { press in
+                .onKeyPress(keys: [.delete, .deleteForward, KeyEquivalent("\u{7F}")], phases: .down) { press in
                     guard hasKeyboardFocus, !entry.isDirectory,
                           press.modifiers.intersection([.shift, .control, .option, .command]).isEmpty else { return .ignored }
                     session.delete(entry.url)
