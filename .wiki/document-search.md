@@ -24,3 +24,7 @@ acceptance and a captured highlighted result are recorded in
 
 Canonical feature: [#39](https://github.com/PinedaTec-EU/LeonardoMD/issues/39),
 [#434](https://github.com/PinedaTec-EU/LeonardoMD/issues/434).
+
+Delete and Forward Delete invoke the existing deletion confirmation when a file
+row in the project tree has keyboard focus. The active-document highlight is
+independent of keyboard focus. Search results have their own row actions.

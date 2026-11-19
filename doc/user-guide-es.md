@@ -335,7 +335,7 @@ Inicio separa **Proyectos** de **Documentos**, con Favoritos y Recientes para ca
 
 ## 8. Proyectos, navegación y pestañas
 
-Abre una carpeta con ⇧⌘O. Despliega sus carpetas en la barra lateral; sus hijos se cargan al expandirlas. Usa Nueva nota y Nueva carpeta, o el menú contextual para renombrar, mover o eliminar elementos. Revisa el destino antes de eliminar y conserva copias o historial Git del material importante.
+Abre una carpeta con ⇧⌘O. Despliega sus carpetas en la barra lateral; sus hijos se cargan al expandirlas. Usa Nueva nota y Nueva carpeta, o el menú contextual para renombrar, mover o eliminar elementos. Revisa el destino antes de eliminar y conserva copias o historial Git del material importante. Con el foco en la fila de un archivo del árbol del proyecto, pulsa **Retroceso (⌫)** o **Supr (⌦)** para abrir la misma confirmación que **Mover a la Papelera…**.
 
 Un clic abre un archivo compatible en la pestaña activa. Haz doble clic o elige **Abrir en nueva pestaña** para conservar la pestaña original y su borrador. Si ya está abierto, se selecciona su pestaña existente. Las pestañas del proyecto conservan la navegación, carpetas expandidas y filtros; ⌘T crea una pestaña vacía. ⌘W cierra la pestaña activa y ⇧⌘W la ventana. Las decisiones Guardar, Descartar y Cancelar protegen los cambios pendientes.
 

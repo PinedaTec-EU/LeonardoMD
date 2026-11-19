@@ -8,6 +8,7 @@ struct FileTreeRow: View {
     let expanded: Bool
     let toggle: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    @FocusState private var hasKeyboardFocus: Bool
     var selected: Bool {
         !entry.isDirectory && session.displayDocumentURL?.resolvingSymlinksInPath().path ==
             entry.url.resolvingSymlinksInPath().path
@@ -19,6 +20,7 @@ struct FileTreeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Button {
+                if !entry.isDirectory { hasKeyboardFocus = true }
                 if entry.isDirectory {
                     toggle()
                 } else { Task { await session.openDocument(entry.url) } }
@@ -39,6 +41,7 @@ struct FileTreeRow: View {
                 .highPriorityGesture(
                     TapGesture(count: 2).exclusively(before: TapGesture())
                         .onEnded { value in
+                            if !entry.isDirectory { hasKeyboardFocus = true }
                             switch value {
                             case .first:
                                 if !entry.isDirectory {
@@ -74,6 +77,14 @@ struct FileTreeRow: View {
                 // Include the context menu in the plain-style scope so it cannot
                 // inherit the sidebar's stateful PremiumButtonStyle.
                 .buttonStyle(.plain)
+                .focusable(!entry.isDirectory)
+                .focused($hasKeyboardFocus)
+                .onKeyPress(keys: [.delete, .deleteForward], phases: .down) { press in
+                    guard hasKeyboardFocus, !entry.isDirectory,
+                          press.modifiers.intersection([.shift, .control, .option, .command]).isEmpty else { return .ignored }
+                    session.delete(entry.url)
+                    return .handled
+                }
                 .onDrag { NSItemProvider(object: entry.url as NSURL) }
                 .onDrop(of: [.fileURL], isTargeted: nil) { providers in
                     guard entry.isDirectory else { return false }
