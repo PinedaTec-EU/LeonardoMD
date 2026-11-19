@@ -6,7 +6,8 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v102 adds the project file deletion shortcut to chapter 11. The v99 evidence below applies to that earlier revision.
+Guide v102 adds the project file deletion shortcut to chapter 8. The v99 evidence
+below applies to that earlier revision.
 
 Guide v99 carries forward Guide v92's HTTP rejection, uncertain-delivery and
 remote-project recovery guidance, along with Little Leonardo host aliases,
