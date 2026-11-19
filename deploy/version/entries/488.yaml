@@ -1,0 +1,4 @@
+{
+  "build": 2,
+  "summary": "CI bounds the Swift test suite, retains timeout diagnostics, and synchronizes the Preview close regression test with WebKit readiness."
+}
