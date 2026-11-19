@@ -1,4 +1,4 @@
 {
-  "build": 44,
-  "summary": "Adds a saved, off-by-default preference in macOS and Little Leonardo to hide non-document files from project lists, preserves embedded Markdown images and existing file access, and renders received .mdlf and .mdlr documents read-only in Little Leonardo."
+  "build": 45,
+  "summary": "Adds a saved, off-by-default macOS and Little Leonardo preference to hide non-document files; keeps embedded Markdown images and existing access; renders received .mdlf/.mdlr read-only; and lets authorized peers check receipts before first upload."
 }

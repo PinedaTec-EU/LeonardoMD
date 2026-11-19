@@ -33,17 +33,16 @@ extension DirectSyncAuthority {
                                supportsLeonardoFormats: Bool = false) async throws -> DesktopPeerProposalReceipt? {
         let expectedView = try uploadView(deviceID: deviceID, credential: credential, projectID: projectID,
                                           supportsLeonardoFormats: supportsLeonardoFormats)
-        guard let receipts, let uploads else { throw DirectAuthorityError.busy }
-        let view = try await uploads.view(deviceID: deviceID, projectID: projectID,
-                                          proposalID: proposalID, grantSelection: expectedView.grantSelection)
-        guard let view, view == expectedView else { throw SyncError.outsideScope }
+        guard let receipts else { throw DirectAuthorityError.busy }
+        // A client asks for a receipt before beginning its first upload. Authorization and
+        // selection are bound by expectedView; an upload slot is not required for lookup.
         let receipt = try await receipts.load(deviceID: deviceID, projectID: projectID,
-                                              proposalID: proposalID, selection: view.selection)
+                                              proposalID: proposalID, selection: expectedView.selection)
         guard try uploadView(deviceID: deviceID, credential: credential, projectID: projectID,
                              supportsLeonardoFormats: supportsLeonardoFormats) == expectedView else { throw SyncError.outsideScope }
         if let receipt {
             guard receipt.projectID == projectID, receipt.proposalID == proposalID else { throw SyncError.invalidSnapshot }
-            return try Self.receipt(receipt, for: view)
+            return try Self.receipt(receipt, for: expectedView)
         }
         return receipt
     }
