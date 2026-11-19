@@ -37,6 +37,10 @@ struct ProjectSidebar: View {
 
     private var sidebarContent: some View {
         VStack(alignment: .leading, spacing: 14) {
+            TextField(L10n.text("Search files and content"), text: $session.searchQuery)
+                .textFieldStyle(PremiumTextFieldStyle(compact: true))
+                .accessibilityIdentifier("project-search")
+                .onChange(of: session.searchQuery) { _, _ in session.scheduleSearch() }
             HStack {
                 if let root = session.projectURL {
                     rootDropTarget(root)
@@ -45,10 +49,6 @@ struct ProjectSidebar: View {
                     .help(L10n.text("Open another project"))
                     .accessibilityLabel(L10n.text("Open another project"))
             }
-            TextField(L10n.text("Search files and content"), text: $session.searchQuery)
-                .textFieldStyle(PremiumTextFieldStyle(compact: true))
-                .accessibilityIdentifier("project-search")
-                .onChange(of: session.searchQuery) { _, _ in session.scheduleSearch() }
             HStack {
                 Button { session.createItem(directory: false) } label: { Label(L10n.text("Note"), systemImage: "doc.badge.plus") }
                 Button { session.createItem(directory: true) } label: { Image(systemName: "folder.badge.plus") }
