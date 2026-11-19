@@ -9,7 +9,30 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     private struct Manifest: Codable, Equatable {
         let deviceID: UUID
         let upload: DesktopPeerUpload
-        let selection: CorpusSelection
+        let view: DesktopPeerUploadView
+
+        private enum CodingKeys: String, CodingKey { case deviceID, upload, view, selection }
+        init(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) {
+            self.deviceID = deviceID; self.upload = upload; self.view = view
+        }
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            deviceID = try container.decode(UUID.self, forKey: .deviceID)
+            upload = try container.decode(DesktopPeerUpload.self, forKey: .upload)
+            if let view = try container.decodeIfPresent(DesktopPeerUploadView.self, forKey: .view) {
+                self.view = view
+            } else {
+                let selection = try container.decode(CorpusSelection.self, forKey: .selection)
+                view = DesktopPeerUploadView(grantSelection: selection, selection: selection,
+                                             supportsLeonardoFormats: false)
+            }
+        }
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(deviceID, forKey: .deviceID)
+            try container.encode(upload, forKey: .upload)
+            try container.encode(view, forKey: .view)
+        }
     }
     private struct Tombstone: Codable, Equatable {
         let manifest: Manifest
@@ -17,12 +40,12 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     private let root: URL
     public init(root: URL) { self.root = root.standardizedFileURL.resolvingSymlinksInPath() }
 
-    public func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws -> Int {
+    public func begin(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) throws -> Int {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
         // Tombstones are retained per proposal ID. A stale begin must remain blocked even
         // after a later proposal has reused the active staging slot.
         if try tombstone(at: directory, proposalID: upload.proposalID) != nil { throw SyncError.publicationPending }
-        let expected = Manifest(deviceID: deviceID, upload: upload, selection: selection)
+        let expected = Manifest(deviceID: deviceID, upload: upload, view: view)
         if let existing = try manifest(at: directory) {
             guard existing == expected else { throw SyncError.publicationPending }
         } else {
@@ -64,36 +87,36 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         return max(count, offset + bytes.count)
     }
 
-    public func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) throws -> Int {
+    public func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, view: DesktopPeerUploadView) throws -> Int {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
-        guard try requireManifest(at: directory, deviceID: deviceID, upload: upload).selection == selection else { throw SyncError.outsideScope }
+        guard try requireManifest(at: directory, deviceID: deviceID, upload: upload).view == view else { throw SyncError.outsideScope }
         return try append(deviceID: deviceID, upload: upload, offset: offset, bytes: bytes)
     }
 
-    public func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws {
-        _ = try finish(deviceID: deviceID, upload: upload, selection: selection)
+    public func submit(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) throws {
+        _ = try finish(deviceID: deviceID, upload: upload, view: view)
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
         try PrivateDesktopFile.write(JSONEncoder().encode(upload), to: directory.appendingPathComponent("submitted.json"))
     }
 
-    public func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) throws -> DesktopPeerUpload? {
+    public func pending(deviceID: UUID, projectID: UUID, grantSelection: CorpusSelection) throws -> DesktopPeerPendingUpload? {
         let directory = try location(deviceID: deviceID, projectID: projectID)
         let marker = directory.appendingPathComponent("submitted.json")
         try validateFile(marker, maximumBytes: 4 * 1_024)
         guard FileManager.default.fileExists(atPath: marker.path) else { return nil }
         let upload = try JSONDecoder().decode(DesktopPeerUpload.self, from: Data(contentsOf: marker))
-        guard upload.projectID == projectID,
-              try requireManifest(at: directory, deviceID: deviceID, upload: upload).selection == selection else { throw SyncError.outsideScope }
-        return upload
+        let manifest = try requireManifest(at: directory, deviceID: deviceID, upload: upload)
+        guard upload.projectID == projectID, manifest.view.grantSelection == grantSelection else { throw SyncError.outsideScope }
+        return DesktopPeerPendingUpload(upload: upload, view: manifest.view)
     }
 
-    public func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws -> DesktopPeerProposal {
+    public func finish(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) throws -> DesktopPeerProposal {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
         if try tombstone(at: directory, proposalID: upload.proposalID) != nil {
             throw SyncError.publicationPending
         }
         let saved = try requireManifest(at: directory, deviceID: deviceID, upload: upload)
-        guard saved.selection == selection else { throw SyncError.outsideScope }
+        guard saved.view == view else { throw SyncError.outsideScope }
         guard try received(at: directory, upload: upload) == upload.byteCount else { throw SyncError.invalidSnapshot }
         let payload = directory.appendingPathComponent("payload.json")
         let handle = try FileHandle(forReadingFrom: payload)
@@ -103,19 +126,33 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         guard hash.finalize().map({ String(format: "%02x", $0) }).joined() == upload.sha256 else { throw SyncError.invalidSnapshot }
         let proposal = try JSONDecoder().decode(DesktopPeerProposal.self, from: Data(contentsOf: payload))
         guard proposal.id == upload.proposalID, proposal.projectID == upload.projectID,
-              proposal.selection == selection else { throw SyncError.invalidSnapshot }
-        try selection.validate(proposal.base)
-        try selection.validate(proposal.proposed)
+              proposal.selection == view.selection else { throw SyncError.invalidSnapshot }
+        try view.selection.validate(proposal.base)
+        try view.selection.validate(proposal.proposed)
         return proposal
     }
 
-    public func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) throws {
+    public func view(deviceID: UUID, projectID: UUID, proposalID: UUID,
+                     grantSelection: CorpusSelection) throws -> DesktopPeerUploadView? {
+        let directory = try location(deviceID: deviceID, projectID: projectID)
+        if let tombstone = try tombstone(at: directory, proposalID: proposalID) {
+            guard tombstone.manifest.deviceID == deviceID, tombstone.manifest.upload.projectID == projectID,
+                  tombstone.manifest.view.grantSelection == grantSelection else { throw SyncError.outsideScope }
+            return tombstone.manifest.view
+        }
+        guard let manifest = try manifest(at: directory), manifest.deviceID == deviceID,
+              manifest.upload.projectID == projectID, manifest.upload.proposalID == proposalID else { return nil }
+        guard manifest.view.grantSelection == grantSelection else { throw SyncError.outsideScope }
+        return manifest.view
+    }
+
+    public func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, view: DesktopPeerUploadView) throws {
         let directory = try location(deviceID: deviceID, projectID: projectID)
         if let existing = try tombstone(at: directory, proposalID: proposalID) {
             guard existing.manifest.deviceID == deviceID,
                   existing.manifest.upload.projectID == projectID,
                   existing.manifest.upload.proposalID == proposalID,
-                  existing.manifest.selection == selection else { throw SyncError.publicationPending }
+                  existing.manifest.view == view else { throw SyncError.publicationPending }
             if let current = try manifest(at: directory), current != existing.manifest { return }
             try removeStagedFiles(at: directory, expectedManifest: existing.manifest)
             return
@@ -123,7 +160,7 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         guard let manifest = try manifest(at: directory), manifest.deviceID == deviceID,
               manifest.upload.projectID == projectID,
               manifest.upload.proposalID == proposalID else { throw SyncError.invalidSnapshot }
-        guard manifest.selection == selection else { throw SyncError.outsideScope }
+        guard manifest.view == view else { throw SyncError.outsideScope }
         let marker = directory.appendingPathComponent("submitted.json")
         try validateFile(marker, maximumBytes: 4 * 1_024)
         guard FileManager.default.fileExists(atPath: marker.path),
@@ -224,6 +261,35 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
             if FileManager.default.fileExists(atPath: directory.path), metadata?.isDirectory != true { throw SyncError.invalidPath }
         }
         return directory
+    }
+}
+
+/// Source-compatible convenience for local store tests and callers that already
+/// negotiated the current Leonardo-aware peer contract.
+public extension FileDesktopPeerUploadStore {
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int {
+        try begin(deviceID: deviceID, upload: upload,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+    }
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data,
+                selection: CorpusSelection) async throws -> Int {
+        try append(deviceID: deviceID, upload: upload, offset: offset, bytes: bytes,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+    }
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws {
+        try submit(deviceID: deviceID, upload: upload,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+    }
+    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? {
+        try pending(deviceID: deviceID, projectID: projectID, grantSelection: selection)?.upload
+    }
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal {
+        try finish(deviceID: deviceID, upload: upload,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
+    }
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws {
+        try acknowledge(deviceID: deviceID, projectID: projectID, proposalID: proposalID,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: true))
     }
 }
 #endif

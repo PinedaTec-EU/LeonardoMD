@@ -22,7 +22,6 @@ enum RubricCaptureAvailability: Equatable {
         }
     }
 }
-
 enum DesktopConsentActionOutcome: Equatable {
     case completed
     case unavailable
@@ -429,10 +428,12 @@ final class DesktopSyncController {
         do {
             let review = try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)
             guard let project = settings.projects.first(where: { $0.id == item.upload.projectID }) else { throw SyncError.outsideScope }
+            if let itemView = item.view, review.view != itemView { throw ReconciliationError.staleComparison }
             let drafts = try await buffers(project.rootURL)
-            let source = try await ProjectCorpusReader().snapshot(root: project.rootURL,
-                selection: review.proposal.selection, buffers: drafts)
-            reviewing = DesktopSourceReview(item: item, review: try DesktopPeerProposalReview(proposal: review.proposal, source: source))
+            let source = try await DesktopPeerProposalSourceCapture.source(root: project.rootURL,
+                view: review.view, buffers: drafts)
+            reviewing = DesktopSourceReview(item: item, review: try DesktopPeerProposalReview(
+                proposal: review.proposal, source: source, view: review.view))
         }
         catch { self.error = error.localizedDescription }
     }
@@ -443,25 +444,25 @@ final class DesktopSyncController {
         busy = true; error = nil
         defer { busy = false }
         do {
-            let selection = try CorpusSelection(folders: project.folders, documents: project.documents)
-            guard selection == value.review.proposal.selection else { throw SyncError.outsideScope }
-            _ = try await lease.run(projectRoot: project.rootURL, selection: selection) {
-                let drafts = try await buffers(project.rootURL).filter { selection.contains($0.path) }
-                for group in Dictionary(grouping: drafts, by: \.path).values where Set(group.map(\.text)).count > 1 {
-                    throw NativeSourceReviewError.ambiguousBuffers
-                }
-                let reader = ProjectCorpusReader()
-                let disk = try await reader.snapshot(root: project.rootURL, selection: selection)
-                let source = try await reader.snapshot(root: project.rootURL, selection: selection, buffers: drafts)
+            let grantSelection = try CorpusSelection(folders: project.folders, documents: project.documents)
+            let view = value.item.view ?? value.review.view
+            guard view.grantSelection == grantSelection,
+                  view.selection == value.review.proposal.selection,
+                  value.review.view == view else { throw SyncError.outsideScope }
+            _ = try await lease.run(projectRoot: project.rootURL, selection: grantSelection) {
+                let drafts = try await buffers(project.rootURL)
+                let current = try await DesktopPeerProposalSourceCapture.current(root: project.rootURL,
+                    view: view, buffers: drafts)
                 return try await runtime.applyIncomingProposal(deviceID: value.item.deviceID, upload: value.item.upload,
-                    review: value.review, decisions: decisions, projectRoot: project.rootURL, currentSource: source, currentDisk: disk)
+                    review: value.review, decisions: decisions, projectRoot: project.rootURL,
+                    currentSource: current.source, currentDisk: current.disk)
             }
             reviewing = nil
             incoming = try await runtime.incomingProposals()
             return true
         } catch ReconciliationError.staleComparison {
             error = L10n.text("The source changed. Reopen the review before applying decisions.")
-        } catch NativeSourceReviewError.ambiguousBuffers {
+        } catch DesktopPeerProposalSourceCaptureError.ambiguousBuffers {
             error = L10n.text("Multiple open editors contain different drafts of the same file. Close duplicate editors before reconciliation.")
         } catch { self.error = error.localizedDescription }
         return false
@@ -832,7 +833,6 @@ final class DesktopSourceReviewDraft {
         self.decisions = decisions
     }
 }
-
 @MainActor struct DesktopSourceReview: Identifiable {
     let item: DesktopPeerIncomingProposal
     let review: DesktopPeerProposalReview
@@ -846,5 +846,3 @@ final class DesktopSourceReviewDraft {
         self.draft = draft
     }
 }
-
-private enum NativeSourceReviewError: Error { case ambiguousBuffers }

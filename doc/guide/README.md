@@ -1,13 +1,20 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v102-en.mdlz` and `Guide-v102-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v103-en.mdlz` and `Guide-v103-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v102/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v103/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v102 adds the project file deletion shortcut to chapter 8. The v99 evidence
-below applies to that earlier revision.
+Guide v103 carries forward v102's project file deletion shortcut and updates
+chapters 8, 11 and 14–15 with the off-by-default non-document file preference on
+macOS and Little Leonardo, unchanged file access and Markdown image loading,
+informational recovery-archive rows, and read-only MDLF/MDLR reading in Little
+Leonardo. Existing guide copies and practice answers through v102 remain
+untouched. Fresh packaged Help and practice-form acceptance for v103 is tracked
+under PR #473.
+Guide v103 EN SHA-256: `780bf99c75f300323692fb39564a113a9943b5ea86a0d24a2e1174b01207cf42`
+and ES SHA-256: `1811786c9b68ceccf612c460510d975419140ffe483100c0e2c956dd409b0bf2`.
 
 Guide v99 carries forward Guide v92's HTTP rejection, uncertain-delivery and
 remote-project recovery guidance, along with Little Leonardo host aliases,
@@ -24,8 +31,8 @@ Guide v87 previously passed packaged Help acceptance in a fresh macOS QA
 process. The bundle/opened-copy hashes, rendered examples, Math fallback,
 practice-form round trips and teardown are recorded in
 [packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
-That acceptance does not cover the Guide v99 package; its Help/practice
-acceptance remains pending under PR #448.
+That acceptance does not establish acceptance for the current Guide v103 package;
+its Help/practice acceptance is tracked under PR #473.
 
 The terminal-retry screenshots and result bundle were captured from product
 and test source `5e751df2` before integrating the follow-up #459/#460 evidence
@@ -39,14 +46,14 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. Guide v99 used with a new
+historical review record. The current app resources use Guide v103 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
 record is in
 [packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
-It does not establish acceptance for the Guide v99 package. The
+It does not establish acceptance for the current Guide v103 package. The
 previous iOS capture bundles are historical; refreshed simulator evidence is
 recorded separately under `doc/validation/`.
 

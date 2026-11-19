@@ -12,13 +12,16 @@ public actor ProjectCorpusReader {
     public init(limits: CorpusLimits = CorpusLimits()) { self.limits = limits }
 
     public func snapshot(root: URL, scope: CorpusScope, revision: String? = nil,
-                         buffers: [OpenDocumentBuffer] = []) throws -> CorpusSnapshot {
+                         buffers: [OpenDocumentBuffer] = [],
+                         excludingExtensions: Set<String> = []) throws -> CorpusSnapshot {
         try snapshot(root: root, selection: CorpusSelection(folders: [scope.folder], documents: []),
-                     revision: revision, buffers: buffers)
+                     revision: revision, buffers: buffers, excludingExtensions: excludingExtensions)
     }
 
     public func snapshot(root: URL, selection: CorpusSelection, revision: String? = nil,
-                         buffers: [OpenDocumentBuffer] = []) throws -> CorpusSnapshot {
+                         buffers: [OpenDocumentBuffer] = [],
+                         excludingExtensions: Set<String> = []) throws -> CorpusSnapshot {
+        let excluded = Set(excludingExtensions.map { $0.lowercased() })
         let normalized = root.standardizedFileURL.resolvingSymlinksInPath()
         guard try FileManager.default.attributesOfItem(atPath: normalized.path)[.type] as? FileAttributeType == .typeDirectory else {
             throw SyncError.invalidPath
@@ -56,10 +59,12 @@ public actor ProjectCorpusReader {
                     continue
                 }
                 guard (try? selection.validate(path)) != nil else { continue }
+                guard !excluded.contains((path as NSString).pathExtension.lowercased()) else { continue }
                 try read(path: path, root: normalized, files: &files, byteCount: &byteCount)
             }
         }
         for path in selection.documents {
+            guard !excluded.contains((path as NSString).pathExtension.lowercased()) else { continue }
             let url = try scope.fileURL(for: path, under: normalized)
             // A removed selected document is represented by its absence, not by a broadened grant.
             if !FileManager.default.fileExists(atPath: url.path) { continue }
@@ -67,6 +72,7 @@ public actor ProjectCorpusReader {
         }
         let diskFiles = files
         for buffer in buffers {
+            guard !excluded.contains((buffer.path as NSString).pathExtension.lowercased()) else { continue }
             try selection.validate(buffer.path)
             let data = Data(buffer.text.utf8)
             let previousSize = files[buffer.path]?.content.count ?? 0

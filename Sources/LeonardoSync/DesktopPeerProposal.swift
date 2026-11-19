@@ -48,10 +48,15 @@ public struct DesktopPeerProposalReceipt: Codable, Equatable, Sendable {
 public struct DesktopPeerProposalReview: Sendable {
     public let proposal: DesktopPeerProposal
     public let source: CorpusSnapshot
+    public let view: DesktopPeerUploadView
     public let comparison: ManualReconciliation
-    public init(proposal: DesktopPeerProposal, source: CorpusSnapshot) throws {
+    public init(proposal: DesktopPeerProposal, source: CorpusSnapshot,
+                view: DesktopPeerUploadView? = nil) throws {
+        let view = view ?? DesktopPeerUploadView(grantSelection: proposal.selection,
+            selection: proposal.selection, supportsLeonardoFormats: true)
+        guard view.selection == proposal.selection else { throw SyncError.invalidSnapshot }
         try proposal.selection.validate(source)
-        self.proposal = proposal; self.source = source
+        self.proposal = proposal; self.source = source; self.view = view
         comparison = try ManualReconciliation(base: proposal.base, local: proposal.proposed, remote: source,
                                               scope: CorpusScope(folder: ""))
     }

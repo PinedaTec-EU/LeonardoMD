@@ -5,6 +5,38 @@ import LeonardoSync
 @testable import LeonardoDesktopSync
 
 final class DesktopPeerUploadTests: XCTestCase {
+    func testProposalManifestPinsTheNegotiatedLegacyFileView() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let deviceID = UUID(), projectID = UUID()
+        let grant = try CorpusSelection(folders: [], documents: ["docs/note.md", "docs/request.mdlf"])
+        let legacySelection = try CorpusSelection(folders: [], documents: ["docs/note.md"])
+        let legacyView = DesktopPeerUploadView(grantSelection: grant, selection: legacySelection,
+                                               supportsLeonardoFormats: false)
+        let modernView = DesktopPeerUploadView(grantSelection: grant, selection: grant,
+                                               supportsLeonardoFormats: true)
+        let base = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/note.md", content: Data("base".utf8))])
+        let proposed = CorpusSnapshot(revision: "proposal", files: [CorpusFile(path: "docs/note.md", content: Data("edit".utf8))])
+        let proposal = try DesktopPeerProposal(projectID: projectID, selection: legacySelection,
+            base: base, proposed: proposed)
+        let bytes = try JSONEncoder().encode(proposal)
+        let upload = try descriptor(proposal, bytes: bytes)
+        let store = FileDesktopPeerUploadStore(root: root)
+
+        _ = try await store.begin(deviceID: deviceID, upload: upload, view: legacyView)
+        _ = try await store.append(deviceID: deviceID, upload: upload, offset: 0, bytes: bytes, view: legacyView)
+        try await store.submit(deviceID: deviceID, upload: upload, view: legacyView)
+        let pending = try await store.pending(deviceID: deviceID, projectID: projectID, grantSelection: grant)
+        XCTAssertEqual(pending?.view, legacyView)
+        let finished = try await store.finish(deviceID: deviceID, upload: upload, view: legacyView)
+        XCTAssertEqual(finished, proposal)
+
+        do {
+            _ = try await store.finish(deviceID: deviceID, upload: upload, view: modernView)
+            XCTFail("A proposal must stay bound to its original format view")
+        } catch { XCTAssertEqual(error as? SyncError, .outsideScope) }
+    }
+
     func testChunkedUploadReopensRetriesPartialAppendAndValidatesOriginalCapture() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

@@ -92,6 +92,34 @@ final class DirectSyncAuthorityTests: XCTestCase {
         XCTAssertEqual(currentFile, form)
     }
 
+    func testLegacyPeerUploadUsesItsNarrowedExplicitSelection() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64), now = Date()
+        let fingerprint = Data(repeating: 1, count: 32)
+        let request = try registry.requestPairing(deviceName: "Older Mac", credential: credential,
+            serverFingerprint: fingerprint, now: now, kind: .desktopPeer)
+        let grant = try CorpusSelection(folders: [], documents: ["docs/note.md", "docs/request.mdlf"])
+        let project = SharedProjectDescriptor(id: UUID(), name: "Mixed", scope: try CorpusScope(folder: ""), selection: grant)
+        _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode,
+            projects: [project.id], now: now)
+        let legacySelection = try CorpusSelection(folders: [], documents: ["docs/note.md"])
+        let legacyView = DesktopPeerUploadView(grantSelection: grant, selection: legacySelection,
+                                               supportsLeonardoFormats: false)
+        let empty = CorpusSnapshot(revision: "base", files: [])
+        let proposal = try DesktopPeerProposal(projectID: project.id, selection: legacySelection,
+            base: empty, proposed: empty)
+        let upload = try DesktopPeerUpload(proposalID: proposal.id, projectID: project.id,
+            byteCount: 1, sha256: String(repeating: "a", count: 64))
+        let uploads = FixedProposalUploadStore(proposal: proposal, upload: upload, expectedView: legacyView)
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project) { empty }], serverFingerprint: fingerprint,
+            persist: { _ in }, uploads: uploads)
+
+        let result = try await authority.beginUpload(deviceID: request.id, credential: credential, upload: upload)
+
+        XCTAssertEqual(result.proposalID, proposal.id)
+    }
+
     func testRevocationDuringUploadCannotReturnAcknowledgement() async throws {
         var registry = PairingRegistry(); registry.setEnabled(true)
         let credential = String(repeating: "a", count: 64), now = Date()
@@ -125,15 +153,24 @@ final class DirectSyncAuthorityTests: XCTestCase {
         }
         let receipt = try DesktopPeerProposalReceipt(proposalID: UUID(), projectID: project.id,
             accepted: CorpusSnapshot(revision: "accepted", files: []))
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let empty = CorpusSnapshot(revision: "base", files: [])
+        let proposal = try DesktopPeerProposal(id: receipt.proposalID, projectID: project.id,
+            selection: selection, base: empty, proposed: empty)
+        let upload = try DesktopPeerUpload(proposalID: proposal.id, projectID: project.id,
+            byteCount: 1, sha256: String(repeating: "a", count: 64))
         let gate = SnapshotGate()
         let authority = try DirectSyncAuthority(registry: registry,
             projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
-            serverFingerprint: fingerprint, persist: { _ in }, receipts: StalledReceiptStore(gate: gate, receipt: receipt))
+            serverFingerprint: fingerprint, persist: { _ in },
+            uploads: FixedProposalUploadStore(proposal: proposal, upload: upload),
+            receipts: StalledReceiptStore(gate: gate, receipt: receipt))
         do {
             _ = try await authority.proposalReceipt(deviceID: phone.id, credential: phoneCredential, projectID: project.id, proposalID: receipt.proposalID)
             XCTFail("Read-only client accessed reconciliation receipts")
         } catch { XCTAssertEqual(error as? SyncError, .readOnly) }
-        let fetch = Task { try await authority.proposalReceipt(deviceID: peer.id, credential: credential, projectID: project.id, proposalID: receipt.proposalID) }
+        let fetch = Task { try await authority.proposalReceipt(deviceID: peer.id, credential: credential,
+            projectID: project.id, proposalID: receipt.proposalID, supportsLeonardoFormats: true) }
         await gate.waitForRead()
         try await authority.revoke(deviceID: peer.id)
         await gate.finish()
@@ -271,14 +308,15 @@ private actor SnapshotGate {
 
 private struct StalledUploadStore: DesktopPeerUploadStore {
     let gate: SnapshotGate
-    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int {
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws -> Int {
         _ = await gate.read(); return 0
     }
-    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) async throws -> Int { throw SyncError.invalidSnapshot }
-    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws { throw SyncError.invalidSnapshot }
-    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? { nil }
-    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal { throw SyncError.invalidSnapshot }
-    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws { throw SyncError.invalidSnapshot }
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, view: DesktopPeerUploadView) async throws -> Int { throw SyncError.invalidSnapshot }
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws { throw SyncError.invalidSnapshot }
+    func pending(deviceID: UUID, projectID: UUID, grantSelection: CorpusSelection) async throws -> DesktopPeerPendingUpload? { nil }
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws -> DesktopPeerProposal { throw SyncError.invalidSnapshot }
+    func view(deviceID: UUID, projectID: UUID, proposalID: UUID, grantSelection: CorpusSelection) async throws -> DesktopPeerUploadView? { nil }
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, view: DesktopPeerUploadView) async throws { throw SyncError.invalidSnapshot }
 }
 
 private struct StalledReceiptStore: DesktopPeerReceiptStore {
@@ -294,10 +332,21 @@ private struct StalledReceiptStore: DesktopPeerReceiptStore {
 private struct FixedProposalUploadStore: DesktopPeerUploadStore {
     let proposal: DesktopPeerProposal
     let upload: DesktopPeerUpload
-    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int { 0 }
-    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) async throws -> Int { 0 }
-    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws {}
-    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? { upload }
-    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal { proposal }
-    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws {}
+    var expectedView: DesktopPeerUploadView? = nil
+    private var uploadView: DesktopPeerUploadView {
+        DesktopPeerUploadView(grantSelection: proposal.selection, selection: proposal.selection,
+                              supportsLeonardoFormats: true)
+    }
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws -> Int {
+        if let expectedView, expectedView != view { throw SyncError.outsideScope }
+        return 0
+    }
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, view: DesktopPeerUploadView) async throws -> Int { 0 }
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws {}
+    func pending(deviceID: UUID, projectID: UUID, grantSelection: CorpusSelection) async throws -> DesktopPeerPendingUpload? {
+        DesktopPeerPendingUpload(upload: upload, view: uploadView)
+    }
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws -> DesktopPeerProposal { proposal }
+    func view(deviceID: UUID, projectID: UUID, proposalID: UUID, grantSelection: CorpusSelection) async throws -> DesktopPeerUploadView? { uploadView }
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, view: DesktopPeerUploadView) async throws {}
 }

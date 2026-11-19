@@ -65,6 +65,45 @@ final class ProjectCorpusReaderTests: XCTestCase {
             XCTFail("Oversized file must not transfer")
         } catch { XCTAssertEqual(error as? CorpusReadFailure, CorpusReadFailure(reason: .fileTooLarge, path: "a.md", observed: 10, limit: 2)) }
     }
+
+    func testExcludedLeonardoFormatsDoNotConsumeLegacyReadLimits() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let docs = root.appendingPathComponent("docs", isDirectory: true)
+        try FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
+        try Data("# Readable".utf8).write(to: docs.appendingPathComponent("readme.md"))
+        let oversized = docs.appendingPathComponent("response.mdlr")
+        XCTAssertTrue(FileManager.default.createFile(atPath: oversized.path, contents: nil))
+        let handle = try FileHandle(forWritingTo: oversized)
+        try handle.seek(toOffset: UInt64(20 * 1_024 * 1_024 + 1))
+        try handle.write(contentsOf: Data([0]))
+        try handle.close()
+
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let reader = ProjectCorpusReader()
+        let legacy = try await reader.snapshot(root: root, selection: selection,
+            excludingExtensions: ["mdlf", "mdlr"])
+        XCTAssertEqual(legacy.files.map(\.path), ["docs/readme.md"])
+        let legacyCatalogue = try await reader.catalogue(root: root, selection: selection,
+            excludingExtensions: ["mdlf", "mdlr"])
+        XCTAssertEqual(legacyCatalogue.files.map(\.path), ["docs/readme.md"])
+
+        do {
+            _ = try await reader.snapshot(root: root, selection: selection)
+            XCTFail("Leonardo-aware readers should still enforce their file size limit")
+        } catch let failure as CorpusReadFailure {
+            XCTAssertEqual(failure.reason, .fileTooLarge)
+            XCTAssertEqual(failure.path, "docs/response.mdlr")
+        }
+        do {
+            _ = try await reader.catalogue(root: root, selection: selection)
+            XCTFail("Leonardo-aware catalogues should still enforce their file size limit")
+        } catch let failure as CorpusReadFailure {
+            XCTAssertEqual(failure.reason, .fileTooLarge)
+            XCTAssertEqual(failure.path, "docs/response.mdlr")
+        }
+    }
+
     func testCorpusAndCountLimitsIncludeObservedQuantityAndNeverReturnPartialSnapshot() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

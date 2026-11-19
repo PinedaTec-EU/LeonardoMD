@@ -78,6 +78,40 @@ final class DesktopPeerAcceptanceTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: note), Data("draft".utf8))
         XCTAssertFalse(accepted.accepted.files[0].isUnsavedBuffer)
     }
+
+    func testLegacyPeerProposalRetainsLeonardoFileAndReturnsFilteredReceipt() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let project = root.appendingPathComponent("Project", isDirectory: true)
+        let docs = project.appendingPathComponent("docs", isDirectory: true)
+        try FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
+        let noteURL = docs.appendingPathComponent("note.md")
+        let formURL = docs.appendingPathComponent("response.mdlr")
+        let noteBase = Data("base".utf8), formContents = Data("saved Leonardo response".utf8)
+        try noteBase.write(to: noteURL)
+        try formContents.write(to: formURL)
+
+        let grant = try CorpusSelection(folders: ["docs"], documents: [])
+        let view = DesktopPeerUploadView(grantSelection: grant, selection: grant,
+                                         supportsLeonardoFormats: false)
+        let base = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/note.md", content: noteBase)])
+        let proposed = CorpusSnapshot(revision: "proposed", files: [CorpusFile(path: "docs/note.md", content: Data("edited by old Mac".utf8))])
+        let proposal = try DesktopPeerProposal(projectID: UUID(), selection: grant, base: base, proposed: proposed)
+        let review = try DesktopPeerProposalReview(proposal: proposal, source: base, view: view)
+        let receipts = FileDesktopPeerReceiptStore(root: root.appendingPathComponent("Receipts"))
+        let acceptance = DesktopPeerAcceptance(root: root.appendingPathComponent("Acceptance"), receipts: receipts)
+        let deviceID = UUID()
+
+        let result = try await acceptance.apply(deviceID: deviceID, review: review,
+            decisions: ["docs/note.md": .local], projectRoot: project, currentSource: base, currentDisk: base)
+
+        XCTAssertEqual(try Data(contentsOf: noteURL), Data("edited by old Mac".utf8))
+        XCTAssertEqual(try Data(contentsOf: formURL), formContents)
+        XCTAssertEqual(result.receipt.accepted.files.map(\.path), ["docs/note.md"])
+        let stored = try await receipts.load(deviceID: deviceID, projectID: proposal.projectID,
+            proposalID: proposal.id, selection: grant)
+        XCTAssertEqual(stored, result.receipt)
+    }
 }
 private enum AcceptanceFixtureError: Error { case persist }
 private struct FailingAcceptanceReceipts: DesktopPeerReceiptStore {

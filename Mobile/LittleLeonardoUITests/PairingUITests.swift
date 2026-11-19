@@ -195,6 +195,23 @@ final class PairingUITests: XCTestCase {
         captureScreen(app, name: "Classic enrolled library")
         project.tap()
         captureScreen(app, name: "Classic project documents")
+        let note = app.buttons.matching(
+            NSPredicate(format: "identifier CONTAINS %@", "docs/note.mdlf")).firstMatch
+        let response = app.buttons.matching(
+            NSPredicate(format: "identifier CONTAINS %@", "docs/response.mdlr")).firstMatch
+        XCTAssertTrue(note.waitForExistence(timeout: 10), "Received MDLF documents stay visible with non-document files hidden")
+        XCTAssertTrue(response.exists, "Received MDLR documents stay visible with non-document files hidden")
+        note.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Portable note"].waitForExistence(timeout: 15))
+        captureScreen(app, name: "Received MDLF renders read only in Little Leonardo")
+        app.navigationBars.buttons.firstMatch.tap()
+        response.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Filled response"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Ada Lovelace"].exists)
+        XCTAssertFalse(app.buttons["Editar"].exists)
+        XCTAssertFalse(app.buttons["Enviar cambios"].exists)
+        captureScreen(app, name: "Received MDLR renders read only in Little Leonardo")
+        app.navigationBars.buttons.firstMatch.tap()
         let initialDocument = app.buttons.matching(
             NSPredicate(format: "identifier CONTAINS %@", "docs/read.md")).firstMatch
         XCTAssertTrue(initialDocument.waitForExistence(timeout: 10))

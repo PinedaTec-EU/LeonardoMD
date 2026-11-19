@@ -34,6 +34,24 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             imageData = nil
             try Data("# Native direct initial\n\nSynthetic enrolled corpus.\n".utf8).write(to: file)
         }
+        let note = sourceRoot.appendingPathComponent("docs/note.mdlf")
+        try Data("""
+        ---
+        {"format":"mdlf","formatVersion":1,"document":{"kind":"document","title":"Portable note"}}
+        ---
+        # Portable note
+
+        MDLF document received from the synthetic host.
+        """.utf8).write(to: note)
+        let response = sourceRoot.appendingPathComponent("docs/response.mdlr")
+        try Data("""
+        ---
+        {"format":"mdlf","formatVersion":1,"document":{"kind":"form","title":"Filled response"},"fields":{"name":{"type":"text","label":"Name"}},"values":{"name":"Ada Lovelace"}}
+        ---
+        # Filled response
+
+        Name: {{field:name}}
+        """.utf8).write(to: response)
         let selection = try CorpusSelection(folders: ["docs"], documents: [])
         let descriptor = SharedProjectDescriptor(id: UUID(), name: "QA · Native Direct",
             scope: try CorpusScope(folder: ""), selection: selection)

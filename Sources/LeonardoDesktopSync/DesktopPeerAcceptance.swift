@@ -47,7 +47,15 @@ public actor DesktopPeerAcceptance {
             return DesktopPeerAcceptanceResult(receipt: receipt, appliedNow: false)
         }
         let accepted = try review.resolve(decisions, currentSource: currentSource, revision: "accepted-" + UUID().uuidString)
-        let transactionID = try await transactions.prepare(projectRoot: root, selection: proposal.selection, before: currentDisk, after: accepted)
+        let excludedExtensions = review.view.excludedExtensions
+        let excluded = Set(excludedExtensions.map { $0.lowercased() })
+        guard review.view.selection == proposal.selection,
+              currentSource.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }),
+              currentDisk.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }) else {
+            throw SyncError.invalidSnapshot
+        }
+        let transactionID = try await transactions.prepare(projectRoot: root, selection: proposal.selection,
+            before: currentDisk, after: accepted, excludingExtensions: excludedExtensions)
         let intent = Intent(deviceID: deviceID, projectID: proposal.projectID, proposalID: proposal.id, root: root,
             selection: proposal.selection, transactionID: transactionID, acceptedDigest: CorpusRevision.make(files: accepted.files))
         // Binding is durable before source mutation; a receipt write failure leaves recoverable proof.
