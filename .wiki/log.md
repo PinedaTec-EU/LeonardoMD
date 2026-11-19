@@ -323,3 +323,17 @@ and remote “New files” notices bypassed the shared non-document preference.
 Search now composes file visibility with the existing authorization filter and
 refreshes on local or external preference changes; remote review notices use
 the same surface policy. Both focused regressions pass. Tracking: [#472](https://github.com/PinedaTec-EU/LeonardoMD/issues/472), [#476](https://github.com/PinedaTec-EU/LeonardoMD/issues/476).
+
+# 2026-11-19: PR #473 CI and packaged QA follow-up
+
+The Little Leonardo workflow now resolves one available iPhone 17 Pro by
+simulator ID, uses that ID for its test invocations, and boots that same device
+before installing the recovery fixture. This removes the assumption that a
+previous XCTest invocation leaves a simulator booted. The first exact-head
+failure and correction are tracked in [#493](https://github.com/PinedaTec-EU/LeonardoMD/issues/493).
+
+Packaged macOS preference and bilingual Help captures are recorded in
+`doc/validation/non-document-files/pr473/exact-head-7d078669/README.md`. The
+Mac Help CTA resolved an existing personal practice copy, which was preserved;
+Mac text save/reopen remains unverified. Little Leonardo’s offline practice
+save/reopen XCTest passed 1/1.
