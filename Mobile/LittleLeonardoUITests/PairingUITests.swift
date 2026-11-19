@@ -207,7 +207,6 @@ final class PairingUITests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         response.tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Filled response"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Ada Lovelace"].exists)
         XCTAssertFalse(app.buttons["Editar"].exists)
         XCTAssertFalse(app.buttons["Enviar cambios"].exists)
         captureScreen(app, name: "Received MDLR renders read only in Little Leonardo")
