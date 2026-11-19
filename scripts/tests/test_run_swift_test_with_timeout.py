@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from shlex import quote
 import subprocess
 import sys
 import tempfile
@@ -42,3 +43,17 @@ class SwiftTestTimeoutTests(unittest.TestCase):
             self.assertIn("PID PPID PGID ELAPSED STAT COMMAND", snapshot)
             self.assertIn("sleep", snapshot)
             self.assertNotIn(str(directory), snapshot)
+
+    def test_timeout_captures_and_stops_descendant_with_separate_group(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            child = "import os, time; os.setsid(); print(os.getpid(), flush=True); time.sleep(60)"
+            result = self.run_fake_swift(
+                directory, f"{quote(sys.executable)} -c {quote(child)} & wait\n",
+            )
+            self.assertEqual(result.returncode, 124, result.stderr)
+            child_pid = result.stdout.splitlines()[0]
+            snapshot = (directory / "diagnostics" / "timeout-processes.txt").read_text()
+            row = next(line.split() for line in snapshot.splitlines() if line.startswith(child_pid + " "))
+            self.assertEqual(row[0], row[2])
+            self.assertNotEqual(row[0], row[1])

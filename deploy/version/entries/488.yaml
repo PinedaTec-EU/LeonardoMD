@@ -1,0 +1,4 @@
+{
+  "build": 1,
+  "summary": "CI stops the full Swift test suite at its deadline and preserves the log and available process diagnostics."
+}

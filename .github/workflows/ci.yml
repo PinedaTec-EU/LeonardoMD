@@ -83,6 +83,7 @@ jobs:
         shell: bash
         if: steps.isolated-file-list.outcome == 'success' && steps.isolated-file-list.outputs.executed == 'true' && steps.isolated-truncated-https.outcome == 'success' && steps.isolated-truncated-https.outputs.executed == 'true' && steps.isolated-project-https.outcome == 'success' && steps.isolated-project-https.outputs.executed == 'true'
         env:
+          NSUnbufferedIO: "YES"
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: |
@@ -116,6 +117,7 @@ jobs:
           path: |
             ${{ runner.temp }}/swift-test-diagnostics/full-suite.log
             ${{ runner.temp }}/swift-test-diagnostics/timeout-processes.txt
+            ${{ runner.temp }}/swift-test-diagnostics/timeout-stack-*.txt
           if-no-files-found: warn
           retention-days: 3
       - name: Enforce Swift test results
