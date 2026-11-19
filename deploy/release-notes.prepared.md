@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1889
+
+- #481 Added: show historical PR summaries in both apps ([#482](https://github.com/PinedaTec-EU/LeonardoMD/pull/482))
+
+<p>Read offline summaries of the 59 merged pull requests through #207 in macOS Release notes and in Little Leonardo under About.</p>
+
+Source: `1d1ccad82ce71e6ac27b63da2bdc6f306b8ae0bc`. Delta: `{"build": 5}`.
+
 ## 0.3.1884
 
 - #447 Fixed: unblock closing after preview sync failure ([#448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448))

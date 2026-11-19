@@ -6,7 +6,7 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v100 carries forward visible selection counts and checkmarks for mixed multi-selection,
+Guide v100 includes the historical release notes guidance from v99 and carries forward visible selection counts and checkmarks for mixed multi-selection,
 and carries forward v96's same-target move no-ops and destination collision behavior,
 v95's project-tree multi-selection, and v94's drag/drop guidance. Existing personal
 copies and practice answers through v99 remain untouched. Revisions v97, v98, and
@@ -32,8 +32,8 @@ These hashes describe superseded candidates; those revision directories already 
 different personal guides. The v100 candidate hashes are recorded after packaging.
 Guide v98 EN SHA-256: `e1a0496cda013821d04a9dffbf9b417a58de816f0ed0e2252da4fbcc6c1f0a2e`
 and ES SHA-256: `60dd50195ea44fd85f469c96cc576667bd3f9090c3e5196f5e1359bf79d11de7`.
-Guide v100 EN SHA-256: `1a271286cdd6962e72e80f36bb437606fe4c5ffdf07488c0986857aa80a94cfa`
-and ES SHA-256: `1d90ac52a73351d9dacc3a5923669b6b0b264742a9245cbc568634901cc7c290`.
+Guide v100 EN SHA-256: `bd8ea4ab8f959e81fd4814d130fb2e26c2aaa869638508cb2c0ea404864f0058`
+and ES SHA-256: `9f690a85b15a165a1445c71c6b927de95e80e20e070fbfb3ae12fda0f4aee09d`.
 Guide v95 EN SHA-256: `4b96b84bc89f83fd3347e6ccb6e621e21e8d3b73abfbe54c7ccedc5f30e65848`
 and ES SHA-256: `cdfbe9adbe90ef95402636c6171243cd25643fb48feada5de3a6e7136b6fb0df`.
 Guide v94 EN SHA-256: `151bda467f3bdf81965d2f961ed31031eba5b9a1b0d59be32785e927f47dbb4e`
