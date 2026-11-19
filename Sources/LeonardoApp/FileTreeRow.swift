@@ -19,7 +19,7 @@ struct FileTreeRow: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Button {
+            let rowButton = Button {
                 if !entry.isDirectory { hasKeyboardFocus = true }
                 if entry.isDirectory {
                     toggle()
@@ -77,19 +77,26 @@ struct FileTreeRow: View {
                 // Include the context menu in the plain-style scope so it cannot
                 // inherit the sidebar's stateful PremiumButtonStyle.
                 .buttonStyle(.plain)
-                .focusable(!entry.isDirectory)
-                .focused($hasKeyboardFocus)
-                .onKeyPress(keys: [.delete, .deleteForward, KeyEquivalent("\u{7F}")], phases: .down) { press in
-                    guard hasKeyboardFocus, !entry.isDirectory,
-                          press.modifiers.intersection([.shift, .control, .option, .command]).isEmpty else { return .ignored }
-                    session.delete(entry.url)
-                    return .handled
+            Group {
+                if entry.isDirectory {
+                    rowButton
+                } else {
+                    rowButton
+                        .focusable()
+                        .focused($hasKeyboardFocus)
+                        .onKeyPress(keys: [.delete, .deleteForward, KeyEquivalent("\u{7F}")], phases: .down) { press in
+                            guard hasKeyboardFocus,
+                                  press.modifiers.intersection([.shift, .control, .option, .command]).isEmpty else { return .ignored }
+                            session.delete(entry.url)
+                            return .handled
+                        }
                 }
-                .onDrag { NSItemProvider(object: entry.url as NSURL) }
-                .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                    guard entry.isDirectory else { return false }
-                    return session.acceptDrop(providers, into: entry.url)
-                }
+            }
+            .onDrag { NSItemProvider(object: entry.url as NSURL) }
+            .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                guard entry.isDirectory else { return false }
+                return session.acceptDrop(providers, into: entry.url)
+            }
         }
         .padding(.leading, CGFloat(depth) * 16)
         .accessibilityIdentifier("project-file-" + entry.url.path)
