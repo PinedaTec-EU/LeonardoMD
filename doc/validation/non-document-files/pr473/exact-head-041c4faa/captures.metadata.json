@@ -1,0 +1,101 @@
+{
+  "product_source_sha": "041c4faa3bcf992890f2cc847926e394f07b957a",
+  "macos": {
+    "application": "LeonardoMD QA",
+    "version": "0.3.1894",
+    "build": 1894,
+    "bundle_id": "eu.pinedatec.LeonardoMD.qa.6038627454684a31acc99874e1bf5ca8",
+    "pid": 37428,
+    "process_started_at": "2026-11-19T15:19:17+01:00",
+    "process_exited_normally": true,
+    "os": "macOS 27.0.1 (26A434)",
+    "capture_method": "screencapture -l for native app window 157979",
+    "viewport_pixels": [
+      2744,
+      1924
+    ],
+    "viewport_points_at_2x": [
+      1372,
+      962
+    ],
+    "browser": null
+  },
+  "ios": {
+    "application": "Little Leonardo",
+    "device_name": "LittleLeonardo PR473 QA 20261119",
+    "device_id": "4C448AE1-1736-4047-BCC1-0F9B3CA82182",
+    "test": "PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation()",
+    "xcresult": ".build/qa-pr473-direct-20261119-run3/ReceivedDocuments.xcresult",
+    "capture_manifest": ".build/qa-pr473-direct-20261119-run3/attachments/manifest.json",
+    "viewport_pixels": [
+      1206,
+      2622
+    ]
+  },
+  "captures": [
+    {
+      "file": "macos-help-en-v103.jpg",
+      "platform": "macOS",
+      "state": "Guide v103 English cover; opened from Help → Leonardo user guide.",
+      "width_px": 2744,
+      "height_px": 1924,
+      "sha256": "fa6f08abdf3c46b88d4fe288bd58be6bd28c05c8cabe86e9c0c0c3f83cada2b7"
+    },
+    {
+      "file": "macos-help-es-v103.jpg",
+      "platform": "macOS",
+      "state": "Guide v103 Spanish cover; opened from Help → Leonardo user guide.",
+      "width_px": 2744,
+      "height_px": 1924,
+      "sha256": "5053c22fee87c1734da77cf2a895bcd6fd00c865b5768d5f51a45f1f55e954d5"
+    },
+    {
+      "file": "macos-help-es-mermaid.jpg",
+      "platform": "macOS",
+      "state": "Spanish Mermaid and inline-math examples render.",
+      "width_px": 2744,
+      "height_px": 1924,
+      "sha256": "06f27e2a0e39e6272860385b9cbb6dc79134d2f32ba3743e17f84493e2441032"
+    },
+    {
+      "file": "macos-help-es-tagged-equation-chart.jpg",
+      "platform": "macOS",
+      "state": "Spanish tagged display equation (1) and chart render.",
+      "width_px": 2744,
+      "height_px": 1924,
+      "sha256": "deceffe2fe7ee1936cc244d717abf642ad810e1c4ac72873519e4babd4a56f56"
+    },
+    {
+      "file": "macos-help-es-table-image.jpg",
+      "platform": "macOS",
+      "state": "Spanish Markdown table and local image render.",
+      "width_px": 2744,
+      "height_px": 1924,
+      "sha256": "a18e7c70b919e2e78b4b1edc8cab7d4fb0489d825222e83d1bfb03387789b5aa"
+    },
+    {
+      "file": "macos-practice-en-reopened.jpg",
+      "platform": "macOS",
+      "state": "Temporary English practice copy after save, close and reopen.",
+      "width_px": 2744,
+      "height_px": 1924,
+      "sha256": "dbad16e1dfdc4bee1ac63d543fd04417c28badb6838a641cc24addd5c1a7e9e1"
+    },
+    {
+      "file": "ios-mdlf-read-only.png",
+      "platform": "iOS",
+      "state": "Received MDLF shown read-only in Little Leonardo.",
+      "width_px": 1206,
+      "height_px": 2622,
+      "sha256": "e066c3d49690b4e7eb8126ca51ca9dba18c0f6dd73420fbf99cd305dbbd9a6af"
+    },
+    {
+      "file": "ios-mdlr-read-only.png",
+      "platform": "iOS",
+      "state": "Received MDLR shown read-only in Little Leonardo.",
+      "width_px": 1206,
+      "height_px": 2622,
+      "sha256": "6567e0aa837ccedb12e8e2afae0bc458c920cda2aafbc5dfcf8ea78ed5c58fe2"
+    }
+  ]
+}
