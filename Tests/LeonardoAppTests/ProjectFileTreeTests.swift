@@ -45,6 +45,20 @@ final class ProjectFileTreeTests: XCTestCase {
         XCTAssertEqual(tree.selection, Set([sibling]))
     }
 
+    func testDragKeepsFileAndFolderWithNoSelectedAncestor() {
+        let tree = ProjectFileTree()
+        let file = URL(fileURLWithPath: "/private/var/folders/project/assets-other/note.md")
+        let folder = URL(fileURLWithPath: "/private/var/folders/project/assets", isDirectory: true)
+        let rows = [
+            ProjectFileTree.Row(entry: NavigationEntry(url: file, isDirectory: false), depth: 0),
+            ProjectFileTree.Row(entry: NavigationEntry(url: folder, isDirectory: true), depth: 0)
+        ]
+
+        XCTAssertEqual(tree.dragSelection(startingAt: file, rows: rows), [file])
+        tree.select(folder, among: rows, gesture: .toggle)
+        XCTAssertEqual(tree.dragSelection(startingAt: file, rows: rows), [file, folder])
+    }
+
     func testOlderExpansionCannotOverwriteReopenedFoldersNewerLoad() async throws {
         let fixture = try await folderFixture(files: ["Old.md", "New.md"])
         let (root, folder, session, entry) = fixture

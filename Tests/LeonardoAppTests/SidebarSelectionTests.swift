@@ -74,11 +74,11 @@ final class SidebarSelectionTests: XCTestCase {
         XCTAssertEqual(tree.selection, Set([selectedFile, selectedFolder]))
         for appearance in [ColorScheme.light, .dark] {
             let view = VStack(alignment: .leading, spacing: 4) {
-                ProjectFileSelectionSummary(tree: tree, accent: session.accentColor)
                 ForEach(names, id: \.self) { name in
                     self.row(URL(fileURLWithPath: "/project/" + name), session: session, tree: tree,
                              directory: name == "Assets-folder")
                 }
+                ProjectFileSelectionSummary(tree: tree, accent: session.accentColor)
             }.padding(16).frame(width: 440, height: 240)
                 .background(appearance == .dark ? Color(white: 0.15) : Color(red: 0.94, green: 0.91, blue: 0.78))
                 .environment(\.colorScheme, appearance)

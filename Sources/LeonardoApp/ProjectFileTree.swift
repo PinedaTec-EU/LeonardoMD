@@ -131,13 +131,14 @@ final class ProjectFileTree {
     }
 
     private func hasSelectedFolderAncestor(of url: URL, folderPaths: Set<String>) -> Bool {
-        var ancestor = url.standardizedFileURL.deletingLastPathComponent()
-        while true {
-            if folderPaths.contains(ancestor.path) { return true }
-            let parent = ancestor.deletingLastPathComponent()
-            guard parent.path != ancestor.path else { return false }
-            ancestor = parent
+        guard !folderPaths.isEmpty else { return false }
+        var path = url.standardizedFileURL.path[...]
+        // Each iteration removes a component and terminates at the root.
+        while let separator = path.lastIndex(of: "/"), separator != path.startIndex {
+            path = path[..<separator]
+            if folderPaths.contains(String(path)) { return true }
         }
+        return false
     }
 
     func clearSelection() {

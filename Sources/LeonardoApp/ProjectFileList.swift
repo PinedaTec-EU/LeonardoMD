@@ -33,9 +33,6 @@ struct ProjectFileList: View {
         ScrollViewReader { proxy in
             let visibleRows = session.searchQuery.isEmpty ? tree.rows(roots: session.rootEntries) : []
             VStack(spacing: 0) {
-                if session.searchQuery.isEmpty, !tree.selection.isEmpty {
-                    selectionSummary
-                }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
                         if session.searchQuery.isEmpty {
@@ -49,6 +46,13 @@ struct ProjectFileList: View {
                             searchResults
                         }
                     }
+                }
+                if session.searchQuery.isEmpty {
+                    let hasSelection = !tree.selection.isEmpty
+                    selectionSummary
+                        .opacity(hasSelection ? 1 : 0)
+                        .allowsHitTesting(hasSelection)
+                        .accessibilityHidden(!hasSelection)
                 }
             }
             .task(id: request) {

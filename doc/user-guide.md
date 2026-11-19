@@ -337,7 +337,7 @@ Open a folder with ⇧⌘O. Expand its folders in the sidebar; children load as 
 
 Click a row to select it and keep the current open/expand behavior. ⌘-click adds or removes a row; ⇧-click selects the visible range from the last selection anchor. A range can include both folders and files. Drag a selected row onto a folder in the same project to move the selected items together. If the dragged row is not selected, only that row moves. When a selected folder contains another selected row, Leonardo transfers the folder once and skips that descendant.
 
-The sidebar shows how many rows are selected and marks each row in a multi-selection. Use **Clear selection** beside the count to start over.
+The bottom of the sidebar shows how many rows are selected and marks each row in a multi-selection. Use **Clear selection** beside the count to start over.
 
 Hold ⌥ (Option) while releasing to copy the selected items instead. The target folder highlights and shows **Move** or **Copy**. Copying keeps every original. When moving, an item already directly inside the target folder stays in place while the other selected items can move. Copying an item into a folder where it already exists is a collision. Leonardo checks every actual destination before changing anything: if a move or copy would write over an existing destination, two selected items would have the same name, or a folder would enter itself or one of its subfolders, the whole batch is rejected without overwriting existing content. Dragging Markdown from Finder still opens it in a tab.
 
