@@ -539,6 +539,13 @@ final class SessionEditingTests: XCTestCase {
         ]
 
         for scenario in scenarios {
+            let scenarioName = scenario.prepareWindowClose ? "window-discard" : "tab-save"
+            func trace(_ phase: String) {
+                guard ProcessInfo.processInfo.environment["CI"] == "true" else { return }
+                let line = "CI close snapshot [\(scenarioName)]: \(phase)\n"
+                FileHandle.standardError.write(Data(line.utf8))
+            }
+            trace("setup")
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
             let file = root.appendingPathComponent("figure.mdlf")
@@ -558,7 +565,9 @@ final class SessionEditingTests: XCTestCase {
             await session.open(file)
             await session.toggleProtection()
             let (host, webView) = try await installEditablePreview(session, in: owner)
+            trace("preview ready")
             let settings = await holdSettingsWrite(session)
+            trace("settings held")
             var askedForSaveDecision = false
             session.unsavedChangesDecision = { _ in
                 askedForSaveDecision = true
@@ -577,17 +586,44 @@ final class SessionEditingTests: XCTestCase {
                 try? FileManager.default.removeItem(at: root)
             }
 
+            let closeFinished = expectation(description: "Close finished for \(scenarioName)")
+            var closeApproved: Bool?
             let closeTask = Task { @MainActor in
-                if scenario.prepareWindowClose { return await tabs.prepareClose() }
-                await tabs.close(tabID)
-                return true
+                defer { closeFinished.fulfill() }
+                if scenario.prepareWindowClose {
+                    closeApproved = await tabs.prepareClose()
+                } else {
+                    await tabs.close(tabID)
+                    closeApproved = true
+                }
+                trace("close returned")
             }
+            defer { closeTask.cancel() }
             for _ in 0..<100 where !session.isClosing {
                 try await Task.sleep(for: .milliseconds(10))
             }
             XCTAssertTrue(session.isClosing)
             XCTAssertTrue(session.isClosePreviewSyncPending)
 
+            let refreshed = expectation(description: "Preview ready after the queued object action")
+            let nativeAction = try XCTUnwrap(host.onObjectAction)
+            let readyHandler = host.onReady
+            var acceptedAction: Bool?
+            var receivedRefresh = false
+            host.onObjectAction = { expected, object, remove, fieldID in
+                let accepted = nativeAction(expected, object, remove, fieldID)
+                acceptedAction = accepted
+                trace(accepted ? "native action accepted" : "native action rejected")
+                return accepted
+            }
+            host.onReady = { ready in
+                readyHandler?(ready)
+                guard ready, acceptedAction != nil, !receivedRefresh else { return }
+                receivedRefresh = true
+                refreshed.fulfill()
+            }
+
+            trace("posting queued object action")
             if scenario.remove {
                 try await postObjectAction(to: webView, source: originalSource, remove: originalGraphic.id)
             } else {
@@ -597,12 +633,21 @@ final class SessionEditingTests: XCTestCase {
                 try await postObjectAction(to: webView, source: originalSource, object: movedGraphic)
             }
 
+            await fulfillment(of: [refreshed], timeout: 10)
+            XCTAssertEqual(acceptedAction, true)
+            XCTAssertTrue(receivedRefresh)
+            trace("preview refreshed; releasing settings")
             settings.release()
             await settings.task.value
-            let closeApproved = await closeTask.value
+            trace("settings drained; waiting for close")
+            await fulfillment(of: [closeFinished], timeout: 20)
+            if owner.attachedSheet != nil {
+                trace("unexpected recovery sheet present")
+            }
+            let approved = try XCTUnwrap(closeApproved, "Close never returned for \(scenarioName)")
             if scenario.prepareWindowClose { tabs.cancelPreparedClose() }
 
-            XCTAssertTrue(closeApproved)
+            XCTAssertTrue(approved)
             XCTAssertTrue(askedForSaveDecision)
             let savedSource = try String(contentsOf: file, encoding: .utf8)
             let savedDocument = try LeonardoFormatParser.parse(savedSource)
