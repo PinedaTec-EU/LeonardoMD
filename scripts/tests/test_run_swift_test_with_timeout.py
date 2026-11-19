@@ -57,3 +57,13 @@ class SwiftTestTimeoutTests(unittest.TestCase):
             row = next(line.split() for line in snapshot.splitlines() if line.startswith(child_pid + " "))
             self.assertEqual(row[0], row[2])
             self.assertNotEqual(row[0], row[1])
+
+    def test_exited_parent_cannot_bypass_deadline_while_child_holds_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            result = self.run_fake_swift(
+                directory, "echo 'parent completed'; sleep 60 & exit 0\n",
+            )
+            self.assertEqual(result.returncode, 124, result.stderr)
+            self.assertIn("parent completed", result.stdout)
+            self.assertIn("sleep", (directory / "diagnostics" / "timeout-processes.txt").read_text())

@@ -5,8 +5,11 @@ import argparse
 from dataclasses import dataclass
 import os
 from pathlib import Path
+from selectors import DefaultSelector, EVENT_READ
 import signal
 import subprocess
+import sys
+import tempfile
 import time
 
 
@@ -50,19 +53,31 @@ def sample_test_processes(processes, leader, diagnostics):
     sampler = Path("/usr/bin/sample")
     if not sampler.exists():
         return
-    test_runners = [p.pid for p in processes if p.pid != leader and "xctest" in p.command.lower()]
-    for pid in [leader, *test_runners[:2]]:
-        destination = diagnostics / f"timeout-stack-{pid}.txt"
+    candidates = [
+        p for p in processes
+        if "xctest" in p.command.lower() or (p.pid == leader and p.command in {"swift", "swift-test"})
+    ]
+    for process in candidates[:3]:
+        pid = process.pid
         try:
-            subprocess.run(
-                [str(sampler), str(pid), "1", "10", "-file", str(destination)],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=8,
-            )
-            report = destination.read_text(encoding="utf-8", errors="replace")
+            with tempfile.TemporaryDirectory(prefix="swift-test-sample-") as scratch:
+                raw = Path(scratch) / "sample.txt"
+                subprocess.run(
+                    [str(sampler), str(pid), "1", "10", "-file", str(raw)],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=8,
+                )
+                report = raw.read_text(encoding="utf-8", errors="replace")
             call_graph = report.partition("Call graph:")[2].partition("Binary Images:")[0]
-            destination.write_text(f"PID {pid}\nCall graph:{call_graph}", encoding="utf-8")
+            if not call_graph.strip():
+                print(f"::warning::No call graph for Swift test PID {pid}.", flush=True)
+                continue
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=diagnostics, suffix=".tmp", delete=False,
+            ) as output:
+                pending = Path(output.name)
+                output.write(f"PID {pid}\nCall graph:{call_graph}")
+            pending.replace(diagnostics / f"timeout-stack-{pid}.txt")
         except (OSError, subprocess.SubprocessError) as error:
-            destination.unlink(missing_ok=True)
             print(f"::warning::Could not sample Swift test PID {pid}: {error}", flush=True)
 
 
@@ -87,6 +102,22 @@ def terminate_suite(process, descendants):
     process.wait(timeout=5)
 
 
+def wait_with_output(process, seconds):
+    deadline = time.monotonic() + seconds
+    with DefaultSelector() as selector:
+        selector.register(process.stdout, EVENT_READ)
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 or not selector.select(remaining):
+                raise subprocess.TimeoutExpired(process.args, seconds)
+            chunk = os.read(process.stdout.fileno(), 65536)
+            if not chunk:
+                break
+            sys.stdout.buffer.write(chunk)
+            sys.stdout.buffer.flush()
+    return process.wait(timeout=max(0, deadline - time.monotonic()))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seconds", type=int, required=True)
@@ -94,12 +125,15 @@ def main():
     args = parser.parse_args()
     if args.seconds <= 0:
         parser.error("--seconds must be positive")
-    process = subprocess.Popen(["swift", "test", "--verbose"], start_new_session=True)
+    process = subprocess.Popen(
+        ["swift", "test", "--verbose"], start_new_session=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
     try:
-        return process.wait(timeout=args.seconds)
+        return wait_with_output(process, args.seconds)
     except subprocess.TimeoutExpired:
         message = f"Swift test exceeded the {args.seconds}-second deadline."
-        print(f"::error::{message}", flush=True)
+        print(f"\n::error::{message}", flush=True)
         descendants = []
         try:
             processes = suite_processes(process.pid)
@@ -108,13 +142,14 @@ def main():
             (args.diagnostics / "timeout-processes.txt").write_text(
                 f"{message}\n{snapshot(processes)}\n", encoding="utf-8",
             )
-            if any(p.pid == process.pid and p.command in {"swift", "swift-test"} for p in processes):
-                sample_test_processes(processes, process.pid, args.diagnostics)
+            sample_test_processes(processes, process.pid, args.diagnostics)
         except (OSError, subprocess.SubprocessError) as error:
             print(f"::warning::Could not collect the Swift test diagnostics: {error}", flush=True)
         finally:
             terminate_suite(process, descendants)
         return 124
+    finally:
+        process.stdout.close()
 
 
 if __name__ == "__main__":
