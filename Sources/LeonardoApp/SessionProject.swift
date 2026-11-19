@@ -242,14 +242,22 @@ extension AppSession {
             operation == .copy || url.standardizedFileURL.deletingLastPathComponent() != parent.standardizedFileURL
         }
         guard !transferURLs.isEmpty else { return nil }
+        let operationName = operation == .copy ? "copy" : "move"
         let identity = SessionFileOperationIdentity(sourceURL: transferURLs[0], session: self)
         return Task {
             guard identity.isCurrent(in: self) else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
-            guard await prepareNavigation(), identity.isCurrent(in: self) else { return }
+            guard await prepareNavigation(), identity.isCurrent(in: self) else {
+                logger.info("Project-item transfer stopped during navigation preparation operation=\(operationName, privacy: .public)")
+                return
+            }
             for url in transferURLs {
-                guard await prepareRelatedFileOperation?(url) ?? true, identity.isCurrent(in: self) else { return }
+                let canProceed = await prepareRelatedFileOperation?(url) ?? true
+                guard canProceed, identity.isCurrent(in: self) else {
+                    logger.info("Project-item transfer stopped by related-session preparation operation=\(operationName, privacy: .public)")
+                    return
+                }
             }
             do {
                 for url in transferURLs {
@@ -275,7 +283,11 @@ extension AppSession {
                 }
                 projectFileTree.clearSelection()
                 await refreshTree()
-            } catch { report(error) }
+                logger.info("Project-item transfer completed operation=\(operationName, privacy: .public) items=\(nodes.count, privacy: .public)")
+            } catch {
+                logger.error("Project-item transfer failed operation=\(operationName, privacy: .public): \(String(describing: error), privacy: .private)")
+                report(error)
+            }
         }
     }
     func updateMovedDocument(from source: URL, to destination: URL) async {
@@ -294,21 +306,38 @@ extension AppSession {
         mode = previousMode
     }
     func acceptDrop(_ providers: [NSItemProvider], into parent: URL, copy: Bool = false) -> Bool {
-        guard DocumentDropProviders.canLoad(providers) else { return false }
-        let internalCount = providers.filter(DocumentDropProviders.isProjectTreeItem).count
-        guard internalCount == 0 || internalCount == providers.count else { return false }
-        let isProjectTreeDrop = internalCount == providers.count
+        guard DocumentDropProviders.isSupportedFolderDrop(providers) else {
+            logger.warning("Folder drop rejected unsupported providers=\(providers.count, privacy: .public)")
+            return false
+        }
+        let isProjectTreeDrop = DocumentDropProviders.isProjectTreeDrop(providers)
+        logger.info("Folder drop accepted providerCount=\(providers.count, privacy: .public) projectTree=\(isProjectTreeDrop, privacy: .public) copy=\(copy, privacy: .public)")
         let urlLoad = isProjectTreeDrop
             ? DocumentDropProviders.startLoadingProjectTreeURLs(providers)
             : DocumentDropProviders.startLoadingURLs(providers)
         Task {
-            guard let urls = await urlLoad.value else { return }
+            guard let urls = await urlLoad.value else {
+                logger.error("Folder drop payload did not produce file URLs projectTree=\(isProjectTreeDrop, privacy: .public)")
+                return
+            }
             if isProjectTreeDrop {
-                guard let root = projectURL, urls.allSatisfy({ DocumentDropProviders.isProjectMove($0, in: root) }) else { return }
-                let operation = copy ? self.copy(urls, into: parent) : self.move(urls, into: parent)
-                await operation?.value
+                guard let root = projectURL else {
+                    logger.error("Folder drop lost its project context before loading completed")
+                    return
+                }
+                guard urls.allSatisfy({ DocumentDropProviders.isProjectMove($0, in: root) }) else {
+                    logger.error("Folder drop rejected out-of-project or root items count=\(urls.count, privacy: .public)")
+                    return
+                }
+                guard let operationTask = copy ? self.copy(urls, into: parent) : self.move(urls, into: parent) else {
+                    logger.debug("Folder move was a no-op because every item already belongs to the destination")
+                    return
+                }
+                await operationTask.value
             } else if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
                 await openDroppedDocuments(urls)
+            } else {
+                logger.warning("External folder drop rejected URLs=\(urls.count, privacy: .public)")
             }
         }
         return true
@@ -316,9 +345,11 @@ extension AppSession {
 
     func relative(_ url: URL) -> String {
         guard let root = projectURL else { return url.path }
-        if url == root { return "" }
-        guard url.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path + "/") else { return "../" }
-        return String(url.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count + 1))
+        let rootPath = root.standardizedFileURL.resolvingSymlinksInPath().path
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        if path == rootPath { return "" }
+        guard path.hasPrefix(rootPath == "/" ? "/" : rootPath + "/") else { return "../" }
+        return String(path.dropFirst(rootPath == "/" ? 1 : rootPath.count + 1))
     }
     func prompt(title: String, initial: String) async -> String? {
         let alert = NSAlert()

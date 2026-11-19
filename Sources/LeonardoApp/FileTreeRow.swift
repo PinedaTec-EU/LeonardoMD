@@ -5,18 +5,19 @@ struct FileTreeRow: View {
     let entry: NavigationEntry
     @Bindable var session: AppSession
     let tree: ProjectFileTree
+    var rows: [ProjectFileTree.Row]? = nil
     let depth: Int
     let expanded: Bool
     let toggle: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @State private var dropState = ProjectFolderDropState.idle
-    @State private var clickModifiers: NSEvent.ModifierFlags = []
+    @State private var pointerMouseUpHandled = false
 
     var isActiveDocument: Bool {
         !entry.isDirectory && session.displayDocumentURL?.resolvingSymlinksInPath().path ==
             entry.url.resolvingSymlinksInPath().path
     }
-    private var isMultiSelected: Bool { tree.selection.contains(entry.url) }
+    private var isInSelection: Bool { tree.selection.contains(entry.url) }
     private var isColoredLeonardo: Bool {
         session.colorLeonardoFiles && !entry.isDirectory &&
         AppDocumentKind.classify(entry.url).isLeonardo
@@ -25,9 +26,8 @@ struct FileTreeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Button {
-                if entry.isDirectory {
-                    toggle()
-                } else { Task { await session.openDocument(entry.url) } }
+                guard !pointerMouseUpHandled else { return }
+                activateSingleClick()
             } label: {
                 HStack(spacing: 7) {
                     if entry.isDirectory {
@@ -37,6 +37,12 @@ struct FileTreeRow: View {
                     Text(entry.name).lineLimit(1)
                         .foregroundStyle(isActiveDocument ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .primary)
                     Spacer(minLength: 0)
+                    if isInSelection {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(session.accentColor)
+                            .accessibilityHidden(true)
+                    }
                     if let label = dropState.label, let symbol = dropState.symbol {
                         Label(L10n.text(label), systemImage: symbol)
                             .font(.caption2.weight(.semibold))
@@ -45,30 +51,11 @@ struct FileTreeRow: View {
                     }
                 }.padding(.vertical, 6).padding(.horizontal, 6)
                     .modifier(FileRowHighlight(accent: session.accentColor, selected: isActiveDocument,
-                                               multiSelected: isMultiSelected,
+                                               multiSelected: isInSelection,
                                                dropTarget: dropState.isTarget))
                     .background(isActiveDocument ? Color(nsColor: .selectedContentBackgroundColor) : .clear,
                                 in: RoundedRectangle(cornerRadius: 6))
             }
-                .highPriorityGesture(
-                    TapGesture(count: 2).exclusively(before: TapGesture())
-                        .onEnded { value in
-                            if selectUsingCurrentModifiers(clickModifiers) { return }
-                            switch value {
-                            case .first:
-                                if !entry.isDirectory {
-                                    Task {
-                                        if AppSession.supportedDocumentExtensions.contains(entry.url.pathExtension.lowercased()) {
-                                            await session.openProjectDocumentInTab?(entry.url, nil)
-                                        } else { await session.openDocument(entry.url) }
-                                    }
-                                } else { toggle() }
-                            case .second:
-                                if entry.isDirectory { toggle() }
-                                else { Task { await session.openDocument(entry.url) } }
-                            }
-                        }
-                )
                 .contextMenu {
                     if !entry.isDirectory && AppSession.supportedDocumentExtensions.contains(entry.url.pathExtension.lowercased()) {
                         Button(L10n.text("Open in new tab")) {
@@ -93,33 +80,94 @@ struct FileTreeRow: View {
         .padding(.leading, CGFloat(depth) * 16)
         .overlay {
             ProjectTreeDragSource(url: entry.url, selectedURLs: {
-                tree.dragSelection(startingAt: entry.url, rows: tree.rows(roots: session.rootEntries))
-            }, onMouseDown: { clickModifiers = $0 })
+                tree.dragSelection(startingAt: entry.url, rows: rows ?? tree.rows(roots: session.rootEntries))
+            }, onMouseDown: { modifiers, _ in
+                ProjectTreeRowClickDelay.cancel(in: tree)
+                selectOnMouseDown(modifiers)
+            }, onMouseUp: { modifiers, count in
+                pointerMouseUpHandled = true
+                DispatchQueue.main.async { pointerMouseUpHandled = false }
+                handleMouseUp(modifiers, clickCount: count)
+            })
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .allowsHitTesting(false)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
         .onDrop(of: [DocumentDropProviders.projectTreeItemType, .fileURL], delegate: ProjectFolderDropDelegate(
             folder: entry.url,
             session: session,
             state: $dropState
         ))
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
         .accessibilityIdentifier("project-file-" + entry.url.path)
-        .accessibilityAddTraits(isActiveDocument || isMultiSelected ? [.isSelected] : [])
+        .accessibilityAddTraits(isActiveDocument || isInSelection ? [.isSelected] : [])
     }
 
-    private func selectUsingCurrentModifiers(_ modifiers: NSEvent.ModifierFlags) -> Bool {
-        let rows = tree.rows(roots: session.rootEntries)
+    private func selectOnMouseDown(_ modifiers: NSEvent.ModifierFlags) {
+        let visibleRows = rows ?? tree.rows(roots: session.rootEntries)
         if modifiers.contains(.shift) {
-            tree.select(entry.url, among: rows, gesture: .extend(additive: modifiers.contains(.command)))
-            return true
+            tree.select(entry.url, among: visibleRows, gesture: .extend(additive: modifiers.contains(.command)))
+        } else if modifiers.contains(.command) {
+            tree.select(entry.url, among: visibleRows, gesture: .toggle)
+        } else if !tree.selection.contains(entry.url) {
+            tree.select(entry.url, among: visibleRows, gesture: .replace)
         }
-        if modifiers.contains(.command) {
-            tree.select(entry.url, among: rows, gesture: .toggle)
-            return true
+    }
+
+    private func handleMouseUp(_ modifiers: NSEvent.ModifierFlags, clickCount: Int) {
+        guard !modifiers.contains(.command), !modifiers.contains(.shift) else { return }
+        let visibleRows = rows ?? tree.rows(roots: session.rootEntries)
+        tree.select(entry.url, among: visibleRows, gesture: .replace)
+        if entry.isDirectory {
+            if clickCount == 1 { toggle() }
+            return
         }
-        tree.select(entry.url, among: rows, gesture: .replace)
-        return false
+        guard clickCount > 1 else {
+            ProjectTreeRowClickDelay.schedule(in: tree) { activateSingleClick() }
+            return
+        }
+        ProjectTreeRowClickDelay.cancel(in: tree)
+        activateDoubleClick()
+    }
+
+    private func activateSingleClick() {
+        let visibleRows = rows ?? tree.rows(roots: session.rootEntries)
+        tree.select(entry.url, among: visibleRows, gesture: .replace)
+        if entry.isDirectory {
+            toggle()
+        } else {
+            Task { await session.openDocument(entry.url) }
+        }
+    }
+
+    private func activateDoubleClick() {
+        guard !entry.isDirectory else { return }
+        if AppSession.supportedDocumentExtensions.contains(entry.url.pathExtension.lowercased()) {
+            Task { await session.openProjectDocumentInTab?(entry.url, nil) }
+        } else {
+            Task { await session.openDocument(entry.url) }
+        }
+    }
+}
+
+@MainActor
+private enum ProjectTreeRowClickDelay {
+    private static var pending: [ObjectIdentifier: Task<Void, Never>] = [:]
+
+    static func cancel(in tree: ProjectFileTree) {
+        pending.removeValue(forKey: ObjectIdentifier(tree))?.cancel()
+    }
+
+    static func schedule(in tree: ProjectFileTree, action: @escaping @MainActor () -> Void) {
+        let key = ObjectIdentifier(tree)
+        cancel(in: tree)
+        let delay = Int64(NSEvent.doubleClickInterval * 1_000)
+        pending[key] = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(delay)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            pending.removeValue(forKey: key)
+            action()
+        }
     }
 }

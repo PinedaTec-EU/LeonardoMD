@@ -122,11 +122,22 @@ final class ProjectFileTree {
     func dragSelection(startingAt url: URL, rows: [Row]) -> [URL] {
         if !selection.contains(url) { select(url, among: rows, gesture: .replace) }
         let selectedRows = rows.filter { selection.contains($0.id) }
+        let selectedFolderPaths = Set(selectedRows.compactMap { row in
+            row.entry.isDirectory ? row.entry.url.standardizedFileURL.path : nil
+        })
         return selectedRows.filter { candidate in
-            !selectedRows.contains { parent in
-                parent.entry.isDirectory && isDescendant(candidate.entry.url, of: parent.entry.url)
-            }
+            !hasSelectedFolderAncestor(of: candidate.entry.url, folderPaths: selectedFolderPaths)
         }.map(\.entry.url)
+    }
+
+    private func hasSelectedFolderAncestor(of url: URL, folderPaths: Set<String>) -> Bool {
+        var ancestor = url.standardizedFileURL.deletingLastPathComponent()
+        while true {
+            if folderPaths.contains(ancestor.path) { return true }
+            let parent = ancestor.deletingLastPathComponent()
+            guard parent.path != ancestor.path else { return false }
+            ancestor = parent
+        }
     }
 
     func clearSelection() {

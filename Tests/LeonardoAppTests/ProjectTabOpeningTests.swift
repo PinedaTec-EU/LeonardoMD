@@ -163,7 +163,7 @@ final class ProjectTabOpeningTests: XCTestCase {
                     modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
                     windowNumber: window.windowNumber, context: nil, eventNumber: count,
                     clickCount: count, pressure: type == .leftMouseDown ? 1 : 0))
-                window.sendEvent(event)
+                NSApp.sendEvent(event)
             }
         }
         try click(1)
@@ -199,7 +199,8 @@ final class ProjectTabOpeningTests: XCTestCase {
         let lastIndex = try XCTUnwrap(visible.firstIndex(where: { $0.id == lastFile.id }))
         XCTAssertLessThan(folderIndex, lastIndex, "The synthetic visible order must leave room for a mixed Shift range")
 
-        func click(_ entry: NavigationEntry, modifiers: NSEvent.ModifierFlags) async throws {
+        func click(_ entry: NavigationEntry, modifiers: NSEvent.ModifierFlags,
+                   expectedAtMouseDown: Set<URL>? = nil) async throws {
             let host = NSHostingView(rootView: FileTreeRow(entry: entry, session: session, tree: tree,
                 depth: 0, expanded: false, toggle: {}))
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 50),
@@ -210,23 +211,31 @@ final class ProjectTabOpeningTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(100))
             host.layoutSubtreeIfNeeded()
             let location = host.convert(NSPoint(x: 100, y: 25), to: nil)
-            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                let event = try XCTUnwrap(NSEvent.mouseEvent(with: type, location: location,
-                    modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime,
-                    windowNumber: window.windowNumber, context: nil, eventNumber: 1,
-                    clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-                NSApp.sendEvent(event)
+            let down = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseDown, location: location,
+                modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 1,
+                clickCount: 1, pressure: 1))
+            NSApp.sendEvent(down)
+            if let expectedAtMouseDown {
+                XCTAssertEqual(tree.selection, expectedAtMouseDown,
+                               "Selection feedback should update as soon as the mouse goes down")
             }
+            let up = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseUp, location: location,
+                modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 1,
+                clickCount: 1, pressure: 0))
+            NSApp.sendEvent(up)
             try await Task.sleep(for: .milliseconds(700))
             window.close()
         }
 
         try await click(firstFile.entry, modifiers: [])
         XCTAssertEqual(tree.selection, Set([firstFile.id]))
-        try await click(folder.entry, modifiers: .command)
+        try await click(folder.entry, modifiers: .command,
+                        expectedAtMouseDown: [firstFile.id, folder.id])
         XCTAssertEqual(tree.selection, Set([firstFile.id, folder.id]))
-        try await click(lastFile.entry, modifiers: .shift)
         let expectedRange = Set(visible[folderIndex...lastIndex].map(\.id))
+        try await click(lastFile.entry, modifiers: .shift, expectedAtMouseDown: expectedRange)
         XCTAssertEqual(tree.selection, expectedRange)
         XCTAssertTrue(tree.selection.contains(folder.id))
         XCTAssertTrue(tree.selection.contains(lastFile.id))

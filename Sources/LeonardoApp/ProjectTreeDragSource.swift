@@ -4,13 +4,15 @@ import SwiftUI
 struct ProjectTreeDragSource: NSViewRepresentable {
     let url: URL
     let selectedURLs: () -> [URL]
-    let onMouseDown: (NSEvent.ModifierFlags) -> Void
+    let onMouseDown: (NSEvent.ModifierFlags, Int) -> Void
+    let onMouseUp: (NSEvent.ModifierFlags, Int) -> Void
 
     func makeNSView(context: Context) -> ProjectTreeDragSourceView {
         let view = ProjectTreeDragSourceView(frame: .zero)
         view.url = url
         view.selectedURLs = selectedURLs
         view.onMouseDown = onMouseDown
+        view.onMouseUp = onMouseUp
         return view
     }
 
@@ -18,6 +20,7 @@ struct ProjectTreeDragSource: NSViewRepresentable {
         view.url = url
         view.selectedURLs = selectedURLs
         view.onMouseDown = onMouseDown
+        view.onMouseUp = onMouseUp
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: ProjectTreeDragSourceView,
@@ -31,7 +34,8 @@ struct ProjectTreeDragSource: NSViewRepresentable {
 final class ProjectTreeDragSourceView: NSView, NSDraggingSource {
     var url = URL(fileURLWithPath: "/")
     var selectedURLs: () -> [URL] = { [] }
-    var onMouseDown: ((NSEvent.ModifierFlags) -> Void)?
+    var onMouseDown: ((NSEvent.ModifierFlags, Int) -> Void)?
+    var onMouseUp: ((NSEvent.ModifierFlags, Int) -> Void)?
 
     private var draggingSession: NSDraggingSession?
 
@@ -130,7 +134,7 @@ private final class ProjectTreeDragSourceRegistry {
             activeView = target
             dragStartPoint = target?.convert(event.locationInWindow, from: nil)
             dragStartEvent = target == nil ? nil : event
-            target?.onMouseDown?(event.modifierFlags)
+            target?.onMouseDown?(event.modifierFlags, event.clickCount)
         case .leftMouseDragged:
             guard let target = activeView, target.window === event.window,
                   let dragStartPoint, let dragStartEvent else { return }
@@ -143,6 +147,10 @@ private final class ProjectTreeDragSourceRegistry {
             self.dragStartEvent = nil
             target.beginDrag(with: dragStartEvent)
         case .leftMouseUp:
+            if let target = activeView, target.window === event.window,
+               target.bounds.contains(target.convert(event.locationInWindow, from: nil)) {
+                target.onMouseUp?(event.modifierFlags, event.clickCount)
+            }
             activeView = nil
             dragStartPoint = nil
             dragStartEvent = nil

@@ -1,18 +1,19 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v96-en.mdlz` and `Guide-v96-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v100-en.mdlz` and `Guide-v100-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v96/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v100/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v96 clarifies same-target move no-ops and destination collision behavior,
-carrying forward v95's mixed multi-selection in the project tree: ⌘-click toggles
-rows, ⇧-click selects a visible range, and dragging a selected row transfers
-selected files and folders together. Holding ⌥ copies. It also carries forward
-v94's project-tree drag/drop guidance and v93's Preview recovery and Little Leonardo
-guidance. Existing personal copies and practice answers through v95 remain untouched.
-Fresh packaged Help acceptance for v96 passed in task-owned QA app `0.3.1884 stable`
+Guide v100 carries forward visible selection counts and checkmarks for mixed multi-selection,
+and carries forward v96's same-target move no-ops and destination collision behavior,
+v95's project-tree multi-selection, and v94's drag/drop guidance. Existing personal
+copies and practice answers through v99 remain untouched. Revisions v97, v98, and
+v99 already exist in the task account with different contents from this candidate;
+v100 is the first unused personal-copy directory. Fresh packaged Help acceptance
+for v100 is pending in a task-owned QA app `0.3.1884 stable`.
+Earlier packaged Help acceptance for v96 passed in task-owned QA app `0.3.1884 stable`
 (build ledger entry 12, PID 9666). Help → Leonardo user guide opened both v96 locales.
 Mermaid, Math, Charts, local images, and tables rendered. With Math enabled, inline
 notation and one-line/multiline equations—including underbraces and the tagged
@@ -25,6 +26,14 @@ quit normally and PID 9666 was confirmed exited. Manual project-row move/copy dr
 acceptance remains unverified. Tracking: [issue #261](https://github.com/PinedaTec-EU/LeonardoMD/issues/261).
 Guide v96 EN SHA-256: `722e956dc62552995ebdb4b05e69c91e0bc2f5dfa96c667274d496bfaabf4e87`
 and ES SHA-256: `c0be641188e7ec9da86559bd5baf8891f953318bddbf0f67f5f2b4adad64c2a5`.
+Guide v97 EN SHA-256: `a1eed2094f9ff3c0f8b42577976498fa439c89a40eb274f40b6b730c7c364105`
+and ES SHA-256: `97a170c53555657fde2820c8abce4d5ab7c6b7b191d18e65aa65ee0a45d83448`.
+These hashes describe superseded candidates; those revision directories already held
+different personal guides. The v100 candidate hashes are recorded after packaging.
+Guide v98 EN SHA-256: `e1a0496cda013821d04a9dffbf9b417a58de816f0ed0e2252da4fbcc6c1f0a2e`
+and ES SHA-256: `60dd50195ea44fd85f469c96cc576667bd3f9090c3e5196f5e1359bf79d11de7`.
+Guide v100 EN SHA-256: `1a271286cdd6962e72e80f36bb437606fe4c5ffdf07488c0986857aa80a94cfa`
+and ES SHA-256: `1d90ac52a73351d9dacc3a5923669b6b0b264742a9245cbc568634901cc7c290`.
 Guide v95 EN SHA-256: `4b96b84bc89f83fd3347e6ccb6e621e21e8d3b73abfbe54c7ccedc5f30e65848`
 and ES SHA-256: `cdfbe9adbe90ef95402636c6171243cd25643fb48feada5de3a6e7136b6fb0df`.
 Guide v94 EN SHA-256: `151bda467f3bdf81965d2f961ed31031eba5b9a1b0d59be32785e927f47dbb4e`
@@ -52,14 +61,14 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v96 with a new
+historical review record. The current app resources use Guide v100 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
 record is in
 [packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
-It does not establish acceptance for the current Guide v96 package. The
+It does not establish acceptance for the current Guide v100 package. The
 previous iOS capture bundles are historical; refreshed simulator evidence is
 recorded separately under `doc/validation/`.
 
@@ -69,7 +78,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v93 introduced the current document-search, remote-project review and offline-catalogue guidance, grouped Dock/app-switcher instances, synchronization status and helper recovery. Guide v94 carried that guidance forward alongside project-tree drag/drop instructions; Guide v95 adds mixed multi-selection. Guide v96 clarifies same-target move no-ops and destination collision behavior. Existing guide copies and their separate practice answers remain preserved.
+Guide v93 introduced the current document-search, remote-project review and offline-catalogue guidance, grouped Dock/app-switcher instances, synchronization status and helper recovery. Guide v94 carried that guidance forward alongside project-tree drag/drop instructions; Guide v95 adds mixed multi-selection. Guide v96 clarifies same-target move no-ops and destination collision behavior. Guide v97 adds a visible count and row marks for multi-selection. Guide v100 carries that behavior forward under an unused personal-copy directory. Existing guide copies and their separate practice answers remain preserved.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under

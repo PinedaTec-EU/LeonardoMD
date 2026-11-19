@@ -12,7 +12,7 @@ struct FileRowHighlight: ViewModifier {
     private var opacity: Double {
         if dropTarget { return selected ? 0.30 : 0.20 }
         if selected { return hovered && enabled ? 0.24 : 0.14 }
-        if multiSelected { return hovered && enabled ? 0.20 : 0.13 }
+        if multiSelected { return hovered && enabled ? 0.28 : 0.20 }
         return hovered && enabled ? 0.10 : 0
     }
 
@@ -25,7 +25,7 @@ struct FileRowHighlight: ViewModifier {
                         .strokeBorder(accent.opacity(0.75), lineWidth: 1.5)
                 } else if multiSelected {
                     RoundedRectangle(cornerRadius: 6)
-                        .strokeBorder(accent.opacity(0.45), lineWidth: 1)
+                        .strokeBorder(accent.opacity(0.70), lineWidth: 1)
                 }
             }
             .contentShape(Rectangle())

@@ -39,11 +39,13 @@ struct ProjectFolderDropDelegate: DropDelegate {
         guard (try? folder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else {
             return false
         }
-        return info.hasItemsConforming(to: [.fileURL])
+        return info.hasItemsConforming(to: [.fileURL]) ||
+            info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType])
     }
 
     func dropEntered(info: DropInfo) {
         _ = updateState(info: info)
+        session.logger.debug("Folder drop target entered projectTree=\(info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType]), privacy: .public) fileURL=\(info.hasItemsConforming(to: [.fileURL]), privacy: .public)")
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
@@ -58,7 +60,9 @@ struct ProjectFolderDropDelegate: DropDelegate {
         let providers = providers(for: info)
         let isCopy = DocumentDropProviders.isProjectTreeDrop(providers) && optionKeyIsDown
         state = .idle
-        return session.acceptDrop(providers, into: folder, copy: isCopy)
+        let accepted = session.acceptDrop(providers, into: folder, copy: isCopy)
+        session.logger.info("Folder drop callback providers=\(providers.count, privacy: .public) projectTree=\(DocumentDropProviders.isProjectTreeDrop(providers), privacy: .public) copy=\(isCopy, privacy: .public) accepted=\(accepted, privacy: .public)")
+        return accepted
     }
 
     private func updateState(info: DropInfo) -> DropOperation {
@@ -87,6 +91,11 @@ struct ProjectFolderDropDelegate: DropDelegate {
 
     private func providers(for info: DropInfo) -> [NSItemProvider] {
         // SwiftUI only permits querying providers during performDrop(info:).
-        info.itemProviders(for: [DocumentDropProviders.projectTreeItemType, .fileURL])
+        let projectTreeProviders = info.itemProviders(for: [DocumentDropProviders.projectTreeItemType])
+        let fileURLProviders = info.itemProviders(for: [.fileURL])
+        return DocumentDropProviders.preferredFolderDropProviders(
+            projectTreeProviders: projectTreeProviders,
+            fileURLProviders: fileURLProviders
+        )
     }
 }

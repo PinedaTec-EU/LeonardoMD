@@ -1,16 +1,17 @@
 import AppKit
+import os
 import UniformTypeIdentifiers
 
 /// The shared native item-provider boundary for document and sidebar drops.
 @MainActor
 enum DocumentDropProviders {
     static let projectTreeItemTypeIdentifier = "eu.pinedatec.LeonardoMD.project-tree-item"
-    static let projectTreeItemType = UTType(importedAs: projectTreeItemTypeIdentifier)
+    static let projectTreeItemType = UTType(exportedAs: projectTreeItemTypeIdentifier, conformingTo: .data)
     static let projectTreeItemPasteboardType = NSPasteboard.PasteboardType(projectTreeItemTypeIdentifier)
 
     static func isProjectMove(_ url: URL, in root: URL) -> Bool {
-        let rootPath = root.standardizedFileURL.path
-        let path = url.standardizedFileURL.path
+        let rootPath = root.standardizedFileURL.resolvingSymlinksInPath().path
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
         return url.isFileURL && path != rootPath && path.hasPrefix(rootPath == "/" ? "/" : rootPath + "/")
     }
 
@@ -66,15 +67,35 @@ enum DocumentDropProviders {
         !providers.isEmpty && providers.allSatisfy(isProjectTreeItem)
     }
 
+    static func preferredFolderDropProviders(
+        projectTreeProviders: [NSItemProvider],
+        fileURLProviders: [NSItemProvider]
+    ) -> [NSItemProvider] {
+        projectTreeProviders.isEmpty ? fileURLProviders : projectTreeProviders
+    }
+
+    static func isSupportedFolderDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard !providers.isEmpty else { return false }
+        if isProjectTreeDrop(providers) { return true }
+        guard !providers.contains(where: isProjectTreeItem) else { return false }
+        return canLoad(providers)
+    }
+
     static func startLoadingProjectTreeURLs(_ providers: [NSItemProvider]) -> Task<[URL]?, Never> {
         guard isProjectTreeDrop(providers) else { return Task { nil } }
+        let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "project-tree-drop")
         let streams = providers.map { provider in
             AsyncStream<[URL]> { continuation in
-                provider.loadDataRepresentation(forTypeIdentifier: projectTreeItemTypeIdentifier) { data, _ in
+                provider.loadDataRepresentation(forTypeIdentifier: projectTreeItemTypeIdentifier) { data, error in
                     if let data,
                        let urls = try? JSONDecoder().decode([URL].self, from: data),
                        !urls.isEmpty, urls.allSatisfy(\.isFileURL) {
+                        logger.info("Project-tree payload loaded bytes=\(data.count, privacy: .public) items=\(urls.count, privacy: .public)")
                         continuation.yield(urls)
+                    } else if let error {
+                        logger.error("Project-tree payload load failed: \(String(describing: error), privacy: .private)")
+                    } else {
+                        logger.error("Project-tree payload was missing or invalid bytes=\(data?.count ?? 0, privacy: .public)")
                     }
                     continuation.finish()
                 }

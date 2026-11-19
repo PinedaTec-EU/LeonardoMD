@@ -56,6 +56,15 @@ final class SessionPackageLifecycleTests: XCTestCase {
         return try LeonardoFormatParser.parse(loaded.content).metadata.values["name"]?.stringValue
     }
 
+    private func waitForFileSystemChange(_ condition: () -> Bool, timeout: TimeInterval = 2) async throws -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        repeat {
+            if condition() { return true }
+            try await Task.sleep(for: .milliseconds(10))
+        } while Date() < deadline
+        return condition()
+    }
+
     func testSelectingContainingProjectsPreservesOpenPackageIdentityAndContent() async throws {
         let fixture = try await fixture()
         let session = fixture.session
@@ -155,6 +164,62 @@ final class SessionPackageLifecycleTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: target.url.appendingPathComponent("untouched.md").path))
         XCTAssertEqual(try String(contentsOf: alreadyInTarget.url, encoding: .utf8), "target")
         XCTAssertNotNil(session.errorMessage)
+    }
+
+    func testProjectTreeDropMovesAndCopiesMixedFileAndFolderSelection() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LeonardoProjectTreeDrop-\(UUID().uuidString)", isDirectory: true)
+        let projectRoot = root.appendingPathComponent("Project", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        let session = tabs.activeSession
+        session.authorizePath = { _, _ in }
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+
+        let projectOpened = await session.openProject(projectRoot)
+        XCTAssertTrue(projectOpened)
+        session.monitorTask?.cancel()
+        let project = try await session.files.project(at: projectRoot)
+        let target = try await session.files.createFolder(named: "Target", in: project)
+        let moveFolder = try await session.files.createFolder(named: "MoveFolder", in: project)
+        let moveFile = try await session.files.createMarkdown(
+            named: "MoveSource.md", in: project, contents: "move"
+        )
+        _ = try await session.files.createMarkdown(
+            named: "Nested.md", in: project, at: moveFolder.relativePath, contents: "nested"
+        )
+        let moveProvider = DocumentDropProviders.projectTreeItemProvider(
+            for: moveFile.url, selecting: [moveFile.url, moveFolder.url]
+        )
+
+        XCTAssertTrue(session.acceptDrop([moveProvider], into: target.url))
+        let moved = try await waitForFileSystemChange {
+            FileManager.default.fileExists(atPath: target.url.appendingPathComponent("MoveSource.md").path) &&
+            FileManager.default.fileExists(atPath: target.url.appendingPathComponent("MoveFolder/Nested.md").path)
+        }
+        XCTAssertTrue(moved, "The internal project-tree drop should move the complete mixed selection")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: moveFile.url.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: moveFolder.url.path))
+
+        let copyFolder = try await session.files.createFolder(named: "CopyFolder", in: project)
+        let copyFile = try await session.files.createMarkdown(
+            named: "CopySource.md", in: project, contents: "copy"
+        )
+        _ = try await session.files.createMarkdown(
+            named: "NestedCopy.md", in: project, at: copyFolder.relativePath, contents: "nested copy"
+        )
+        let copyProvider = DocumentDropProviders.projectTreeItemProvider(
+            for: copyFile.url, selecting: [copyFile.url, copyFolder.url]
+        )
+
+        XCTAssertTrue(session.acceptDrop([copyProvider], into: target.url, copy: true))
+        let copied = try await waitForFileSystemChange {
+            FileManager.default.fileExists(atPath: target.url.appendingPathComponent("CopySource.md").path) &&
+            FileManager.default.fileExists(atPath: target.url.appendingPathComponent("CopyFolder/NestedCopy.md").path)
+        }
+        XCTAssertTrue(copied, "The Option-copy path should retain and duplicate each selected item")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copyFile.url.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copyFolder.url.path))
     }
 
     func testDeletingOwnerPackageClearsOnlyPackageTabAndPreservesExtractedTab() async throws {
