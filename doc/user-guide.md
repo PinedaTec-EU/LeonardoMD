@@ -333,7 +333,7 @@ Home separates **Projects** from **Documents**, with Favorites and Recents for e
 
 ## 8. Projects, navigation and tabs
 
-Open a folder with ⇧⌘O. Expand its folders in the sidebar; children load as you expand them. Use New note and New folder, or an item's context menu to rename, move or delete. Check the target before deleting and keep a backup or Git history for valuable material.
+Open a folder with ⇧⌘O. Expand its folders in the sidebar; children load as you expand them. Use New note and New folder, or an item's context menu to rename, move or delete. Check the target before deleting and keep a backup or Git history for valuable material. With a file row focused in the project tree, press **Delete (⌫)** or **Forward Delete (⌦)** to open the same confirmation as **Move to Trash…**.
 
 A single click opens a supported file in the active tab. Double-click or choose **Open in new tab** to keep the original tab and its draft. An already open document selects its existing tab. New project tabs preserve navigation, expanded folders and file filters; ⌘T creates an empty tab. Close the active tab with ⌘W, or the window with ⇧⌘W. Save, Discard and Cancel decisions protect pending edits.
 
