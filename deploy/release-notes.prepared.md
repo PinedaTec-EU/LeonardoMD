@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1896
+
+- #487 Fixed: bound the full Swift CI suite and retain diagnostics ([#488](https://github.com/PinedaTec-EU/LeonardoMD/pull/488))
+
+<p>CI bounds the Swift test suite, retains timeout diagnostics, and synchronizes the Preview close regression test with WebKit readiness.</p>
+
+Source: `c07cd8d53665dda4a9305d8f788f29ce7c396e80`. Delta: `{"build": 2}`.
+
 ## 0.3.1894
 
 - #484 Added: delete project files from the keyboard ([#485](https://github.com/PinedaTec-EU/LeonardoMD/pull/485))

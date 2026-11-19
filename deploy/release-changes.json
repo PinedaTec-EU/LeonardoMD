@@ -1169,6 +1169,16 @@
       "pr": 485,
       "summary": "Project files can be sent to Trash with Delete or Forward Delete from the sidebar.",
       "to_version": "0.3.1894"
+    },
+    {
+      "delta": {
+        "build": 2
+      },
+      "from_version": "0.3.1894",
+      "merge_sha": "c07cd8d53665dda4a9305d8f788f29ce7c396e80",
+      "pr": 488,
+      "summary": "CI bounds the Swift test suite, retains timeout diagnostics, and synchronizes the Preview close regression test with WebKit readiness.",
+      "to_version": "0.3.1896"
     }
   ],
   "initial_version": "0.1.56",
@@ -1179,5 +1189,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1894"
+  "version": "0.3.1896"
 }
