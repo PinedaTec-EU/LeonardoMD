@@ -66,6 +66,11 @@ struct DesktopTransactionJournal: Codable {
         }
         try selection.validate(before)
         try selection.validate(after)
+        let excluded = Set(excludedExtensions.map { $0.lowercased() })
+        guard before.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }),
+              after.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }) else {
+            throw SyncError.invalidSnapshot
+        }
     }
     var changedPaths: [String] {
         let old = Dictionary(uniqueKeysWithValues: before.files.map { ($0.path, $0.content) })

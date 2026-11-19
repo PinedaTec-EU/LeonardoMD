@@ -4,6 +4,36 @@ import LeonardoSync
 @testable import LeonardoDesktopSync
 
 final class ScopedDesktopTransactionTests: XCTestCase {
+    func testExcludedFormatsAreRejectedBeforePreparingOrRecoveringJournal() async throws {
+        let fixture = try TransactionFixture()
+        defer { fixture.remove() }
+        let before = try await fixture.snapshot()
+        let form = CorpusFile(path: "docs/request.mdlf", content: Data("form".utf8))
+        let after = CorpusSnapshot(revision: "accepted", files: fixture.after.files + [form])
+        let id = UUID()
+
+        do {
+            _ = try await fixture.transaction.prepare(id: id, projectRoot: fixture.project,
+                selection: fixture.selection, before: before, after: after,
+                excludingExtensions: ["mdlf", "mdlr"])
+            XCTFail("Excluded result was prepared")
+        } catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.url(form.path).path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.journals.appendingPathComponent(id.uuidString + ".json").path))
+
+        try FileManager.default.createDirectory(at: fixture.journals, withIntermediateDirectories: true)
+        let journal = DesktopTransactionJournal(id: id, projectRoot: fixture.project,
+            selection: fixture.selection, excludedExtensions: ["mdlf"], before: before, after: after,
+            permissions: [:], missingParents: [], replacedDirectoryPermissions: [:], phase: .prepared)
+        try JSONEncoder().encode(journal).write(to: fixture.journals.appendingPathComponent(id.uuidString + ".json"))
+        let reopened = ScopedDesktopTransaction(journals: fixture.journals)
+        do {
+            _ = try await reopened.recover(id: id, projectRoot: fixture.project)
+            XCTFail("Excluded path in persisted journal was recovered")
+        } catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.url(form.path).path))
+    }
+
     func testApprovedScopedChangesPreserveUnselectedBytesPermissionsAndLaterEdits() async throws {
         let fixture = try TransactionFixture()
         defer { fixture.remove() }

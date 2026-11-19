@@ -24,6 +24,8 @@ public actor ScopedDesktopTransaction {
         try enter(); defer { busy = false }
         let root = try canonicalRoot(projectRoot)
         try selection.validate(before); try selection.validate(after)
+        try Self.validate(before, excludingExtensions: excludingExtensions)
+        try Self.validate(after, excludingExtensions: excludingExtensions)
         guard before.files.allSatisfy({ !$0.isUnsavedBuffer }), after.files.allSatisfy({ !$0.isUnsavedBuffer }) else { throw SyncError.invalidSnapshot }
         let files = DesktopTransactionFiles(root: root)
         let missingParents = try Set(after.files.compactMap { try files.firstMissingParent($0.path) }).sorted()
@@ -127,6 +129,14 @@ public actor ScopedDesktopTransaction {
 
     private func equivalent(_ lhs: CorpusSnapshot, _ rhs: CorpusSnapshot) -> Bool {
         lhs.files.sorted { $0.path < $1.path } == rhs.files.sorted { $0.path < $1.path }
+    }
+    private static func validate(_ snapshot: CorpusSnapshot, excludingExtensions: Set<String>) throws {
+        let excluded = Set(excludingExtensions.map { $0.lowercased() })
+        guard excluded.count == excludingExtensions.count,
+              excluded.allSatisfy({ !$0.isEmpty && $0.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) } }),
+              snapshot.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }) else {
+            throw SyncError.invalidSnapshot
+        }
     }
     private func enter() throws { guard !busy else { throw DesktopTransactionError.busy }; busy = true }
     private func canonicalRoot(_ url: URL) throws -> URL {

@@ -7,3 +7,10 @@ The preference filters project tree rows, local project search results, remote c
 When the setting changes, the active sidebar tree and search results refresh. External preference-file changes refresh search when they change this setting. Focused regressions cover default-off search, enabling/disabling it, and remote review notices with synthetic `.md` and `.png` entries.
 
 Implementation and delivery tracking: [#472](https://github.com/PinedaTec-EU/LeonardoMD/issues/472), [#476](https://github.com/PinedaTec-EU/LeonardoMD/issues/476), and [PR #473](https://github.com/PinedaTec-EU/LeonardoMD/pull/473).
+
+Peer upload exclusion is enforced separately from list visibility. The receiving
+side validates the base, proposed, current, and resolved snapshots against its
+excluded extensions before file writes; persisted transaction journals repeat
+that check during recovery. This protects older manifests and crafted proposals
+that contain formats hidden by the receiving view. See
+[#491](https://github.com/PinedaTec-EU/LeonardoMD/issues/491).

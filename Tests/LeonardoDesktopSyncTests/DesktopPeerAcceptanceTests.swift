@@ -112,6 +112,42 @@ final class DesktopPeerAcceptanceTests: XCTestCase {
             proposalID: proposal.id, selection: grant)
         XCTAssertEqual(stored, result.receipt)
     }
+
+    func testLegacyAcceptanceRejectsExcludedProposalBeforeDiskOrReceiptMutation() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let project = root.appendingPathComponent("Project", isDirectory: true)
+        let docs = project.appendingPathComponent("docs", isDirectory: true)
+        try FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
+        let noteURL = docs.appendingPathComponent("note.md")
+        let formURL = docs.appendingPathComponent("response.mdlr")
+        try Data("disk note".utf8).write(to: noteURL)
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let base = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/note.md", content: Data("disk note".utf8))])
+        let proposed = CorpusSnapshot(revision: "proposal", files: [
+            CorpusFile(path: "docs/note.md", content: Data("disk note".utf8)),
+            CorpusFile(path: "docs/response.mdlr", content: Data("response".utf8))
+        ])
+        let proposal = try DesktopPeerProposal(projectID: UUID(), selection: selection, base: base, proposed: proposed)
+        let view = DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false)
+        let review = try DesktopPeerProposalReview(proposal: proposal, source: base, view: view)
+        let deviceID = UUID(), receipts = FileDesktopPeerReceiptStore(root: root.appendingPathComponent("Receipts"))
+        let acceptanceRoot = root.appendingPathComponent("Acceptance")
+        let acceptance = DesktopPeerAcceptance(root: acceptanceRoot, receipts: receipts)
+
+        do {
+            _ = try await acceptance.apply(deviceID: deviceID, review: review,
+                decisions: ["docs/response.mdlr": .remote], projectRoot: project, currentSource: base, currentDisk: base)
+            XCTFail("Excluded proposal format was accepted")
+        } catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+
+        XCTAssertEqual(try Data(contentsOf: noteURL), Data("disk note".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: formURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: acceptanceRoot.appendingPathComponent("Transactions").path))
+        let absent = try await receipts.load(deviceID: deviceID, projectID: proposal.projectID,
+                                             proposalID: proposal.id, selection: selection)
+        XCTAssertNil(absent)
+    }
 }
 private enum AcceptanceFixtureError: Error { case persist }
 private struct FailingAcceptanceReceipts: DesktopPeerReceiptStore {

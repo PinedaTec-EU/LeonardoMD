@@ -13,7 +13,7 @@ extension DirectSyncAuthority {
         defer { changing = false }
         guard let view = try await uploads.view(deviceID: deviceID, projectID: projectID,
                                                 proposalID: proposalID, grantSelection: expectedView.grantSelection),
-              view == expectedView else { throw SyncError.outsideScope }
+              view.acceptsResumeRequest(expectedView) else { throw SyncError.outsideScope }
         guard let receipt = try await receipts.load(deviceID: deviceID, projectID: projectID,
                                                     proposalID: proposalID, selection: view.selection),
               receipt.projectID == projectID, receipt.proposalID == proposalID else {

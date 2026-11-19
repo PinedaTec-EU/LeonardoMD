@@ -1,8 +1,25 @@
 import SwiftUI
 import LeonardoCore
+
 import LeonardoSync
 import LeonardoRender
 import LeonardoSyncUI
+
+enum MobileRecoveryArchiveCopy {
+    static func summary(spanish: Bool) -> String {
+        spanish
+            ? "Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente."
+            : "This older copy preserves your local and submitted changes. Export it to recover them on a computer. It won't be edited or sent automatically."
+    }
+
+    static func exportAction(spanish: Bool) -> String {
+        spanish ? "Exportar recuperación" : "Export recovery"
+    }
+
+    static func retainedFile(size: String, spanish: Bool) -> String {
+        spanish ? "Archivo conservado para exportación · \(size)" : "File retained for export · \(size)"
+    }
+}
 
 private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings, about
@@ -486,8 +503,9 @@ struct MobileProjectView: View {
                             Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)")
                                 .font(.caption)
                             if project.isRecoveryArchive {
-                                Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
-                                Button("Exportar recuperación", systemImage: "square.and.arrow.up") { exporting = true }
+                                Text(MobileRecoveryArchiveCopy.summary(spanish: spanishErrors))
+                                Button(MobileRecoveryArchiveCopy.exportAction(spanish: spanishErrors),
+                                       systemImage: "square.and.arrow.up") { exporting = true }
                                     .accessibilityIdentifier("export-recovery")
                             }
                         }
@@ -505,7 +523,9 @@ struct MobileProjectView: View {
                             } else {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(file.path)
-                                    Text("Archivo conservado para exportación · \(ByteCountFormatter.string(fromByteCount: Int64(file.content.count), countStyle: .file))")
+                                    Text(MobileRecoveryArchiveCopy.retainedFile(
+                                        size: ByteCountFormatter.string(fromByteCount: Int64(file.content.count), countStyle: .file),
+                                        spanish: spanishErrors))
                                         .font(.caption).foregroundStyle(MobileClassic.secondary)
                                 }
                                 .accessibilityElement(children: .combine)

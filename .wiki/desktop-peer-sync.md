@@ -42,3 +42,19 @@ and resolve the normal STATUS behavior in its library body. Xcode 26.3 / Swift
 6.2.4 can link incompatible context metadata for public async default-argument
 closures across modules, aborting the test process with signal 6; the regression
 is tracked by [#450](https://github.com/PinedaTec-EU/LeonardoMD/issues/450).
+
+Peer upload manifests pin the original grant, proposal selection, and reader
+capabilities. After an upgrade, a broader current grant or selection may resume
+that upload only when it covers the persisted view; all reads, validation,
+receipts, and acknowledgement continue under the saved narrower view. A
+tombstone retains that manifest for idempotent acknowledgement and slot reuse,
+so its serialized-size limit must allow both persisted selections. Validate the
+payload, submitted marker, and manifest before deleting any staged file to keep
+cleanup repeatable. See [#489](https://github.com/PinedaTec-EU/LeonardoMD/issues/489)
+and [#490](https://github.com/PinedaTec-EU/LeonardoMD/issues/490).
+
+Excluded extensions must be checked on the upload base and proposed snapshots
+before acceptance can stage writes, then on the resolved result and transaction
+journal before commit or crash recovery. This prevents a legacy or crafted peer
+proposal from writing a format the receiving view excludes. See
+[#491](https://github.com/PinedaTec-EU/LeonardoMD/issues/491).

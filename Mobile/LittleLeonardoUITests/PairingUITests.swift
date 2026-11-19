@@ -1663,6 +1663,36 @@ final class PairingUITests: XCTestCase {
         add(readerCapture)
     }
 
+    @MainActor func testLegacyRecoveryCopyIsLocalizedInEnglish() throws {
+        try assertRecoveryArchiveLocale(language: "en", locale: "en_US",
+            summary: "This older copy preserves your local and submitted changes. Export it to recover them on a computer. It won't be edited or sent automatically.",
+            exportAction: "Export recovery")
+    }
+
+    @MainActor func testLegacyRecoveryCopyIsLocalizedInSpanish() throws {
+        try assertRecoveryArchiveLocale(language: "es", locale: "es_ES",
+            summary: "Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.",
+            exportAction: "Exportar recuperación")
+    }
+
+    @MainActor private func assertRecoveryArchiveLocale(language: String, locale: String,
+        summary: String, exportAction: String) throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale]
+        app.launch()
+        let project = app.staticTexts["QA · Recovery"].firstMatch
+        guard project.waitForExistence(timeout: 10) else {
+            throw XCTSkip("Requires the isolated legacy recovery archive in the simulator app container")
+        }
+        project.tap()
+        let summaryText = app.staticTexts.matching(NSPredicate(format: "label == %@", summary)).firstMatch
+        XCTAssertTrue(summaryText.waitForExistence(timeout: 5))
+        let export = app.buttons["export-recovery"]
+        XCTAssertTrue(export.waitForExistence(timeout: 5))
+        XCTAssertEqual(export.label, exportAction)
+        captureScreen(app, name: "\(language) legacy recovery archive localized copy")
+    }
+
     @MainActor func testManualPairingFormRequiresAddressAndRetainsQRAlternative() throws {
         let app = XCUIApplication()
         app.launch()

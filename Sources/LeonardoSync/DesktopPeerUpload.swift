@@ -73,6 +73,15 @@ public struct DesktopPeerUploadView: Codable, Equatable, Sendable {
         self.selection = selection
         self.supportsLeonardoFormats = supportsLeonardoFormats
     }
+
+    /// A resumed request may use a newer, broader capability declaration, but it
+    /// continues under the narrower view already pinned in the persisted manifest.
+    public func acceptsResumeRequest(_ request: DesktopPeerUploadView) -> Bool {
+        (!supportsLeonardoFormats || request.supportsLeonardoFormats)
+            && request.grantSelection.covers(grantSelection)
+            && request.selection.covers(selection)
+            && grantSelection.covers(selection)
+    }
 }
 
 public struct DesktopPeerPendingUpload: Codable, Sendable {
