@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1894
+
+- #484 Added: delete project files from the keyboard ([#485](https://github.com/PinedaTec-EU/LeonardoMD/pull/485))
+
+<p>Project files can be sent to Trash with Delete or Forward Delete from the sidebar.</p>
+
+Source: `31bd534cfa242cb9dba3f64b6cebe2e6444be810`. Delta: `{"build": 5}`.
+
 ## 0.3.1889
 
 - #481 Added: show historical PR summaries in both apps ([#482](https://github.com/PinedaTec-EU/LeonardoMD/pull/482))

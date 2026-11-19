@@ -1159,9 +1159,19 @@
       "pr": 482,
       "summary": "Read offline summaries of the 59 merged pull requests through #207 in macOS Release notes and in Little Leonardo under About.",
       "to_version": "0.3.1889"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.3.1889",
+      "merge_sha": "31bd534cfa242cb9dba3f64b6cebe2e6444be810",
+      "pr": 485,
+      "summary": "Project files can be sent to Trash with Delete or Forward Delete from the sidebar.",
+      "to_version": "0.3.1894"
     }
   ],
-  "current_version": "0.3.1889",
+  "current_version": "0.3.1894",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
