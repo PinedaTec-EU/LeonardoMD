@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-19T08:36:10.972081+00:00",
+  "capture": {
+    "captured_at": "2026-11-19T08:30:08.827621+00:00",
+    "route": "Little Leonardo > Biblioteca > Demo Local > Demo-es.mdlr",
+    "screen": "ios-mdlr-assets-es",
+    "browser_name": "Native iOS Simulator UI (XcodeBuildMCP; no browser)",
+    "browser_version": "iOS 27.0 simulator runtime",
+    "state": "Rendered Markdown table and bundled image are visible while the non-document file preference is off.",
+    "viewport_css": {
+      "width": 368,
+      "height": 800
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "bundled Demo",
+    "instance": {
+      "device": "iPhone 17",
+      "udid": "691F22BD-BD95-40DC-8744-352846B25B84",
+      "app_bundle_id": "eu.pinedatec.LittleLeonardo",
+      "app_process_id": 66575,
+      "app_version": "0.3.1889",
+      "preference_show_non_document_files": false
+    }
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 368,
+    "height_px": 800,
+    "sha256": "4f236beb083efd9e4ae883ae92c757340d1d4dd565a6c9e3573e8995b36a3721"
+  },
+  "source": {
+    "revision_at_collection": "334e0d6d55518a827ead653bfcbe72b4f3e451e6",
+    "tracked_changes_present": false,
+    "untracked_files_present": false,
+    "pr": 473,
+    "pr_build_delta": 38
+  }
+}
