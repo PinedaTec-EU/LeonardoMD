@@ -34,13 +34,14 @@ struct ProjectFolderDropDelegate: DropDelegate {
     let folder: URL
     let session: AppSession
     @Binding var state: ProjectFolderDropState
+    var acceptsExternalFiles = true
 
     func validateDrop(info: DropInfo) -> Bool {
         guard (try? folder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else {
             return false
         }
-        return info.hasItemsConforming(to: [.fileURL]) ||
-            info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType])
+        return info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType]) ||
+            (acceptsExternalFiles && info.hasItemsConforming(to: [.fileURL]))
     }
 
     func dropEntered(info: DropInfo) {
@@ -92,7 +93,7 @@ struct ProjectFolderDropDelegate: DropDelegate {
     private func providers(for info: DropInfo) -> [NSItemProvider] {
         // SwiftUI only permits querying providers during performDrop(info:).
         let projectTreeProviders = info.itemProviders(for: [DocumentDropProviders.projectTreeItemType])
-        let fileURLProviders = info.itemProviders(for: [.fileURL])
+        let fileURLProviders = acceptsExternalFiles ? info.itemProviders(for: [.fileURL]) : []
         return DocumentDropProviders.preferredFolderDropProviders(
             projectTreeProviders: projectTreeProviders,
             fileURLProviders: fileURLProviders

@@ -83,3 +83,9 @@ EVIDENCE_SHA=47b5495b6b3be7ba651b33160da7af448fb37fa2 \
 LEONARDO_VISUAL_EVIDENCE=/tmp/leonardo-pr471-selection-captures-47b5495b-exact \
   swift test --filter SidebarSelectionTests/testNativeSelectionAppearances
 ```
+
+## Drag freeze and root destination follow-up
+
+- A main-thread sample from packaged QA PID 4367 identified the freeze in URL ancestor traversal while assembling the drag selection. The fix uses a path walk that removes a component each iteration. Tracking: [#483](https://github.com/PinedaTec-EU/LeonardoMD/issues/483).
+- The owner tested fresh packaged QA build delta 42, source `35e2e09c`, PID 15426. This process logged two successful single-item moves and one successful two-item copy. The fixture showed the moved file at its destination and byte-identical copies with their originals still present. The owner confirmed the gesture worked and Computer could read the resulting window. The process exited after a normal quit. Bilingual Help smoke remains pending.
+- The next candidate adds a drag image count, puts the selection footer next to the window status bar, and accepts project-item drops on the project header as the root destination. The focused suite passed 22 cases, including an internal copy and move back to the root. Validate all three changes in packaged QA before publishing a beta.

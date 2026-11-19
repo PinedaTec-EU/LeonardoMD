@@ -32,8 +32,8 @@ These hashes describe superseded candidates; those revision directories already 
 different personal guides. The v100 candidate hashes are recorded after packaging.
 Guide v98 EN SHA-256: `e1a0496cda013821d04a9dffbf9b417a58de816f0ed0e2252da4fbcc6c1f0a2e`
 and ES SHA-256: `60dd50195ea44fd85f469c96cc576667bd3f9090c3e5196f5e1359bf79d11de7`.
-Guide v100 EN SHA-256: `7114204a9969fb418409fe4b9950b0579b15b23594a075ed46174c9f234e0d15`
-and ES SHA-256: `90fbb14f002625cc207dae05fbf1084edacb8efc4e92034d99dbee77d494bbec`.
+Guide v100 EN SHA-256: `f61d615cf9df2566e317c0253f798dc9d67b2c727033465912291c2c27232397`
+and ES SHA-256: `eeb84384b2ab62a7a692e16df539d63a384465a1c3142e6c861f32033669b6d1`.
 Guide v95 EN SHA-256: `4b96b84bc89f83fd3347e6ccb6e621e21e8d3b73abfbe54c7ccedc5f30e65848`
 and ES SHA-256: `cdfbe9adbe90ef95402636c6171243cd25643fb48feada5de3a6e7136b6fb0df`.
 Guide v94 EN SHA-256: `151bda467f3bdf81965d2f961ed31031eba5b9a1b0d59be32785e927f47dbb4e`

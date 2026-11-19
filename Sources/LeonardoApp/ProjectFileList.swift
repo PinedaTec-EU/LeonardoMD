@@ -32,27 +32,18 @@ struct ProjectFileList: View {
     var body: some View {
         ScrollViewReader { proxy in
             let visibleRows = session.searchQuery.isEmpty ? tree.rows(roots: session.rootEntries) : []
-            VStack(spacing: 0) {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        if session.searchQuery.isEmpty {
-                            ForEach(visibleRows) { row in
-                                FileTreeRow(entry: row.entry, session: session, tree: tree, rows: visibleRows,
-                                            depth: row.depth, expanded: tree.expanded.contains(row.id)) {
-                                    Task { await tree.toggle(row.entry, session: session) }
-                                }.id(row.id)
-                            }
-                        } else {
-                            searchResults
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    if session.searchQuery.isEmpty {
+                        ForEach(visibleRows) { row in
+                            FileTreeRow(entry: row.entry, session: session, tree: tree, rows: visibleRows,
+                                        depth: row.depth, expanded: tree.expanded.contains(row.id)) {
+                                Task { await tree.toggle(row.entry, session: session) }
+                            }.id(row.id)
                         }
+                    } else {
+                        searchResults
                     }
-                }
-                if session.searchQuery.isEmpty {
-                    let hasSelection = !tree.selection.isEmpty
-                    selectionSummary
-                        .opacity(hasSelection ? 1 : 0)
-                        .allowsHitTesting(hasSelection)
-                        .accessibilityHidden(!hasSelection)
                 }
             }
             .task(id: request) {
@@ -87,10 +78,6 @@ struct ProjectFileList: View {
                 }
             }
         }
-    }
-
-    private var selectionSummary: some View {
-        ProjectFileSelectionSummary(tree: tree, accent: session.accentColor)
     }
 
     private var searchResults: some View {
@@ -147,6 +134,6 @@ struct ProjectFileSelectionSummary: View {
         .padding(.vertical, 5)
         .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
         .padding(.horizontal, 6)
-        .padding(.vertical, 4)
+        .padding(.top, 4)
     }
 }

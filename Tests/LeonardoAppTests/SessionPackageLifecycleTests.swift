@@ -220,6 +220,28 @@ final class SessionPackageLifecycleTests: XCTestCase {
         XCTAssertTrue(copied, "The Option-copy path should retain and duplicate each selected item")
         XCTAssertTrue(FileManager.default.fileExists(atPath: copyFile.url.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: copyFolder.url.path))
+
+        let movedFile = target.url.appendingPathComponent("MoveSource.md")
+        let rootProvider = DocumentDropProviders.projectTreeItemProvider(
+            for: movedFile, selecting: [movedFile]
+        )
+        XCTAssertTrue(session.acceptDrop([rootProvider], into: projectRoot, copy: true))
+        let copiedBack = try await waitForFileSystemChange {
+            FileManager.default.fileExists(atPath: moveFile.url.path)
+        }
+        XCTAssertTrue(copiedBack)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: movedFile.path))
+
+        let movedFolder = target.url.appendingPathComponent("MoveFolder", isDirectory: true)
+        let folderProvider = DocumentDropProviders.projectTreeItemProvider(
+            for: movedFolder, selecting: [movedFolder]
+        )
+        XCTAssertTrue(session.acceptDrop([folderProvider], into: projectRoot))
+        let movedBack = try await waitForFileSystemChange {
+            FileManager.default.fileExists(atPath: moveFolder.url.appendingPathComponent("Nested.md").path)
+        }
+        XCTAssertTrue(movedBack)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: movedFolder.path))
     }
 
     func testDeletingOwnerPackageClearsOnlyPackageTabAndPreservesExtractedTab() async throws {

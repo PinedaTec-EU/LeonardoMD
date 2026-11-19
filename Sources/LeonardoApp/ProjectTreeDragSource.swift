@@ -68,12 +68,35 @@ final class ProjectTreeDragSourceView: NSView, NSDraggingSource {
             for: primaryURL, selecting: urls)
         let item = NSDraggingItem(pasteboardWriter: pasteboardItem)
         let icon = NSWorkspace.shared.icon(forFile: primaryURL.path)
-        icon.size = NSSize(width: 32, height: 32)
+        let preview = dragPreview(icon: icon, count: urls.count)
+        let size = preview.size
         let point = convert(event.locationInWindow, from: nil)
-        item.setDraggingFrame(NSRect(x: point.x - 16, y: point.y - 16, width: 32, height: 32),
-                              contents: icon)
+        item.setDraggingFrame(NSRect(x: point.x - size.width / 2, y: point.y - size.height / 2,
+                                     width: size.width, height: size.height), contents: preview)
         draggingSession = beginDraggingSession(with: [item], event: event, source: self)
         draggingSession?.animatesToStartingPositionsOnCancelOrFail = true
+    }
+
+    private func dragPreview(icon: NSImage, count: Int) -> NSImage {
+        let iconRect = NSRect(x: 0, y: 0, width: 32, height: 32)
+        let badge = NSAttributedString(string: count.formatted(), attributes: [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: NSColor.alternateSelectedControlTextColor
+        ])
+        let badgeSize = badge.size()
+        let width = max(18, ceil(badgeSize.width) + 8)
+        let size = NSSize(width: count > 1 ? 24 + width : iconRect.width, height: 36)
+        return NSImage(size: size, flipped: false) { _ in
+            icon.draw(in: iconRect)
+            if count > 1 {
+                let rect = NSRect(x: 24, y: 18, width: width, height: 18)
+                NSColor.selectedContentBackgroundColor.setFill()
+                NSBezierPath(roundedRect: rect, xRadius: 9, yRadius: 9).fill()
+                badge.draw(at: NSPoint(x: rect.midX - badgeSize.width / 2,
+                                       y: rect.midY - badgeSize.height / 2))
+            }
+            return true
+        }
     }
 
     func draggingSession(_ session: NSDraggingSession,
