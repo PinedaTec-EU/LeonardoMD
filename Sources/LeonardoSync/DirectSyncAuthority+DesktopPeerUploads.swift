@@ -39,15 +39,17 @@ extension DirectSyncAuthority {
         let lookupView = persistedView ?? expectedView
         let receipt = try await receipts.load(deviceID: deviceID, projectID: projectID,
                                               proposalID: proposalID, selection: lookupView.selection)
-        guard try uploadView(deviceID: deviceID, credential: credential, projectID: projectID) == expectedView else {
-            throw SyncError.outsideScope
-        }
         if let persistedView {
             guard let uploads,
                   try await uploads.view(deviceID: deviceID, projectID: projectID,
                     proposalID: proposalID, grantSelection: expectedView.grantSelection) == persistedView else {
                 throw SyncError.outsideScope
             }
+        }
+        // This is intentionally the final authorization check: the persisted-view lookup
+        // above can suspend while consent is revoked or narrowed.
+        guard try uploadView(deviceID: deviceID, credential: credential, projectID: projectID) == expectedView else {
+            throw SyncError.outsideScope
         }
         if let receipt {
             guard receipt.projectID == projectID, receipt.proposalID == proposalID else { throw SyncError.invalidSnapshot }
