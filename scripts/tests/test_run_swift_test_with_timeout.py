@@ -1,10 +1,12 @@
 from pathlib import Path
 import os
+import runpy
 from shlex import quote
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "run-swift-test-with-timeout.py"
@@ -67,3 +69,22 @@ class SwiftTestTimeoutTests(unittest.TestCase):
             self.assertEqual(result.returncode, 124, result.stderr)
             self.assertIn("parent completed", result.stdout)
             self.assertIn("sleep", (directory / "diagnostics" / "timeout-processes.txt").read_text())
+
+    def test_interrupted_sample_never_exposes_raw_report_for_upload(self):
+        wrapper = runpy.run_path(str(SCRIPT))
+        with tempfile.TemporaryDirectory() as tmp:
+            diagnostics = Path(tmp)
+
+            def interrupted_sample(command, **kwargs):
+                raw = Path(command[-1])
+                raw.write_text("Raw header\nBinary Images:\n/private/path\n", encoding="utf-8")
+                self.assertNotEqual(raw.parent, diagnostics)
+                self.assertEqual(list(diagnostics.glob("timeout-stack-*.txt")), [])
+                raise KeyboardInterrupt
+
+            process = wrapper["ProcessInfo"](123, 1, 123, "00:01", "S", "swift-test")
+            with patch.object(Path, "exists", return_value=True), patch(
+                "subprocess.run", side_effect=interrupted_sample,
+            ), self.assertRaises(KeyboardInterrupt):
+                wrapper["sample_test_processes"]([process], 123, diagnostics)
+            self.assertEqual(list(diagnostics.glob("timeout-stack-*.txt")), [])
