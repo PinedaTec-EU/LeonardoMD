@@ -88,3 +88,31 @@ class SwiftTestTimeoutTests(unittest.TestCase):
             ), self.assertRaises(KeyboardInterrupt):
                 wrapper["sample_test_processes"]([process], 123, diagnostics)
             self.assertEqual(list(diagnostics.glob("timeout-stack-*.txt")), [])
+
+    def test_exited_parent_leaves_reparented_child_in_owned_session(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            program = """import os, time
+reader, writer = os.pipe()
+if os.fork() == 0:
+    os.close(reader)
+    os.setpgid(0, 0)
+    print(os.getpid(), flush=True)
+    os.write(writer, b"1")
+    os.close(writer)
+    time.sleep(60)
+else:
+    os.close(writer)
+    os.read(reader, 1)
+"""
+            result = self.run_fake_swift(directory, f"exec {quote(sys.executable)} -c {quote(program)}\n")
+            self.assertEqual(result.returncode, 124, result.stderr)
+            pid = result.stdout.splitlines()[0]
+            snapshot = (directory / "diagnostics" / "timeout-processes.txt").read_text()
+            row = next(line.split() for line in snapshot.splitlines() if line.startswith(pid + " "))
+            self.assertEqual(row[2], pid)
+            self.assertEqual(row[1], "1")
+            state = subprocess.run(
+                ["ps", "-p", pid, "-o", "stat="], capture_output=True, text=True, timeout=5,
+            ).stdout.strip()
+            self.assertTrue(not state or state.startswith("Z"), state)

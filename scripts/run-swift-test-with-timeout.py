@@ -23,6 +23,13 @@ class ProcessInfo:
     command: str
 
 
+def belongs_to_session(pid, session):
+    try:
+        return os.getsid(pid) == session
+    except OSError:
+        return False
+
+
 def suite_processes(leader):
     result = subprocess.run(
         ["ps", "-axo", "pid=,ppid=,pgid=,etime=,stat=,comm="],
@@ -35,7 +42,7 @@ def suite_processes(leader):
             pid, parent, group = map(int, columns[:3])
             processes.append(ProcessInfo(pid, parent, group, *columns[3:5], Path(columns[5]).name))
 
-    selected = {p.pid for p in processes if p.group == leader} | {leader}
+    selected = {p.pid for p in processes if belongs_to_session(p.pid, leader)} | {leader}
     while True:
         expanded = selected | {p.pid for p in processes if p.parent in selected}
         if expanded == selected:
