@@ -15,13 +15,13 @@ The central release ledger and evidence checks run independently.
 | Canonical format examples, schemas or cross-format fixtures | All |
 | Agent plugin manifests, skill and standalone tests | Plugin |
 | Agent plugin scripts or bundled schema used by the guides or macOS tests | Plugin, macOS and packaging |
-| Packaging tests under `Tests/Packaging/` | Packaging |
+| Packaging tests, generated web guides or sync-helper evidence checked by packaging tests | Packaging |
 | Recognized maintainer prose and PR ledger entries | No product suite |
 | Workflow, scripts, package manifests and unclassified paths | All |
 
 Mixed changes use the union of the affected suites. Renames and copies include
 both paths. An unavailable, empty, stale, or potentially truncated comparison
-runs all suites. A push to `main` always schedules all suites.
+runs all suites. Product CI also schedules every suite for pushes to `main`.
 
 Use PR labels `ci:macos`, `ci:ios`, `ci:package` and `ci:plugin` to add individual
 suites. `ci:full` schedules all suites. Labels are read when the planning job

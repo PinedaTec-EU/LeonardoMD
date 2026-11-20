@@ -29,7 +29,9 @@ def suites_for(path):
         return NATIVE
     if path.startswith(("doc/format/", "Tests/FormatContractFixtures/")):
         return SUITES
-    if path.startswith("Tests/Packaging/"):
+    if path.startswith(("Tests/Packaging/", "doc/validation/sync-helper/")) or path in {
+        "doc/user-guide.md", "doc/user-guide-es.md",
+    }:
         return {"package"}
     if path.startswith((
         "Tests/LeonardoAppTests/", "Tests/LeonardoCoreTests/", "Tests/LeonardoDesktopSyncTests/",
@@ -43,6 +45,8 @@ def suites_for(path):
         return {"plugin"}
     if path in {"README.md", "design-qa.md", ".github/pull_request_template.md"} or (
         path.endswith(".md") and path.startswith((".wiki/", "doc/adr/", "doc/design/", "doc/mobile/", "doc/plugins/"))
+    ) or (
+        path.startswith("doc/validation/") and path.endswith(".md") and "/fixtures/" not in path
     ) or re.fullmatch(r"deploy/version/entries/[1-9][0-9]*\.yaml", path):
         return set()
     return SUITES
