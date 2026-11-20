@@ -431,7 +431,7 @@ select it again and retry. Close the inspector to give the document more space.
 
 ![Drawing canvas and saved rubric thumbnails](assets/rubric-canvas.png)
 
-*Earlier view of the drawing canvas. The library now uses a trash icon.*
+*Drawing canvas with a sample saved rubric and its library trash button.*
 
 **Insert → New rubric…** opens a drawing canvas: enter a label, choose color,
 stroke width and Solid/Brush, draw, Undo or Clear. New rubrics created here are

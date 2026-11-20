@@ -437,7 +437,7 @@ al documento.
 
 ![Lienzo de dibujo y miniaturas guardadas](assets/rubric-canvas.png)
 
-*Vista anterior del lienzo. La biblioteca ahora muestra un icono de papelera.*
+*Lienzo de dibujo con una rúbrica de ejemplo y su papelera.*
 
 **Insertar → Nueva rúbrica…** abre el lienzo: indica una etiqueta, elige color,
 grosor y estilo Uniforme/Pincel, dibuja y usa Deshacer o Borrar trazos.
@@ -445,7 +445,7 @@ Las nuevas rúbricas creadas aquí siempre se guardan en tu biblioteca local.
 Elige una miniatura guardada para insertar otra copia. Al insertarla, arrastra la rúbrica seleccionada a un lateral o al
 centro de la página. Para cambiar su tamaño, arrastra el tirador de la esquina.
 En el Inspector de objetos puedes indicar directamente la página, la posición
-y el tamaño. Si estás en Editar, al insertar se abre la Vista dividida para que
+y el tamaño. Si estás en Editar, al insertar se abre la vista **Dividida** para que
 veas la página.
 
 Para borrar una rúbrica guardada, pulsa la papelera bajo su miniatura y confirma
