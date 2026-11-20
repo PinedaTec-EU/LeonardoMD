@@ -3,6 +3,25 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.1959</title>
+            <pubDate>Fri, 20 Nov 2026 04:00:44 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>1959</sparkle:version>
+            <sparkle:shortVersionString>0.3.1959</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">LeonardoMD 0.3.1959 beta
+
+- Choose whether non-document files appear in project lists, search, and remote review. The setting is off by default, and Markdown-linked images still render.
+- Little Leonardo can open received .mdlf and .mdlr files read-only. Edit or submit forms in LeonardoMD for macOS.
+- Peer transfers resume compatible saved selections, support larger manifests, and reject excluded file types before changing files.
+- Recovery guidance is available in English and Spanish.
+- Move selected project files to Trash with Delete or Forward Delete.
+- Browse offline summaries of recent changes in Release Notes and About.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1959/LeonardoMD-0.3.1959.zip" length="25640514" type="application/octet-stream" sparkle:edSignature="/QXBwBmArZATKwR0eM5+T8UJPBdyfnzLUQ/AqoElQ3tgsUICosfFyYiz9NT9fRSAPOJOdMK9NDlYaOr/XR04Dg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.1884</title>
             <pubDate>Tue, 17 Nov 2026 17:12:37 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
