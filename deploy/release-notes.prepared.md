@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1960
+
+- #502 Refactored: parallelize CI and reuse iOS test builds ([#503](https://github.com/PinedaTec-EU/LeonardoMD/pull/503))
+
+<p>Pull-request CI runs macOS tests, Little Leonardo simulator tests and packaging checks concurrently. Little Leonardo installs and seeds one build before running all selected unit and UI tests in one session.</p>
+
+Source: `2be8bad65e91963c30df7e2a69b1bd1631b91924`. Delta: `{"build": 1}`.
+
 ## 0.3.1959
 
 - #472 Added: show non-document files on demand ([#473](https://github.com/PinedaTec-EU/LeonardoMD/pull/473))

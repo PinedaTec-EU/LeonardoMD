@@ -1189,9 +1189,19 @@
       "pr": 473,
       "summary": "Adds default-off non-document visibility on macOS and Little Leonardo; reads .mdlf/.mdlr read-only in Little; preserves pinned proposals across grant expansion/restart; hardens legacy journals/tombstones; blocks peer writes to read-only formats; localizes archive guidance.",
       "to_version": "0.3.1959"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.1959",
+      "merge_sha": "2be8bad65e91963c30df7e2a69b1bd1631b91924",
+      "pr": 503,
+      "summary": "Pull-request CI runs macOS tests, Little Leonardo simulator tests and packaging checks concurrently. Little Leonardo installs and seeds one build before running all selected unit and UI tests in one session.",
+      "to_version": "0.3.1960"
     }
   ],
-  "current_version": "0.3.1959",
+  "current_version": "0.3.1960",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
