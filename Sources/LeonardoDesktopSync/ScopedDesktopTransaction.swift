@@ -10,17 +10,22 @@ public actor ScopedDesktopTransaction {
     private var busy = false
     public init(journals: URL) { self.journals = journals.standardizedFileURL.resolvingSymlinksInPath() }
 
-    public func prepare(projectRoot: URL, selection: CorpusSelection, before: CorpusSnapshot, after: CorpusSnapshot) async throws -> UUID {
-        try await prepare(id: UUID(), projectRoot: projectRoot, selection: selection, before: before, after: after)
+    public func prepare(projectRoot: URL, selection: CorpusSelection, before: CorpusSnapshot, after: CorpusSnapshot,
+                        excludingExtensions: Set<String> = []) async throws -> UUID {
+        try await prepare(id: UUID(), projectRoot: projectRoot, selection: selection, before: before,
+                          after: after, excludingExtensions: excludingExtensions)
     }
 
     /// Uses a caller-owned ID so a higher-level acknowledgement intent can bind the
     /// transaction before filesystem mutation begins.
     public func prepare(id: UUID, projectRoot: URL, selection: CorpusSelection,
-                        before: CorpusSnapshot, after: CorpusSnapshot) async throws -> UUID {
+                        before: CorpusSnapshot, after: CorpusSnapshot,
+                        excludingExtensions: Set<String> = []) async throws -> UUID {
         try enter(); defer { busy = false }
         let root = try canonicalRoot(projectRoot)
         try selection.validate(before); try selection.validate(after)
+        try Self.validate(before, excludingExtensions: excludingExtensions)
+        try Self.validate(after, excludingExtensions: excludingExtensions)
         guard before.files.allSatisfy({ !$0.isUnsavedBuffer }), after.files.allSatisfy({ !$0.isUnsavedBuffer }) else { throw SyncError.invalidSnapshot }
         let files = DesktopTransactionFiles(root: root)
         let missingParents = try Set(after.files.compactMap { try files.firstMissingParent($0.path) }).sorted()
@@ -31,9 +36,11 @@ public actor ScopedDesktopTransaction {
         var permissions: [String: Int] = [:]
         for file in before.files { permissions[file.path] = try files.permissions(file.path) }
         let journal = DesktopTransactionJournal(id: id, projectRoot: root, selection: selection,
+            excludedExtensions: excludingExtensions,
             before: before, after: after, permissions: permissions, missingParents: missingParents, replacedDirectoryPermissions: replacedDirectoryPermissions, phase: .prepared)
         try journal.validate(id: journal.id, projectRoot: root)
-        let current = try await reader.snapshot(root: root, selection: selection, revision: before.revision)
+        let current = try await reader.snapshot(root: root, selection: selection, revision: before.revision,
+                                                excludingExtensions: excludingExtensions)
         guard equivalent(current, before) else { throw ReconciliationError.staleComparison }
         try save(journal)
         return journal.id
@@ -45,16 +52,19 @@ public actor ScopedDesktopTransaction {
         var journal = try load(id: id, root: root)
         if journal.phase == .applied { return journal.after } // Exact accepted intent, even if later source edits exist.
         guard journal.phase == .prepared else { throw ReconciliationError.staleComparison }
-        let current = try await reader.snapshot(root: root, selection: journal.selection, revision: journal.before.revision)
+        let current = try await reader.snapshot(root: root, selection: journal.selection, revision: journal.before.revision,
+                                                excludingExtensions: journal.excludedExtensions)
         guard equivalent(current, journal.before) else { throw ReconciliationError.staleComparison }
         do {
             try change(journal: journal, destination: journal.after, expected: journal.before)
-            let persisted = try await reader.snapshot(root: root, selection: journal.selection, revision: journal.after.revision)
+            let persisted = try await reader.snapshot(root: root, selection: journal.selection, revision: journal.after.revision,
+                                                      excludingExtensions: journal.excludedExtensions)
             guard equivalent(persisted, journal.after) else { throw ReconciliationError.staleComparison }
             journal.phase = .applied; try save(journal)
             return journal.after
         } catch {
-            let current = try await reader.snapshot(root: root, selection: journal.selection, revision: "recovery")
+            let current = try await reader.snapshot(root: root, selection: journal.selection, revision: "recovery",
+                                                    excludingExtensions: journal.excludedExtensions)
             try rollback(&journal, current: current)
             throw error
         }
@@ -69,7 +79,8 @@ public actor ScopedDesktopTransaction {
         var journal = try load(id: id, root: root)
         if journal.phase == .applied { return journal.after }
         if journal.phase == .rolledBack { return nil }
-        let current = try await reader.snapshot(root: root, selection: journal.selection, revision: journal.after.revision)
+        let current = try await reader.snapshot(root: root, selection: journal.selection, revision: journal.after.revision,
+                                                excludingExtensions: journal.excludedExtensions)
         if equivalent(current, journal.after) {
             journal.phase = .applied; try save(journal); return journal.after
         }
@@ -118,6 +129,14 @@ public actor ScopedDesktopTransaction {
 
     private func equivalent(_ lhs: CorpusSnapshot, _ rhs: CorpusSnapshot) -> Bool {
         lhs.files.sorted { $0.path < $1.path } == rhs.files.sorted { $0.path < $1.path }
+    }
+    private static func validate(_ snapshot: CorpusSnapshot, excludingExtensions: Set<String>) throws {
+        let excluded = Set(excludingExtensions.map { $0.lowercased() })
+        guard excluded.count == excludingExtensions.count,
+              excluded.allSatisfy({ !$0.isEmpty && $0.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) } }),
+              snapshot.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }) else {
+            throw SyncError.invalidSnapshot
+        }
     }
     private func enter() throws { guard !busy else { throw DesktopTransactionError.busy }; busy = true }
     private func canonicalRoot(_ url: URL) throws -> URL {

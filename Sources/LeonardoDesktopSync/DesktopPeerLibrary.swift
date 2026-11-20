@@ -45,7 +45,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
             for (projectID, copyID) in connection.copies {
                 guard let grant = connection.grants[projectID],
                       let copy = try await copyStore.load(id: copyID),
-                      grant == copy.selection else { continue }
+                      grant.covers(copy.selection) else { continue }
                 try checkOwnership(copy, connection: connection)
                 let authorizationRequired = await revoker.authorizationRequired(
                     connectionID: connection.id, projectID: projectID)
@@ -288,8 +288,8 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
             var grants: [UUID: CorpusSelection] = [:]
             for project in status.projects { grants[project.id] = try selection(for: project) }
             let narrowed = connection.grants.keys.filter { projectID in
-                guard let current = grants[projectID] else { return true }
-                return connection.grants[projectID] != current
+                guard let current = grants[projectID], let previous = connection.grants[projectID] else { return true }
+                return !current.covers(previous)
             }.sorted { $0.uuidString < $1.uuidString }
             if !narrowed.isEmpty {
                 await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: narrowed)
@@ -318,7 +318,10 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
                 let copy = try await copyStore.load(id: copyID)
                 let authorizationRequired = await revoker.authorizationRequired(
                     connectionID: connection.id, projectID: projectID)
-                guard authorizationRequired || currentGrant != copy?.selection else { continue }
+                let copyRemainsAuthorized: Bool
+                if let currentGrant, let copy { copyRemainsAuthorized = currentGrant.covers(copy.selection) }
+                else { copyRemainsAuthorized = false }
+                guard authorizationRequired || !copyRemainsAuthorized else { continue }
                 try await outbox?.remove(copyID: copyID)
             }
             return
@@ -414,7 +417,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         guard !connection.revoked else { throw SyncError.revoked }
         guard copy.connectionID == connection.id, connection.copies[copy.remoteProjectID] == copy.id,
               let granted = connection.grants[copy.remoteProjectID] else { throw DesktopPeerLibraryError.unauthorizedProject }
-        guard granted == copy.selection else { throw DesktopPeerLibraryError.selectionChanged }
+        guard granted.covers(copy.selection) else { throw DesktopPeerLibraryError.selectionChanged }
     }
     private func selection(for descriptor: SharedProjectDescriptor) throws -> CorpusSelection {
         guard descriptor.name.utf8.count <= 1_024 else { throw SyncError.invalidSnapshot }

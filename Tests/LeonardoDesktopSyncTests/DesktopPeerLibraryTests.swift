@@ -115,6 +115,147 @@ final class DesktopPeerLibraryTests: XCTestCase {
         }
     }
 
+    func testExpandedGrantKeepsLegacyProposalPinnedThroughOwnerReceiptRestartAndSlotReuse() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sourceRoot = root.appendingPathComponent("Source")
+        let legacyFile = sourceRoot.appendingPathComponent("docs/legacy.md")
+        let addedFile = sourceRoot.appendingPathComponent("docs/new.md")
+        try FileManager.default.createDirectory(at: legacyFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("owner baseline".utf8).write(to: legacyFile)
+        try Data("new owner file".utf8).write(to: addedFile)
+
+        let legacySelection = try CorpusSelection(folders: [], documents: ["docs/legacy.md"])
+        let expandedSelection = try CorpusSelection(folders: [], documents: ["docs/legacy.md", "docs/new.md"])
+        let projectID = UUID()
+        let legacyDescriptor = SharedProjectDescriptor(id: projectID, name: "Legacy source",
+            scope: try CorpusScope(folder: ""), selection: legacySelection)
+        let expandedDescriptor = SharedProjectDescriptor(id: projectID, name: "Legacy source",
+            scope: try CorpusScope(folder: ""), selection: expandedSelection)
+        let reader = ProjectCorpusReader()
+        let legacySource = SharedProjectSource(descriptor: legacyDescriptor, rootURL: sourceRoot) {
+            try await reader.snapshot(root: sourceRoot, selection: legacySelection)
+        }
+        let expandedSource = SharedProjectSource(descriptor: expandedDescriptor, rootURL: sourceRoot) {
+            try await reader.snapshot(root: sourceRoot, selection: expandedSelection)
+        }
+        let serverRoot = root.appendingPathComponent("Server")
+        let runtime = DesktopDirectRuntime(root: serverRoot, credentials: PeerMemoryCredentials(), now: { Date() })
+        var running = try await runtime.start(host: "127.0.0.1", port: 0, projects: [legacySource])
+        var phase = "enroll and import legacy project"
+        do {
+            let connectionStore = FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections"))
+            let copies = FileDesktopPeerCopyStore(root: root.appendingPathComponent("Copies"))
+            let workspaceRoot = root.appendingPathComponent("Working")
+            let outbox = FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox"))
+            let intentsRoot = root.appendingPathComponent("ReceiptIntents")
+            let credentials = PeerMemoryCredentials()
+            let revoker = PeerRevokerFixture()
+            let library = DesktopPeerLibrary(connections: connectionStore, copies: copies,
+                workspace: DesktopPeerWorkspace(root: workspaceRoot, copies: copies), credentials: credentials,
+                remote: DesktopPeerHTTPSRemote(), revoker: revoker, outbox: outbox,
+                receiptApplier: DesktopPeerReceiptApplier(workingRoot: workspaceRoot, copies: copies,
+                    intents: FileDesktopPeerReceiptIntentStore(root: intentsRoot)))
+            let connection = try await library.enroll(endpoint: running.endpoint, fingerprint: nil,
+                invitation: nil, name: "Updating Mac")
+            let registry = try await runtime.consentState()
+            let request = try XCTUnwrap(registry.requests.first)
+            try await runtime.approve(requestID: request.id, code: request.comparisonCode, projectIDs: [projectID])
+            let copy = try await library.importProject(connectionID: connection.id, projectID: projectID)
+            let directory = try await library.open(copyID: copy.id)
+            try Data("queued proposal".utf8).write(to: directory.appendingPathComponent("docs/legacy.md"))
+            let sendResult = try await library.send(copyID: copy.id, buffers: [])
+            let firstID = try XCTUnwrap(sendResult)
+            let queuedResult = try await library.pendingProposal(copyID: copy.id)
+            let queued = try XCTUnwrap(queuedResult)
+            XCTAssertEqual(queued.proposal.id, firstID)
+
+            // Convert the just-staged manifest to the prior schema, which stored only selection.
+            let stage = serverRoot.appendingPathComponent("Proposals")
+                .appendingPathComponent(connection.remoteDeviceID.uuidString).appendingPathComponent(projectID.uuidString)
+            let manifestURL = stage.appendingPathComponent("manifest.json")
+            let encodedManifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+            let encodedSelection = try JSONSerialization.jsonObject(with: JSONEncoder().encode(legacySelection))
+            let legacyManifest: [String: Any] = [
+                "deviceID": connection.remoteDeviceID.uuidString,
+                "upload": try XCTUnwrap(encodedManifest["upload"]),
+                "selection": encodedSelection
+            ]
+            try JSONSerialization.data(withJSONObject: legacyManifest, options: [.sortedKeys]).write(to: manifestURL)
+
+            let serverPort = UInt16(try XCTUnwrap(running.endpoint.port))
+            phase = "restart owner with expanded grant"
+            try await runtime.stop()
+            running = try await runtime.start(host: "127.0.0.1", port: serverPort, projects: [expandedSource])
+
+            phase = "retry the pinned proposal under the expanded grant"
+            let retriedID = try await library.send(copyID: copy.id, buffers: [])
+            XCTAssertEqual(retriedID, firstID, "A compatible grant expansion must retry the immutable proposal")
+            let visibleCopies = try await library.copies()
+            XCTAssertEqual(visibleCopies.map(\.id), [copy.id], "A broader grant keeps the existing narrower copy visible")
+            let retainedOutbox = try await outbox.load(copyID: copy.id)
+            XCTAssertEqual(retainedOutbox?.proposal, queued.proposal)
+            let incomingValues = try await runtime.incomingProposals()
+            let incoming = try XCTUnwrap(incomingValues.first)
+            XCTAssertEqual(incoming.view?.selection, legacySelection)
+            let proposal = try await runtime.incomingProposal(deviceID: incoming.deviceID, upload: incoming.upload)
+            XCTAssertEqual(proposal, queued.proposal)
+            phase = "review pinned proposal at owner"
+            let review = try await runtime.reviewIncomingProposal(deviceID: incoming.deviceID, upload: incoming.upload)
+            XCTAssertEqual(review.source.files.map(\.path), ["docs/legacy.md"],
+                           "Owner review remains bounded by the pre-expansion proposal selection")
+            let ownerDisk = try await reader.snapshot(root: sourceRoot, selection: legacySelection)
+            let accepted = try await runtime.applyIncomingProposal(deviceID: incoming.deviceID, upload: incoming.upload,
+                review: review, decisions: ["docs/legacy.md": .local], projectRoot: sourceRoot,
+                currentSource: review.source, currentDisk: ownerDisk)
+            XCTAssertEqual(accepted.receipt.accepted.files.map(\.path), ["docs/legacy.md"])
+            XCTAssertEqual(try Data(contentsOf: legacyFile), Data("queued proposal".utf8))
+            XCTAssertEqual(try Data(contentsOf: addedFile), Data("new owner file".utf8))
+
+            // Restart both sides before retrieving and acknowledging the accepted receipt.
+            phase = "restart owner and retrieve accepted receipt"
+            try await runtime.stop()
+            running = try await runtime.start(host: "127.0.0.1", port: serverPort, projects: [expandedSource])
+            let reopened = DesktopPeerLibrary(connections: connectionStore, copies: copies,
+                workspace: DesktopPeerWorkspace(root: workspaceRoot, copies: copies), credentials: credentials,
+                remote: DesktopPeerHTTPSRemote(), revoker: revoker, outbox: outbox,
+                receiptApplier: DesktopPeerReceiptApplier(workingRoot: workspaceRoot, copies: copies,
+                    intents: FileDesktopPeerReceiptIntentStore(root: intentsRoot)))
+            let receiptValue = try await reopened.pendingReceipt(copyID: copy.id)
+            let receipt = try XCTUnwrap(receiptValue)
+            XCTAssertEqual(receipt, accepted.receipt)
+            phase = "apply and acknowledge accepted receipt"
+            _ = try await reopened.acknowledge(copyID: copy.id, receipt: receipt, buffers: [])
+            let clearedOutbox = try await outbox.load(copyID: copy.id)
+            XCTAssertNil(clearedOutbox)
+
+            let proposalClient = try DesktopPeerProposalClient(endpoint: running.endpoint,
+                certificateFingerprint: running.certificateFingerprint)
+            let secretValue = await credentials.credential(deviceID: connection.id)
+            let secret = try XCTUnwrap(secretValue)
+            phase = "repeat receipt acknowledgment"
+            try await proposalClient.acknowledge(queued.proposal, receipt: receipt,
+                deviceID: connection.remoteDeviceID, credential: secret)
+            try await proposalClient.acknowledge(queued.proposal, receipt: receipt,
+                deviceID: connection.remoteDeviceID, credential: secret)
+            let nextProposal = try DesktopPeerProposal(projectID: projectID, selection: legacySelection,
+                base: receipt.accepted, proposed: CorpusSnapshot(revision: "next", files: [
+                    CorpusFile(path: "docs/legacy.md", content: Data("next proposal".utf8))
+                ]))
+            phase = "reuse acknowledged proposal slot"
+            try await proposalClient.submit(nextProposal, deviceID: connection.remoteDeviceID,
+                credential: secret)
+            let nextIncoming = try await runtime.incomingProposals()
+            XCTAssertEqual(nextIncoming.map(\.upload.proposalID), [nextProposal.id],
+                           "The acknowledged staging slot must accept the next proposal")
+            try await runtime.stop()
+        } catch {
+            try? await runtime.stop()
+            throw NSError(domain: "DesktopPeerLibraryTests", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Legacy grant expansion scenario failed during \(phase): \(error)"])
+        }
+    }
+
     func testRealPinnedHTTPSEnrollmentImportAndRevocation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

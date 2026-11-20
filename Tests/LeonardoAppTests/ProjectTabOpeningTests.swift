@@ -26,7 +26,7 @@ final class ProjectTabOpeningTests: XCTestCase {
         source.toggleFavorite(root, kind: .project)
         source.setFavoritePalette(.graphiteGlass, for: root, kind: .project)
         await source.settingsTask?.value
-        source.showAllFiles = true
+        source.showNonDocumentFiles = true
         source.foldersFirst = false
         let folder = NavigationEntry(url: root.appendingPathComponent("Notes"), isDirectory: true)
         await source.projectFileTree.toggle(folder, session: source)
@@ -39,7 +39,7 @@ final class ProjectTabOpeningTests: XCTestCase {
         XCTAssertTrue(target.presentation.showsSidebar)
         XCTAssertEqual(target.documentURL, second)
         XCTAssertTrue(target.projectFileTree.expanded.contains(folder.url))
-        XCTAssertTrue(target.showAllFiles)
+        XCTAssertTrue(target.showNonDocumentFiles)
         XCTAssertFalse(target.foldersFirst)
         XCTAssertEqual(source.content, "draft")
         XCTAssertTrue(source.isDirty)

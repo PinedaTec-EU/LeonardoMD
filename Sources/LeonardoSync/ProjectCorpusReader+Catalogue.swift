@@ -2,7 +2,9 @@ import Foundation
 
 extension ProjectCorpusReader {
     /// Hash one saved file at a time. The index is independent of the aggregate snapshot byte cap.
-    public func catalogue(root: URL, selection: CorpusSelection) throws -> RemoteProjectCatalogue {
+    public func catalogue(root: URL, selection: CorpusSelection,
+                          excludingExtensions: Set<String> = []) throws -> RemoteProjectCatalogue {
+        let excluded = Set(excludingExtensions.map { $0.lowercased() })
         let normalized = root.standardizedFileURL.resolvingSymlinksInPath()
         guard try normalized.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true,
               let enumerator = FileManager.default.enumerator(at: normalized,
@@ -25,9 +27,11 @@ extension ProjectCorpusReader {
                 continue
             }
             guard (try? selection.validate(path)) != nil else { continue }
+            guard !excluded.contains((path as NSString).pathExtension.lowercased()) else { continue }
             guard entries.count < CorpusLimits().maximumFiles else { throw SyncError.sizeLimitExceeded }
             // Reuse the canonical guarded reader for symlink, regular-file and individual size validation.
-            let value = try snapshot(root: normalized, selection: CorpusSelection(folders: [], documents: [path]))
+            let value = try snapshot(root: normalized, selection: CorpusSelection(folders: [], documents: [path]),
+                                     excludingExtensions: excluded)
             if let file = value.files.first { entries.append(RemoteFileEntry(file: file)) }
         }
         return RemoteProjectCatalogue(files: entries.sorted { $0.path < $1.path }, directories: directories.sorted())

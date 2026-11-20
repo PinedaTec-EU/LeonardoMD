@@ -2,6 +2,7 @@ import Foundation
 
 /// Resolves a rendered local link exclusively against documents already in the granted cache.
 public struct CachedDocumentLink: Equatable, Sendable {
+    private static let previewableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
     public let file: CorpusFile
     public let anchor: String?
 
@@ -14,7 +15,7 @@ public struct CachedDocumentLink: Equatable, Sendable {
         guard target.count > root.count, Array(target.prefix(root.count)) == root else { return nil }
         let path = target.dropFirst(root.count).joined(separator: "/")
         guard (try? scope.validate(path)) != nil,
-              ["md", "markdown", "txt"].contains((path as NSString).pathExtension.lowercased()),
+              Self.previewableDocumentExtensions.contains((path as NSString).pathExtension.lowercased()),
               let file = files.first(where: { $0.path == path }),
               String(data: file.content, encoding: .utf8) != nil else { return nil }
         self.file = file

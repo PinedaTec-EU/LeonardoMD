@@ -6,6 +6,64 @@ import LeonardoCore
 @testable import LeonardoSyncTransport
 
 final class HTTPSRuntimeTests: XCTestCase {
+    func testEnrollmentClientAdvertisesReadOnlyLeonardoFormats() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let server = LANHTTPSListener(identity: identity) { request in
+            guard request.headers[DirectReadCapability.headerName]
+                    == DirectReadCapability.readOnlyLeonardoFormatsV1.rawValue else {
+                return HTTPResponse(status: 400)
+            }
+            return HTTPResponse(status: 200, body: Data("{\"access\":\"authorized\",\"projects\":[],\"capabilities\":[]}".utf8))
+        }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let client = try DirectEnrollmentClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
+                                                    certificateFingerprint: identity.certificateFingerprint)
+            let result = try await client.status(deviceID: UUID(), credential: String(repeating: "a", count: 64))
+            XCTAssertEqual(result.access, .authorized)
+            XCTAssertTrue(result.projects.isEmpty)
+            await server.stop()
+        } catch {
+            await server.stop()
+            throw error
+        }
+    }
+
+    func testStatusHeaderNegotiatesLeonardoDocumentsWithoutChangingLegacyJSON() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64)
+        let now = Date(timeIntervalSince1970: 1_000)
+        let fingerprint = Data(repeating: 1, count: 32)
+        let request = try registry.requestPairing(deviceName: "Older peer", credential: credential,
+            serverFingerprint: fingerprint, now: now)
+        let selection = try CorpusSelection(folders: [], documents: ["readme.md", "form.mdlf"])
+        let project = SharedProjectDescriptor(id: UUID(), name: "Mixed format project",
+            scope: try CorpusScope(folder: ""), selection: selection)
+        _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode,
+                                 projects: [project.id], now: now)
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "empty", files: []) }],
+            serverFingerprint: fingerprint, persist: { _ in })
+        let router = DirectHTTPSRouter(authority: authority, now: { now })
+        let path = "/v1/devices/\(request.id.uuidString)/status"
+        let baseHeaders = ["authorization": "Bearer \(credential)"]
+
+        let legacy = await router.respond(to: HTTPRequest(method: "GET", path: path,
+            headers: baseHeaders, body: Data()))
+        XCTAssertEqual(legacy.status, 200)
+        let legacyStatus = try JSONDecoder().decode(DirectDeviceStatus.self, from: legacy.body)
+        XCTAssertEqual(legacyStatus.projects.first?.selection?.documents, ["readme.md"])
+
+        var modernHeaders = baseHeaders
+        modernHeaders[DirectReadCapability.headerName] = DirectReadCapability.readOnlyLeonardoFormatsV1.rawValue
+        let modern = await router.respond(to: HTTPRequest(method: "GET", path: path,
+            headers: modernHeaders, body: Data()))
+        XCTAssertEqual(modern.status, 200)
+        let modernStatus = try JSONDecoder().decode(DirectDeviceStatus.self, from: modern.body)
+        XCTAssertEqual(modernStatus.projects.first?.selection, project.selection)
+    }
+
     func testSnapshotFailureBodyOmitsWideSelectionMetricsAfterGrantNarrowing() throws {
         let projectID = UUID()
         let original = SharedProjectDescriptor(id: projectID, name: "Shared",

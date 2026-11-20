@@ -1,14 +1,21 @@
 import SwiftUI
+import LeonardoCore
 import LeonardoSync
 import LeonardoSyncUI
 
 struct DesktopPeerRemoteProjectsView: View {
     @Bindable var controller: DesktopPeerController
+    let showNonDocumentFiles: Bool
     @State private var selectedConnectionID: UUID?
     @State private var browsingID: UUID?
     @State private var browsingPath: String?
     @State private var renamingConnection: DesktopPeerConnection?
     @State private var hostNameDraft = ""
+
+    init(controller: DesktopPeerController, showNonDocumentFiles: Bool = false) {
+        self.controller = controller
+        self.showNonDocumentFiles = showNonDocumentFiles
+    }
 
     private var connections: [DesktopPeerConnection] {
         controller.connections.sorted {
@@ -43,7 +50,8 @@ struct DesktopPeerRemoteProjectsView: View {
         }
         .sheet(isPresented: Binding(get: { browsingID != nil }, set: { if !$0 { browsingID = nil; browsingPath = nil } })) {
             if let id = browsingID {
-                DesktopDownloadBrowser(library: controller.downloads, projectID: id, initialPath: browsingPath)
+                DesktopDownloadBrowser(library: controller.downloads, projectID: id, initialPath: browsingPath,
+                                       showNonDocumentFiles: showNonDocumentFiles)
             }
         }
         .sheet(item: $renamingConnection) { connection in
@@ -246,12 +254,17 @@ struct DesktopPeerRemoteProjectsView: View {
         }
     }
 
-    private func fileNotices(for connection: DesktopPeerConnection) -> [FileNotice] {
+    func fileNotices(for connection: DesktopPeerConnection) -> [FileNotice] {
         (controller.available[connection.id] ?? []).flatMap { descriptor -> [FileNotice] in
             let downloadID = DesktopPeerController.downloadID(connectionID: connection.id, projectID: descriptor.id)
             guard let project = controller.downloads.projects.first(where: { $0.id == downloadID }) else { return [] }
             let paths = controller.reviewStore.pendingFilePaths(connectionID: connection.id, projectID: descriptor.id)
-            return project.catalogue.files.filter { paths.contains($0.path) }.map {
+            return project.catalogue.files.filter {
+                paths.contains($0.path) && LeonardoProjectFileVisibility.shouldShowFile(
+                    at: $0.path,
+                    showNonDocumentFiles: showNonDocumentFiles
+                )
+            }.map {
                 FileNotice(projectID: descriptor.id, projectName: descriptor.name, downloadID: downloadID,
                            entry: $0, isDownloaded: project.isDownloaded($0))
             }
@@ -291,7 +304,7 @@ struct DesktopPeerRemoteProjectsView: View {
         .padding(24).frame(width: 440)
     }
 
-    private struct FileNotice: Identifiable {
+    struct FileNotice: Identifiable {
         let projectID: UUID
         let projectName: String
         let downloadID: UUID

@@ -57,25 +57,62 @@ public struct DesktopPeerUploadChunk: Codable, Sendable {
     }
 }
 
+/// The negotiated file view for one proposal. The grant remains the owner's
+/// authorization; the proposal selection can be narrower for older peers.
+public struct DesktopPeerUploadView: Codable, Equatable, Sendable {
+    public let grantSelection: CorpusSelection
+    public let selection: CorpusSelection
+    public let supportsLeonardoFormats: Bool
+    /// Read-only Leonardo-format access does not authorize peer writes to those files.
+    public var excludedExtensions: Set<String> { DirectReadCapability.legacyExcludedExtensions }
+
+    public init(grantSelection: CorpusSelection, selection: CorpusSelection,
+                supportsLeonardoFormats: Bool) {
+        self.grantSelection = grantSelection
+        self.selection = selection
+        self.supportsLeonardoFormats = supportsLeonardoFormats
+    }
+
+    /// A resumed request may use a newer, broader capability declaration, but it
+    /// continues under the narrower view already pinned in the persisted manifest.
+    public func acceptsResumeRequest(_ request: DesktopPeerUploadView) -> Bool {
+        request.grantSelection.covers(grantSelection)
+            && request.selection.covers(selection)
+            && grantSelection.covers(selection)
+    }
+}
+
+public struct DesktopPeerPendingUpload: Codable, Sendable {
+    public let upload: DesktopPeerUpload
+    public let view: DesktopPeerUploadView
+    public init(upload: DesktopPeerUpload, view: DesktopPeerUploadView) {
+        self.upload = upload
+        self.view = view
+    }
+}
+
 public protocol DesktopPeerUploadStore: Sendable {
-    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int
-    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) async throws -> Int
-    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws
-    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload?
-    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws -> Int
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, view: DesktopPeerUploadView) async throws -> Int
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws
+    func pending(deviceID: UUID, projectID: UUID, grantSelection: CorpusSelection) async throws -> DesktopPeerPendingUpload?
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) async throws -> DesktopPeerProposal
     /// Permanently closes the exact accepted upload slot while retaining a tombstone that
     /// prevents a stale in-flight request from recreating it. The store resolves the full
     /// descriptor from its manifest/tombstone so a repeated HTTP ACK remains idempotent even
     /// though the wire proof intentionally carries only the accepted receipt identity.
-    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws
+    func view(deviceID: UUID, projectID: UUID, proposalID: UUID,
+              grantSelection: CorpusSelection) async throws -> DesktopPeerUploadView?
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, view: DesktopPeerUploadView) async throws
 }
 
 public struct DesktopPeerIncomingProposal: Codable, Sendable, Identifiable {
     public let deviceID: UUID
     public let deviceName: String
     public let upload: DesktopPeerUpload
+    public let view: DesktopPeerUploadView?
     public var id: String { deviceID.uuidString + "/" + upload.projectID.uuidString + "/" + upload.proposalID.uuidString }
-    public init(deviceID: UUID, deviceName: String, upload: DesktopPeerUpload) {
-        self.deviceID = deviceID; self.deviceName = deviceName; self.upload = upload
+    public init(deviceID: UUID, deviceName: String, upload: DesktopPeerUpload, view: DesktopPeerUploadView? = nil) {
+        self.deviceID = deviceID; self.deviceName = deviceName; self.upload = upload; self.view = view
     }
 }

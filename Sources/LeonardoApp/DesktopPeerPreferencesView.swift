@@ -31,7 +31,8 @@ struct DesktopPeerPreferencesView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section(L10n.text("Computers I connect to")) {
-                DesktopPeerRemoteProjectsView(controller: controller)
+                DesktopPeerRemoteProjectsView(controller: controller,
+                                              showNonDocumentFiles: session.showNonDocumentFiles)
             }
             SyncCacheSettingsView(library: controller.downloads, spanish: LanguageSettings.shared.language == .spanish)
                 .disabled(!controller.storageAuthorized)

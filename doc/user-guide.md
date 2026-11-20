@@ -341,7 +341,7 @@ The sidebar filter menu controls visibility and order:
 
 | Control | Effect |
 | --- | --- |
-| Show all files | Include files beyond supported documents; initially off |
+| Show non-document files | Include images and other non-document files in the project list; initially off |
 | Show hidden files | Independent visibility setting |
 | Folders first | Group folders ahead of files; initially on |
 | A–Z / Z–A | Sort names, including expanded subfolders |
@@ -501,7 +501,7 @@ Open **LeonardoMD → Preferences…** (⌘,). Tab navigation stays fixed; Gener
 | This project | Appearance and extension overrides; Git tools | The open project's portable `.leonardomd/project.json` |
 | On this Mac | Interface language, multiple instances, file associations, viewing behavior, warning suppression | Your local application settings |
 
-Choose English or Español under **General → On this Mac → Language**. General also controls package opening, Markdown-to-MDLF saves, frontmatter visibility, external-link confirmation, hidden files and following the active file. Read each description: these controls do not all become project settings because a project is open.
+Choose English or Español under **General → On this Mac → Language**. General also controls package opening, Markdown-to-MDLF saves, frontmatter visibility, external-link confirmation, hidden files, non-document file visibility and following the active file. **Show non-document files** reveals images and other file types in the Mac project list and remote project browser. It is off by default and changes only which rows appear; it does not remove files or affect Markdown image links. The sidebar's filter menu uses the same saved setting. Read each description: these controls do not all become project settings because a project is open.
 
 The active file stays highlighted in the project explorer in light and dark appearance, including MDLF, MDLR and MDLZ. Turning off **Follow active file** stops automatic expansion and scrolling; it keeps the visible active row highlighted. Leonardo file colors adapt to the appearance, and the selection color takes precedence.
 
@@ -623,7 +623,9 @@ The project icon shows the same project identity on macOS and iOS. Its small rol
 
 For example, a project named **Trip** is **Shared from this device** on the Mac configured to serve selected content. The same **Trip** is **Received from another device** on the receiving Mac, iPhone or iPad after that device is invited and authorized. An iOS copy remains received even when it is available offline; storing its files locally does not turn it into a locally owned project. A recovery archive is identified separately as read-only and does not imply a live remote connection. If you share only selected folders or documents, the text names that scope; the project icon does not mean that the entire project is exposed. Connectivity, synchronization progress and read-only access are separate states.
 
-On iPhone and iPad, the bundled **Demo** is a **Local** project. Its Spanish and English files are documents inside that project. A received project keeps its origin while each file independently shows **Remote only**, **Cached** or **Available offline**; the project icon does not mean that every file has been downloaded.
+On iPhone and iPad, the bundled **Demo** is a **Local** project. Its Spanish and English files are documents inside that project. A received project keeps its origin while each file independently shows **Remote only**, **Cached** or **Available offline**; the project icon does not mean that every file has been downloaded. In **Sync settings → Project files**, enable **Show non-document files** to include images and other file types in project lists. It starts off. This changes row visibility only; file access and offline state are unchanged, and Markdown image links still load when their standalone files are hidden. In a legacy recovery archive, non-document files appear as informational rows; export the archive to retrieve them on a computer.
+
+Valid `.mdlf` and `.mdlr` files open in Little Leonardo's Leonardo-aware reader. Their saved text and form values are read-only: you cannot edit a document or fill and submit a received form. Use LeonardoMD on macOS to edit a template or complete a response.
 
 For rubric capture without document access, do not choose **Share current project**.
 In the pending-connection review, leave every project toggle off. When the sheet

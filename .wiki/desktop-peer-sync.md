@@ -8,8 +8,8 @@ narrowed **project grant** leaves the device paired. Its durable project barrier
 hides editable copies and blocks open/compare/send until authenticated
 reconciliation, while preserving the working directory and any open local
 editor. A stale outbound proposal is dropped so it cannot replay after retry.
-The same project and selection becoming authorized makes the retained copy
-available again; a narrower selection keeps the broader copy blocked. Preserve
+Any current grant that covers the copy's pinned selection makes that retained
+copy available again; a narrower selection keeps the broader copy blocked. Preserve
 the difference as `SyncError.revoked` versus
 `DesktopPeerLibraryError.unauthorizedProject` so the UI gives the correct
 recovery action. See [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368),
@@ -42,3 +42,23 @@ and resolve the normal STATUS behavior in its library body. Xcode 26.3 / Swift
 6.2.4 can link incompatible context metadata for public async default-argument
 closures across modules, aborting the test process with signal 6; the regression
 is tracked by [#450](https://github.com/PinedaTec-EU/LeonardoMD/issues/450).
+
+Peer upload manifests pin the original grant and each proposal's narrower
+selection. Submission validates the selection in the proposal payload against
+the persisted grant and stores that narrower view before exposing it for owner
+review. Legacy manifests containing only a selection remain decodable, and a
+resumed proposal keeps its persisted view when the current grant expands.
+Read-only `.mdlf`/`.mdlr` visibility never authorizes peer writes. Tombstones
+preserve idempotent acknowledgement and slot reuse, with the selection stored
+once so large-selection tombstones remain bounded. Validate the payload,
+submitted marker, and manifest before deleting staged files to keep cleanup
+repeatable. See [#489](https://github.com/PinedaTec-EU/LeonardoMD/issues/489)
+and [#490](https://github.com/PinedaTec-EU/LeonardoMD/issues/490).
+
+Excluded extensions must be checked on the upload base and proposed snapshots
+before acceptance can stage writes, then on the resolved result and transaction
+journal before commit or crash recovery. A legacy transaction journal with no
+extension field uses the historical exclusions; only an explicitly stored
+empty set means no exclusions. This prevents a legacy or crafted peer proposal
+from writing a format the receiving view excludes. See
+[#491](https://github.com/PinedaTec-EU/LeonardoMD/issues/491).

@@ -1,6 +1,7 @@
 import Foundation
 import Security
 import CryptoKit
+import LeonardoSync
 
 /// Certificate pin is obtained by QR or explicit cross-check, never by accepting a TLS failure.
 public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate, @unchecked Sendable {
@@ -22,6 +23,7 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
     }
 
     public func request(method: String, path: String, credential: String? = nil, body: Data? = nil,
+                        supportsReadOnlyLeonardoFormats: Bool = false,
                         returnWithoutReadingBodyForStatuses: Set<Int> = []) async throws -> HTTPResponse {
         guard ["GET", "POST"].contains(method), path.hasPrefix("/v1/"), !path.contains("?"), !path.contains("#"),
               !path.contains(".."), !path.contains("%"), (body?.count ?? 0) <= HTTPRequestParser.maximumBodyBytes else {
@@ -35,6 +37,10 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
         request.httpBody = body
         request.timeoutInterval = 120
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if supportsReadOnlyLeonardoFormats {
+            request.setValue(DirectReadCapability.readOnlyLeonardoFormatsV1.rawValue,
+                             forHTTPHeaderField: DirectReadCapability.headerName)
+        }
         if let credential {
             guard credential.count == 64, credential.allSatisfy(\.isHexDigit) else { throw TransportError.malformedRequest }
             request.setValue("Bearer " + credential, forHTTPHeaderField: "Authorization")

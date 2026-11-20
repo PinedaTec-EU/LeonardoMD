@@ -1,8 +1,25 @@
 import SwiftUI
 import LeonardoCore
+
 import LeonardoSync
 import LeonardoRender
 import LeonardoSyncUI
+
+enum MobileRecoveryArchiveCopy {
+    static func summary(spanish: Bool) -> String {
+        spanish
+            ? "Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente."
+            : "This older copy preserves your local and submitted changes. Export it to recover them on a computer. It won't be edited or sent automatically."
+    }
+
+    static func exportAction(spanish: Bool) -> String {
+        spanish ? "Exportar recuperación" : "Export recovery"
+    }
+
+    static func retainedFile(size: String, spanish: Bool) -> String {
+        spanish ? "Archivo conservado para exportación · \(size)" : "File retained for export · \(size)"
+    }
+}
 
 private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings, about
@@ -108,6 +125,7 @@ struct MobileLibraryView: View {
     @State private var selectedRemoteFile: MobileRemoteFileRoute?
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
+    @AppStorage(LeonardoProjectFileVisibility.showNonDocumentFilesPreferenceKey) private var showNonDocumentFiles = false
     @Environment(\.scenePhase) private var scenePhase
     private var spanishErrors: Bool {
         MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
@@ -378,6 +396,15 @@ struct MobileLibraryView: View {
                     Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
                         .font(.caption)
                 }.listRowBackground(MobileClassic.inset)
+                Section(spanishErrors ? "Archivos del proyecto" : "Project files") {
+                    Toggle(spanishErrors ? "Mostrar archivos que no sean documentos" : "Show non-document files",
+                           isOn: $showNonDocumentFiles)
+                        .accessibilityIdentifier("show-non-document-files")
+                    Text(spanishErrors
+                         ? "Incluye imágenes y otros archivos en los listados. Las imágenes referenciadas desde Markdown siguen cargándose aunque ocultes sus archivos."
+                         : "Includes images and other files in project lists. Images referenced from Markdown still load when their files are hidden.")
+                        .font(.caption)
+                }.listRowBackground(MobileClassic.inset)
                 SyncCacheSettingsView(library: library.downloads, spanish: spanishErrors).listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
@@ -446,6 +473,7 @@ struct MobileProjectView: View {
     let projectID: UUID
     @State private var exporting = false
     @State private var selectedEntry: RemoteFileEntry?
+    @AppStorage(LeonardoProjectFileVisibility.showNonDocumentFilesPreferenceKey) private var showNonDocumentFiles = false
     private var spanishErrors: Bool {
         MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
     }
@@ -459,7 +487,9 @@ struct MobileProjectView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(MobileClassic.inset)
                     SyncCatalogueView(library: library.downloads, projectID: project.id,
-                                      spanish: spanishErrors, rowBackground: MobileClassic.paper) { entry in
+                                      spanish: spanishErrors, rowBackground: MobileClassic.paper,
+                                      showNonDocumentFiles: showNonDocumentFiles,
+                                      fileVisibilitySurface: .littleLeonardo) { entry in
                         selectedEntry = entry
                     }
                 }
@@ -473,16 +503,35 @@ struct MobileProjectView: View {
                             Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)")
                                 .font(.caption)
                             if project.isRecoveryArchive {
-                                Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
-                                Button("Exportar recuperación", systemImage: "square.and.arrow.up") { exporting = true }
+                                Text(MobileRecoveryArchiveCopy.summary(spanish: spanishErrors))
+                                Button(MobileRecoveryArchiveCopy.exportAction(spanish: spanishErrors),
+                                       systemImage: "square.and.arrow.up") { exporting = true }
                                     .accessibilityIdentifier("export-recovery")
                             }
                         }
                         .listRowBackground(MobileClassic.inset)
-                        ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
-                            NavigationLink(file.path) {
-                                MobileDocumentView(library: library, projectID: project.id, file: file)
-                            }.listRowBackground(MobileClassic.paper)
+                        ForEach(project.files.filter {
+                            LeonardoProjectFileVisibility.shouldShowFile(at: $0.path,
+                                                                         showNonDocumentFiles: showNonDocumentFiles,
+                                                                         on: .littleLeonardo)
+                        }, id: \.path) { file in
+                            if LeonardoProjectFileVisibility.isSupportedDocumentExtension(
+                                (file.path as NSString).pathExtension, on: .littleLeonardo) {
+                                NavigationLink(file.path) {
+                                    MobileDocumentView(library: library, projectID: project.id, file: file)
+                                }.listRowBackground(MobileClassic.paper)
+                            } else {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(file.path)
+                                    Text(MobileRecoveryArchiveCopy.retainedFile(
+                                        size: ByteCountFormatter.string(fromByteCount: Int64(file.content.count), countStyle: .file),
+                                        spanish: spanishErrors))
+                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                                }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityIdentifier("recovery-file-info")
+                                .listRowBackground(MobileClassic.paper)
+                            }
                         }
                     }
                 }
@@ -517,6 +566,9 @@ struct MobileProjectView: View {
 }
 
 struct MobileDocumentView: View {
+    private static let markdownPreviewExtensions: Set<String> = ["md", "markdown", "mdlf", "mdlr"]
+    private static let leonardoFormatExtensions: Set<String> = ["mdlf", "mdlr"]
+    private static let previewableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
     let library: MobileLibrary
     let projectID: UUID
     let file: CorpusFile
@@ -529,11 +581,13 @@ struct MobileDocumentView: View {
     @State private var didScrollToInitialAnchor = false
     @StateObject private var previewController = MarkdownPreviewController()
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
+    private var fileExtension: String { (file.path as NSString).pathExtension.lowercased() }
     private var previewConfiguration: MarkdownPreviewConfiguration {
         var configuration = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
             appearance: .leonardoClassic,
             localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
         configuration.compactFirstHeading = true
+        configuration.allowsLeonardoFormat = Self.leonardoFormatExtensions.contains(fileExtension)
         return configuration
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
@@ -545,7 +599,10 @@ struct MobileDocumentView: View {
                 ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
             } else if liveFile == nil {
                 ContentUnavailableView("Documento no disponible", systemImage: "doc", description: Text("El documento ya no está en la copia local."))
-            } else if !source, ["md", "markdown"].contains((file.path as NSString).pathExtension.lowercased()) {
+            } else if !Self.previewableDocumentExtensions.contains(fileExtension) {
+                ContentUnavailableView("Archivo conservado", systemImage: "doc",
+                    description: Text("Este archivo se conserva en la copia de recuperación. Expórtala para abrirlo en un ordenador."))
+            } else if !source, Self.markdownPreviewExtensions.contains(fileExtension) {
                 MarkdownPreview(content: text,
                     baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
                     configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)

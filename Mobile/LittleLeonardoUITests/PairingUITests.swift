@@ -195,6 +195,22 @@ final class PairingUITests: XCTestCase {
         captureScreen(app, name: "Classic enrolled library")
         project.tap()
         captureScreen(app, name: "Classic project documents")
+        let note = app.buttons.matching(
+            NSPredicate(format: "identifier CONTAINS %@", "docs/note.mdlf")).firstMatch
+        let response = app.buttons.matching(
+            NSPredicate(format: "identifier CONTAINS %@", "docs/response.mdlr")).firstMatch
+        XCTAssertTrue(note.waitForExistence(timeout: 10), "Received MDLF documents stay visible with non-document files hidden")
+        XCTAssertTrue(response.exists, "Received MDLR documents stay visible with non-document files hidden")
+        note.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Portable note"].waitForExistence(timeout: 15))
+        captureScreen(app, name: "Received MDLF renders read only in Little Leonardo")
+        app.navigationBars.buttons.firstMatch.tap()
+        response.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Filled response"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Editar"].exists)
+        XCTAssertFalse(app.buttons["Enviar cambios"].exists)
+        captureScreen(app, name: "Received MDLR renders read only in Little Leonardo")
+        app.navigationBars.buttons.firstMatch.tap()
         let initialDocument = app.buttons.matching(
             NSPredicate(format: "identifier CONTAINS %@", "docs/read.md")).firstMatch
         XCTAssertTrue(initialDocument.waitForExistence(timeout: 10))
@@ -1645,6 +1661,36 @@ final class PairingUITests: XCTestCase {
         readerCapture.name = "Read-only legacy document preview"
         readerCapture.lifetime = .keepAlways
         add(readerCapture)
+    }
+
+    @MainActor func testLegacyRecoveryCopyIsLocalizedInEnglish() throws {
+        try assertRecoveryArchiveLocale(language: "en", locale: "en_US",
+            summary: "This older copy preserves your local and submitted changes. Export it to recover them on a computer. It won't be edited or sent automatically.",
+            exportAction: "Export recovery")
+    }
+
+    @MainActor func testLegacyRecoveryCopyIsLocalizedInSpanish() throws {
+        try assertRecoveryArchiveLocale(language: "es", locale: "es_ES",
+            summary: "Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.",
+            exportAction: "Exportar recuperación")
+    }
+
+    @MainActor private func assertRecoveryArchiveLocale(language: String, locale: String,
+        summary: String, exportAction: String) throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale]
+        app.launch()
+        let project = app.staticTexts["QA · Recovery"].firstMatch
+        guard project.waitForExistence(timeout: 10) else {
+            throw XCTSkip("Requires the isolated legacy recovery archive in the simulator app container")
+        }
+        project.tap()
+        let summaryText = app.staticTexts.matching(NSPredicate(format: "label == %@", summary)).firstMatch
+        XCTAssertTrue(summaryText.waitForExistence(timeout: 5))
+        let export = app.buttons["export-recovery"]
+        XCTAssertTrue(export.waitForExistence(timeout: 5))
+        XCTAssertEqual(export.label, exportAction)
+        captureScreen(app, name: "\(language) legacy recovery archive localized copy")
     }
 
     @MainActor func testManualPairingFormRequiresAddressAndRetainsQRAlternative() throws {

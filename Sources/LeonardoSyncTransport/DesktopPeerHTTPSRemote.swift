@@ -14,8 +14,7 @@ public struct DesktopPeerHTTPSRemote: DesktopPeerRemote {
         return PairingChallenge(id: result.deviceID, comparisonCode: result.comparisonCode, expiresAt: result.expiresAt)
     }
     public func status(_ connection: DesktopPeerConnection, credential: String) async throws -> DirectDeviceStatus {
-        try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
-            .status(deviceID: connection.remoteDeviceID, credential: credential)
+        try await enrollmentClient(connection).status(deviceID: connection.remoteDeviceID, credential: credential)
     }
     public func publish(_ proposal: DesktopPeerProposal, connection: DesktopPeerConnection, credential: String) async throws {
         try await DesktopPeerProposalClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
@@ -32,17 +31,19 @@ public struct DesktopPeerHTTPSRemote: DesktopPeerRemote {
             .acknowledge(proposal, receipt: receipt, deviceID: connection.remoteDeviceID, credential: credential)
     }
     public func catalogue(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> RemoteProjectCatalogue {
-        try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
-            .catalogue(descriptor, deviceID: connection.remoteDeviceID, credential: credential)
+        try await enrollmentClient(connection).catalogue(descriptor, deviceID: connection.remoteDeviceID, credential: credential)
     }
     public func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile {
-        try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
-            .file(entry, projectID: projectID, deviceID: connection.remoteDeviceID, credential: credential)
+        try await enrollmentClient(connection).file(entry, projectID: projectID, deviceID: connection.remoteDeviceID, credential: credential)
     }
     public func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot {
-        let project = try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
-            .project(descriptor, deviceID: connection.remoteDeviceID, credential: credential)
+        let project = try await enrollmentClient(connection).project(descriptor, deviceID: connection.remoteDeviceID, credential: credential)
         try descriptor.selection?.validate(project.base)
         return project.base
+    }
+
+    private func enrollmentClient(_ connection: DesktopPeerConnection) throws -> DirectEnrollmentClient {
+        try DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint,
+                                   supportsReadOnlyLeonardoFormats: false)
     }
 }

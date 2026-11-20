@@ -12,6 +12,8 @@ final class CorpusTests: XCTestCase {
             XCTAssertThrowsError(try scope.validate(path), path)
         }
         XCTAssertNoThrow(try scope.validate("docs/sub/a.md"))
+        XCTAssertNoThrow(try scope.validate("docs/request.mdlf"))
+        XCTAssertNoThrow(try scope.validate("docs/response.mdlr"))
         XCTAssertThrowsError(try JSONDecoder().decode(CorpusScope.self, from: Data(#"{"folder":"../docs"}"#.utf8)))
     }
 

@@ -55,7 +55,7 @@ struct ProjectSidebar: View {
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.regularMaterial)
-        .onChange(of: session.showAllFiles) { _, _ in Task { await session.refreshTree() } }
+        .onChange(of: session.showNonDocumentFiles) { _, _ in Task { await session.refreshTree() } }
         .onChange(of: session.foldersFirst) { _, _ in Task { await session.refreshTree() } }
         .onChange(of: session.fileSortDescending) { _, _ in Task { await session.refreshTree() } }
         .onChange(of: session.showHidden) { _, _ in Task { await session.refreshTree() } }

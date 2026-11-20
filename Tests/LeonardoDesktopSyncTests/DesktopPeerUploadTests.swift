@@ -5,6 +5,135 @@ import LeonardoSync
 @testable import LeonardoDesktopSync
 
 final class DesktopPeerUploadTests: XCTestCase {
+    func testProposalManifestPinsTheNegotiatedLegacyFileView() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let deviceID = UUID(), projectID = UUID()
+        let grant = try CorpusSelection(folders: [], documents: ["docs/note.md", "docs/request.mdlf"])
+        let legacySelection = try CorpusSelection(folders: [], documents: ["docs/note.md"])
+        let modernView = DesktopPeerUploadView(grantSelection: grant, selection: grant,
+                                               supportsLeonardoFormats: true)
+        XCTAssertEqual(modernView.excludedExtensions, DirectReadCapability.legacyExcludedExtensions,
+                       "A read-only renderer capability must not authorize peer writes to Leonardo files")
+        let base = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/note.md", content: Data("base".utf8))])
+        let proposed = CorpusSnapshot(revision: "proposal", files: [CorpusFile(path: "docs/note.md", content: Data("edit".utf8))])
+        let proposal = try DesktopPeerProposal(projectID: projectID, selection: legacySelection,
+            base: base, proposed: proposed)
+        let bytes = try JSONEncoder().encode(proposal)
+        let upload = try descriptor(proposal, bytes: bytes)
+        let store = FileDesktopPeerUploadStore(root: root)
+
+        _ = try await store.begin(deviceID: deviceID, upload: upload, view: modernView)
+        _ = try await store.append(deviceID: deviceID, upload: upload, offset: 0, bytes: bytes, view: modernView)
+        try await store.submit(deviceID: deviceID, upload: upload, view: modernView)
+        let pending = try await store.pending(deviceID: deviceID, projectID: projectID, grantSelection: grant)
+        XCTAssertEqual(pending?.view.selection, legacySelection,
+                       "Submission pins the actual narrower selection from the proposal payload")
+        let finished = try await store.finish(deviceID: deviceID, upload: upload, view: modernView)
+        XCTAssertEqual(finished, proposal)
+
+        let resumedFinish = try await store.finish(deviceID: deviceID, upload: upload, view: modernView)
+        XCTAssertEqual(resumedFinish, proposal, "A newer request must resume under the persisted narrower selection")
+    }
+
+    func testLegacyManifestResumesUnderItsPersistedNarrowerView() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let deviceID = UUID(), projectID = UUID()
+        let legacySelection = try CorpusSelection(folders: [], documents: ["docs/legacy.md"])
+        let currentGrant = try CorpusSelection(folders: [], documents: ["docs/legacy.md", "docs/new.mdlf"])
+        let currentView = DesktopPeerUploadView(grantSelection: currentGrant, selection: currentGrant,
+                                                supportsLeonardoFormats: true)
+        let proposal = try DesktopPeerProposal(projectID: projectID, selection: legacySelection,
+            base: CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/legacy.md", content: Data("base".utf8))]),
+            proposed: CorpusSnapshot(revision: "proposal", files: [CorpusFile(path: "docs/legacy.md", content: Data("edit".utf8))]))
+        let bytes = try JSONEncoder().encode(proposal)
+        let upload = try descriptor(proposal, bytes: bytes)
+        let stage = root.appendingPathComponent(deviceID.uuidString).appendingPathComponent(projectID.uuidString)
+        try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: true)
+        let legacyManifest: [String: Any] = [
+            "deviceID": deviceID.uuidString,
+            "upload": try JSONSerialization.jsonObject(with: JSONEncoder().encode(upload)),
+            "selection": try JSONSerialization.jsonObject(with: JSONEncoder().encode(legacySelection))
+        ]
+        try JSONSerialization.data(withJSONObject: legacyManifest).write(to: stage.appendingPathComponent("manifest.json"))
+
+        let store = FileDesktopPeerUploadStore(root: root)
+        let resumed = try await store.begin(deviceID: deviceID, upload: upload, view: currentView)
+        XCTAssertEqual(resumed, 0)
+        let received = try await store.append(deviceID: deviceID, upload: upload, offset: 0,
+            bytes: bytes, view: currentView)
+        XCTAssertEqual(received, bytes.count)
+        try await store.submit(deviceID: deviceID, upload: upload, view: currentView)
+        let pending = try await store.pending(deviceID: deviceID, projectID: projectID, grantSelection: currentGrant)
+        XCTAssertEqual(pending?.view.selection, legacySelection)
+        XCTAssertEqual(pending?.view.supportsLeonardoFormats, false)
+        let finished = try await store.finish(deviceID: deviceID, upload: upload, view: currentView)
+        XCTAssertEqual(finished, proposal)
+
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID,
+                                    proposalID: proposal.id, view: currentView)
+        let acknowledgedView = try await store.view(deviceID: deviceID, projectID: projectID,
+            proposalID: proposal.id, grantSelection: currentGrant)
+        XCTAssertEqual(acknowledgedView?.selection, legacySelection)
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID,
+                                    proposalID: proposal.id, view: currentView)
+    }
+
+    func testLargeSelectionTombstoneRemainsReadableAndAllowsSlotReuse() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let deviceID = UUID(), projectID = UUID()
+        let selection = try CorpusSelection(folders: [], documents: (0..<480).map { "docs/item-\($0).md" })
+        let first = try DesktopPeerProposal(projectID: projectID, selection: selection,
+            base: CorpusSnapshot(revision: "base", files: []), proposed: CorpusSnapshot(revision: "next", files: []))
+        let firstBytes = try JSONEncoder().encode(first), firstUpload = try descriptor(first, bytes: firstBytes)
+        let store = FileDesktopPeerUploadStore(root: root)
+        _ = try await store.begin(deviceID: deviceID, upload: firstUpload, selection: selection)
+        _ = try await store.append(deviceID: deviceID, upload: firstUpload, offset: 0,
+                                   bytes: firstBytes, selection: selection)
+        try await store.submit(deviceID: deviceID, upload: firstUpload, selection: selection)
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID,
+                                    proposalID: first.id, selection: selection)
+
+        let tombstone = root.appendingPathComponent(deviceID.uuidString).appendingPathComponent(projectID.uuidString)
+            .appendingPathComponent("acknowledged").appendingPathComponent(first.id.uuidString + ".json")
+        XCTAssertGreaterThan(try Data(contentsOf: tombstone).count, 16 * 1_024)
+        let acknowledgedView = try await store.view(deviceID: deviceID, projectID: projectID,
+            proposalID: first.id, grantSelection: selection)
+        XCTAssertEqual(acknowledgedView?.selection, selection)
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID,
+                                    proposalID: first.id, selection: selection)
+
+        let second = try DesktopPeerProposal(projectID: projectID, selection: selection,
+            base: first.proposed, proposed: first.proposed)
+        let secondBytes = try JSONEncoder().encode(second), secondUpload = try descriptor(second, bytes: secondBytes)
+        _ = try await store.begin(deviceID: deviceID, upload: secondUpload, selection: selection)
+        _ = try await store.append(deviceID: deviceID, upload: secondUpload, offset: 0,
+                                   bytes: secondBytes, selection: selection)
+        try await store.submit(deviceID: deviceID, upload: secondUpload, selection: selection)
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID,
+                                    proposalID: second.id, selection: selection)
+    }
+
+    func testFinishRejectsExcludedFormatsBeforeAcceptingLegacyProposal() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let deviceID = UUID(), projectID = UUID()
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let legacyView = DesktopPeerUploadView(grantSelection: selection, selection: selection,
+                                               supportsLeonardoFormats: false)
+        let proposal = try DesktopPeerProposal(projectID: projectID, selection: selection,
+            base: CorpusSnapshot(revision: "base", files: []),
+            proposed: CorpusSnapshot(revision: "proposal", files: [CorpusFile(path: "docs/request.mdlr", content: Data("response".utf8))]))
+        let bytes = try JSONEncoder().encode(proposal), upload = try descriptor(proposal, bytes: bytes)
+        let store = FileDesktopPeerUploadStore(root: root)
+        _ = try await store.begin(deviceID: deviceID, upload: upload, view: legacyView)
+        _ = try await store.append(deviceID: deviceID, upload: upload, offset: 0, bytes: bytes, view: legacyView)
+        do { _ = try await store.finish(deviceID: deviceID, upload: upload, view: legacyView); XCTFail("Excluded form accepted") }
+        catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+    }
+
     func testChunkedUploadReopensRetriesPartialAppendAndValidatesOriginalCapture() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

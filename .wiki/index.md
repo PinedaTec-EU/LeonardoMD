@@ -20,6 +20,7 @@ Read [current state](current-state.md), then the relevant source target. Human p
 
 - [Mobile Git architecture reevaluation](../doc/adr/0002-reevaluate-mobile-git-engine.md) — owner-selected iOS read-only and macOS/Windows desktop-sync direction; runtime migration pending.
 - [Local image resource policy](image-resources.md)
+- [Project file visibility](project-file-visibility.md) — saved default-off preference across macOS and Little Leonardo.
 - [PDF export and preview replacement](pdf-export.md)
 
 - [Optional document extensions](document-extensions.md)

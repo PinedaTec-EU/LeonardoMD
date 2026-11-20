@@ -1,0 +1,157 @@
+{
+  "capture_session": {
+    "date": "2026-11-20",
+    "source_commit": "8ae9c9c94662c389e9b3149d54aa76c4f2255be2",
+    "bundle_id": "eu.pinedatec.LeonardoMD.qa.pr473.8ae9c9c9",
+    "bundle_version": "0.3.1896",
+    "build_number": "1896",
+    "macOS": "27.2.1 (26B131)",
+    "qa_process_pid": 47887,
+    "qa_process_started_local": "2026-11-20 01:51:11",
+    "capture_method": "macOS screencapture -l on LeonardoMD-owned windows; synthetic data only",
+    "normal_quit_verified": true,
+    "extensions_restored_off": [
+      "Mermaid",
+      "Math",
+      "Charts"
+    ]
+  },
+  "captures": [
+    {
+      "file": "macos-preferences-default-off.png",
+      "description": "Global Show non-document files preference, off by default.",
+      "width_pixels": 1160,
+      "height_pixels": 1240,
+      "bytes": 262881,
+      "sha256": "bf0c6e1ac6dff8cc7eac768c116c27030dfc07649fed9869e5ead5b4a3dfedc8"
+    },
+    {
+      "file": "macos-preferences-opt-in.png",
+      "description": "Global Show non-document files preference enabled.",
+      "width_pixels": 1160,
+      "height_pixels": 1240,
+      "bytes": 268223,
+      "sha256": "da0c6327513e26d7a145cad955eaa193e53c053845b477b2de52af5d33687cf1"
+    },
+    {
+      "file": "macos-project-files-off.png",
+      "description": "Project tree omits non-document rows while off.",
+      "width_pixels": 600,
+      "height_pixels": 1700,
+      "bytes": 674016,
+      "sha256": "40868e9f35d3acdf879431ba80f5c5dd6cfeb4282620c1af0c08056ae3cfcca6"
+    },
+    {
+      "file": "macos-project-files-on.png",
+      "description": "Project tree includes image and other non-document rows while on; Leonardo formats remain visible.",
+      "width_pixels": 600,
+      "height_pixels": 1700,
+      "bytes": 686204,
+      "sha256": "faf76afa2de74109bf45e1e6ae09376f56f001ca1a3b017f3d90f1b118cf61f8"
+    },
+    {
+      "file": "macos-markdown-image-visible.png",
+      "description": "Markdown-linked image renders although its standalone project row is hidden.",
+      "width_pixels": 2520,
+      "height_pixels": 1700,
+      "bytes": 2675258,
+      "sha256": "1d48b43108d784dc8c5cdffb6448266ec520409392253386a2b7baef8ce11a17"
+    },
+    {
+      "file": "macos-help-en-guide-v103.png",
+      "description": "English bundled Help Guide v103.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 2224911,
+      "sha256": "8654f05132c746a46d6501c307aa144960f4ba87c3e0c999946ae93c01d94264"
+    },
+    {
+      "file": "macos-help-es-guide-v103.png",
+      "description": "Spanish bundled Help Guide v103.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 2249380,
+      "sha256": "4e1f49eeb2349d64fb7bf855ab1608413ab50bda0d93c2223ab1ddec63081f47"
+    },
+    {
+      "file": "macos-help-en-practice-cta.png",
+      "description": "English Guide chapter 4 practice-form action.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1105744,
+      "sha256": "49d44337982c9727e6518c471e0023270db995fd671e72648c1cddd2620ba6b7"
+    },
+    {
+      "file": "macos-help-en-math-disabled.png",
+      "description": "English Help with Math disabled; literal TeX remains visible.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1202917,
+      "sha256": "75d8e3846ff08c57e4b230ba2d22fad4c85415382cb4c7e8b352d7c96dc8d70a"
+    },
+    {
+      "file": "macos-help-en-mermaid-math.png",
+      "description": "English bundled Help with Mermaid and Math enabled.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1188260,
+      "sha256": "354202369bbab73abf9c5506227094c3021280c605bdff573d618f450c5d4294"
+    },
+    {
+      "file": "macos-help-en-tagged-equation-chart.png",
+      "description": "English tagged equation (1) and chart rendered.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1173263,
+      "sha256": "3247b2930502eef2f165b4b6384a95ecca52d02d8a91059434e387096e2855fc"
+    },
+    {
+      "file": "macos-help-es-mermaid-math.png",
+      "description": "Spanish bundled Help with Mermaid and Math enabled.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1206353,
+      "sha256": "f1b4db1cba746ab4863c6c8fdcfed2d9c770004c46ef6f7bd02b1fd7856c323d"
+    },
+    {
+      "file": "macos-help-es-tagged-equation-chart.png",
+      "description": "Spanish tagged equation (1) and chart rendered.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1190258,
+      "sha256": "811b363c9ca653a5ced2bddc08b90c0ee4102d8c9dea1e0dc421093249994cd1"
+    },
+    {
+      "file": "macos-help-es-table-image.png",
+      "description": "Spanish bundled Help table/image content.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1231260,
+      "sha256": "034baf83c14d9a8b62a959b6e1e251bd7dce6df8aa21e43d2d8b22113ffd5e95"
+    },
+    {
+      "file": "macos-help-es-practice-table.png",
+      "description": "Spanish bundled Help practice field and validation table.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1368221,
+      "sha256": "117f1a6bec79e01d49b4d908cd5cbcdc437a9f12797a4dbc4aca9c314f9af83c"
+    },
+    {
+      "file": "macos-practice-en-reopened.png",
+      "description": "English saved practice MDLR reopened with synthetic values retained.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1004695,
+      "sha256": "f6f765ccacefedda86de61a10fa7b727081b2dd776048ad6ed8479ed7f6df70f"
+    },
+    {
+      "file": "macos-practice-es-saved.png",
+      "description": "Spanish practice MDLR saved with synthetic values.",
+      "width_pixels": 2744,
+      "height_pixels": 1924,
+      "bytes": 1015992,
+      "sha256": "38c0c7a52762d7521f68f60e46bde805f7846e6b4808c2793f7c1f464055d45a"
+    }
+  ]
+}

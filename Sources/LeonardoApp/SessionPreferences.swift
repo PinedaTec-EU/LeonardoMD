@@ -57,6 +57,13 @@ extension AppSession {
         persistSettings()
         Task { await refreshGit() }
     }
+    func setShowNonDocumentFiles(_ value: Bool) {
+        guard showNonDocumentFiles != value else { return }
+        showNonDocumentFiles = value
+        globalPreferences.showNonDocumentFiles = value
+        persistSettings()
+        scheduleSearch()
+    }
     func persistSettings() {
         let global = globalPreferences
         let project = projectConfiguration

@@ -5,6 +5,21 @@ import LeonardoSyncTransport
 @testable import LittleLeonardo
 
 final class MobileDiagnosticLogTests: XCTestCase {
+    func testRecoveryArchiveCopyIsLocalizedForBothLanguages() {
+        XCTAssertEqual(
+            MobileRecoveryArchiveCopy.summary(spanish: true),
+            "Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
+        XCTAssertEqual(
+            MobileRecoveryArchiveCopy.summary(spanish: false),
+            "This older copy preserves your local and submitted changes. Export it to recover them on a computer. It won't be edited or sent automatically.")
+        XCTAssertEqual(MobileRecoveryArchiveCopy.exportAction(spanish: true), "Exportar recuperación")
+        XCTAssertEqual(MobileRecoveryArchiveCopy.exportAction(spanish: false), "Export recovery")
+        XCTAssertEqual(MobileRecoveryArchiveCopy.retainedFile(size: "8 KB", spanish: true),
+                       "Archivo conservado para exportación · 8 KB")
+        XCTAssertEqual(MobileRecoveryArchiveCopy.retainedFile(size: "8 KB", spanish: false),
+                       "File retained for export · 8 KB")
+    }
+
     @MainActor
     func testNoticeUsesOpaqueReferenceAndLogOmitsURLAndDescription() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

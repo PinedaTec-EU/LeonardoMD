@@ -47,7 +47,19 @@ public actor DesktopPeerAcceptance {
             return DesktopPeerAcceptanceResult(receipt: receipt, appliedNow: false)
         }
         let accepted = try review.resolve(decisions, currentSource: currentSource, revision: "accepted-" + UUID().uuidString)
-        let transactionID = try await transactions.prepare(projectRoot: root, selection: proposal.selection, before: currentDisk, after: accepted)
+        let excludedExtensions = review.view.excludedExtensions
+        let excluded = Set(excludedExtensions.map { $0.lowercased() })
+        guard review.view.selection == proposal.selection,
+              Self.allows(proposal.base, excluding: excluded),
+              Self.allows(proposal.proposed, excluding: excluded),
+              Self.allows(review.source, excluding: excluded),
+              currentSource.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }),
+              currentDisk.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }),
+              Self.allows(accepted, excluding: excluded) else {
+            throw SyncError.invalidSnapshot
+        }
+        let transactionID = try await transactions.prepare(projectRoot: root, selection: proposal.selection,
+            before: currentDisk, after: accepted, excludingExtensions: excludedExtensions)
         let intent = Intent(deviceID: deviceID, projectID: proposal.projectID, proposalID: proposal.id, root: root,
             selection: proposal.selection, transactionID: transactionID, acceptedDigest: CorpusRevision.make(files: accepted.files))
         // Binding is durable before source mutation; a receipt write failure leaves recoverable proof.
@@ -81,6 +93,9 @@ public actor DesktopPeerAcceptance {
     private func validate(_ intent: Intent, deviceID: UUID, projectID: UUID, proposalID: UUID, root: URL, selection: CorpusSelection) throws {
         guard intent.deviceID == deviceID, intent.projectID == projectID, intent.proposalID == proposalID,
               intent.root == root, intent.selection == selection else { throw SyncError.invalidSnapshot }
+    }
+    private static func allows(_ snapshot: CorpusSnapshot, excluding excluded: Set<String>) -> Bool {
+        snapshot.files.allSatisfy { !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }
     }
     private func location(deviceID: UUID, projectID: UUID, proposalID: UUID) throws -> URL {
         var directory = intents

@@ -1,5 +1,6 @@
 #if os(macOS)
 import XCTest
+import CryptoKit
 import LeonardoSync
 import LeonardoSyncTransport
 @testable import LeonardoDesktopSync
@@ -143,6 +144,82 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Proposals").path))
             try await runtime.stop()
         } catch { try? await runtime.stop(); throw error }
+    }
+
+    func testReadCapabilityHeaderCannotEnableLeonardoFormatPeerWrites() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sourceRoot = root.appendingPathComponent("Source")
+        let markdown = sourceRoot.appendingPathComponent("docs/note.md")
+        let form = sourceRoot.appendingPathComponent("docs/form.mdlf")
+        try FileManager.default.createDirectory(at: markdown.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("source note".utf8).write(to: markdown)
+        let originalForm = Data("form baseline".utf8)
+        try originalForm.write(to: form)
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Mixed source",
+            scope: try CorpusScope(folder: ""), selection: selection)
+        let reader = ProjectCorpusReader()
+        let source = SharedProjectSource(descriptor: descriptor, rootURL: sourceRoot) {
+            try await reader.snapshot(root: sourceRoot, selection: selection)
+        }
+        let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Server"),
+            credentials: ProposalMemoryCredentials(), now: { Date() })
+        let running = try await runtime.start(host: "127.0.0.1", port: 0, projects: [source])
+        do {
+            let credential = try PairingRegistry.makeCredential()
+            let enrollment = try DirectEnrollmentClient(endpoint: running.endpoint,
+                certificateFingerprint: running.certificateFingerprint)
+            let paired = try await enrollment.begin(deviceName: "Read-only-capable peer", credential: credential,
+                now: Date(), kind: .desktopPeer)
+            try await runtime.approve(requestID: paired.deviceID, code: paired.comparisonCode,
+                projectIDs: [descriptor.id])
+
+            let base = CorpusSnapshot(revision: "base", files: [
+                CorpusFile(path: "docs/note.md", content: Data("source note".utf8)),
+                CorpusFile(path: "docs/form.mdlf", content: originalForm)
+            ])
+            let proposed = CorpusSnapshot(revision: "proposed", files: [
+                CorpusFile(path: "docs/note.md", content: Data("source note".utf8)),
+                CorpusFile(path: "docs/form.mdlf", content: Data("changed form".utf8))
+            ])
+            let proposal = try DesktopPeerProposal(projectID: descriptor.id, selection: selection,
+                base: base, proposed: proposed)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+            let bytes = try encoder.encode(proposal)
+            let digest = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+            let upload = try DesktopPeerUpload(proposalID: proposal.id, projectID: proposal.projectID,
+                byteCount: bytes.count, sha256: digest)
+            let transport = try PinnedHTTPSClient(endpoint: running.endpoint,
+                certificateFingerprint: running.certificateFingerprint,
+                maximumResponseBytes: DesktopPeerArchiveBudget.maximumEncodedBytes(), allowPrivateOverlay: true)
+            let path = "/v1/devices/\(paired.deviceID.uuidString)/projects/\(descriptor.id.uuidString)/proposals/"
+            let started = try await transport.request(method: "POST", path: path + "begin", credential: credential,
+                body: encoder.encode(upload), supportsReadOnlyLeonardoFormats: true)
+            XCTAssertEqual(started.status, 200)
+
+            var offset = 0
+            while offset < bytes.count {
+                let end = min(bytes.count, offset + DesktopPeerUpload.maximumChunkBytes)
+                let chunk = DesktopPeerUploadChunk(upload: upload, offset: offset, bytes: bytes.subdata(in: offset..<end))
+                let response = try await transport.request(method: "POST", path: path + "chunk", credential: credential,
+                    body: encoder.encode(chunk), supportsReadOnlyLeonardoFormats: true)
+                XCTAssertEqual(response.status, 200)
+                offset = end
+            }
+            let submitted = try await transport.request(method: "POST", path: path + "submit", credential: credential,
+                body: encoder.encode(upload), supportsReadOnlyLeonardoFormats: true)
+            XCTAssertEqual(submitted.status, 400,
+                           "A read-only format capability must not authorize an excluded peer write")
+            XCTAssertEqual(try Data(contentsOf: form), originalForm)
+            let incoming = try await runtime.incomingProposals()
+            XCTAssertTrue(incoming.isEmpty, "Rejected payloads are not published for owner review")
+            try await runtime.stop()
+        } catch {
+            try? await runtime.stop()
+            throw error
+        }
     }
 }
 private actor ProposalMemoryCredentials: DeviceCredentialStore {

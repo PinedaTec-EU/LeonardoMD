@@ -6,7 +6,10 @@ struct FileListMenu: View {
 
     var body: some View {
         Menu {
-            Toggle(L10n.text("Show all files"), isOn: $session.showAllFiles)
+            Toggle(L10n.text("Show non-document files"), isOn: Binding(
+                get: { session.showNonDocumentFiles },
+                set: { session.setShowNonDocumentFiles($0) }
+            ))
             Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
                 .toggleStyle(PremiumSwitchStyle())
             Menu(L10n.text("Sort")) {

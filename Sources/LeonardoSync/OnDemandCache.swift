@@ -187,7 +187,7 @@ public actor OnDemandCache: RemoteDownloadCache {
         try file.content.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         next.sequence &+= 1
-        if let source = String(data: file.content, encoding: .utf8), ["md", "markdown", "txt"].contains((entry.path as NSString).pathExtension.lowercased()) {
+        if let source = String(data: file.content, encoding: .utf8), ["md", "markdown", "txt", "mdlf", "mdlr"].contains((entry.path as NSString).pathExtension.lowercased()) {
             next.projects[index].dependencies[entry.path] = RemoteDocumentResources.imagePaths(
                 in: source, documentPath: entry.path, catalogue: next.projects[index].catalogue)
         }

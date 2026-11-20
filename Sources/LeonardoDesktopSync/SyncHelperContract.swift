@@ -38,6 +38,7 @@ public struct SyncHelperApplication: Codable, Sendable {
     public let upload: DesktopPeerUpload
     public let proposal: DesktopPeerProposal
     public let reviewedSource: CorpusSnapshot
+    public let view: DesktopPeerUploadView?
     public let decisions: [String: ReconciliationChoice]
     public let projectRoot: URL
     public let currentSource: CorpusSnapshot
@@ -47,7 +48,7 @@ public struct SyncHelperApplication: Codable, Sendable {
                 currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) {
         id = UUID()
         self.deviceID = deviceID; self.upload = upload; proposal = review.proposal
-        reviewedSource = review.source; self.decisions = decisions; self.projectRoot = projectRoot
+        reviewedSource = review.source; view = review.view; self.decisions = decisions; self.projectRoot = projectRoot
         self.currentSource = currentSource; self.currentDisk = currentDisk
     }
 }
@@ -55,6 +56,10 @@ public struct SyncHelperApplication: Codable, Sendable {
 public struct SyncHelperReview: Codable, Sendable {
     public let proposal: DesktopPeerProposal
     public let source: CorpusSnapshot
+    public let view: DesktopPeerUploadView?
+    public init(proposal: DesktopPeerProposal, source: CorpusSnapshot, view: DesktopPeerUploadView? = nil) {
+        self.proposal = proposal; self.source = source; self.view = view
+    }
 }
 
 public struct SyncHelperStatus: Codable, Sendable {

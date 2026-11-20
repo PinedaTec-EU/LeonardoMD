@@ -42,6 +42,14 @@ final class BundledUserGuideTests: XCTestCase {
             defer { LeonardoPackageTransport.discard(workspace) }
             let source = try String(contentsOf: workspace.documentURL, encoding: .utf8)
             XCTAssertTrue(source.contains("[LL1 op=snapshot"), "The combined guide must retain the HTTPS diagnostic example")
+            let mobileFormatGuidance = language == .english
+                ? "Valid `.mdlf` and `.mdlr` files open in Little Leonardo's Leonardo-aware reader"
+                : "Los archivos `.mdlf` y `.mdlr` válidos se abren en el lector compatible con Leonardo de Little Leonardo"
+            let readOnlyGuidance = language == .english
+                ? "Their saved text and form values are read-only"
+                : "El texto y las respuestas guardadas son de solo lectura"
+            XCTAssertTrue(source.contains(mobileFormatGuidance), "The guide must explain which Leonardo formats Little Leonardo reads")
+            XCTAssertTrue(source.contains(readOnlyGuidance), "The guide must state that received mobile forms remain read-only")
             let accessDenialGuidance = language == .english
                 ? "An explicit access denial does not open that stale version."
                 : "Una denegación de acceso explícita no abre esa versión desactualizada."

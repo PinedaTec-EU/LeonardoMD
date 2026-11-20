@@ -6,6 +6,7 @@ final class ConfigurationStoreTests: XCTestCase {
     func testFollowActiveFileDefaultsAndMergesAcrossWindows() async throws {
         let defaults = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))
         XCTAssertTrue(defaults.followActiveFile)
+        XCTAssertFalse(defaults.showNonDocumentFiles)
         let directory = try TemporaryDirectory()
         let store = ConfigurationStore()
         let url = directory.url.appendingPathComponent("preferences.json")
@@ -19,6 +20,31 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertTrue(merged.showHiddenFiles)
         let loaded = try await store.loadGlobalPreferences(at: url)
         XCTAssertFalse(loaded.followActiveFile)
+    }
+
+    func testNonDocumentFilesPreferenceDefaultsOffAndPersistsAcrossReloads() async throws {
+        let decodedDefaults = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))
+        XCTAssertFalse(decodedDefaults.showNonDocumentFiles)
+
+        let directory = try TemporaryDirectory()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        let store = ConfigurationStore()
+        try await store.saveGlobalPreferences(decodedDefaults, at: url)
+
+        var enabled = decodedDefaults
+        enabled.showNonDocumentFiles = true
+        _ = try await store.mergeGlobalPreferences(updated: enabled, baseline: decodedDefaults, at: url)
+
+        let restartedStore = ConfigurationStore()
+        let restoredEnabled = try await restartedStore.loadGlobalPreferences(at: url)
+        XCTAssertTrue(restoredEnabled.showNonDocumentFiles)
+
+        var disabled = restoredEnabled
+        disabled.showNonDocumentFiles = false
+        _ = try await restartedStore.mergeGlobalPreferences(updated: disabled, baseline: restoredEnabled, at: url)
+
+        let restoredDisabled = try await ConfigurationStore().loadGlobalPreferences(at: url)
+        XCTAssertFalse(restoredDisabled.showNonDocumentFiles)
     }
 
     func testFileColorMergesPreserveOtherWindowsAndProjectInheritance() async throws {

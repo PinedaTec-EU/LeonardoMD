@@ -242,6 +242,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var paperEffect: PaperEffect
     public var markdown: MarkdownFeatures
     public var showHiddenFiles: Bool
+    public var showNonDocumentFiles: Bool
     public var favorites: [FavoriteItem]
     public var recentWorkspacePaths: [URL] {
         didSet { recentWorkspacePaths = Self.uniqueRecentPaths(recentWorkspacePaths) }
@@ -260,6 +261,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         paperEffect: PaperEffect = .white,
         markdown: MarkdownFeatures = MarkdownFeatures(),
         showHiddenFiles: Bool = false,
+        showNonDocumentFiles: Bool = false,
         favorites: [FavoriteItem] = [],
         recentWorkspacePaths: [URL] = [],
         recentProjectPaths: [URL] = [],
@@ -273,6 +275,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         self.paperEffect = paperEffect
         self.markdown = markdown
         self.showHiddenFiles = showHiddenFiles
+        self.showNonDocumentFiles = showNonDocumentFiles
         self.favorites = favorites
         self.recentWorkspacePaths = Self.uniqueRecentPaths(recentWorkspacePaths)
         self.recentProjectPaths = Self.uniqueRecentPaths(recentProjectPaths)
@@ -290,6 +293,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         case paperEffect
         case markdown
         case showHiddenFiles
+        case showNonDocumentFiles
         case favorites
         case recentWorkspacePaths
         case recentProjectPaths
@@ -310,6 +314,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         paperEffect = try container.decodeIfPresent(PaperEffect.self, forKey: .paperEffect) ?? .white
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown) ?? MarkdownFeatures()
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
+        showNonDocumentFiles = try container.decodeIfPresent(Bool.self, forKey: .showNonDocumentFiles) ?? false
         favorites = try container.decodeIfPresent([FavoriteItem].self, forKey: .favorites) ?? []
         recentWorkspacePaths = Self.uniqueRecentPaths(try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? [])
         recentProjectPaths = Self.uniqueRecentPaths(try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? [])

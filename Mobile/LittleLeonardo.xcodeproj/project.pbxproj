@@ -47,6 +47,7 @@
 		D38110000000000000000001 /* MobileDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000001 /* MobileDemoView.swift */; };
 		D38110000000000000000002 /* Demo in Resources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000002 /* Demo */; };
 		D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000003 /* MobileDemoStoreTests.swift */; };
+		A5D8C102B4E7491FA472C312 /* MobileProjectFileVisibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D8C102B4E7491FA472C313 /* MobileProjectFileVisibilityTests.swift */; };
 		D38110000000000000000004 /* MobileDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000004 /* MobileDemoUITests.swift */; };
 		D38510000000000000000001 /* OnDemandSyncUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38500000000000000000001 /* OnDemandSyncUITests.swift */; };
 		D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39700000000000000000001 /* MobileReaderSpacingTests.swift */; };
@@ -108,6 +109,7 @@
 		D38100000000000000000001 /* MobileDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoView.swift; sourceTree = "<group>"; };
 		D38100000000000000000002 /* Demo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Demo; sourceTree = "<group>"; };
 		D38100000000000000000003 /* MobileDemoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoStoreTests.swift; sourceTree = "<group>"; };
+		A5D8C102B4E7491FA472C313 /* MobileProjectFileVisibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileProjectFileVisibilityTests.swift; sourceTree = "<group>"; };
 		D38100000000000000000004 /* MobileDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoUITests.swift; sourceTree = "<group>"; };
 		D38500000000000000000001 /* OnDemandSyncUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDemandSyncUITests.swift; sourceTree = "<group>"; };
 		D39700000000000000000001 /* MobileReaderSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileReaderSpacingTests.swift; sourceTree = "<group>"; };
@@ -181,6 +183,7 @@
 				A44200000000000000000004 /* MobileConnectionDisplayNameTests.swift */,
 				C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */,
 				D38100000000000000000003 /* MobileDemoStoreTests.swift */,
+				A5D8C102B4E7491FA472C313 /* MobileProjectFileVisibilityTests.swift */,
 				D39700000000000000000001 /* MobileReaderSpacingTests.swift */,
 				F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */,
 			);
@@ -418,6 +421,7 @@
 				A44200000000000000000002 /* MobileConnectionDisplayNameTests.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */,
 				D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */,
+				A5D8C102B4E7491FA472C312 /* MobileProjectFileVisibilityTests.swift in Sources */,
 				D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */,
 				F435C0DE0000000000000002 /* MobileDiagnosticLogTests.swift in Sources */,
 			);

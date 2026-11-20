@@ -44,6 +44,18 @@ public struct CorpusSelection: Codable, Equatable, Sendable {
         documentSet.contains(path) || Self.covered(path, by: folderSet)
     }
 
+    /// Returns whether this selection authorizes every path and subtree in `other`.
+    /// A selected folder remains a subtree, so a list of individual documents cannot
+    /// cover it even when those documents happen to exist today.
+    public func covers(_ other: CorpusSelection) -> Bool {
+        for folder in other.folders {
+            guard folderSet.contains("") || folderSet.contains(where: {
+                folder == $0 || folder.hasPrefix($0 + "/")
+            }) else { return false }
+        }
+        return other.documents.allSatisfy(contains)
+    }
+
     public func validate(_ path: String) throws {
         try CorpusScope(folder: "").validate(path)
         guard contains(path) else { throw SyncError.outsideScope }

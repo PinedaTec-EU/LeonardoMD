@@ -81,7 +81,7 @@ final class AppSession {
     var showInspector = false
     var showPreferences = false
     var showGit = false
-    var showAllFiles = false
+    var showNonDocumentFiles = false
     var foldersFirst = true
     var fileSortDescending = false
     var colorLeonardoFiles: Bool { projectConfiguration.colorLeonardoFiles ?? globalPreferences.colorLeonardoFiles }
@@ -237,6 +237,7 @@ final class AppSession {
                 globalPreferences = try await configurations.loadGlobalPreferences(at: globalPreferencesURL)
                 globalBaseline = globalPreferences
                 showHidden = globalPreferences.showHiddenFiles
+                showNonDocumentFiles = globalPreferences.showNonDocumentFiles
             } catch { report(error) }
         }
         initializationTask = task

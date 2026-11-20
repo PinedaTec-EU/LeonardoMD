@@ -125,7 +125,7 @@ public actor DesktopDirectRuntime {
         transitioning = true
         defer { transitioning = false }
         let acceptance = self.acceptance
-        return try await authority.withOwnerApplicationResult(deviceID: deviceID, upload: upload) { proposal, sourceRoot in
+        return try await authority.withOwnerApplicationResult(deviceID: deviceID, upload: upload, view: review.view) { proposal, sourceRoot in
             guard sourceRoot == projectRoot.standardizedFileURL.resolvingSymlinksInPath() else { throw SyncError.invalidSnapshot }
             guard proposal == review.proposal else { throw ReconciliationError.staleComparison }
             return try await acceptance.apply(deviceID: deviceID, review: review, decisions: decisions,

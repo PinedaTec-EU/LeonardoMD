@@ -4,6 +4,8 @@ import LeonardoRender
 
 /// A read-only preview never materializes an editable document in the evictable cache.
 public struct RemoteDocumentPreview: View {
+    private static let previewableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
+    private static let leonardoFormatExtensions: Set<String> = ["mdlf", "mdlr"]
     @Bindable var library: DownloadLibrary
     let projectID: UUID
     let entry: RemoteFileEntry
@@ -30,12 +32,14 @@ public struct RemoteDocumentPreview: View {
     private var request: RemoteDocumentPreviewRequest {
         .init(projectID: projectID, path: entry.path, catalogue: project?.catalogue)
     }
+    private var fileExtension: String { (entry.path as NSString).pathExtension.lowercased() }
     private var file: CorpusFile? { presentation.content(for: request) }
     private var failure: String? { presentation.error(for: request) }
     private var previewConfiguration: MarkdownPreviewConfiguration {
         var value = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true,
             externalLinkPolicy: .callbackOnly, appearance: appearance, localAssetRoot: virtualRoot,
             memoryAssets: MarkdownMemoryAssets(files: authorizedImages), allowsRemoteImages: false)
+        value.allowsLeonardoFormat = Self.leonardoFormatExtensions.contains(fileExtension)
         value.compactFirstHeading = compactFirstHeading
         return value
     }
@@ -73,8 +77,8 @@ public struct RemoteDocumentPreview: View {
         Group {
             if project == nil { Text(t("Access removed", "Acceso retirado")) }
             else if currentEntry == nil { Text(t("Document no longer available", "Documento ya no disponible")) }
-            else if let file, let text = String(data: file.content, encoding: .utf8), ["md", "markdown", "txt"].contains((entry.path as NSString).pathExtension.lowercased()) {
-                if source || (entry.path as NSString).pathExtension.lowercased() == "txt" {
+            else if let file, let text = String(data: file.content, encoding: .utf8), Self.previewableDocumentExtensions.contains(fileExtension) {
+                if source || fileExtension == "txt" {
                     ScrollView { Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled).padding() }
                 } else {
                     MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
@@ -133,7 +137,7 @@ public struct RemoteDocumentPreview: View {
     private func followLink(_ url: URL) {
         guard let path = RemoteDocumentResources.path(url: url, virtualRoot: virtualRoot),
               let entry = project?.catalogue.files.first(where: { $0.path == path }),
-              ["md", "markdown", "txt"].contains((path as NSString).pathExtension.lowercased()) else { return }
+              Self.previewableDocumentExtensions.contains((path as NSString).pathExtension.lowercased()) else { return }
         linked = entry
     }
 }

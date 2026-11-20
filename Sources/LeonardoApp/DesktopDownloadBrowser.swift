@@ -5,13 +5,15 @@ import LeonardoSyncUI
 struct DesktopDownloadBrowser: View {
     @Bindable var library: DownloadLibrary
     let projectID: UUID
+    let showNonDocumentFiles: Bool
     @State private var selected: RemoteFileEntry?
     @Environment(\.dismiss) private var dismiss
     private var spanish: Bool { LanguageSettings.shared.language == .spanish }
 
-    init(library: DownloadLibrary, projectID: UUID, initialPath: String? = nil) {
+    init(library: DownloadLibrary, projectID: UUID, initialPath: String? = nil, showNonDocumentFiles: Bool) {
         self.library = library
         self.projectID = projectID
+        self.showNonDocumentFiles = showNonDocumentFiles
         _selected = State(initialValue: initialPath.flatMap { path in
             library.projects.first(where: { $0.id == projectID })?.catalogue.files.first(where: { $0.path == path })
         })
@@ -25,7 +27,8 @@ struct DesktopDownloadBrowser: View {
                         .padding(.horizontal)
                         .padding(.top)
                 }
-                SyncCatalogueView(library: library, projectID: projectID, spanish: spanish) { selected = $0 }
+                SyncCatalogueView(library: library, projectID: projectID, spanish: spanish,
+                                  showNonDocumentFiles: showNonDocumentFiles) { selected = $0 }
                     .padding()
             }
                 .navigationDestination(item: $selected) { entry in

@@ -78,7 +78,7 @@ public struct SyncHelperClient: SyncHelperControlAccess, DesktopSyncRuntimeAcces
     }
     public func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
         let value: SyncHelperReview = try await request(.review(deviceID, upload))
-        return try DesktopPeerProposalReview(proposal: value.proposal, source: value.source)
+        return try DesktopPeerProposalReview(proposal: value.proposal, source: value.source, view: value.view)
     }
     public func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
         decisions: [String: ReconciliationChoice], projectRoot: URL, currentSource: CorpusSnapshot,

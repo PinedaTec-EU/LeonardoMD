@@ -58,9 +58,13 @@ public actor SyncHelperHost {
                     let selection = try CorpusSelection(folders: project.folders, documents: project.documents)
                     let descriptor = SharedProjectDescriptor(id: project.id, name: project.name,
                         scope: try CorpusScope(folder: ""), selection: selection)
-                    return SharedProjectSource(descriptor: descriptor, rootURL: project.rootURL) {
-                        try await ProjectCorpusReader().snapshot(root: project.rootURL, selection: selection)
-                    }
+                    let reader = ProjectCorpusReader()
+                    return SharedProjectSource(descriptor: descriptor, rootURL: project.rootURL,
+                        snapshot: { try await reader.snapshot(root: project.rootURL, selection: selection) },
+                        snapshotExcludingExtensions: { excluded in
+                            try await reader.snapshot(root: project.rootURL, selection: selection,
+                                excludingExtensions: excluded)
+                        })
                 }
                 sharing = try await runtime.start(host: host, port: settings.port, projects: projects,
                     allowPrivateOverlay: settings.privateOverlayEnabled)
@@ -117,9 +121,11 @@ public actor SyncHelperHost {
             return try await encode(runtime.rubricStatus(requestID: requestID))
         case .review(let id, let upload):
             let review = try await runtime.reviewIncomingProposal(deviceID: id, upload: upload)
-            return try encode(SyncHelperReview(proposal: review.proposal, source: review.source))
+            return try encode(SyncHelperReview(proposal: review.proposal, source: review.source, view: review.view))
         case .apply(let value):
-            let review = try DesktopPeerProposalReview(proposal: value.proposal, source: value.reviewedSource)
+            let view = value.view ?? DesktopPeerUploadView(grantSelection: value.proposal.selection,
+                selection: value.proposal.selection, supportsLeonardoFormats: false)
+            let review = try DesktopPeerProposalReview(proposal: value.proposal, source: value.reviewedSource, view: view)
             return try await applications.apply(value.id) {
                 try await encode(runtime.applyIncomingProposal(deviceID: value.deviceID, upload: value.upload,
                     review: review, decisions: value.decisions, projectRoot: value.projectRoot,

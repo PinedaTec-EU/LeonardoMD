@@ -9,7 +9,30 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     private struct Manifest: Codable, Equatable {
         let deviceID: UUID
         let upload: DesktopPeerUpload
-        let selection: CorpusSelection
+        let view: DesktopPeerUploadView
+
+        private enum CodingKeys: String, CodingKey { case deviceID, upload, view, selection }
+        init(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) {
+            self.deviceID = deviceID; self.upload = upload; self.view = view
+        }
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            deviceID = try container.decode(UUID.self, forKey: .deviceID)
+            upload = try container.decode(DesktopPeerUpload.self, forKey: .upload)
+            if let view = try container.decodeIfPresent(DesktopPeerUploadView.self, forKey: .view) {
+                self.view = view
+            } else {
+                let selection = try container.decode(CorpusSelection.self, forKey: .selection)
+                view = DesktopPeerUploadView(grantSelection: selection, selection: selection,
+                                             supportsLeonardoFormats: false)
+            }
+        }
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(deviceID, forKey: .deviceID)
+            try container.encode(upload, forKey: .upload)
+            try container.encode(view, forKey: .view)
+        }
     }
     private struct Tombstone: Codable, Equatable {
         let manifest: Manifest
@@ -17,20 +40,23 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     private let root: URL
     public init(root: URL) { self.root = root.standardizedFileURL.resolvingSymlinksInPath() }
 
-    public func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws -> Int {
+    public func begin(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) throws -> Int {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
         // Tombstones are retained per proposal ID. A stale begin must remain blocked even
         // after a later proposal has reused the active staging slot.
         if try tombstone(at: directory, proposalID: upload.proposalID) != nil { throw SyncError.publicationPending }
-        let expected = Manifest(deviceID: deviceID, upload: upload, selection: selection)
+        let expected = Manifest(deviceID: deviceID, upload: upload, view: view)
         if let existing = try manifest(at: directory) {
-            guard existing == expected else { throw SyncError.publicationPending }
+            guard existing.deviceID == deviceID, existing.upload == upload,
+                  existing.view.acceptsResumeRequest(view) else { throw SyncError.publicationPending }
         } else {
             // A failed cleanup can leave payload.json or submitted.json after
             // manifest.json has gone. Do not let a new proposal reinterpret
             // those bytes as its own staging slot.
             guard try !hasStagedFiles(at: directory) else { throw SyncError.publicationPending }
-            try PrivateDesktopFile.write(JSONEncoder().encode(expected), to: directory.appendingPathComponent("manifest.json"))
+            let bytes = try JSONEncoder().encode(expected)
+            guard bytes.count <= (try maximumManifestBytes()) else { throw SyncError.sizeLimitExceeded }
+            try PrivateDesktopFile.write(bytes, to: directory.appendingPathComponent("manifest.json"))
         }
         return try received(at: directory, upload: upload)
     }
@@ -64,36 +90,48 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         return max(count, offset + bytes.count)
     }
 
-    public func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) throws -> Int {
+    public func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, view: DesktopPeerUploadView) throws -> Int {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
-        guard try requireManifest(at: directory, deviceID: deviceID, upload: upload).selection == selection else { throw SyncError.outsideScope }
+        guard try requireManifest(at: directory, deviceID: deviceID, upload: upload).view.acceptsResumeRequest(view) else { throw SyncError.outsideScope }
         return try append(deviceID: deviceID, upload: upload, offset: offset, bytes: bytes)
     }
 
-    public func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws {
-        _ = try finish(deviceID: deviceID, upload: upload, selection: selection)
+    public func submit(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) throws {
+        let proposal = try finish(deviceID: deviceID, upload: upload, view: view)
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
-        try PrivateDesktopFile.write(JSONEncoder().encode(upload), to: directory.appendingPathComponent("submitted.json"))
+        let manifest = try requireManifest(at: directory, deviceID: deviceID, upload: upload)
+        let pinnedView = DesktopPeerUploadView(grantSelection: manifest.view.grantSelection,
+            selection: proposal.selection, supportsLeonardoFormats: manifest.view.supportsLeonardoFormats)
+        if pinnedView != manifest.view {
+            let pinnedManifest = Manifest(deviceID: manifest.deviceID, upload: manifest.upload, view: pinnedView)
+            let bytes = try JSONEncoder().encode(pinnedManifest)
+            guard bytes.count <= (try maximumManifestBytes()) else { throw SyncError.sizeLimitExceeded }
+            try PrivateDesktopFile.write(bytes, to: directory.appendingPathComponent("manifest.json"))
+        }
+        try PrivateDesktopFile.write(JSONEncoder().encode(upload),
+                                     to: directory.appendingPathComponent("submitted.json"))
     }
 
-    public func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) throws -> DesktopPeerUpload? {
+    public func pending(deviceID: UUID, projectID: UUID, grantSelection: CorpusSelection) throws -> DesktopPeerPendingUpload? {
         let directory = try location(deviceID: deviceID, projectID: projectID)
         let marker = directory.appendingPathComponent("submitted.json")
         try validateFile(marker, maximumBytes: 4 * 1_024)
         guard FileManager.default.fileExists(atPath: marker.path) else { return nil }
         let upload = try JSONDecoder().decode(DesktopPeerUpload.self, from: Data(contentsOf: marker))
+        let manifest = try requireManifest(at: directory, deviceID: deviceID, upload: upload)
         guard upload.projectID == projectID,
-              try requireManifest(at: directory, deviceID: deviceID, upload: upload).selection == selection else { throw SyncError.outsideScope }
-        return upload
+              grantSelection.covers(manifest.view.grantSelection),
+              grantSelection.covers(manifest.view.selection) else { throw SyncError.outsideScope }
+        return DesktopPeerPendingUpload(upload: upload, view: manifest.view)
     }
 
-    public func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws -> DesktopPeerProposal {
+    public func finish(deviceID: UUID, upload: DesktopPeerUpload, view: DesktopPeerUploadView) throws -> DesktopPeerProposal {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
         if try tombstone(at: directory, proposalID: upload.proposalID) != nil {
             throw SyncError.publicationPending
         }
         let saved = try requireManifest(at: directory, deviceID: deviceID, upload: upload)
-        guard saved.selection == selection else { throw SyncError.outsideScope }
+        guard saved.view.acceptsResumeRequest(view) else { throw SyncError.outsideScope }
         guard try received(at: directory, upload: upload) == upload.byteCount else { throw SyncError.invalidSnapshot }
         let payload = directory.appendingPathComponent("payload.json")
         let handle = try FileHandle(forReadingFrom: payload)
@@ -103,19 +141,38 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         guard hash.finalize().map({ String(format: "%02x", $0) }).joined() == upload.sha256 else { throw SyncError.invalidSnapshot }
         let proposal = try JSONDecoder().decode(DesktopPeerProposal.self, from: Data(contentsOf: payload))
         guard proposal.id == upload.proposalID, proposal.projectID == upload.projectID,
-              proposal.selection == selection else { throw SyncError.invalidSnapshot }
-        try selection.validate(proposal.base)
-        try selection.validate(proposal.proposed)
+              saved.view.selection.covers(proposal.selection),
+              saved.view.grantSelection.covers(proposal.selection) else { throw SyncError.invalidSnapshot }
+        try proposal.selection.validate(proposal.base)
+        try proposal.selection.validate(proposal.proposed)
+        try Self.validate(proposal.base, excludingExtensions: saved.view.excludedExtensions)
+        try Self.validate(proposal.proposed, excludingExtensions: saved.view.excludedExtensions)
         return proposal
     }
 
-    public func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) throws {
+    public func view(deviceID: UUID, projectID: UUID, proposalID: UUID,
+                     grantSelection: CorpusSelection) throws -> DesktopPeerUploadView? {
+        let directory = try location(deviceID: deviceID, projectID: projectID)
+        if let tombstone = try tombstone(at: directory, proposalID: proposalID) {
+            guard tombstone.manifest.deviceID == deviceID, tombstone.manifest.upload.projectID == projectID,
+                  grantSelection.covers(tombstone.manifest.view.grantSelection),
+                  grantSelection.covers(tombstone.manifest.view.selection) else { throw SyncError.outsideScope }
+            return tombstone.manifest.view
+        }
+        guard let manifest = try manifest(at: directory), manifest.deviceID == deviceID,
+              manifest.upload.projectID == projectID, manifest.upload.proposalID == proposalID else { return nil }
+        guard grantSelection.covers(manifest.view.grantSelection),
+              grantSelection.covers(manifest.view.selection) else { throw SyncError.outsideScope }
+        return manifest.view
+    }
+
+    public func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, view: DesktopPeerUploadView) throws {
         let directory = try location(deviceID: deviceID, projectID: projectID)
         if let existing = try tombstone(at: directory, proposalID: proposalID) {
             guard existing.manifest.deviceID == deviceID,
                   existing.manifest.upload.projectID == projectID,
                   existing.manifest.upload.proposalID == proposalID,
-                  existing.manifest.selection == selection else { throw SyncError.publicationPending }
+                  existing.manifest.view.acceptsResumeRequest(view) else { throw SyncError.publicationPending }
             if let current = try manifest(at: directory), current != existing.manifest { return }
             try removeStagedFiles(at: directory, expectedManifest: existing.manifest)
             return
@@ -123,7 +180,7 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         guard let manifest = try manifest(at: directory), manifest.deviceID == deviceID,
               manifest.upload.projectID == projectID,
               manifest.upload.proposalID == proposalID else { throw SyncError.invalidSnapshot }
-        guard manifest.selection == selection else { throw SyncError.outsideScope }
+        guard manifest.view.acceptsResumeRequest(view) else { throw SyncError.outsideScope }
         let marker = directory.appendingPathComponent("submitted.json")
         try validateFile(marker, maximumBytes: 4 * 1_024)
         guard FileManager.default.fileExists(atPath: marker.path),
@@ -131,7 +188,9 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
             throw SyncError.invalidSnapshot
         }
         let tombstone = Tombstone(manifest: manifest)
-        try PrivateDesktopFile.write(JSONEncoder().encode(tombstone), to: tombstoneLocation(at: directory, proposalID: proposalID))
+        let bytes = try JSONEncoder().encode(tombstone)
+        guard bytes.count <= (try maximumManifestBytes()) else { throw SyncError.sizeLimitExceeded }
+        try PrivateDesktopFile.write(bytes, to: tombstoneLocation(at: directory, proposalID: proposalID))
         do { try removeStagedFiles(at: directory, expectedManifest: manifest) }
         catch {
             // Retaining the tombstone makes the retry idempotent and blocks stale uploads.
@@ -146,12 +205,14 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     }
 
     private func requireManifest(at directory: URL, deviceID: UUID, upload: DesktopPeerUpload) throws -> Manifest {
-        guard let saved = try manifest(at: directory), saved.deviceID == deviceID, saved.upload == upload else { throw SyncError.invalidSnapshot }
+        guard let saved = try manifest(at: directory), saved.deviceID == deviceID, saved.upload == upload else {
+            throw SyncError.invalidSnapshot
+        }
         return saved
     }
     private func manifest(at directory: URL) throws -> Manifest? {
         let file = directory.appendingPathComponent("manifest.json")
-        try validateFile(file, maximumBytes: 10_000 * (6 * 4_096 + 512) + 64 * 1_024)
+        try validateFile(file, maximumBytes: maximumManifestBytes())
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
         return try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: file))
     }
@@ -163,7 +224,7 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
             throw SyncError.invalidPath
         }
         let file = try tombstoneLocation(at: directory, proposalID: proposalID)
-        try validateFile(file, maximumBytes: 16 * 1_024)
+        try validateFile(file, maximumBytes: maximumManifestBytes())
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
         return try JSONDecoder().decode(Tombstone.self, from: Data(contentsOf: file))
     }
@@ -187,9 +248,15 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         // A previous cleanup can have removed manifest.json after leaving another staged
         // file behind. The tombstone still authenticates the exact old upload, so clear all
         // known stage names rather than allowing an orphan payload into a new proposal.
-        for name in ["payload.json", "submitted.json", "manifest.json"] {
+        let names = ["payload.json", "submitted.json", "manifest.json"]
+        // Validate every staged file before deleting any of them. An invalid manifest
+        // discovered after deleting the payload must not leave an unrepeatable cleanup.
+        for name in names {
             let file = directory.appendingPathComponent(name)
-            try validateFile(file, maximumBytes: name == "payload.json" ? expectedManifest.upload.byteCount : 16 * 1_024)
+            try validateFile(file, maximumBytes: maximumBytes(for: name, manifest: expectedManifest))
+        }
+        for name in names {
+            let file = directory.appendingPathComponent(name)
             if FileManager.default.fileExists(atPath: file.path) { try FileManager.default.removeItem(at: file) }
         }
     }
@@ -197,10 +264,35 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         let payloadMaximum = try DesktopPeerArchiveBudget.maximumEncodedBytes()
         for name in ["payload.json", "submitted.json", "manifest.json"] {
             let file = directory.appendingPathComponent(name)
-            try validateFile(file, maximumBytes: name == "payload.json" ? payloadMaximum : 16 * 1_024)
+            try validateFile(file, maximumBytes: name == "payload.json" ? payloadMaximum : (name == "manifest.json" ? maximumManifestBytes() : 4 * 1_024))
             if FileManager.default.fileExists(atPath: file.path) { return true }
         }
         return false
+    }
+    private func maximumManifestBytes() throws -> Int {
+        // A manifest stores both the original grant and the proposal's possibly
+        // narrower selection. Tombstones contain that same manifest verbatim.
+        let perSelection = CorpusLimits().maximumFiles.multipliedReportingOverflow(by: 6 * 4_096 + 512)
+        guard !perSelection.overflow else { throw SyncError.sizeLimitExceeded }
+        let selections = perSelection.partialValue.multipliedReportingOverflow(by: 2)
+        guard !selections.overflow else { throw SyncError.sizeLimitExceeded }
+        let total = selections.partialValue.addingReportingOverflow(64 * 1_024)
+        guard !total.overflow else { throw SyncError.sizeLimitExceeded }
+        return total.partialValue
+    }
+    private func maximumBytes(for name: String, manifest: Manifest) throws -> Int {
+        switch name {
+        case "payload.json": manifest.upload.byteCount
+        case "submitted.json": 4 * 1_024
+        case "manifest.json": try maximumManifestBytes()
+        default: 0
+        }
+    }
+    private static func validate(_ snapshot: CorpusSnapshot, excludingExtensions: Set<String>) throws {
+        let excluded = Set(excludingExtensions.map { $0.lowercased() })
+        guard snapshot.files.allSatisfy({ !excluded.contains(($0.path as NSString).pathExtension.lowercased()) }) else {
+            throw SyncError.invalidSnapshot
+        }
     }
     private func received(at directory: URL, upload: DesktopPeerUpload) throws -> Int {
         let file = directory.appendingPathComponent("payload.json")
@@ -224,6 +316,35 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
             if FileManager.default.fileExists(atPath: directory.path), metadata?.isDirectory != true { throw SyncError.invalidPath }
         }
         return directory
+    }
+}
+
+/// Source-compatible convenience for local store tests and callers that already
+/// negotiated the current peer contract. Leonardo-format reads stay separate from proposal writes.
+public extension FileDesktopPeerUploadStore {
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int {
+        try begin(deviceID: deviceID, upload: upload,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
+    }
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data,
+                selection: CorpusSelection) async throws -> Int {
+        try append(deviceID: deviceID, upload: upload, offset: offset, bytes: bytes,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
+    }
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws {
+        try submit(deviceID: deviceID, upload: upload,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
+    }
+    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? {
+        try pending(deviceID: deviceID, projectID: projectID, grantSelection: selection)?.upload
+    }
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal {
+        try finish(deviceID: deviceID, upload: upload,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
+    }
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws {
+        try acknowledge(deviceID: deviceID, projectID: projectID, proposalID: proposalID,
+            view: DesktopPeerUploadView(grantSelection: selection, selection: selection, supportsLeonardoFormats: false))
     }
 }
 #endif

@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-11-18: [#472](https://github.com/PinedaTec-EU/LeonardoMD/issues/472), [PR #473](https://github.com/PinedaTec-EU/LeonardoMD/pull/473): the default-off non-document visibility preference remains limited to file-list rows and does not affect access or Markdown-linked assets. Little Leonardo now opens valid `.mdlf`/`.mdlr` entries in the existing Leonardo-aware reader, including remote project links, with forms still disabled/read-only. Bilingual Guide v98 documents the formats and limitation; packaged-process Help/practice acceptance passed on source `a357aaeb0dbc4f7cf4f1fbf4f5ca3e0c6080dde0`. Exact macOS/iOS preference captures and acceptance details are recorded in `doc/validation/non-document-files/pr473/exact-head-a357/`.
+
 - 2026-11-17: [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369) now aborts if authenticated STATUS reconciliation returns no context after a concurrent connection commit. The affected projects stay quarantined and the journal remains reconciliation-required; if persistence fails, the original write-ahead ticket is preserved. The focused regression covers the initial STATUS callback, the post-403 recheck and marker-promotion failure on iPhone 18 Pro Max / iOS 27.0 Simulator. Result bundle: `/private/tmp/ll369-obsolete-auth-final-20261117.xcresult`. Compilation ledger delta: 81; exact-head CI and strict review are pending at this source checkpoint.
 
 - 2026-11-15: Reconciled [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369) with the current [PR #435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435) head, preserving per-project and per-file authorization denial behavior while integrating attempt-scoped Little Leonardo diagnostics. The combined English/Spanish guide is revision v80 (EN `2ae32f3bf7f9c1c20a6292a67936b7a2761d0da21e48ac1f34dfb07e3b773349`; ES `6ea33e78be9699ce5b14509c087665649c9721e40daab3195ce25df7183b1cff`) because a personal v79 copy already exists; v79 remains untouched. The Guide package tests pass 3/3 and the full recorded `swift test` passes with zero failures (build delta 73). Exact-head CI for `fd69320b3fb0fc85588bc8d1eb3b49ab01e16779` is running; packaged v80 Help/practice acceptance remains pending while macOS is locked. The original physical transfer tracked by [#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380) is still a separate open acceptance item.
@@ -315,3 +317,23 @@ head CI, exact-source alert captures and strict review are pending; Beta Help
 and tab/window/app-quit acceptance remain required after integration because
 local screen capture again returned `ScreenCaptureKit -3811`. See
 `doc/validation/preview-sync/448/README.md`.
+
+PR #473 visibility follow-up (18 Nov 2026): the strict review found local search
+and remote “New files” notices bypassed the shared non-document preference.
+Search now composes file visibility with the existing authorization filter and
+refreshes on local or external preference changes; remote review notices use
+the same surface policy. Both focused regressions pass. Tracking: [#472](https://github.com/PinedaTec-EU/LeonardoMD/issues/472), [#476](https://github.com/PinedaTec-EU/LeonardoMD/issues/476).
+
+# 2026-11-19: PR #473 CI and packaged QA follow-up
+
+The Little Leonardo workflow now resolves one available iPhone 17 Pro by
+simulator ID, uses that ID for its test invocations, and boots that same device
+before installing the recovery fixture. This removes the assumption that a
+previous XCTest invocation leaves a simulator booted. The first exact-head
+failure and correction are tracked in [#493](https://github.com/PinedaTec-EU/LeonardoMD/issues/493).
+
+Packaged macOS preference and bilingual Help captures are recorded in
+`doc/validation/non-document-files/pr473/exact-head-7d078669/README.md`. The
+Mac Help CTA resolved an existing personal practice copy, which was preserved;
+Mac text save/reopen remains unverified. Little Leonardo’s offline practice
+save/reopen XCTest passed 1/1.
