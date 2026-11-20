@@ -1179,9 +1179,19 @@
       "pr": 488,
       "summary": "CI bounds the Swift test suite, retains timeout diagnostics, and synchronizes the Preview close regression test with WebKit readiness.",
       "to_version": "0.3.1896"
+    },
+    {
+      "delta": {
+        "build": 63
+      },
+      "from_version": "0.3.1896",
+      "merge_sha": "f1de4a8918c0a60ad0f35b387b146e86f7ced845",
+      "pr": 473,
+      "summary": "Adds default-off non-document visibility on macOS and Little Leonardo; reads .mdlf/.mdlr read-only in Little; preserves pinned proposals across grant expansion/restart; hardens legacy journals/tombstones; blocks peer writes to read-only formats; localizes archive guidance.",
+      "to_version": "0.3.1959"
     }
   ],
-  "current_version": "0.3.1896",
+  "current_version": "0.3.1959",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

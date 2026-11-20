@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1959
+
+- #472 Added: show non-document files on demand ([#473](https://github.com/PinedaTec-EU/LeonardoMD/pull/473))
+
+<p>Adds default-off non-document visibility on macOS and Little Leonardo; reads .mdlf/.mdlr read-only in Little; preserves pinned proposals across grant expansion/restart; hardens legacy journals/tombstones; blocks peer writes to read-only formats; localizes archive guidance.</p>
+
+Source: `f1de4a8918c0a60ad0f35b387b146e86f7ced845`. Delta: `{"build": 63}`.
+
 ## 0.3.1896
 
 - #487 Fixed: bound the full Swift CI suite and retain diagnostics ([#488](https://github.com/PinedaTec-EU/LeonardoMD/pull/488))
