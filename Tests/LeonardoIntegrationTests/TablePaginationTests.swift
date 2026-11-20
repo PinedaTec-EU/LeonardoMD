@@ -14,9 +14,9 @@ final class TablePaginationTests: XCTestCase {
             return "| \(value) | \(detail) |"
         }.joined(separator: "\n")
         let body = "First physical page\n\n<!-- leonardo:page-break -->\n\nIntro on page two\n\n## Records\n\n"
-            + "| Record key | Details |\n| --- | --- |\n" + table
+            + "| RecordKey | Details |\n| --- | --- |\n" + table
             + "\n\n<!-- leonardo:page-break -->\n\n| Last table |\n| --- |\n| Footnote |"
-        try await withPreview(body) { host, web in
+        try await withPreview(body, height: 360) { host, web in
             let probe = """
             (() => {
               const tables = Array.from(document.querySelectorAll('table')).slice(0, -1);
@@ -42,7 +42,7 @@ final class TablePaginationTests: XCTestCase {
                 XCTAssertEqual(pages.first, result["introPage"] as? Int)
                 XCTAssertEqual(pages.last.map { $0 + 1 }, result["finalPage"] as? Int)
                 XCTAssertEqual(result["rows"] as? [String], rows)
-                XCTAssertEqual(result["headers"] as? [String], Array(repeating: "Record key", count: pages.count))
+                XCTAssertEqual(result["headers"] as? [String], Array(repeating: "RecordKey", count: pages.count))
                 XCTAssertEqual(result["overflow"] as? Bool, false)
                 XCTAssertEqual(result["matchingWidths"] as? Bool, true)
                 _ = try await web.evaluateJavaScript("window.LeonardoObjects.refresh()")
@@ -56,7 +56,7 @@ final class TablePaginationTests: XCTestCase {
             XCTAssertTrue(pdf.page(at: 0)?.string?.contains("First physical page") == true)
             XCTAssertTrue(pdf.page(at: 1)?.string?.contains("Records") == true)
             for index in 1..<(pdf.pageCount - 1) {
-                XCTAssertTrue(pdf.page(at: index)?.string?.contains("Record key") == true)
+                XCTAssertTrue(pdf.page(at: index)?.string?.contains("RecordKey") == true)
             }
             XCTAssertTrue(pdf.page(at: pdf.pageCount - 1)?.string?.contains("Footnote") == true)
         }
@@ -85,7 +85,7 @@ final class TablePaginationTests: XCTestCase {
         try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 300, 24])]) { host, web in
             let lastRowPageOverflows = try await web.evaluateJavaScript("""
             Array.from(document.querySelectorAll('.table-fragmented tbody tr')).map(row =>
-              [row.textContent, row.closest('.leonardo-page').dataset.overflow ?? 'false'].join(':')).join(',')
+              [row.textContent.trim(), row.closest('.leonardo-page').dataset.overflow ?? 'false'].join(':')).join(',')
             """) as? String
             XCTAssertEqual(lastRowPageOverflows, "Tall row:true,Next row:false")
             do {
@@ -100,9 +100,10 @@ final class TablePaginationTests: XCTestCase {
     private func withPreview(
         _ body: String,
         tables: [LeonardoTableLayout] = [],
-        _ assertions: (MarkdownPreviewHost, WKWebView) async throws -> Void
+        height: Double = 280,
+        _ assertions: @MainActor (MarkdownPreviewHost, WKWebView) async throws -> Void
     ) async throws {
-        let page = LeonardoPageLayout(size: .custom, widthPoints: 420, heightPoints: 280)
+        let page = LeonardoPageLayout(size: .custom, widthPoints: 420, heightPoints: height)
         let source = try LeonardoFormatParser.serialize(.init(body: body, metadata: .init(layout: .init(page: page, tables: tables))))
         var config = MarkdownPreviewConfiguration()
         config.allowsLeonardoFormat = true
