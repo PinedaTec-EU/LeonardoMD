@@ -1199,9 +1199,19 @@
       "pr": 503,
       "summary": "Pull-request CI runs macOS tests, Little Leonardo simulator tests and packaging checks concurrently. Little Leonardo installs and seeds one build before running all selected unit and UI tests in one session.",
       "to_version": "0.3.1960"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.1960",
+      "merge_sha": "4d3f09de9f2735632cde825ee6576a1395dcbe20",
+      "pr": 506,
+      "summary": "Pull-request CI selects macOS, iOS, packaging and plugin checks from the changed files. PR labels can request extra checks, and pushes to main run the full suite.",
+      "to_version": "0.3.1961"
     }
   ],
-  "current_version": "0.3.1960",
+  "current_version": "0.3.1961",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

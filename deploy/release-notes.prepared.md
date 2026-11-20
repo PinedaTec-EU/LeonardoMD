@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1961
+
+- #505 Added: select PR validation suites by affected surface ([#506](https://github.com/PinedaTec-EU/LeonardoMD/pull/506))
+
+<p>Pull-request CI selects macOS, iOS, packaging and plugin checks from the changed files. PR labels can request extra checks, and pushes to main run the full suite.</p>
+
+Source: `4d3f09de9f2735632cde825ee6576a1395dcbe20`. Delta: `{"build": 1}`.
+
 ## 0.3.1960
 
 - #502 Refactored: parallelize CI and reuse iOS test builds ([#503](https://github.com/PinedaTec-EU/LeonardoMD/pull/503))
