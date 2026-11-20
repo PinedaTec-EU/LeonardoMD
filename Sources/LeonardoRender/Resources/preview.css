@@ -344,3 +344,31 @@ body[data-paper-effect="parchment"] {
 
 .leonardo-legacy-images { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .leonardo-legacy-images img { pointer-events: auto; }
+
+.leonardo-form-field.leonardo-rubric-positioned {
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  min-width: 0;
+  transform-origin: top left;
+}
+
+.leonardo-rubric-layout-editable {
+  position: relative;
+  cursor: move;
+  touch-action: none;
+}
+.leonardo-rubric-layout-editable > .leonardo-form-input:disabled { pointer-events: none; }
+.leonardo-rubric-layout-editable > .leonardo-field-help:disabled,
+.leonardo-rubric-layout-editable .leonardo-field-help:disabled { pointer-events: none; }
+.leonardo-rubric-rotate { display: none; }
+.leonardo-rubric-layout-editable.leonardo-object-selected > .leonardo-rubric-rotate {
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+.leonardo-form-export .leonardo-rubric-rotate { display: none !important; }
+@media print { .leonardo-rubric-rotate { display: none !important; } }

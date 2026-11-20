@@ -426,7 +426,15 @@
 
   window.LeonardoPreview = {
     setAppearance,
-    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); window.LeonardoTableResizing.setEditable(value); window.LeonardoObjects?.setEditable(value); },
+    setEditable(value) {
+      const needsPages = window.LeonardoRubricPlacement.needsPages();
+      payload.allowsEditing = value;
+      window.LeonardoEditing.setEditable(root, value);
+      window.LeonardoTableResizing.setEditable(value);
+      window.LeonardoObjects?.setEditable(value);
+      window.LeonardoRubricPlacement.setEditable(value);
+      if (needsPages !== window.LeonardoRubricPlacement.needsPages()) renderDocument();
+    },
     updateContent(nextPayload) {
       if (!nextPayload || typeof nextPayload.markdown !== "string") return;
       payload = Object.assign(payload, nextPayload, { leonardo: nextPayload.leonardo || null });

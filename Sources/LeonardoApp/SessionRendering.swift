@@ -27,6 +27,10 @@ extension AppSession {
             guard let self, self.documentURL == previewDocumentURL else { return nil }
             return self.updatePreviewLeonardoFields(expected: expected, changes: changes)
         }
+        renderer.onRubricLayout = { [weak self] expected, edit in
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return self.applyRubricLayout(expected: expected, edit: edit)
+        }
         renderer.onObjectAction = { [weak self] expected, object, remove, fieldID in
             guard let self else { return false }
             return self.applyPreviewObjectAction(expected: expected, object: object, remove: remove,

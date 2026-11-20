@@ -481,7 +481,11 @@ synchronization with Little Leonardo is not implemented by this feature.
 
 For forms, declare `{"type":"rubric","rubricSize":{"width":180,"height":60}}`
 and insert `{{field:signature}}` in the body. Dimensions are authored in points;
-the default is 180×60. Clicking the field in Fill expands the native rubric
+the default is 180×60. Optional `rubricPlacement` sets `page` (1-based), `x`
+and `y` (physical points), and clockwise `rotation` (0, 90, 180 or 270).
+It pins the first occurrence of the field to the page. Repeated markers remain
+inline and share the same answer and ink dimensions. Without placement the
+field flows with its marker. Clicking the field in Fill expands the native rubric
 dialog, where the user can pick saved ink or draw, label and optionally save
 new ink to the library. The answer is a rubric object in `values.signature`.
 It stays within the declared area, scales with its aspect ratio, and cannot

@@ -12,6 +12,7 @@ public final class MarkdownPreviewController: ObservableObject {
     public var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
     public var onRejectedTableResize: (() -> Void)?
     public var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
+    public var onRubricLayout: ((String, LeonardoRubricLayoutEdit) -> Bool)?
     public var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
     public var onRejectedObjectAction: (() -> Void)?
     public var onGraphicSelection: ((String, String?, Bool) -> Void)?
@@ -101,6 +102,7 @@ public final class MarkdownPreviewController: ObservableObject {
         host.onEdit = onEdit
         host.onFormEdit = onFormEdit
         host.onFieldHelp = onFieldHelp
+        host.onRubricLayout = onRubricLayout
         host.onObjectAction = onObjectAction
         host.onRejectedObjectAction = onRejectedObjectAction
         host.onGraphicSelection = onGraphicSelection

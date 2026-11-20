@@ -63,6 +63,7 @@ enum MarkdownHTMLShell {
           <script src="\(resourceURL(.leonardoForms))"></script>
           <script src="\(resourceURL(.leonardoLayout))"></script>
           <script src="\(resourceURL(.leonardoObjects))"></script>
+          <script src="\(resourceURL(.rubricPlacement))"></script>
           <script src="\(resourceURL(.imageLoading))"></script>
           \(extensionScripts)
           <script src="\(resourceURL(.extensionDetection))"></script>
