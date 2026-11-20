@@ -56,6 +56,7 @@
     const resizing = event.target === entry.handle;
     const start = origin(entry, page);
     const startX = event.clientX, startY = event.clientY;
+    const bounds = wrapper.getBoundingClientRect(), frame = page.getBoundingClientRect();
     const angle = start.rotation * Math.PI / 180;
     let nextSize = size, nextPlacement = placement;
     wrapper.setPointerCapture(event.pointerId);
@@ -70,8 +71,12 @@
         nextSize = {width, height: width * size.height / size.width};
         sizeField(entry, nextSize);
       } else if (nextPlacement !== placement || Math.hypot(dx, dy) >= 2) {
-        nextPlacement = {...start, x: start.x + dx, y: start.y + dy};
-        wrapper.style.translate = `${dx}pt ${dy}pt`;
+        // Keep part of the field reachable even if the pointer leaves the page.
+        const visible = 24;
+        const x = Math.max(frame.left + visible - bounds.right, Math.min(frame.right - visible - bounds.left, dx / pointsPerPixel)) * pointsPerPixel;
+        const y = Math.max(frame.top + visible - bounds.bottom, Math.min(frame.bottom - visible - bounds.top, dy / pointsPerPixel)) * pointsPerPixel;
+        nextPlacement = {...start, x: start.x + x, y: start.y + y};
+        wrapper.style.translate = `${x}pt ${y}pt`;
       }
     }
 
