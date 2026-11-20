@@ -1,0 +1,4 @@
+{
+  "build": 1,
+  "summary": "Pull-request CI selects macOS, iOS, packaging and plugin checks from the changed files. PR labels can request extra checks, and pushes to main run the full suite."
+}
