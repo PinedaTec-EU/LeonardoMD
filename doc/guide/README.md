@@ -11,7 +11,7 @@ and confirmed library deletion. The sample dialog images come from the native
 component fixture with synthetic entries. Packaged Help acceptance is tracked in
 [PR #497](https://github.com/PinedaTec-EU/LeonardoMD/pull/497).
 Guide v104 EN SHA-256: `eff7d1ed815105c6c282139ed1e0099c0fe74c60e401239287ef7b19af1e13d3`
-and ES SHA-256: `b44593e02a241b1342e20d050a4aa731cda05e4c4d16c85f9596b86bf59369c2`.
+and ES SHA-256: `0f8215716268547558916967c8375b65809c77ba9b45ab4546a92e25d86499aa`.
 
 Guide v103 carries forward v102's project file deletion shortcut and updates
 chapters 8, 11 and 14–15 with the off-by-default non-document file preference on
