@@ -9,11 +9,11 @@ concurrency:
   # Validate PR branches once and run post-merge validation on main pushes.
   group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
 jobs:
-  test:
+  macos-tests:
     runs-on: macos-15
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,8 +23,6 @@ jobs:
           test -d "$DEVELOPER_DIR"
           xcodebuild -version
           swift --version
-      - name: Test packaging version metadata
-        run: python3 -m unittest discover -s scripts/tests -v
       - name: Test Leonardo agent plugin
         run: python3 -m unittest discover -s plugins/leonardo-format/tests -v
       - name: Verify pinned Sparkle artifact cache
@@ -229,6 +227,30 @@ jobs:
           path: ${{ runner.temp }}/preview-alert-evidence/
           if-no-files-found: warn
           retention-days: 3
+      - name: Record preview capture provenance
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          printf 'Head: %s\nSurface: native WKWebView Markdown preview\nViewport: 1000x800 points\nStates: light, dark; first tag focused\nFixture: synthetic tagged document\n' "$EVIDENCE_SHA" > visual-evidence/provenance.txt
+          printf 'Head: %s\nSurface: native NSHostingView Preferences - Updates\nViewports: full 580x620; component 532x550 points\nLanguages: en, es\nStates: stable, beta, waiting, busy, deferred, development, startup-error\nFixture: synthetic session and isolated update driver\nLimits: component rendering; native glass tab bar pixels unavailable; no hosted install/relaunch or fresh packaged startup claim\n' "$EVIDENCE_SHA" > visual-evidence/updates/provenance.txt
+      - name: Record release notes capture provenance
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          printf 'Head: %s\nSurface: native NSHostingView Release Notes\nViewport: 760x580 points\nLanguages: en, es\nStates: light, dark; interval and downgrade; suppression on\nFixture: synthetic 18-PR history\nLimits: component rendering; no fresh packaged-process startup claim\n' "$EVIDENCE_SHA" > visual-evidence/release-notes/provenance.txt
+      - name: Upload preview evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-tags-${{ github.event.pull_request.head.sha || github.sha }}
+          path: visual-evidence/
+          if-no-files-found: error
+
+  ios-tests:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Build iOS companion
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build-for-testing
       - name: Select Little Leonardo simulator
@@ -256,12 +278,6 @@ jobs:
           print(matches[0][1]["udid"])
           ')"
           printf 'LITTLE_LEONARDO_SIMULATOR_ID=%s\n' "$device_id" >> "$GITHUB_ENV"
-      - name: Test Little Leonardo revocation recovery
-        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileRevocationTests test
-      - name: Test Little Leonardo diagnostic log
-        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests test
-      - name: Test Little Leonardo connection display names
-        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests test
       - name: Seed legacy recovery archive for UI coverage
         shell: bash
         run: |
@@ -292,32 +308,40 @@ jobs:
             *) echo "Unexpected state for selected simulator $device_id: $device_state" >&2; exit 1 ;;
           esac
           xcrun simctl bootstatus "$device_id" -b
+          xcrun simctl install "$device_id" .build/little-ios/Build/Products/Debug-iphonesimulator/LittleLeonardo.app
           app_data="$(xcrun simctl get_app_container "$device_id" eu.pinedatec.LittleLeonardo data)"
           corpus="$app_data/Library/Application Support/LittleLeonardo/Corpus"
           mkdir -p "$corpus"
           install -m 600 "$fixture" "$corpus/59521A0B-559C-4477-BE42-39AC03349CC3.json"
           test "$(shasum -a 256 "$corpus/59521A0B-559C-4477-BE42-39AC03349CC3.json" | awk '{ print $1 }')" = "$expected_sha"
-      - name: Test Little Leonardo file visibility, read-only formats and recovery UI
-        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileProjectFileVisibilityTests -only-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInEnglish -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInSpanish test
+      - name: Test Little Leonardo unit suites and recovery UI
+        run: >-
+          xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO
+          -parallel-testing-enabled NO
+          -only-testing:LittleLeonardoTests/MobileRevocationTests
+          -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests
+          -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests
+          -only-testing:LittleLeonardoTests/MobileProjectFileVisibilityTests
+          -only-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo
+          -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending
+          -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInEnglish
+          -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInSpanish
+          test-without-building
+
+  package:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Test packaging version metadata
+        run: python3 -m unittest discover -s scripts/tests -v
       - name: Validate update metadata
         run: python3 -m unittest discover -s Tests/Packaging
-      - name: Record preview capture provenance
+      - name: Verify pinned Sparkle artifact cache
         env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          printf 'Head: %s\nSurface: native WKWebView Markdown preview\nViewport: 1000x800 points\nStates: light, dark; first tag focused\nFixture: synthetic tagged document\n' "$EVIDENCE_SHA" > visual-evidence/provenance.txt
-          printf 'Head: %s\nSurface: native NSHostingView Preferences - Updates\nViewports: full 580x620; component 532x550 points\nLanguages: en, es\nStates: stable, beta, waiting, busy, deferred, development, startup-error\nFixture: synthetic session and isolated update driver\nLimits: component rendering; native glass tab bar pixels unavailable; no hosted install/relaunch or fresh packaged startup claim\n' "$EVIDENCE_SHA" > visual-evidence/updates/provenance.txt
-      - name: Record release notes capture provenance
-        env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          printf 'Head: %s\nSurface: native NSHostingView Release Notes\nViewport: 760x580 points\nLanguages: en, es\nStates: light, dark; interval and downgrade; suppression on\nFixture: synthetic 18-PR history\nLimits: component rendering; no fresh packaged-process startup claim\n' "$EVIDENCE_SHA" > visual-evidence/release-notes/provenance.txt
-      - name: Upload preview evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-tags-${{ github.event.pull_request.head.sha || github.sha }}
-          path: visual-evidence/
-          if-no-files-found: error
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/prime-sparkle-cache.py
       - name: Package app
         run: ./scripts/build-app.sh
       - name: Verify packaged release changes
@@ -330,3 +354,19 @@ jobs:
           name: release-notes-package-${{ github.event.pull_request.head.sha || github.sha }}
           path: release-notes-package.json
           if-no-files-found: error
+
+  test:
+    if: ${{ always() }}
+    needs: [macos-tests, ios-tests, package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful validation
+        env:
+          MACOS_RESULT: ${{ needs.macos-tests.result }}
+          IOS_RESULT: ${{ needs.ios-tests.result }}
+          PACKAGE_RESULT: ${{ needs.package.result }}
+        run: |
+          if [[ "$MACOS_RESULT" != "success" || "$IOS_RESULT" != "success" || "$PACKAGE_RESULT" != "success" ]]; then
+            echo "::error::Validation results: macOS=$MACOS_RESULT, iOS=$IOS_RESULT, package=$PACKAGE_RESULT"
+            exit 1
+          fi
