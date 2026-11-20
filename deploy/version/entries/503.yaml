@@ -1,0 +1,4 @@
+{
+  "build": 1,
+  "summary": "Pull-request CI runs macOS tests, Little Leonardo simulator tests and packaging checks concurrently. Little Leonardo installs and seeds one build before running all selected unit and UI tests in one session."
+}
