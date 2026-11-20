@@ -429,15 +429,17 @@ save the document to retain it. Raster images have no ink-color control. Delete
 an object from the inspector. If a value is invalid or the object changed,
 select it again and retry. Close the inspector to give the document more space.
 
-![Rubric canvas and local library](assets/rubric-canvas.png)
-
-*Production drawing-dialog component with synthetic saved ink; not a signed document.*
-
 **Insert → New rubric…** opens a drawing canvas: enter a label, choose color,
 stroke width and Solid/Brush, draw, Undo or Clear. New rubrics created here are
 always saved in your local library. Pick a saved thumbnail to insert another
-copy. The dialog's Delete removes only the library entry, never ink already
-inserted in documents. The library holds up to 100 entries on this Mac. A Mac
+copy. After insertion, drag the selected rubric to a side or the center of
+the page, or drag its corner handle to resize it. The Object inspector lets
+you enter the page, position and size directly. In Edit mode, insertion opens
+Split so you can see the page.
+
+To delete a saved rubric, click the trash icon below its thumbnail and confirm
+**Delete**. This permanently removes the library entry. Copies already inserted
+in documents remain. The library holds up to 100 entries on this Mac. A Mac
 with the current Leonardo Sync helper can also choose **Use a linked Little
 Leonardo** and target one explicitly capable, read-only device. This sends a
 single request; it does not broadcast to the linked group or grant document

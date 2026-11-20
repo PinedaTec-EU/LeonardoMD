@@ -337,3 +337,5 @@ Packaged macOS preference and bilingual Help captures are recorded in
 Mac Help CTA resolved an existing personal practice copy, which was preserved;
 Mac text save/reopen remains unverified. Little Leonardo’s offline practice
 save/reopen XCTest passed 1/1.
+
+- 2026-11-20: [#496](https://github.com/PinedaTec-EU/LeonardoMD/issues/496) adds immediate page-rubric placement and confirmed library deletion. See [page objects](page-objects.md).
