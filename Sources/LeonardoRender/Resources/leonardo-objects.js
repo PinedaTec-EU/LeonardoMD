@@ -64,7 +64,7 @@
         page.title = label("Content exceeds page height. Split the block before exporting.");
       }
     }
-    const last = Math.max(1, ...(payload.leonardo?.layout?.objects || []).map(item => item.page));
+    const last = Math.max(window.LeonardoRubricPlacement.lastPage(), ...(payload.leonardo?.layout?.objects || []).map(item => item.page));
     while (root.querySelectorAll(":scope > .leonardo-page").length < last) next();
     background?.remove();
   }
@@ -164,9 +164,10 @@
     const nextSelection = nextPayload.selectedGraphicID;
     clear(false); root = nextRoot; payload = {...nextPayload, selectedGraphicID: nextSelection};
     root.classList.remove("leonardo-paginated");
+    window.LeonardoRubricPlacement.prepare(root, payload);
     if (!payload.leonardo) return;
     const objects = payload.leonardo.layout?.objects || [];
-    if (!objects.length && !root.querySelector('[data-leonardo-page-break="true"]')) return;
+    if (!objects.length && !window.LeonardoRubricPlacement.needsPages() && !root.querySelector('[data-leonardo-page-break="true"]')) return;
     legacyImages = Array.from(root.querySelectorAll("img")).filter(image => image.style.position === "absolute");
     logicalNodes = Array.from(root.childNodes).filter(node => !node.classList?.contains("leonardo-document-background"));
     backgroundTemplate = root.querySelector(":scope > .leonardo-document-background");
@@ -176,6 +177,7 @@
     paginate();
     renderLegacyImages();
     renderObjects(objects);
+    window.LeonardoRubricPlacement.place();
     setSelection(payload.selectedGraphicID);
   }
   function renderLegacyImages() {
@@ -204,6 +206,7 @@
       if (!child.classList?.contains("leonardo-page") && !child.classList?.contains("leonardo-document-background") && !logicalNodes.includes(child)) logicalNodes.push(child);
     }
     paginate(); renderLegacyImages(); renderObjects(payload.leonardo?.layout?.objects || []);
+    window.LeonardoRubricPlacement.place();
     if (selectedID && payload.allowsEditing && !payload.allowsFormFilling) {
       const element = Array.from(root.querySelectorAll(".leonardo-object")).find(node => node.dataset.object === selectedID);
       if (element) {
