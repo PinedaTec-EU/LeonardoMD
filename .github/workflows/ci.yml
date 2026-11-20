@@ -12,7 +12,32 @@ concurrency:
 env:
   DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      macos: ${{ steps.select.outputs.macos }}
+      ios: ${{ steps.select.outputs.ios }}
+      package: ${{ steps.select.outputs.package }}
+      plugin: ${{ steps.select.outputs.plugin }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          sparse-checkout: /scripts/ci_plan.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Select validation suites
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci_plan.py
+
   macos-tests:
+    needs: plan
+    if: needs.plan.outputs.macos == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -23,8 +48,6 @@ jobs:
           test -d "$DEVELOPER_DIR"
           xcodebuild -version
           swift --version
-      - name: Test Leonardo agent plugin
-        run: python3 -m unittest discover -s plugins/leonardo-format/tests -v
       - name: Verify pinned Sparkle artifact cache
         env:
           GH_TOKEN: ${{ github.token }}
@@ -246,6 +269,8 @@ jobs:
           if-no-files-found: error
 
   ios-tests:
+    needs: plan
+    if: needs.plan.outputs.ios == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -329,6 +354,8 @@ jobs:
           test-without-building
 
   package:
+    needs: plan
+    if: needs.plan.outputs.package == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -355,18 +382,49 @@ jobs:
           path: release-notes-package.json
           if-no-files-found: error
 
-  test:
-    if: ${{ always() }}
-    needs: [macos-tests, ios-tests, package]
+  plugin-tests:
+    needs: plan
+    if: needs.plan.outputs.plugin == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Require successful validation
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Test Leonardo agent plugin
+        run: python3 -m unittest discover -s plugins/leonardo-format/tests -v
+
+  test:
+    if: ${{ always() }}
+    needs: [plan, macos-tests, ios-tests, package, plugin-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the planned validation results
         env:
+          PLAN_RESULT: ${{ needs.plan.result }}
+          MACOS_SELECTED: ${{ needs.plan.outputs.macos }}
+          IOS_SELECTED: ${{ needs.plan.outputs.ios }}
+          PACKAGE_SELECTED: ${{ needs.plan.outputs.package }}
+          PLUGIN_SELECTED: ${{ needs.plan.outputs.plugin }}
           MACOS_RESULT: ${{ needs.macos-tests.result }}
           IOS_RESULT: ${{ needs.ios-tests.result }}
           PACKAGE_RESULT: ${{ needs.package.result }}
+          PLUGIN_RESULT: ${{ needs.plugin-tests.result }}
+        shell: bash
         run: |
-          if [[ "$MACOS_RESULT" != "success" || "$IOS_RESULT" != "success" || "$PACKAGE_RESULT" != "success" ]]; then
-            echo "::error::Validation results: macOS=$MACOS_RESULT, iOS=$IOS_RESULT, package=$PACKAGE_RESULT"
+          if [[ "$PLAN_RESULT" != "success" ]]; then
+            echo "::error::CI planning did not succeed ($PLAN_RESULT)"
             exit 1
           fi
+          failed=0
+          require_result() {
+            case "$2:$3" in
+              true:success|false:skipped) return ;;
+            esac
+            echo "::error::$1 selected=$2 result=$3"
+            failed=1
+          }
+          require_result macOS "$MACOS_SELECTED" "$MACOS_RESULT"
+          require_result iOS "$IOS_SELECTED" "$IOS_RESULT"
+          require_result package "$PACKAGE_SELECTED" "$PACKAGE_RESULT"
+          require_result plugin "$PLUGIN_SELECTED" "$PLUGIN_RESULT"
+          exit "$failed"

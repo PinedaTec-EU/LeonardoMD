@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
+
 - 2026-11-20: [#502](https://github.com/PinedaTec-EU/LeonardoMD/issues/502) splits `.github/workflows/ci.yml` into concurrent macOS test, Little Leonardo simulator, and package jobs. The existing `test` check requires success in all three. Little Leonardo installs the test build and seeds recovery before running the selected unit and UI cases in one XCTest invocation.
 - 2026-11-18: [#472](https://github.com/PinedaTec-EU/LeonardoMD/issues/472), [PR #473](https://github.com/PinedaTec-EU/LeonardoMD/pull/473): the default-off non-document visibility preference remains limited to file-list rows and does not affect access or Markdown-linked assets. Little Leonardo now opens valid `.mdlf`/`.mdlr` entries in the existing Leonardo-aware reader, including remote project links, with forms still disabled/read-only. Bilingual Guide v98 documents the formats and limitation; packaged-process Help/practice acceptance passed on source `a357aaeb0dbc4f7cf4f1fbf4f5ca3e0c6080dde0`. Exact macOS/iOS preference captures and acceptance details are recorded in `doc/validation/non-document-files/pr473/exact-head-a357/`.
 
