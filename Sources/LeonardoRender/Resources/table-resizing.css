@@ -13,3 +13,5 @@
 .table-resize-handle:hover, .table-resize-handle:focus-visible { background: color-mix(in srgb, var(--ld-accent) 55%, transparent); outline: 1px solid var(--ld-accent); }
 @media print { .table-resize-overlay { display: none !important; } }
 .leonardo-form-export .table-resize-overlay { display: none !important; }
+
+.table-fragmented > .table-resize-overlay { display: none !important; }

@@ -38,3 +38,11 @@ the body boundary for resize lookup; mixing raw CRLF length with normalized LF
 length truncates leading tables. The native resize matrix covers CRLF both
 with and without front matter. Outer handles reserve separate viewport padding
 so even header-only/narrow tables keep hit-testable width/height controls.
+
+With paginated Leonardo documents ([#495](https://github.com/PinedaTec-EU/LeonardoMD/issues/495)),
+top-level GFM tables taller than one printable area continue at row boundaries.
+The paginator freezes measured column geometry and repeats eligible headers
+unless layout disables them. Continuations have no source identity or resize
+handles. Original rows retain their live DOM and are moved back before each
+reflow. An indivisible oversized row or unsupported table still triggers the PDF
+overflow guard.

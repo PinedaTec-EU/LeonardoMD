@@ -108,3 +108,5 @@ older, narrower gated-action image to stay within the bundled image memory
 budget. Existing personal guide copies and their practice answers remain
 untouched. Current sources, package revision and build instructions are tracked
 in [README.md](README.md).
+
+Paginated Markdown tables (#495): `table-pagination.js`, chapter 10 in both locales. Covers row boundaries, column widths, repeated headers, and preview and PDF overflow recovery.
