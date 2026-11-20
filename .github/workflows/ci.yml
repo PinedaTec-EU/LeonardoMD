@@ -278,14 +278,6 @@ jobs:
           print(matches[0][1]["udid"])
           ')"
           printf 'LITTLE_LEONARDO_SIMULATOR_ID=%s\n' "$device_id" >> "$GITHUB_ENV"
-      - name: Test Little Leonardo unit suites
-        run: >-
-          xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO
-          -parallel-testing-enabled NO
-          -only-testing:LittleLeonardoTests/MobileRevocationTests
-          -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests
-          -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests
-          test-without-building
       - name: Seed legacy recovery archive for UI coverage
         shell: bash
         run: |
@@ -316,15 +308,19 @@ jobs:
             *) echo "Unexpected state for selected simulator $device_id: $device_state" >&2; exit 1 ;;
           esac
           xcrun simctl bootstatus "$device_id" -b
+          xcrun simctl install "$device_id" .build/little-ios/Build/Products/Debug-iphonesimulator/LittleLeonardo.app
           app_data="$(xcrun simctl get_app_container "$device_id" eu.pinedatec.LittleLeonardo data)"
           corpus="$app_data/Library/Application Support/LittleLeonardo/Corpus"
           mkdir -p "$corpus"
           install -m 600 "$fixture" "$corpus/59521A0B-559C-4477-BE42-39AC03349CC3.json"
           test "$(shasum -a 256 "$corpus/59521A0B-559C-4477-BE42-39AC03349CC3.json" | awk '{ print $1 }')" = "$expected_sha"
-      - name: Test Little Leonardo file visibility, read-only formats and recovery UI
+      - name: Test Little Leonardo unit suites and recovery UI
         run: >-
           xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO
           -parallel-testing-enabled NO
+          -only-testing:LittleLeonardoTests/MobileRevocationTests
+          -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests
+          -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests
           -only-testing:LittleLeonardoTests/MobileProjectFileVisibilityTests
           -only-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo
           -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending
