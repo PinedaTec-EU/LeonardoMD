@@ -431,6 +431,10 @@ Elimina un objeto desde el inspector. Si un valor no es válido o el objeto camb
 vuelve a seleccionarlo e inténtalo otra vez. Cierra el panel para dar más espacio
 al documento.
 
+![Lienzo de dibujo y miniaturas guardadas](guide/es/assets/rubric-canvas.png)
+
+*Vista anterior del lienzo. La biblioteca ahora muestra un icono de papelera.*
+
 **Insertar → Nueva rúbrica…** abre el lienzo: indica una etiqueta, elige color,
 grosor y estilo Uniforme/Pincel, dibuja y usa Deshacer o Borrar trazos.
 Las nuevas rúbricas creadas aquí siempre se guardan en tu biblioteca local.

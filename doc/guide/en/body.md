@@ -429,6 +429,10 @@ save the document to retain it. Raster images have no ink-color control. Delete
 an object from the inspector. If a value is invalid or the object changed,
 select it again and retry. Close the inspector to give the document more space.
 
+![Drawing canvas and saved rubric thumbnails](assets/rubric-canvas.png)
+
+*Earlier view of the drawing canvas. The library now uses a trash icon.*
+
 **Insert → New rubric…** opens a drawing canvas: enter a label, choose color,
 stroke width and Solid/Brush, draw, Undo or Clear. New rubrics created here are
 always saved in your local library. Pick a saved thumbnail to insert another
