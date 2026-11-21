@@ -1,13 +1,22 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v107-en.mdlz` and `Guide-v107-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v108-en.mdlz` and `Guide-v108-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v107/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v108/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v107 documents opening a prefilled support draft from desktop Sync diagnostics.
-Guide v107 EN SHA-256: `1b308105cbcd8619d64af78228b3fe75c1706f8978be460bfdd5b25e6556e9b6`
+Guide v108 documents saved-item recovery from Home and retains the Sync diagnostic instructions.
+Guide v108 EN SHA-256: `a4b736e0b54c25c36a1c4b946f0b5d337a6bb093b8b0800dd51ecd9985bf5d99`
+and ES SHA-256: `ea059fd9173a79296fb438a2f32c670358cfaacb24f82d3879f9a7fd7c4cef6c`.
+
+Guide v107 explains how to copy the Sync diagnostic report and send it manually
+when the default mail handler does not show a draft.
+Guide v107 EN SHA-256: `c23325b22fa41f825a2ac49d99545b6f78110bfab8185bedcd2a96acbe67a9e1`
+and ES SHA-256: `de2b3b03923026aa1b534f7dc6581122ebcd8b84d8d929ddd5fbb977c3889d33`.
+
+Guide v105 documents opening a prefilled support draft from desktop Sync diagnostics.
+Guide v105 EN SHA-256: `1b308105cbcd8619d64af78228b3fe75c1706f8978be460bfdd5b25e6556e9b6`
 and ES SHA-256: `57d0051c7b8efeeb437edbdaed7a2767877b7ca7d020244562e30262f4b8b0fb`.
 
 Guide v104 documents the desktop Sync diagnostics sheet, session service events

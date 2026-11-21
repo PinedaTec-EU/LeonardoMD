@@ -1219,9 +1219,19 @@
       "pr": 511,
       "summary": "Synchronization preferences use less space and offer recent Leonardo Sync diagnostics you can copy or review in an email draft.",
       "to_version": "0.3.1965"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.1965",
+      "merge_sha": "4d2959506178e5496eb9f20b34b68fafe45f6412",
+      "pr": 515,
+      "summary": "Sync diagnostics explains how to copy the report and email it manually when the default mail app does not show a draft.",
+      "to_version": "0.3.1968"
     }
   ],
-  "current_version": "0.3.1965",
+  "current_version": "0.3.1968",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

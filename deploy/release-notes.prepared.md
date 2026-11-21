@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1968
+
+- #513 Fixed: explain how to send Sync diagnostics manually ([#515](https://github.com/PinedaTec-EU/LeonardoMD/pull/515))
+
+<p>Sync diagnostics explains how to copy the report and email it manually when the default mail app does not show a draft.</p>
+
+Source: `4d2959506178e5496eb9f20b34b68fafe45f6412`. Delta: `{"build": 3}`.
+
 ## 0.3.1965
 
 - #510 Added: compact Sync preferences and safe diagnostics ([#511](https://github.com/PinedaTec-EU/LeonardoMD/pull/511))
