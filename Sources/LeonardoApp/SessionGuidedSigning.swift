@@ -446,9 +446,14 @@ extension AppSession {
         }
     }
 
-    func refreshGuidedSigningTargets() {
+    /// Refreshes the target list for the requested signer position. The
+    /// inspector owns selection, so it must not depend on the session's last
+    /// Core `currentPositionID` when a different signer is selected.
+    func refreshGuidedSigningTargets(for positionID: String? = nil) {
         guard let current = guidedSigningSession,
-              let positionID = current.currentPositionID,
+              let positionID = positionID ?? current.currentPositionID,
+              let progress = current.positions[positionID],
+              progress.state == .reviewing || progress.state == .readyToSign,
               let document = leonardoDocument else {
             guidedSigningTargets = []
             return
@@ -575,9 +580,8 @@ extension AppSession {
         }
     }
 
-    func pauseGuidedPosition() async {
+    func pauseGuidedPosition(positionID: String) async {
         guard var current = guidedSigningSession,
-              let positionID = current.currentPositionID,
               let expectedLocation = guidedSigningLocation else { return }
         let expectedContent = content
         do {
@@ -600,9 +604,8 @@ extension AppSession {
         }
     }
 
-    func resumeGuidedPosition() async {
+    func resumeGuidedPosition(positionID: String) async {
         guard var current = guidedSigningSession,
-              let positionID = current.currentPositionID,
               let expectedLocation = guidedSigningLocation else { return }
         let expectedContent = content
         do {
@@ -627,9 +630,8 @@ extension AppSession {
         }
     }
 
-    func signGuidedPosition(password: String) async {
+    func signGuidedPosition(positionID: String, password: String) async {
         guard var current = guidedSigningSession,
-              let positionID = current.currentPositionID,
               let assignment = current.positions[positionID]?.assignment,
               let document = leonardoDocument,
               let expectedLocation = guidedSigningLocation else { return }

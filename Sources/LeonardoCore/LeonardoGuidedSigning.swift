@@ -184,7 +184,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
     public func optionalBlankFieldIDs(document: LeonardoDocument) -> [String] {
         document.metadata.fields.keys.sorted().filter { fieldID in
             guard let field = document.metadata.fields[fieldID],
-                  field.type != .rubric,
+                  field.signerPosition == nil,
                   !field.required else { return false }
             let value = document.metadata.values[fieldID] ?? field.defaultValue
             return value?.isNullOrEmpty != false
@@ -212,8 +212,16 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         }
         let result = try targets(for: positionID, document: document)
         currentPositionID = positionID
-        if positions[positionID]?.state == .pending || positions[positionID]?.state == .paused {
-            positions[positionID]?.state = .reviewing
+        if let progress = positions[positionID],
+           progress.state == .pending || progress.state == .paused
+            || progress.state == .reviewing || progress.state == .readyToSign {
+            // `resume` deliberately enters the review state first so the
+            // caller can restore the exact rendered targets. Re-running
+            // begin must then recover readiness when the last occurrence had
+            // already been confirmed before pausing.
+            positions[positionID]?.state = Self.isReadyToSign(
+                progress: progress, expectedTargets: result
+            ) ? .readyToSign : .reviewing
         }
         return result
     }
@@ -620,7 +628,10 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         resources: [LeonardoSigningResource]
     ) throws {
         let missing = document.metadata.fields.compactMap { fieldID, field -> String? in
-            guard field.required, field.type != .rubric else { return nil }
+            // Rubrics assigned to a declared signer are review targets, not
+            // ordinary form data. Unassigned rubrics are ordinary fields and
+            // therefore participate in the first-confirmation data gate.
+            guard field.required, field.signerPosition == nil else { return nil }
             let value = document.metadata.values[fieldID] ?? field.defaultValue
             return value?.isNullOrEmpty == false ? nil : fieldID
         }.sorted()
@@ -745,9 +756,10 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         progress: LeonardoSigningPositionProgress,
         expectedTargets: [LeonardoSigningLocationTarget]
     ) -> Bool {
-        let confirmed = progress.locations.map { "\($0.fieldID)#\($0.occurrence)" }
-        let expected = expectedTargets.map { "\($0.fieldID)#\($0.occurrence)" }
-        return confirmed == expected
+        // Compare the complete rendered location, not only field/occurrence
+        // labels. This preserves source order and prevents a repeated field
+        // or a changed occurrence from making a signer ready prematurely.
+        return locationsMatch(progress.locations, expectedTargets: expectedTargets)
     }
 
     private static func locationsMatch(

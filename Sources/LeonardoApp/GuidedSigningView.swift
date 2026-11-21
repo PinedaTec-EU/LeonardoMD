@@ -12,6 +12,7 @@ struct GuidedSigningView: View {
     @State private var selectedPositionID: String? = nil
     @State private var selectedTargetIndex = 0
     @State private var selectedProfileID: UUID? = nil
+    @State private var transientProfileID: UUID? = nil
     @State private var creatingProfile = false
     @State private var fullName = ""
     @State private var documentType = LeonardoIdentityDocumentType.nationalID
@@ -62,12 +63,40 @@ struct GuidedSigningView: View {
         return session.guidedSigningProfiles.first { $0.id == selectedProfileID }
     }
 
+    private var selectedProfileNeedsIdentity: Bool {
+        selectedProfile?.identity == nil
+    }
+
+    private var needsDeclaredIdentityInput: Bool {
+        creatingProfile || selectedProfileNeedsIdentity
+    }
+
     private var profileForAssignment: LeonardoSignerProfile? {
-        if let selectedProfile { return selectedProfile }
+        if let selectedProfile {
+            if selectedProfile.identity == nil {
+                let displayName = fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? selectedProfile.displayName : fullName
+                let declaredIdentity = LeonardoDeclaredIdentity(
+                    fullName: displayName,
+                    documentType: documentType,
+                    documentNumber: documentNumber
+                )
+                guard declaredIdentity.isValid, let transientProfileID else { return nil }
+                // An ink-only saved profile is not an identity record. Use a
+                // transient profile ID for this assignment so opting out of
+                // identity persistence cannot mutate or reuse that profile.
+                return GuidedSigningTransientProfile.make(
+                    id: transientProfileID,
+                    savedProfile: selectedProfile,
+                    identity: declaredIdentity
+                )
+            }
+            return selectedProfile
+        }
         guard creatingProfile else { return nil }
         let identity = LeonardoDeclaredIdentity(fullName: fullName, documentType: documentType,
                                                 documentNumber: documentNumber)
-        return LeonardoSignerProfile(displayName: fullName, identity: identity,
+        return LeonardoSignerProfile(id: transientProfileID ?? UUID(), displayName: fullName, identity: identity,
                                      rubric: draftProfileRubric)
     }
 
@@ -100,7 +129,11 @@ struct GuidedSigningView: View {
     private var nextTargetIndex: Int? {
         guard let progress = selectedProgress else { return nil }
         return session.guidedSigningTargets.firstIndex { target in
-            !progress.locations.contains { $0.fieldID == target.fieldID && $0.occurrence == target.occurrence }
+            !progress.locations.contains {
+                $0.positionID == target.positionID
+                    && $0.fieldID == target.fieldID
+                    && $0.occurrence == target.occurrence
+            }
         }
     }
 
@@ -128,6 +161,7 @@ struct GuidedSigningView: View {
         }
         .onChange(of: session.guidedSigningCredentialIDs) { _, values in credentialIDsChanged(values) }
         .onChange(of: session.guidedSigningProfiles) { _, _ in profileOptionsChanged() }
+        .onChange(of: selectedProfileID) { _, _ in selectedProfileChanged() }
         .onChange(of: selectedPositionID) { _, _ in selectedPositionChanged() }
         .onChange(of: selectedTargetIndex) { _, _ in selectedTargetChanged() }
         .onChange(of: session.guidedSigningTargets) { _, _ in refreshTargetsSoon() }
@@ -161,7 +195,8 @@ struct GuidedSigningView: View {
         .sheet(isPresented: $showPassword) {
             GuidedSigningPassword { password in
                 showPassword = false
-                Task { await session.signGuidedPosition(password: password) }
+                guard let positionID = selectedPosition?.id else { return }
+                Task { await session.signGuidedPosition(positionID: positionID, password: password) }
             }
         }
         .sheet(isPresented: $showRubricEditor) {
@@ -213,11 +248,43 @@ struct GuidedSigningView: View {
     }
 
     private func profileOptionsChanged() {
-        guard selectedProgress?.assignment == nil, !creatingProfile, selectedProfileID == nil else { return }
+        guard selectedProgress?.assignment == nil else { return }
+        if creatingProfile {
+            if transientProfileID == nil { transientProfileID = UUID() }
+            return
+        }
         if session.guidedSigningProfiles.isEmpty {
+            selectedProfileID = nil
             creatingProfile = true
+            transientProfileID = UUID()
+        } else if let selectedProfileID,
+                  let profile = session.guidedSigningProfiles.first(where: { $0.id == selectedProfileID }) {
+            transientProfileID = profile.identity == nil ? (transientProfileID ?? UUID()) : nil
         } else {
             selectedProfileID = session.guidedSigningProfiles.first?.id
+            if let profile = session.guidedSigningProfiles.first {
+                transientProfileID = profile.identity == nil ? UUID() : nil
+            }
+        }
+    }
+
+    private func selectedProfileChanged() {
+        guard !creatingProfile else {
+            if transientProfileID == nil { transientProfileID = UUID() }
+            return
+        }
+        guard let profile = selectedProfile else {
+            transientProfileID = nil
+            return
+        }
+        if profile.identity == nil {
+            transientProfileID = UUID()
+            fullName = profile.displayName
+            documentType = .nationalID
+            documentNumber = ""
+            saveIdentityDetails = false
+        } else {
+            transientProfileID = nil
         }
     }
 
@@ -226,9 +293,12 @@ struct GuidedSigningView: View {
         contextRead = false
         reuseConfirmed = false
         locationRubric = nil
+        renderedTargetKeys = []
+        targetAvailabilityChecked = false
+        session.guidedSigningTargets = []
         if let progress = selectedProgress,
            (progress.state == .reviewing || progress.state == .readyToSign) {
-            session.refreshGuidedSigningTargets()
+            session.refreshGuidedSigningTargets(for: selectedPosition?.id)
         }
     }
 
@@ -384,7 +454,11 @@ struct GuidedSigningView: View {
                     .font(.subheadline.weight(.semibold))
                 Picker(L10n.text("Local profile"), selection: Binding(
                     get: { creatingProfile ? nil : selectedProfileID },
-                    set: { value in creatingProfile = value == nil; selectedProfileID = value }
+                    set: { value in
+                        creatingProfile = value == nil
+                        selectedProfileID = value
+                        transientProfileID = value == nil ? UUID() : nil
+                    }
                 )) {
                     Text(L10n.text("New signer…")).tag(UUID?.none)
                     ForEach(session.guidedSigningProfiles) { profile in
@@ -393,7 +467,11 @@ struct GuidedSigningView: View {
                 }
                 .pickerStyle(.menu)
                 .accessibilityLabel(L10n.text("Local profile"))
-                if creatingProfile { newProfileForm }
+                if creatingProfile {
+                    newProfileForm
+                } else if selectedProfileNeedsIdentity {
+                    inkOnlyProfileIdentityForm
+                }
                 credentialPicker
                 Button {
                     showAssignmentConfirmation = true
@@ -410,14 +488,7 @@ struct GuidedSigningView: View {
 
     private var newProfileForm: some View {
         VStack(alignment: .leading, spacing: 7) {
-            TextField(L10n.text("Full name"), text: $fullName)
-            Picker(L10n.text("Document type"), selection: $documentType) {
-                ForEach(LeonardoIdentityDocumentType.allCases, id: \.rawValue) { type in
-                    Text(documentTypeLabel(type)).tag(type)
-                }
-            }
-            TextField(L10n.text("Document number"), text: $documentNumber)
-            Toggle(L10n.text("Save identity details to my local profiles"), isOn: $saveIdentityDetails)
+            declaredIdentityForm
             HStack {
                 Text(draftProfileRubric == nil ? L10n.text("No profile rubric") : L10n.text("Profile rubric ready"))
                     .font(.caption).foregroundStyle(.secondary)
@@ -432,6 +503,36 @@ struct GuidedSigningView: View {
                 .disabled(draftProfileRubric == nil)
         }
         .textFieldStyle(.roundedBorder)
+    }
+
+    private var inkOnlyProfileIdentityForm: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(L10n.text("This profile contains a rubric only. Declare the signer identity for this assignment."))
+                .font(.caption).foregroundStyle(.secondary)
+            declaredIdentityForm
+            if let rubric = selectedProfile?.rubric {
+                HStack(spacing: 8) {
+                    Image(nsImage: RubricDrawing.thumbnail(rubric))
+                        .resizable().aspectRatio(3, contentMode: .fit).frame(height: 40)
+                    Text(L10n.text("The saved rubric will be available only after you confirm reuse."))
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .textFieldStyle(.roundedBorder)
+    }
+
+    private var declaredIdentityForm: some View {
+        Group {
+            TextField(L10n.text("Full name"), text: $fullName)
+            Picker(L10n.text("Document type"), selection: $documentType) {
+                ForEach(LeonardoIdentityDocumentType.allCases, id: \.rawValue) { type in
+                    Text(documentTypeLabel(type)).tag(type)
+                }
+            }
+            TextField(L10n.text("Document number"), text: $documentNumber)
+            Toggle(L10n.text("Save identity details to my local profiles"), isOn: $saveIdentityDetails)
+        }
     }
 
     private var credentialPicker: some View {
@@ -473,7 +574,7 @@ struct GuidedSigningView: View {
             } else if progress.state == .paused {
                 Button(L10n.text("Resume review")) {
                     Task {
-                        await session.resumeGuidedPosition()
+                        await session.resumeGuidedPosition(positionID: position.id)
                         await refreshRenderedTargets()
                     }
                 }
@@ -481,17 +582,22 @@ struct GuidedSigningView: View {
             } else if progress.state == .signed {
                 Label(L10n.text("This position is signed; its signed proof remains in the sidecar."), systemImage: "checkmark.seal")
                     .font(.caption).foregroundStyle(.green)
-            } else if !session.guidedSigningTargets.isEmpty {
-                targetList(progress)
-                targetControls(progress)
-                HStack {
-                    Button(L10n.text("Pause")) { Task { await session.pauseGuidedPosition() } }
+            } else if progress.state == .reviewing || progress.state == .readyToSign {
+                if session.guidedSigningTargets.isEmpty {
+                    ProgressView(L10n.text("Preparing the exact field locations…"))
+                } else {
+                    targetList(progress)
+                    targetControls(progress)
+                    HStack {
+                        Button(L10n.text("Pause")) {
+                            Task { await session.pauseGuidedPosition(positionID: position.id) }
+                        }
                         .buttonStyle(PremiumButtonStyle(compact: true))
-                        .disabled(progress.state == .signed)
-                    Spacer()
-                    Button(L10n.text("Sign")) { showPassword = true }
-                        .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
-                        .disabled(progress.state != .readyToSign)
+                        Spacer()
+                        Button(L10n.text("Sign")) { showPassword = true }
+                            .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
+                            .disabled(progress.state != .readyToSign)
+                    }
                 }
             }
             if session.guidedSigningContentLocked {
@@ -525,15 +631,21 @@ struct GuidedSigningView: View {
             // call and never collapsed to a field ID alone.
             ForEach(targets) { row in
                 let target = row.target
-                let confirmed = progress.locations.contains { $0.fieldID == target.fieldID && $0.occurrence == target.occurrence }
+                let confirmed = progress.locations.contains {
+                    $0.positionID == target.positionID
+                        && $0.fieldID == target.fieldID
+                        && $0.occurrence == target.occurrence
+                }
                 Button {
                     Task { @MainActor in
                         guard await session.renderer.hasFieldTarget(target.fieldID, occurrence: target.occurrence) else {
+                            guard selectedPositionID == target.positionID else { return }
                             renderedTargetKeys.remove(targetKey(target))
                             targetAvailabilityChecked = true
                             session.guidedSigningStatus = L10n.text("This exact field occurrence is not available in the rendered document.")
                             return
                         }
+                        guard selectedPositionID == target.positionID else { return }
                         renderedTargetKeys.insert(targetKey(target))
                         targetAvailabilityChecked = true
                         selectedTargetIndex = targets.firstIndex(where: { $0.id == row.id }) ?? 0
@@ -599,7 +711,7 @@ struct GuidedSigningView: View {
                             rubric: rubricForCurrentChoice ?? LeonardoRubric(), reuse: reuse,
                             reuseConfirmed: reuse == .new ? true : reuseConfirmed,
                             contextRead: contextRead)
-                        if let next = nextTargetIndex { selectedTargetIndex = next }
+                        advanceToNextTarget(for: target.positionID)
                     }
                 }
                 .buttonStyle(PremiumButtonStyle(prominent: true))
@@ -614,18 +726,22 @@ struct GuidedSigningView: View {
     }
 
     private func targetKey(_ target: LeonardoSigningLocationTarget) -> String {
-        "\(target.fieldID)#\(target.occurrence)"
+        "\(target.positionID)#\(target.fieldID)#\(target.occurrence)"
     }
 
     @MainActor
     private func refreshRenderedTargets() async {
         targetAvailabilityChecked = false
+        let expectedPositionID = selectedPosition?.id
+        let expectedTargets = session.guidedSigningTargets
         var available = Set<String>()
-        for target in session.guidedSigningTargets {
+        for target in expectedTargets {
             if await session.renderer.hasFieldTarget(target.fieldID, occurrence: target.occurrence) {
                 available.insert(targetKey(target))
             }
         }
+        guard selectedPosition?.id == expectedPositionID,
+              session.guidedSigningTargets == expectedTargets else { return }
         renderedTargetKeys = available
         targetAvailabilityChecked = true
         if let target = currentTarget, !available.contains(targetKey(target)) {
@@ -641,6 +757,7 @@ struct GuidedSigningView: View {
         guard let target = currentTarget else { return }
         Task { @MainActor in
             let available = await session.renderer.hasFieldTarget(target.fieldID, occurrence: target.occurrence)
+            guard selectedPositionID == target.positionID, currentTarget == target else { return }
             if available {
                 renderedTargetKeys.insert(targetKey(target))
             } else {
@@ -649,6 +766,22 @@ struct GuidedSigningView: View {
             }
             targetAvailabilityChecked = true
         }
+    }
+
+    @MainActor
+    private func advanceToNextTarget(for positionID: String) {
+        guard selectedPositionID == positionID,
+              let progress = session.guidedSigningSession?.positions[positionID],
+              let next = session.guidedSigningTargets.firstIndex(where: { target in
+                  !progress.locations.contains {
+                      $0.positionID == target.positionID
+                          && $0.fieldID == target.fieldID
+                          && $0.occurrence == target.occurrence
+                  }
+              }) else { return }
+        selectedTargetIndex = next
+        contextRead = false
+        reuseConfirmed = false
     }
 
     private func integrityWarning(_ error: String) -> some View {
@@ -675,7 +808,7 @@ struct GuidedSigningView: View {
         Task {
             await session.assignGuidedSigner(positionID: positionID, profile: profile, credential: credential,
                                              saveOptions: LeonardoProfileSaveOptions(
-                                                saveIdentityDetails: creatingProfile && saveIdentityDetails,
+                                                saveIdentityDetails: needsDeclaredIdentityInput && saveIdentityDetails,
                                                 saveRubric: creatingProfile && saveRubric))
         }
     }
@@ -730,6 +863,26 @@ struct GuidedSigningView: View {
         }
     }
 
+}
+
+/// Builds the one-off identity record needed when a saved profile contains
+/// only a rubric. The ID is supplied by the view state and is intentionally
+/// distinct from the saved profile's ID unless the caller explicitly chooses
+/// to persist a separate identity profile.
+struct GuidedSigningTransientProfile {
+    static func make(
+        id: UUID,
+        savedProfile: LeonardoSignerProfile,
+        identity: LeonardoDeclaredIdentity
+    ) -> LeonardoSignerProfile {
+        LeonardoSignerProfile(
+            id: id,
+            displayName: identity.fullName,
+            identity: identity,
+            verificationStatus: savedProfile.verificationStatus,
+            rubric: savedProfile.rubric
+        )
+    }
 }
 
 /// A value snapshot for one rendered location. SwiftUI may retain a row while

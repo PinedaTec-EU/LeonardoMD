@@ -108,6 +108,62 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertTrue(session.canSign)
     }
 
+    func testUnassignedRubricsUseOrdinaryRequiredAndOptionalDataValidation() throws {
+        var document = try makeDocument(requiredName: "Form complete")
+        document.metadata.fields["requiredRubric"] = LeonardoFieldDefinition(
+            type: .rubric, required: true
+        )
+        document.metadata.fields["optionalRubric"] = LeonardoFieldDefinition(type: .rubric)
+        document.metadata.values["requiredRubric"] = .null
+        document.metadata.values["optionalRubric"] = .null
+
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+        XCTAssertEqual(
+            session.optionalBlankFieldIDs(document: document),
+            ["optionalNote", "optionalRubric"]
+        )
+
+        var assignedSession = session
+        let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        try assign(signer, key: key, to: "titular", session: &assignedSession)
+        XCTAssertThrowsError(try assignedSession.begin(positionID: "titular", document: document)) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .requiredDataMissing(["requiredRubric"]))
+        }
+
+        document.metadata.values["requiredRubric"] = try XCTUnwrap(rubric(seed: 9).jsonValue)
+        XCTAssertNoThrow(try assignedSession.begin(positionID: "titular", document: document))
+    }
+
+    func testResumingAfterPausingAtLastLocationRestoresReadyToSign() throws {
+        let document = try makeDocument(requiredName: "Form complete")
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let signerRubric = rubric(seed: 1)
+        let signer = try profile(name: "Ana", number: "A-1", rubric: signerRubric)
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        try assign(signer, key: key, to: "titular", session: &session)
+
+        let targets = try session.begin(positionID: "titular", document: document)
+        for (index, target) in targets.enumerated() {
+            try session.confirmLocation(
+                positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+                document: document, contextRead: true,
+                rubric: signerRubric,
+                reuse: index == 0 ? .new : .session,
+                reuseConfirmed: index > 0,
+                at: now.addingTimeInterval(Double(index + 1))
+            )
+        }
+        XCTAssertEqual(session.positions["titular"]?.state, .readyToSign)
+
+        try session.pause(positionID: "titular", at: now.addingTimeInterval(10))
+        XCTAssertEqual(session.positions["titular"]?.state, .paused)
+        try session.resume(positionID: "titular", at: now.addingTimeInterval(11))
+        XCTAssertEqual(session.positions["titular"]?.state, .reviewing)
+        _ = try session.begin(positionID: "titular", document: document)
+        XCTAssertEqual(session.positions["titular"]?.state, .readyToSign)
+    }
+
     func testAnaPausesLuisCompletesThenAnaResumesAndChainsSignatures() throws {
         let document = try makeDocument(requiredName: "Form complete")
         var session = try LeonardoGuidedSigningSession(document: document, at: now)

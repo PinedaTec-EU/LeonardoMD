@@ -53,6 +53,31 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertTrue(liveTargets.isEmpty)
     }
 
+    func testInkOnlyProfileUsesTransientIdentityProfileID() {
+        let savedID = UUID()
+        let saved = LeonardoSignerProfile(
+            id: savedID,
+            displayName: "Ana rubric",
+            identity: nil,
+            rubric: ink
+        )
+        let transientID = UUID()
+        let identity = LeonardoDeclaredIdentity(
+            fullName: "Ana Pineda",
+            documentType: .nationalID,
+            documentNumber: "A-1"
+        )
+        let assignmentProfile = GuidedSigningTransientProfile.make(
+            id: transientID, savedProfile: saved, identity: identity
+        )
+
+        XCTAssertEqual(assignmentProfile.id, transientID)
+        XCTAssertNotEqual(assignmentProfile.id, savedID)
+        XCTAssertEqual(assignmentProfile.identity, identity)
+        XCTAssertEqual(assignmentProfile.rubric, ink)
+        XCTAssertNil(saved.identity)
+    }
+
     func testIndependentLibrariesMergeWritesAndFailClosedOnCorruption() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
