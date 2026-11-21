@@ -295,8 +295,8 @@ final class FavoritesTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        XCTAssertFalse(FavoriteItem(kind: .document, url: root).isAvailable)
-        XCTAssertTrue(FavoriteItem(kind: .project, url: root).isAvailable)
-        XCTAssertFalse(FavoriteItem(kind: .workspace, url: root.appendingPathComponent("missing")).isAvailable)
+        XCTAssertNotNil(FavoriteItem(kind: .document, url: root).availabilityIssue)
+        XCTAssertNil(FavoriteItem(kind: .project, url: root).availabilityIssue)
+        XCTAssertNotNil(FavoriteItem(kind: .workspace, url: root.appendingPathComponent("missing")).availabilityIssue)
     }
 }
