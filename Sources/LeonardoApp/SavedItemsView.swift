@@ -4,6 +4,7 @@ import LeonardoCore
 struct SavedItemsView: View {
     @Bindable var session: AppSession
     @State private var favoriteKind: FavoriteItem.Kind = .project
+    @State private var availabilityRefresh = UUID()
     @State private var recentKind: FavoriteItem.Kind = .project
 
     private static let categoryOrder: [FavoriteItem.Kind] = [.project, .document]
@@ -77,7 +78,9 @@ struct SavedItemsView: View {
         return ScrollView(.vertical) {
             LazyVStack(spacing: Self.rowSpacing) {
                 ForEach(urls, id: \.self) { url in
-                    row(url, kind: kind).frame(height: Self.rowHeight)
+                    row(url, kind: kind)
+                        .id(availabilityRefresh)
+                        .frame(height: Self.rowHeight)
                 }
             }
         }
@@ -86,7 +89,9 @@ struct SavedItemsView: View {
 
     private func row(_ url: URL, kind: FavoriteItem.Kind) -> some View {
         let favorite = session.isFavorite(url, kind: kind)
-        let available = FavoriteItem(kind: kind, url: url).isAvailable
+        let item = FavoriteItem(kind: kind, url: url)
+        let issue = item.availabilityIssue
+        let available = issue == nil
         let presentation = kind == .project ? DesktopProjectPresentation.resolve(url, session: session) : nil
         return HStack(spacing: 12) {
             Button { Task { await session.openSavedItem(url, kind: kind) } } label: {
@@ -104,13 +109,27 @@ struct SavedItemsView: View {
             }
             .buttonStyle(.plain)
             .disabled(!available)
-            .help(available ? url.path : L10n.text("Item unavailable"))
+            .help(available ? url.path : (issue.map { L10n.text($0) } ?? url.path))
             .accessibilityLabel(url.lastPathComponent)
             .accessibilityValue(savedItemDetail(url, presentation: presentation))
             if favorite, kind != .document {
                 FavoriteThemePicker(session: session, url: url, kind: kind)
             }
-            if !available { Image(systemName: "exclamationmark.triangle").help(L10n.text("Item unavailable")) }
+            if let issue {
+                Menu {
+                    Button(L10n.text("Retry saved location")) { availabilityRefresh = UUID() }
+                    Button(L10n.text("Locate moved item…")) {
+                        session.locateSavedItem(item) { availabilityRefresh = UUID() }
+                    }
+                } label: {
+                    Image(systemName: "exclamationmark.triangle")
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help(L10n.text(issue) + "\n" + url.path)
+                .accessibilityLabel(L10n.text(issue))
+            }
             Button { session.toggleFavorite(url, kind: kind) } label: {
                 Image(systemName: favorite ? "star.fill" : "star")
                     .foregroundStyle(favorite ? session.accentColor : .secondary)

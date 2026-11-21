@@ -329,6 +329,7 @@ Por ejemplo, si una instrucción queda separada de su campo, pide al agente que 
 Inicio separa **Proyectos** de **Documentos**, con Favoritos y Recientes para cada grupo. Usa Abrir documento para un archivo y Abrir proyecto para una carpeta de trabajo. Un archivo independiente usa las preferencias globales y no muestra sus vecinos. **Abrir carpeta como proyecto** añade la navegación de esa carpeta cuando la necesites.
 
 - Marca la estrella para conservar un elemento fuera del historial reciente. Archivo → Favoritos ofrece otra forma de abrirlo.
+- Sitúa el puntero sobre un triángulo de aviso para saber por qué un elemento guardado no está disponible y qué ruta comprobó Leonardo. Abre el menú del triángulo y elige **Reintentar la ubicación guardada** si se ha restablecido el disco o el acceso, o **Localizar el elemento…** para elegir el archivo o la carpeta del proyecto. El favorito y su tema se conservan. Si compartes el proyecto desde este Mac, confirma que los dispositivos vinculados deben mantener acceso al mismo contenido compartido en la nueva carpeta.
 - Comprueba la ruta superior cuando dos entradas tengan el mismo nombre. Los archivos no disponibles aparecen deshabilitados: conecta el volumen o abre la ubicación nueva.
 - Vacía cada lista de recientes desde su submenú de Archivo; esto no elimina documentos.
 - El selector **Tema** de un proyecto favorito asocia su apariencia en este Mac. **Heredar** recupera la apariencia del proyecto o global. No modifica la configuración compartida del proyecto.

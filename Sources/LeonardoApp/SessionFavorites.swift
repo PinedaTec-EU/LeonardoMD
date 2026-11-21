@@ -72,9 +72,20 @@ extension AppSession {
 }
 
 extension FavoriteItem {
-    var isAvailable: Bool {
-        var directory: ObjCBool = false
-        return FileManager.default.fileExists(atPath: url.path, isDirectory: &directory)
-            && directory.boolValue == (kind != .document)
+    var availabilityIssue: String? {
+        do {
+            let attributes = try url.resolvingSymlinksInPath().resourceValues(forKeys: [.isDirectoryKey])
+            guard let isDirectory = attributes.isDirectory else { return "Saved location cannot be accessed." }
+            guard isDirectory == (kind != .document) else {
+                return kind == .document ? "The saved path points to a folder." : "The saved path points to a file."
+            }
+            return FileManager.default.isReadableFile(atPath: url.path) ? nil : "Saved location cannot be accessed."
+        } catch let error as NSError {
+            if error.domain == NSCocoaErrorDomain,
+               [NSFileNoSuchFileError, NSFileReadNoSuchFileError].contains(error.code) {
+                return "Saved location was not found. It may have moved or its storage may be offline."
+            }
+            return "Saved location cannot be accessed."
+        }
     }
 }
