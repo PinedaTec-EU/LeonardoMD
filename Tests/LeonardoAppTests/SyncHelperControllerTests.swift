@@ -13,10 +13,36 @@ import LeonardoSyncTransport
 final class SyncHelperControllerTests: XCTestCase {
     private let replacement = SyncHelperBuildIdentity(build: 200, bundlePath: "/Applications/LeonardoMD.app")
 
-    func testStatusSubtitleHidesHealthyLineAndKeepsOnlyConfirmedDiagnostic() {
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: true, diagnostic: "Offline"), " ")
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: nil), " ")
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: "Offline"), "Offline")
+    func testDiagnosticHistoryKeepsOnlyRecentDistinctSafeServiceEvents() {
+        var diagnostics = SyncHelperDiagnostics()
+        let initial = Date(timeIntervalSince1970: 1_000)
+        diagnostics.record(state: .running, hasError: false, at: initial)
+        diagnostics.record(state: .running, hasError: false, at: initial.addingTimeInterval(1))
+        XCTAssertEqual(diagnostics.events.map(\.date), [initial])
+
+        for index in 1...24 {
+            diagnostics.record(state: index.isMultiple(of: 2) ? .running : .failed,
+                               hasError: true, at: initial.addingTimeInterval(Double(index)))
+        }
+        XCTAssertEqual(diagnostics.events.count, 20)
+        XCTAssertEqual(diagnostics.events.first?.date, initial.addingTimeInterval(5))
+        XCTAssertEqual(diagnostics.status, L10n.text("Sync helper reported a warning"))
+        XCTAssertTrue(diagnostics.report.contains(L10n.text("Sync helper reported a warning")))
+        XCTAssertTrue(diagnostics.report.contains(L10n.text("Offline · sync helper unavailable")))
+    }
+
+    func testSupportEmailDraftPreservesDiagnosticReportAndRecipient() throws {
+        let subject = "Diagnóstico de Leonardo Sync"
+        let report = "Estado · Niño + café & té #1?\n\nLeonardoMD 0.3.1961"
+        let url = try XCTUnwrap(SyncHelperDiagnostics.supportEmailURL(subject: subject, report: report))
+        let draft = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(draft.scheme, "mailto")
+        XCTAssertEqual(draft.path, "leonardo@pinedatec.eu")
+        XCTAssertEqual(draft.queryItems, [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: report.replacingOccurrences(of: "\n", with: "\r\n"))
+        ])
+        XCTAssertTrue(url.absoluteString.contains("%2B"))
     }
 
     func testPreferencesRefreshesOnOpenAndOnlyOnExplicitRefreshes() async throws {
@@ -491,7 +517,7 @@ final class SyncHelperControllerTests: XCTestCase {
             screen: "Synchronization helper status")
     }
 
-    func testStatusSectionHeightDoesNotChangeWithDiagnosticOrApproval() async throws {
+    func testStatusSectionReservesSpaceOnlyForVisibleWarnings() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
         let registration = HelperRegistrationFake(); registration.status = .enabled
@@ -504,17 +530,29 @@ final class SyncHelperControllerTests: XCTestCase {
             return host.fittingSize.height
         }
         let baseline = sectionHeight()
-        await control.setStatusError("Previous error"); await controller.refresh()
-        XCTAssertEqual(controller.displayedError, "Previous error")
-        XCTAssertEqual(sectionHeight(), baseline, "A one-line diagnostic must not move the following controls")
-        let longError = String(repeating: "A long diagnostic message. ", count: 20)
-        await control.setStatusError(longError); await controller.refresh()
-        XCTAssertEqual(controller.displayedError, longError)
-        XCTAssertEqual(sectionHeight(), baseline, "A wrapped diagnostic must not move the following controls")
+        XCTAssertNotNil(controller.diagnostics.lastCheck)
+
+        let privateError = "/Users/example/Private.md https://192.0.2.1/invite?token=secret 123456"
+        await control.setStatusError(privateError); await controller.refresh()
+        XCTAssertEqual(controller.displayedError, privateError)
+        let warningHeight = sectionHeight()
+        XCTAssertGreaterThan(warningHeight, baseline)
+        for sensitiveValue in ["/Users/example", "192.0.2.1", "secret", "123456"] {
+            XCTAssertFalse(controller.diagnostics.report.contains(sensitiveValue))
+        }
+
+        await control.setStatusError(String(repeating: privateError, count: 20)); await controller.refresh()
+        XCTAssertEqual(sectionHeight(), warningHeight, "Private error length must not affect layout")
+
         registration.status = .requiresApproval
         await controller.refresh()
-        XCTAssertEqual(controller.state, .approvalRequired)
-        XCTAssertEqual(sectionHeight(), baseline, "The authorization action must not move the following controls")
+        XCTAssertTrue(controller.showsApprovalAction)
+        XCTAssertGreaterThan(sectionHeight(), baseline)
+
+        registration.status = .enabled
+        await control.setStatusError(nil); await controller.refresh()
+        XCTAssertEqual(sectionHeight(), baseline)
+
     }
 
     func testReturningFromApprovalRefreshesOnlyWhileApprovalIsRequired() async throws {
