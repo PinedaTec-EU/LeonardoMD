@@ -139,14 +139,13 @@ final class MobileReaderSpacingTests: XCTestCase {
             if let web = findWebView(window),
                let value = try? await web.evaluateJavaScript("document.querySelector('h1')?.textContent || ''") as? String {
                 heading = value
-                if heading == "Mobile signing practice" {
-                    XCTAssertTrue(available.contains("signature#0"))
+                if heading == "Mobile signing practice", available.contains("signature#0") {
                     return
                 }
             }
             try await Task.sleep(for: .milliseconds(100))
         } while ContinuousClock.now < deadline
-        XCTFail("Guided signing copy did not render its heading (received: \(heading))")
+        XCTFail("Guided signing copy did not render its heading and target (heading: \(heading), available: \(available.sorted()))")
     }
 
     func testSignedGuidedSigningViewPresentsReaderOutsideList() async throws {
