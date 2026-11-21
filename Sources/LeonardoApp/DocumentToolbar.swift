@@ -127,7 +127,7 @@ struct DocumentToolbar: View {
         case .preview: return L10n.text("Previsualize")
         case .edit: return L10n.text("Edit source")
         case .split: return L10n.text("Split view")
-        case .fill: return L10n.text("Fill")
+        case .fill: return L10n.text("Fill form")
         }
     }
 

@@ -46,6 +46,8 @@ final class GuidedSigningCaptureTests: XCTestCase {
         session.guidedSigningTrustStore = try LeonardoSigningTrustRegistry(credentials: [])
         session.guidedSigningReady = true
         XCTAssertTrue(session.guidedSigningWorkflowOperable)
+        try await capture(WorkspaceView(session: session), name: "mac-al-abrir",
+                          size: NSSize(width: 1260, height: 740), session: session, folder: folder)
         session.mode = .fill
         session.showInspector = true
 
