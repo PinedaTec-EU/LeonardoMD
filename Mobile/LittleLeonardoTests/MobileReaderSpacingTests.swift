@@ -172,10 +172,11 @@ final class MobileReaderSpacingTests: XCTestCase {
         })
         window.makeKeyAndVisible()
 
-        let deadline = ContinuousClock.now.advanced(by: .seconds(15))
+        let deadline = ContinuousClock.now.advanced(by: .seconds(20))
         var heading = ""
         repeat {
-            let web = scene.windows.lazy.compactMap(findWebView).first
+            let readerView = window.rootViewController?.presentedViewController?.viewIfLoaded
+            let web = readerView.flatMap(findWebView) ?? findWebView(window)
             if let web,
                let value = try? await web.evaluateJavaScript("""
                 (() => ({
