@@ -143,7 +143,6 @@ struct MobileGuidedSigningDocumentReader: View {
         }
         .onChange(of: renderedTargetKeys) { _, _ in refreshAvailableTargets() }
         .onChange(of: focusTarget) { _, _ in focusPendingTarget() }
-        .onDisappear { availableTargetKeys = [] }
     }
 
     private var renderedTargetKeys: [String] {

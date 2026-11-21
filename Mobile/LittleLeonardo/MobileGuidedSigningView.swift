@@ -37,6 +37,7 @@ struct MobileGuidedSigningView: View {
     @State private var rubric = LeonardoRubric()
     @State private var rubricReuseChoice: LeonardoRubricReuse?
     @State private var showingRubric = false
+    @State private var showingDocumentReader = false
     @State private var showingEnrollment = false
     @State private var showingPassword = false
     @State private var showingExportDisclosure = false
@@ -45,7 +46,11 @@ struct MobileGuidedSigningView: View {
     @State private var busy = false
     @State private var errorMessage: String?
 
-    init(library: MobileLibrary, exchange: LeonardoSigningExchange) {
+    init(
+        library: MobileLibrary,
+        exchange: LeonardoSigningExchange,
+        initiallyShowingDocumentReader: Bool = false
+    ) {
         self.library = library
         self.initialExchange = exchange
         _document = State(initialValue: try? exchange.document())
@@ -53,6 +58,7 @@ struct MobileGuidedSigningView: View {
         _resources = State(initialValue: (try? exchange.signingResources()) ?? [])
         _trustedCredentials = State(initialValue: exchange.trustedCredentials)
         _trustAccepted = State(initialValue: exchange.trustedCredentials.isEmpty)
+        _showingDocumentReader = State(initialValue: initiallyShowingDocumentReader)
     }
 
     private var spanish: Bool {
@@ -125,6 +131,33 @@ struct MobileGuidedSigningView: View {
             MobileGuidedRubricSheet(rubric: $rubric, spanish: spanish) {
                 showingRubric = false
                 confirmSelectedTarget(reuse: .new, rubric: rubric)
+            }
+        }
+        .fullScreenCover(isPresented: $showingDocumentReader) {
+            if let document {
+                NavigationStack {
+                    MobileGuidedSigningDocumentReader(
+                        document: document,
+                        resources: resources,
+                        session: session,
+                        trustedCredentials: trustedCredentials,
+                        trustAccepted: trustAccepted,
+                        focusTarget: previewFocusTarget,
+                        availableTargetKeys: $availableTargetKeys
+                    ) {
+                        previewFocusTarget = nil
+                    }
+                    .navigationTitle(spanish ? "Documento completo" : "Full document")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(spanish ? "Cerrar" : "Close") {
+                                showingDocumentReader = false
+                            }
+                        }
+                    }
+                    .classicSurface()
+                }
             }
         }
         .sheet(isPresented: $showingEnrollment) {
@@ -236,17 +269,21 @@ struct MobileGuidedSigningView: View {
             .listRowBackground(MobileClassic.inset)
 
             Section(spanish ? "Documento completo" : "Full document") {
-                MobileGuidedSigningDocumentReader(
-                    document: document,
-                    resources: resources,
-                    session: session,
-                    trustedCredentials: trustedCredentials,
-                    trustAccepted: trustAccepted,
-                    focusTarget: previewFocusTarget,
-                    availableTargetKeys: $availableTargetKeys
-                ) {
-                    previewFocusTarget = nil
+                Button {
+                    showingDocumentReader = true
+                } label: {
+                    Label(
+                        spanish ? "Abrir copia completa" : "Open full signing copy",
+                        systemImage: "doc.text.magnifyingglass"
+                    )
                 }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("mobile-signing-open-document")
+                Text(spanish
+                     ? "La copia completa se abre en una página independiente para leerla sin editarla."
+                     : "The full copy opens on a separate page so it can be read without editing.")
+                    .font(.caption)
+                    .foregroundStyle(MobileClassic.secondary)
             }
             .listRowBackground(MobileClassic.paper)
 
@@ -425,9 +462,10 @@ struct MobileGuidedSigningView: View {
                                     Button(spanish ? "Ver ubicación" : "View location", systemImage: "arrow.down.to.line") {
                                         selectedTargetIndex = index
                                         previewFocusTarget = target
+                                        showingDocumentReader = true
                                     }
                                     .buttonStyle(.bordered)
-                                    .disabled(!targetAvailable || busy)
+                                    .disabled(busy)
                                     Button(spanish ? "Leer y dibujar" : "Read and draw") {
                                         selectedTargetIndex = index
                                         previewFocusTarget = target
