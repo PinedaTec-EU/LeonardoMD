@@ -124,5 +124,11 @@ relinked. `LeonardoSigningStore` uses locked read/CAS/write transactions,
 pre-read file limits and 0600-before-publish atomic replacement. Read-time
 verification recomputes the signature chain, assignment/identity commitment,
 snapshot and location/rubric digests against an external trust store; no key in
-the document is trusted. Native/UI integration and bilingual Help acceptance
-remain separate delivery work.
+the document is trusted. Public trust discovery never authorizes a Keychain
+item; macOS legacy-login reads suppress interaction and restore the process
+setting, while private-key access remains an explicit final-sign authorization.
+Native/UI integration now includes a read-only full-document mobile preview:
+exact `fieldID#occurrence` DOM targets gate navigation/actions and verified
+rubric overlays only appear after independent proof verification. The macOS and
+mobile panels disclose optional fields that will remain blank before the first
+seal; bilingual Help is revision v110.

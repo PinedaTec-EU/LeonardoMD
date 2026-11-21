@@ -780,6 +780,7 @@
   "View signatures": "View signatures",
   "Preparing the protected signing workflow…": "Preparing the protected signing workflow…",
   "The first confirmed location seals form data, assignments and referenced resources.": "The first confirmed location seals form data, assignments and referenced resources.",
+  "Optional fields will remain blank: %@": "Optional fields will remain blank: %@",
   "No signer selected": "No signer selected",
   "No signer positions are available.": "No signer positions are available.",
   "No rubric field assigned": "No rubric field assigned",

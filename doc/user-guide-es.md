@@ -212,6 +212,11 @@ declara una identidad biométrica para cada firma. Touch ID u otro aviso
 compartido solo desbloquea material local del llavero: no identifica qué
 persona está firmando.
 
+Antes de la primera confirmación, el panel de revisión enumera los campos
+opcionales que están vacíos y seguirán vacíos. Es un aviso informativo, no una
+segunda confirmación; desaparece cuando se sella la primera instantánea de
+ubicación.
+
 La primera aparición confirmada sella los datos obligatorios del formulario,
 las asignaciones, la revisión del documento y los recursos referenciados. Un
 valor obligatorio ausente, una aparición que no exista en el documento
@@ -649,9 +654,13 @@ una copia explícita de firma desde la vista del documento. **Firmar copia** abr
 el flujo local sin editar ni sincronizar la fuente compartida. Asigna cada puesto
 declarado a un perfil local o a un nombre completo, tipo y número de documento
 nuevos; guardar los datos de identidad y guardar una rúbrica de perfil son
-decisiones separadas. Inscribe y autoriza una credencial personal, lee cada
-aparición exacta en el orden de la fuente, dibuja una rúbrica o confirma
-expresamente su reutilización, y pausa o reanuda cuando sea necesario.
+decisiones separadas. Inscribe y autoriza una credencial personal, lee la copia
+completa en el lector integrado de solo lectura, usa **Ver ubicación** para
+saltar a cada aparición exacta en el orden de la fuente, dibuja una rúbrica o
+confirma expresamente su reutilización, y pausa o reanuda cuando sea necesario.
+El lector nunca edita la copia; solo una firma final separada y verificada de
+forma independiente pinta la rúbrica en su aparición exacta. La revisión
+parcial sigue visible como pendiente.
 **Exportar copia firmada** muestra las identidades declaradas y las rúbricas que
 saldrán del dispositivo. No incluye claves privadas, rutas locales ni perfiles no
 asignados. Importa el JSON en el Mac solo después de comprobar la fuente local,

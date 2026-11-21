@@ -32,6 +32,8 @@ struct MobileGuidedSigningView: View {
     @State private var saveRubric = false
     @State private var profileRubric: LeonardoRubric?
     @State private var selectedTargetIndex: Int?
+    @State private var previewFocusTarget: LeonardoSigningLocationTarget?
+    @State private var availableTargetKeys: Set<String> = []
     @State private var rubric = LeonardoRubric()
     @State private var rubricReuseChoice: LeonardoRubricReuse?
     @State private var showingRubric = false
@@ -181,6 +183,21 @@ struct MobileGuidedSigningView: View {
                 )
                 .font(.footnote)
                 .foregroundStyle(MobileClassic.secondary)
+                if session.snapshot == nil {
+                    let names = session.optionalBlankFieldIDs(document: document).map { fieldID in
+                        document.metadata.fields[fieldID]?.label ?? fieldID
+                    }
+                    if !names.isEmpty {
+                        Label(
+                            spanish
+                                ? "Estos campos opcionales quedarán vacíos: \(names.joined(separator: ", "))"
+                                : "Optional fields will remain blank: \(names.joined(separator: ", "))",
+                            systemImage: "info.circle"
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(MobileClassic.secondary)
+                    }
+                }
                 if !untrustedPackageCredentials.isEmpty && !trustAccepted {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(spanish
@@ -217,6 +234,21 @@ struct MobileGuidedSigningView: View {
                 }
             }
             .listRowBackground(MobileClassic.inset)
+
+            Section(spanish ? "Documento completo" : "Full document") {
+                MobileGuidedSigningDocumentReader(
+                    document: document,
+                    resources: resources,
+                    session: session,
+                    trustedCredentials: trustedCredentials,
+                    trustAccepted: trustAccepted,
+                    focusTarget: previewFocusTarget,
+                    availableTargetKeys: $availableTargetKeys
+                ) {
+                    previewFocusTarget = nil
+                }
+            }
+            .listRowBackground(MobileClassic.paper)
 
             Section(spanish ? "Puestos obligatorios" : "Required positions") {
                 ForEach(session.declaration.positions) { position in
@@ -372,6 +404,10 @@ struct MobileGuidedSigningView: View {
                         let confirmed = progress.locations.contains {
                             $0.fieldID == target.fieldID && $0.occurrence == target.occurrence
                         }
+                        let targetKey = MobileGuidedSigningTargetKey.make(
+                            fieldID: target.fieldID, occurrence: target.occurrence
+                        )
+                        let targetAvailable = availableTargetKeys.contains(targetKey)
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text("\(index + 1). \(target.fieldID) · \(target.occurrence + 1)")
@@ -386,24 +422,43 @@ struct MobileGuidedSigningView: View {
                                 .textSelection(.enabled)
                             if !confirmed {
                                 HStack {
+                                    Button(spanish ? "Ver ubicación" : "View location", systemImage: "arrow.down.to.line") {
+                                        selectedTargetIndex = index
+                                        previewFocusTarget = target
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .disabled(!targetAvailable || busy)
                                     Button(spanish ? "Leer y dibujar" : "Read and draw") {
                                         selectedTargetIndex = index
+                                        previewFocusTarget = target
                                         rubric = LeonardoRubric()
                                         showingRubric = true
                                     }
                                     .buttonStyle(.borderedProminent)
+                                    .disabled(!targetAvailable || busy)
                                     if session.rubricByPosition[position.id] != nil {
                                         Button(spanish ? "Reutilizar última" : "Reuse last") {
                                             selectedTargetIndex = index
+                                            previewFocusTarget = target
                                             rubricReuseChoice = .session
                                         }
+                                        .disabled(!targetAvailable || busy)
                                     }
                                     if progress.assignment?.profileRubric != nil {
                                         Button(spanish ? "Reutilizar perfil" : "Reuse profile") {
                                             selectedTargetIndex = index
+                                            previewFocusTarget = target
                                             rubricReuseChoice = .profile
                                         }
+                                        .disabled(!targetAvailable || busy)
                                     }
+                                }
+                                if !targetAvailable {
+                                    Text(spanish
+                                         ? "La aparición aún no está disponible en el lector; no se puede confirmar."
+                                         : "This occurrence is not available in the reader yet; it cannot be confirmed.")
+                                        .font(.caption2)
+                                        .foregroundStyle(.orange)
                                 }
                             }
                         }
@@ -552,6 +607,13 @@ struct MobileGuidedSigningView: View {
               let selectedTargetIndex,
               selectedTargets.indices.contains(selectedTargetIndex) else { return }
         let target = selectedTargets[selectedTargetIndex]
+        let targetKey = MobileGuidedSigningTargetKey.make(fieldID: target.fieldID, occurrence: target.occurrence)
+        guard availableTargetKeys.contains(targetKey) else {
+            errorMessage = spanish
+                ? "La aparición no se ha encontrado en el lector; la confirmación se ha bloqueado."
+                : "The occurrence was not found in the reader; confirmation was blocked."
+            return
+        }
         do {
             var updated = session
             try updated.confirmLocation(

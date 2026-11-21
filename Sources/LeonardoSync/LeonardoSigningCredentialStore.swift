@@ -2,6 +2,7 @@ import CryptoKit
 import CommonCrypto
 import Foundation
 import LeonardoCore
+import LocalAuthentication
 import Security
 
 enum LeonardoSigningCredentialKeychainItem: Hashable, Sendable {
@@ -73,6 +74,34 @@ private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend
 #if !os(macOS)
         if case .privateRecord = item, let prompt {
             request[kSecUseOperationPrompt as String] = prompt
+        }
+#endif
+        // Verification and credential discovery must never authorize a keychain
+        // item implicitly.  In particular, a public-record read is allowed to
+        // fail closed while the login keychain is locked; it must not block the
+        // document-opening task waiting for Touch ID/password UI.  The only
+        // operation that may request local authorization is `keyPair`, and it
+        // does so explicitly after the signer has confirmed a final signature.
+        if prompt == nil {
+            let context = LAContext()
+            context.interactionNotAllowed = true
+            request[kSecUseAuthenticationContext as String] = context
+        }
+#if os(macOS)
+        // Legacy login-keychain records can still open their own unlock UI on
+        // macOS even when an LAContext refuses interaction.  Suppress that
+        // process-local legacy path for verification reads; `keyPair` passes a
+        // non-nil prompt and therefore retains its explicit authorization
+        // path.  Restore the caller's setting immediately after the query.
+        var priorInteractionAllowed = DarwinBoolean(true)
+        let interactionStatus = SecKeychainGetUserInteractionAllowed(&priorInteractionAllowed)
+        if interactionStatus == errSecSuccess {
+            _ = SecKeychainSetUserInteractionAllowed(false)
+        }
+        defer {
+            if interactionStatus == errSecSuccess {
+                _ = SecKeychainSetUserInteractionAllowed(priorInteractionAllowed.boolValue)
+            }
         }
 #endif
         var result: CFTypeRef?

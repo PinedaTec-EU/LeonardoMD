@@ -213,6 +213,11 @@ but does not claim a per-signature biometric identity. Touch ID or another
 shared device prompt only unlocks local keychain material; it does not identify
 which person is signing.
 
+Before the first confirmation, the review panel lists optional form fields that
+are currently blank and will remain blank. This is an informational notice,
+not a second confirmation; it disappears once the first location snapshot is
+sealed.
+
 The first confirmed location seals the required form data, assignments,
 document revision and referenced resources. A missing required value, an
 unavailable rendered occurrence or a changed document blocks confirmation.
@@ -639,8 +644,12 @@ offline signing copy from the document view. **Sign copy** opens the local
 workflow without editing or synchronizing the shared source. Assign each declared
 position to a local profile or a newly entered full name, document type and
 number; identity details and a profile rubric have separate save choices. Enrol
-and authorize a personal credential, read each exact occurrence in source order,
-draw or explicitly confirm reuse of a rubric, and pause or resume as needed.
+and authorize a personal credential, read the complete copy in the built-in
+read-only preview, use **View location** to jump to each exact occurrence in
+source order, draw or explicitly confirm reuse of a rubric, and pause or resume
+as needed. The preview never edits the copy; only a detached, independently
+verified final signature paints a rubric at its exact occurrence. Partial review
+remains visibly pending.
 **Export signed copy** shows the declared identities and rubrics that will leave
 the device. It includes no private key, local path or unrelated profile. Import
 the JSON copy on the Mac only after it verifies the local source, frozen snapshot,

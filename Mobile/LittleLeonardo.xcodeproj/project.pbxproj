@@ -30,6 +30,7 @@
 		A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */; };
 		A51700000000000000000001 /* MobileSigningExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51700000000000000000011 /* MobileSigningExchange.swift */; };
 		A51700000000000000000002 /* MobileGuidedSigningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51700000000000000000012 /* MobileGuidedSigningView.swift */; };
+		A51700000000000000000003 /* MobileGuidedSigningDocumentReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51700000000000000000013 /* MobileGuidedSigningDocumentReader.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */; };
@@ -94,6 +95,7 @@
 		B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricCaptureView.swift; sourceTree = "<group>"; };
 		A51700000000000000000011 /* MobileSigningExchange.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileSigningExchange.swift; sourceTree = "<group>"; };
 		A51700000000000000000012 /* MobileGuidedSigningView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileGuidedSigningView.swift; sourceTree = "<group>"; };
+		A51700000000000000000013 /* MobileGuidedSigningDocumentReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileGuidedSigningDocumentReader.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDirectConnectionStore.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDirectAuthorization.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationJournal.swift; sourceTree = "<group>"; };
@@ -242,6 +244,7 @@
 				B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */,
 				A51700000000000000000011 /* MobileSigningExchange.swift */,
 				A51700000000000000000012 /* MobileGuidedSigningView.swift */,
+				A51700000000000000000013 /* MobileGuidedSigningDocumentReader.swift */,
 				C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */,
 				C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */,
 				C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */,
@@ -405,6 +408,7 @@
 				A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */,
 				A51700000000000000000001 /* MobileSigningExchange.swift in Sources */,
 				A51700000000000000000002 /* MobileGuidedSigningView.swift in Sources */,
+				A51700000000000000000003 /* MobileGuidedSigningDocumentReader.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift in Sources */,

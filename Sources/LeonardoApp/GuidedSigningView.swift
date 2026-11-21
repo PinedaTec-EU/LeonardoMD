@@ -48,6 +48,15 @@ struct GuidedSigningView: View {
         return session.guidedSigningSession?.positions[id]
     }
 
+    private var optionalBlankFieldNames: [String] {
+        guard let document = session.leonardoDocument,
+              let signingSession = session.guidedSigningSession,
+              signingSession.snapshot == nil else { return [] }
+        return signingSession.optionalBlankFieldIDs(document: document).map { fieldID in
+            session.leonardoFieldDefinition(fieldID)?.label ?? fieldID
+        }
+    }
+
     private var selectedProfile: LeonardoSignerProfile? {
         guard !creatingProfile, let selectedProfileID else { return nil }
         return session.guidedSigningProfiles.first { $0.id == selectedProfileID }
@@ -236,6 +245,13 @@ struct GuidedSigningView: View {
             }
             Text(L10n.text("The first confirmed location seals form data, assignments and referenced resources."))
                 .font(.caption).foregroundStyle(.secondary)
+            if !optionalBlankFieldNames.isEmpty {
+                Label(
+                    L10n.format("Optional fields will remain blank: %@", optionalBlankFieldNames.joined(separator: ", ")),
+                    systemImage: "info.circle"
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
             ForEach(positions) { position in
                 let fields = assignedFieldLabels(for: position.id)
                 HStack(alignment: .top, spacing: 8) {

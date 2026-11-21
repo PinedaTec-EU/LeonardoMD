@@ -780,6 +780,7 @@
   "View signatures": "Ver firmas",
   "Preparing the protected signing workflow…": "Preparando el flujo de firma protegido…",
   "The first confirmed location seals form data, assignments and referenced resources.": "La primera ubicación confirmada bloquea los datos, las asignaciones y los recursos referenciados.",
+  "Optional fields will remain blank: %@": "Estos campos opcionales quedarán vacíos: %@",
   "No signer selected": "No hay firmante seleccionado",
   "No signer positions are available.": "No hay puestos de firma disponibles.",
   "No rubric field assigned": "No hay campo de rúbrica asignado",
