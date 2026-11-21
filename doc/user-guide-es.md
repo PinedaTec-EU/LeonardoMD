@@ -188,7 +188,7 @@ Los documentos que declaran la versión de formato 2 pueden mostrar el botón
 firma obligatorios y los campos de rúbrica asignados a cada uno, junto con una
 ID estable del documento y una revisión semántica positiva. Los documentos
 de la versión 1 mantienen el flujo normal de **Rellenar formulario**; Little
-Leonardo puede previsualizar ambas versiones, pero sigue siendo de solo lectura.
+Leonardo puede previsualizar ambas versiones. La vista compartida normal es de solo lectura.
 
 Antes de revisar un puesto, elige un perfil local o crea uno con el nombre
 completo de la persona, el tipo de documento de identidad y su número. Después
@@ -201,6 +201,10 @@ La persona revisora debe seleccionar el puesto, iniciar la revisión y seguir
 las apariciones exactas de los campos en orden de origen. Para cada aparición,
 lee el contexto mostrado, dibuja una rúbrica nueva en el lienzo exclusivo de firma o elige una guardada,
 confirma expresamente cualquier reutilización y confirma esa aparición exacta.
+Para dibujar en un Little Leonardo vinculado, elige **Usar un Little Leonardo
+enlazado** desde el lienzo. En el Mac, revisa el trazo recibido y pulsa
+**Usar rúbrica**. El dispositivo vinculado solo captura el trazo. El documento
+y la credencial de firma permanecen en el Mac.
 Dibujar en este flujo nunca añade la rúbrica a la biblioteca compartida; guardar
 una rúbrica de perfil sigue siendo una decisión separada y explícita. Los
 campos repetidos son ubicaciones distintas. La revisión se puede pausar y

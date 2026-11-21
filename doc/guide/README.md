@@ -1,20 +1,21 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v110-en.mdlz` and `Guide-v110-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v111-en.mdlz` and `Guide-v111-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v110/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v111/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v110 carries the MDLF v2 guided-signing workflow and clarifies that its
+Guide v111 adds linked Little Leonardo rubric capture to the Mac signing flow.
+It carries the MDLF v2 guided-signing workflow and clarifies that its
 signing-only rubric canvas never writes the shared rubric library unless the
 profile-save choice is explicit. It also explains the pre-seal notice for
 optional fields that remain blank. Exact repeated-field review, credential and
 trust boundaries, pause/resume and new-revision recovery remain in both locales.
 Its Help/practice acceptance remains pending for this change; the package is
 generated from the same bilingual bodies.
-Guide v110 EN SHA-256: `abfbf8b822de4f0c1af2fbdb8e2fb456b37b08751599ac4833c1b2b3f9ae7ed4`
-and ES SHA-256: `a7fe6c65fdb1aafc5010fe61991f58eda720321cadce120e62dc31afc480fad5`.
+Guide v111 EN SHA-256: `889ceecfc357f8a5de2eeace177284d5f9a9ba78829a6ac89102d405471e8d02`
+and ES SHA-256: `2a2882a05fb17acb9d474b84005576a6678a4bf8e206a340ac3e0526662aeda0`.
 
 Guide v109 remains historical: EN `f6dbd7c7b2cb0a45846e371dbcd63b15a7da844bb5dc5533d8a8ba8424fe7cc7`
 and ES `14bb6b47763d36b5dbd72766fd517e28e191292e228841b9038b1cd5795fe84d`.
@@ -77,7 +78,7 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v110 with a new
+historical review record. The current app resources use Guide v111 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
