@@ -91,7 +91,7 @@ private struct SyncHelperDiagnosticSheet: View {
                     ), NSWorkspace.shared.open(draft) {
                         feedback = nil
                     } else {
-                        feedback = L10n.text("Could not open a mail draft. Copy the diagnostics to send them manually.")
+                        feedback = L10n.text("Could not open a mail draft.")
                     }
                 } label: {
                     Label(L10n.text("Email diagnostics…"), systemImage: "envelope")
@@ -101,6 +101,13 @@ private struct SyncHelperDiagnosticSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
             .labelStyle(.titleAndIcon)
+            Text(L10n.format(
+                "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.",
+                SyncHelperDiagnostics.supportEmail
+            ))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .textSelection(.enabled)
             if let feedback {
                 Text(feedback).font(.caption).foregroundStyle(.secondary)
             }

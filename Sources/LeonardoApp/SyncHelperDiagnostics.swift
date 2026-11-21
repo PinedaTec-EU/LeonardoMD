@@ -2,6 +2,8 @@ import Foundation
 
 /// Builds the report exclusively from predefined states and public app metadata.
 struct SyncHelperDiagnostics {
+    static let supportEmail = "leonardo@pinedatec.eu"
+
     struct Event: Equatable {
         let date: Date
         let state: SyncHelperController.State
@@ -29,7 +31,7 @@ struct SyncHelperDiagnostics {
     static func supportEmailURL(subject: String, report: String) -> URL? {
         var draft = URLComponents()
         draft.scheme = "mailto"
-        draft.path = "leonardo@pinedatec.eu"
+        draft.path = supportEmail
         draft.queryItems = [
             URLQueryItem(name: "subject", value: subject),
             URLQueryItem(name: "body", value: report.replacingOccurrences(of: "\n", with: "\r\n"))
