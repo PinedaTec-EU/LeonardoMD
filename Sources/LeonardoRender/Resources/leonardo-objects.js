@@ -34,7 +34,12 @@
     if (page.orientation === "landscape") [width, height] = [height, width];
     return {width, height, margins: ["top", "right", "bottom", "left"].map(side => margins[side] ?? 36)};
   }
+  let restoreTables = [];
+
   function paginate() {
+    window.LeonardoTableResizing.cancel();
+    restoreTables.forEach(restore => restore());
+    restoreTables = [];
     const nodes = logicalNodes;
     legacyImages.forEach(image => image.remove());
     root.querySelectorAll(":scope > .leonardo-page").forEach(page => page.remove());
@@ -50,19 +55,43 @@
       content = document.createElement("div"); content.className = "leonardo-page-text"; page.append(content); root.append(page);
     }
     const background = backgroundTemplate;
+    const available = (size.height - size.margins[0] - size.margins[2]) * 4 / 3 + 1;
+    const fits = () => content.getBoundingClientRect().height <= available;
+    function markOverflow() {
+      page.dataset.overflow = "true";
+      page.title = label("Content exceeds page height. Split the block before exporting.");
+    }
+    function moveTable(node) {
+      if (content.childNodes.length === 1) return;
+      const previous = content;
+      const heading = node.previousElementSibling;
+      const canMoveHeading = previous.childNodes.length > 2 && heading === node.previousSibling &&
+        heading?.matches("h1, h2, h3, h4, h5, h6");
+      next();
+      if (canMoveHeading) content.append(heading);
+      content.append(node);
+      if (canMoveHeading && !fits()) previous.append(heading);
+    }
+    const tablePage = {fits, next, markOverflow, moveTable, append: node => content.append(node)};
     next();
     for (const node of nodes) {
       if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) { node.remove(); continue; }
       if (node.matches?.('[data-leonardo-page-break="true"]')) { node.remove(); next(); continue; }
       content.append(node);
-      const available = (size.height - size.margins[0] - size.margins[2]) * 4 / 3;
-      if (content.getBoundingClientRect().height > available + 1 && content.childNodes.length > 1) {
+      if (fits()) continue;
+      const table = window.LeonardoTablePagination.tableFor(node);
+      if (table) {
+        const style = getComputedStyle(node);
+        const ownHeight = node.getBoundingClientRect().height + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+        if (ownHeight > available) {
+          const restore = window.LeonardoTablePagination.split(node, table, tablePage);
+          if (restore) { restoreTables.push(restore); continue; }
+        }
+        moveTable(node);
+      } else if (content.childNodes.length > 1) {
         next(); content.append(node);
       }
-      if (content.getBoundingClientRect().height > available + 1) {
-        page.dataset.overflow = "true";
-        page.title = label("Content exceeds page height. Split the block before exporting.");
-      }
+      if (!fits()) markOverflow();
     }
     const last = Math.max(1, ...(payload.leonardo?.layout?.objects || []).map(item => item.page));
     while (root.querySelectorAll(":scope > .leonardo-page").length < last) next();
@@ -162,6 +191,7 @@
   }
   function apply(nextRoot, nextPayload) {
     const nextSelection = nextPayload.selectedGraphicID;
+    restoreTables = [];
     clear(false); root = nextRoot; payload = {...nextPayload, selectedGraphicID: nextSelection};
     root.classList.remove("leonardo-paginated");
     if (!payload.leonardo) return;
