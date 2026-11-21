@@ -26,6 +26,19 @@ struct SyncHelperDiagnostics {
         events.last?.label ?? L10n.text("Sync status has not been checked")
     }
 
+    static func supportEmailURL(subject: String, report: String) -> URL? {
+        var draft = URLComponents()
+        draft.scheme = "mailto"
+        draft.path = "leonardo@pinedatec.eu"
+        draft.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: report.replacingOccurrences(of: "\n", with: "\r\n"))
+        ]
+        // Mail clients may interpret a literal plus sign as a space.
+        draft.percentEncodedQuery = draft.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        return draft.url
+    }
+
     @MainActor var report: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "–"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "–"

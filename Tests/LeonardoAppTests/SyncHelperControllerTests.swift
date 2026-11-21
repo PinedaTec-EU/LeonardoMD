@@ -31,6 +31,20 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(diagnostics.report.contains(L10n.text("Offline · sync helper unavailable")))
     }
 
+    func testSupportEmailDraftPreservesDiagnosticReportAndRecipient() throws {
+        let subject = "Diagnóstico de Leonardo Sync"
+        let report = "Estado · Niño + café & té #1?\n\nLeonardoMD 0.3.1961"
+        let url = try XCTUnwrap(SyncHelperDiagnostics.supportEmailURL(subject: subject, report: report))
+        let draft = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(draft.scheme, "mailto")
+        XCTAssertEqual(draft.path, "leonardo@pinedatec.eu")
+        XCTAssertEqual(draft.queryItems, [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: report.replacingOccurrences(of: "\n", with: "\r\n"))
+        ])
+        XCTAssertTrue(url.absoluteString.contains("%2B"))
+    }
+
     func testPreferencesRefreshesOnOpenAndOnlyOnExplicitRefreshes() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         let runtime = StatusRefreshRuntime()

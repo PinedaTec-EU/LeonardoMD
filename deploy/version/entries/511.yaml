@@ -1,4 +1,4 @@
 {
-  "build": 2,
-  "summary": "Synchronization preferences use less space and offer a copyable diagnostic report with recent Leonardo Sync service events."
+  "build": 3,
+  "summary": "Synchronization preferences use less space and offer recent Leonardo Sync diagnostics you can copy or review in an email draft."
 }

@@ -64,7 +64,7 @@ struct SyncHelperPreferencesSection: View {
 private struct SyncHelperDiagnosticSheet: View {
     let controller: SyncHelperController
     @Environment(\.dismiss) private var dismiss
-    @State private var copyResult: Bool?
+    @State private var feedback: String?
 
     var body: some View {
         let report = controller.diagnostics.report
@@ -78,21 +78,35 @@ private struct SyncHelperDiagnosticSheet: View {
             }
             .frame(height: 220)
             HStack {
-                Button(L10n.text("Copy diagnostics")) {
+                Button {
                     NSPasteboard.general.clearContents()
-                    copyResult = NSPasteboard.general.setString(report, forType: .string)
+                    let copied = NSPasteboard.general.setString(report, forType: .string)
+                    feedback = L10n.text(copied ? "Diagnostics copied" : "Could not copy diagnostics")
+                } label: {
+                    Label(L10n.text("Copy diagnostics"), systemImage: "doc.on.doc")
                 }
-                if let copyResult {
-                    Text(L10n.text(copyResult ? "Diagnostics copied" : "Could not copy diagnostics"))
-                        .font(.caption).foregroundStyle(.secondary)
+                Button {
+                    if let draft = SyncHelperDiagnostics.supportEmailURL(
+                        subject: L10n.text("Leonardo Sync diagnostics"), report: report
+                    ), NSWorkspace.shared.open(draft) {
+                        feedback = nil
+                    } else {
+                        feedback = L10n.text("Could not open a mail draft. Copy the diagnostics to send them manually.")
+                    }
+                } label: {
+                    Label(L10n.text("Email diagnostics…"), systemImage: "envelope")
                 }
                 Spacer()
                 Button(L10n.text("Done")) { dismiss() }
                     .keyboardShortcut(.defaultAction)
             }
+            .labelStyle(.titleAndIcon)
+            if let feedback {
+                Text(feedback).font(.caption).foregroundStyle(.secondary)
+            }
         }
         .padding(20)
         .frame(width: 520)
-        .onChange(of: report) { copyResult = nil }
+        .onChange(of: report) { feedback = nil }
     }
 }

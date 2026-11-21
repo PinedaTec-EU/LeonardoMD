@@ -1,10 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v104-en.mdlz` and `Guide-v104-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v105-en.mdlz` and `Guide-v105-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v104/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v105/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v105 documents opening a prefilled support draft from desktop Sync diagnostics.
+Guide v105 EN SHA-256: `1b308105cbcd8619d64af78228b3fe75c1706f8978be460bfdd5b25e6556e9b6`
+and ES SHA-256: `57d0051c7b8efeeb437edbdaed7a2767877b7ca7d020244562e30262f4b8b0fb`.
 
 Guide v104 documents the desktop Sync diagnostics sheet, session service events
 and clipboard report. Fresh packaged Help acceptance is tracked under issue #510.
