@@ -1209,6 +1209,16 @@
       "pr": 506,
       "summary": "Pull-request CI selects macOS, iOS, packaging and plugin checks from the changed files. PR labels can request extra checks, and pushes to main run the full suite.",
       "to_version": "0.3.1961"
+    },
+    {
+      "delta": {
+        "build": 4
+      },
+      "from_version": "0.3.1961",
+      "merge_sha": "089c5d7a7eb65592923d48280953ffb40310bd4f",
+      "pr": 511,
+      "summary": "Synchronization preferences use less space and offer recent Leonardo Sync diagnostics you can copy or review in an email draft.",
+      "to_version": "0.3.1965"
     }
   ],
   "initial_version": "0.1.56",
@@ -1219,5 +1229,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1961"
+  "version": "0.3.1965"
 }

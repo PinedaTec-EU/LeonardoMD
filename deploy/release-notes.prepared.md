@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1965
+
+- #510 Added: compact Sync preferences and safe diagnostics ([#511](https://github.com/PinedaTec-EU/LeonardoMD/pull/511))
+
+<p>Synchronization preferences use less space and offer recent Leonardo Sync diagnostics you can copy or review in an email draft.</p>
+
+Source: `089c5d7a7eb65592923d48280953ffb40310bd4f`. Delta: `{"build": 4}`.
+
 ## 0.3.1961
 
 - #505 Added: select PR validation suites by affected surface ([#506](https://github.com/PinedaTec-EU/LeonardoMD/pull/506))
