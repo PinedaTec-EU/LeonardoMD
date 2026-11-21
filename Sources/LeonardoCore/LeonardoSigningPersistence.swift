@@ -111,10 +111,8 @@ public actor LeonardoSigningStore {
     public func saveSession(_ session: LeonardoGuidedSigningSession) throws {
         try loadSessionsIfNeeded()
         guard session.isPersistable else { throw LeonardoSigningError.storageFailure }
-        let result = try updateSessions { values in
-            guard Set(values.map(\.id)).count == values.count else {
-                throw LeonardoSigningError.storageFailure
-            }
+        let baseline = sessionsByID[session.id]
+        let result = try updateSessions(id: session.id, baseline: baseline) { values in
             if let index = values.firstIndex(where: { $0.id == session.id }) {
                 values[index] = session
             } else {
@@ -138,12 +136,17 @@ public actor LeonardoSigningStore {
     ) throws {
         try loadSessionsIfNeeded()
         guard replacement.isPersistable else { throw LeonardoSigningError.storageFailure }
-        let result = try updateSessions { values in
-            guard Set(values.map(\.id)).count == values.count,
-                  let index = values.firstIndex(where: { $0.id == id }),
+        guard let baseline = sessionsByID[id] else {
+            throw LeonardoSigningError.staleStorage
+        }
+        let result = try updateSessions(id: id, baseline: baseline) { values in
+            guard let index = values.firstIndex(where: { $0.id == id }),
                   values[index].isPristine,
                   values[index].documentLocation == replacement.documentLocation,
-                  !values.contains(where: { $0.id == replacement.id && $0.id != id }) else {
+                  !values.contains(where: { $0.id == replacement.id && $0.id != id }),
+                  !values.contains(where: {
+                      $0.id != id && Self.isCompetingRevision($0, replacement)
+                  }) else {
                 throw LeonardoSigningError.staleStorage
             }
             values[index] = replacement
@@ -156,11 +159,8 @@ public actor LeonardoSigningStore {
 
     public func removeSession(id: UUID) throws {
         try loadSessionsIfNeeded()
-        guard sessionsByID[id] != nil else { return }
-        let result = try updateSessions { values in
-            guard Set(values.map(\.id)).count == values.count else {
-                throw LeonardoSigningError.storageFailure
-            }
+        guard let baseline = sessionsByID[id] else { return }
+        let result = try updateSessions(id: id, baseline: baseline) { values in
             values.removeAll { $0.id == id }
         }
         sessionsByID = result.values.reduce(into: [:]) { result, value in
@@ -206,6 +206,9 @@ public actor LeonardoSigningStore {
                 throw LeonardoSigningError.storageFailure
             }
         }
+        guard !Self.hasCompetingRevision(Array(values.values)) else {
+            throw LeonardoSigningError.storageFailure
+        }
         sessionsByID = values
         sessionsFileDigest = result.digest
         sessionsLoaded = true
@@ -218,9 +221,76 @@ public actor LeonardoSigningStore {
     }
 
     private func updateSessions(
+        id: UUID,
+        baseline: LeonardoGuidedSigningSession?,
         _ mutate: (inout [LeonardoGuidedSigningSession]) throws -> Void
     ) throws -> (values: [LeonardoGuidedSigningSession], digest: Data?) {
-        try updateArray(at: sessionsURL, expectedDigest: sessionsFileDigest, mutate: mutate)
+        do {
+            return try ProcessFileLock.transaction(for: sessionsURL) {
+                let current = try Self.readArray(LeonardoGuidedSigningSession.self, from: sessionsURL)
+                var values = current.values
+                var byID: [UUID: LeonardoGuidedSigningSession] = [:]
+                for value in values {
+                    guard value.isPersistable,
+                          byID.updateValue(value, forKey: value.id) == nil else {
+                        throw LeonardoSigningError.storageFailure
+                    }
+                }
+                guard !Self.hasCompetingRevision(values) else {
+                    throw LeonardoSigningError.storageFailure
+                }
+                // Compare only the session being changed. Unrelated progress
+                // added by another document can be retained safely, while a
+                // concurrent edit/removal of this session remains stale.
+                guard byID[id] == baseline else {
+                    throw LeonardoSigningError.staleStorage
+                }
+                try mutate(&values)
+                guard !Self.hasCompetingRevision(values) else {
+                    throw LeonardoSigningError.staleStorage
+                }
+                let data = try Self.encoded(values)
+                try Self.writeAtomically(data, to: sessionsURL, directory: directoryURL)
+                return (values, Self.digest(data))
+            }
+        } catch let error as LeonardoSigningError {
+            throw error
+        } catch {
+            throw LeonardoSigningError.storageFailure
+        }
+    }
+
+    private static func hasCompetingRevision(
+        _ sessions: [LeonardoGuidedSigningSession]
+    ) -> Bool {
+        for (index, session) in sessions.enumerated() {
+            for other in sessions.dropFirst(index + 1)
+                where isCompetingRevision(session, other) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Historical sessions may share a local path, but two distinct sessions
+    /// must never compete for one document identity and semantic revision.
+    private static func isCompetingRevision(
+        _ lhs: LeonardoGuidedSigningSession,
+        _ rhs: LeonardoGuidedSigningSession
+    ) -> Bool {
+        guard lhs.id != rhs.id,
+              let lhsLocation = lhs.documentLocation,
+              let rhsLocation = rhs.documentLocation,
+              lhsLocation == rhsLocation,
+              let lhsDocumentID = lhs.documentID,
+              let rhsDocumentID = rhs.documentID,
+              !lhsDocumentID.isEmpty,
+              lhsDocumentID == rhsDocumentID,
+              let lhsRevision = lhs.initialRevision,
+              let rhsRevision = rhs.initialRevision else {
+            return false
+        }
+        return lhsRevision == rhsRevision
     }
 
     private func updateArray<T: Codable>(

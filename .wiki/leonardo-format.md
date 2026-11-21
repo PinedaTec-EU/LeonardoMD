@@ -118,7 +118,10 @@ trust, rubrics, resources and detached signatures stay in protected local
 progress. `LeonardoGuidedSigningSession` confirms exact repeated placeholder
 occurrences in source order, freezes the document/resources at the first
 confirmation, supports pause/resume and per-position rubric reuse, and starts a
-fresh session for a higher semantic revision. A position still pending may get
+fresh session for a higher semantic revision. Historical sidecars at one local
+path remain available for audit, while import and persistence reject a second
+session for the same document identity and semantic revision. A position still
+pending may get
 its first assignment after the seal, but an existing assignment cannot be
 relinked. `LeonardoSigningStore` uses locked read/CAS/write transactions,
 pre-read file limits and 0600-before-publish atomic replacement. Read-time

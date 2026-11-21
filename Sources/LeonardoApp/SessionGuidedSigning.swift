@@ -332,18 +332,27 @@ extension AppSession {
         try exchange.validate(against: document, resources: localResources, trustStore: effectiveTrust)
         let localSessions = try await guidedSigningStore.sessions()
             .filter { $0.documentLocation == expectedLocation }
-        let local = localSessions.first { $0.id == exchange.session.id }
-        guard localSessions.count <= 1 else {
-            // Historical or competing sessions at this path are real
-            // progress, even when one of them happens to be pristine.
+        // A deliberate correction preserves the old sidecar session at this
+        // path. Only sessions for this exact document identity and semantic
+        // revision can participate in the import CAS; older revisions remain
+        // audit history and must not block a valid current copy.
+        let currentRevisionSessions = localSessions.filter {
+            $0.documentID == exchange.documentID
+                && $0.initialRevision == exchange.documentRevision
+        }
+        guard currentRevisionSessions.count <= 1 else {
+            // Multiple sessions for one exact revision are a fork, even if
+            // one happens to be pristine. Never choose between them.
             throw LeonardoSigningError.staleStorage
         }
-        let pristineReplacement = local == nil && localSessions.count == 1
-            ? localSessions.first(where: { $0.isPristine })
+        let local = currentRevisionSessions.first { $0.id == exchange.session.id }
+        let pristineReplacement = local == nil && currentRevisionSessions.count == 1
+            ? currentRevisionSessions.first(where: { $0.isPristine })
             : nil
-        guard local != nil || localSessions.isEmpty || pristineReplacement != nil else {
+        guard local != nil || currentRevisionSessions.isEmpty || pristineReplacement != nil else {
             // A different local session means this file already has progress
-            // from another signing copy. Never overwrite or merge that fork.
+            // from another signing copy for this revision. Never overwrite or
+            // merge that fork, while historical revisions remain untouched.
             throw LeonardoSigningError.staleStorage
         }
         let rebound = try exchange.reboundSession(
