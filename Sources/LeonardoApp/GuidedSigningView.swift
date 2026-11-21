@@ -289,6 +289,17 @@ struct GuidedSigningView: View {
     }
 
     private func selectedPositionChanged() {
+        if selectedProgress?.assignment == nil {
+            creatingProfile = true
+            selectedProfileID = nil
+            transientProfileID = UUID()
+            fullName = ""
+            documentType = .nationalID
+            documentNumber = ""
+            saveIdentityDetails = false
+            saveRubric = false
+            draftProfileRubric = nil
+        }
         selectedTargetIndex = 0
         contextRead = false
         reuseConfirmed = false
