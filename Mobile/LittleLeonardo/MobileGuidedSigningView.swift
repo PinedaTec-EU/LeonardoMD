@@ -48,6 +48,7 @@ struct MobileGuidedSigningView: View {
     @State private var storedBaseline: LeonardoGuidedSigningSession?
     @State private var verification: [String: LeonardoSignatureVerification] = [:]
     @State private var showingProfileRubric = false
+    @State private var profileRubricDraft = LeonardoRubric()
     @State private var busy = false
     @State private var errorMessage: String?
 
@@ -153,10 +154,8 @@ struct MobileGuidedSigningView: View {
             Text(exportDisclosureMessage)
         }
         .sheet(isPresented: $showingProfileRubric) {
-            MobileGuidedRubricSheet(rubric: Binding(
-                get: { profileRubric ?? LeonardoRubric() },
-                set: { profileRubric = $0 }
-            ), spanish: spanish) {
+            MobileGuidedRubricSheet(rubric: $profileRubricDraft, spanish: spanish, profileCapture: true) {
+                profileRubric = profileRubricDraft
                 showingProfileRubric = false
             }
         }
@@ -412,6 +411,16 @@ struct MobileGuidedSigningView: View {
                     Text(spanish ? "Perfil guardado" : "Saved profile").tag(false)
                 }
                 .pickerStyle(.segmented)
+                .onChange(of: creatingProfile) { _, creating in
+                    if creating {
+                        fullName = ""
+                        documentNumber = ""
+                        documentType = .nationalID
+                        profileRubric = nil
+                    } else {
+                        loadProfile(selectedProfileID)
+                    }
+                }
                 if !creatingProfile {
                     Picker(spanish ? "Perfil" : "Profile", selection: $selectedProfileID) {
                         Text(spanish ? "Selecciona un perfil" : "Select a profile").tag(UUID?.none)
@@ -435,6 +444,7 @@ struct MobileGuidedSigningView: View {
                     Toggle(spanish ? "Guardar rúbrica del perfil" : "Save profile rubric", isOn: $saveRubric)
                     if saveRubric {
                         Button(spanish ? "Dibujar rúbrica del perfil" : "Draw profile rubric", systemImage: "signature") {
+                            profileRubricDraft = profileRubric ?? LeonardoRubric()
                             showingProfileRubric = true
                         }
                         if let profileRubric {
@@ -954,6 +964,7 @@ struct MobileGuidedSigningView: View {
 private struct MobileGuidedRubricSheet: View {
     @Binding var rubric: LeonardoRubric
     let spanish: Bool
+    var profileCapture = false
     let confirm: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var color = "#111111"
@@ -964,7 +975,9 @@ private struct MobileGuidedRubricSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 14) {
-                Text(spanish ? "Lee el contexto y dibuja una rúbrica nueva." : "Read the context and draw a new rubric.")
+                Text(profileCapture
+                     ? (spanish ? "Dibuja una rúbrica para reutilizar con este perfil." : "Draw a rubric to reuse with this profile.")
+                     : (spanish ? "Lee el contexto y dibuja una rúbrica nueva." : "Read the context and draw a new rubric."))
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
                 MobileRubricInkTools(color: $color, width: $width, style: $style, enabled: true, spanish: spanish)
                 MobileRubricCanvas(rubric: $rubric, color: color, width: width, style: style,
@@ -976,7 +989,8 @@ private struct MobileGuidedRubricSheet: View {
                     Text(spanish ? "La rúbrica supera el límite portable." : "Rubric exceeds the portable limit.")
                         .font(.caption).foregroundStyle(.orange)
                 }
-                Button(spanish ? "Confirmar aparición" : "Confirm occurrence", action: confirm)
+                Button(profileCapture ? (spanish ? "Usar rúbrica" : "Use rubric")
+                       : (spanish ? "Confirmar aparición" : "Confirm occurrence"), action: confirm)
                     .buttonStyle(.borderedProminent)
                     .foregroundStyle(MobileClassic.paper)
                     .disabled(!rubric.isValid || limitReached)
