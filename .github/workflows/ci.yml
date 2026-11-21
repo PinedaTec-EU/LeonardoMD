@@ -160,6 +160,25 @@ jobs:
             echo "::error::The isolated FileList suite, both isolated HTTPS regressions, and the full Swift test suite must pass."
             exit 1
           fi
+      - name: Capture native guided signing screens
+        if: steps.full-suite.outcome == 'success'
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          LEONARDO_GUIDED_SIGNING_CAPTURE: ${{ runner.temp }}/guided-signing-evidence
+        run: |
+          swift test --skip-build --filter GuidedSigningCaptureTests/testCaptureMacSigningComponents
+          for screen in mac-al-abrir mac-documento-con-firmas mac-lienzo-rubrica; do
+            test -s "$LEONARDO_GUIDED_SIGNING_CAPTURE/$screen.png"
+            test -s "$LEONARDO_GUIDED_SIGNING_CAPTURE/$screen.context.json"
+          done
+      - name: Upload native guided signing captures
+        if: steps.full-suite.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: guided-signing-native-captures-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/guided-signing-evidence/
+          if-no-files-found: error
+          retention-days: 30
       - name: Capture native synchronization error dialogs
         id: sync-error-captures
         if: steps.full-suite.outcome == 'success'

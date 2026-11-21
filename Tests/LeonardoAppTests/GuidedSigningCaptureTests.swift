@@ -69,8 +69,16 @@ final class GuidedSigningCaptureTests: XCTestCase {
             .modifier(SessionAppearance(session: session))
             .frame(width: size.width, height: size.height, alignment: .topLeading)
             .background(Color(nsColor: .windowBackgroundColor)))
+        let imageURL = folder.appendingPathComponent(name + ".png")
         try await GuideCaptureSupport.captureNative(host, size: size,
-            to: folder.appendingPathComponent(name + ".png"), language: "es",
-            state: "macOS production component with an isolated synthetic signing form")
+            to: imageURL, language: "es",
+            state: "macOS production component with an isolated synthetic signing form",
+            route: "/native/firmas/" + name, screen: name)
+        let contextURL = imageURL.deletingPathExtension().appendingPathExtension("context.json")
+        let image = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: imageURL)))
+        var context = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: contextURL)) as? [String: Any])
+        context["image_pixels"] = ["width": image.pixelsWide, "height": image.pixelsHigh]
+        try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
+            .write(to: contextURL)
     }
 }
