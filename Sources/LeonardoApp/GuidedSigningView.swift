@@ -427,12 +427,17 @@ struct GuidedSigningView: View {
     }
 
     private func targetList(_ progress: LeonardoSigningPositionProgress) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // Indices are stable for this rendered snapshot even when the same
-            // field appears more than once. The occurrence is still carried in
-            // the navigation call and never collapsed to a field ID alone.
-            ForEach(session.guidedSigningTargets.indices, id: \.self) { index in
-                let target = session.guidedSigningTargets[index]
+        // Keep the values captured by each row independent from the live
+        // target array. Pausing clears `guidedSigningTargets`; indexing that
+        // mutable array from a retained SwiftUI row can otherwise trap while
+        // the list reconciles its children.
+        let targets = GuidedSigningTargetRow.snapshot(session.guidedSigningTargets)
+        return VStack(alignment: .leading, spacing: 4) {
+            // Row identities remain stable when the same field appears more
+            // than once. The occurrence is still carried in the navigation
+            // call and never collapsed to a field ID alone.
+            ForEach(targets) { row in
+                let target = row.target
                 let confirmed = progress.locations.contains { $0.fieldID == target.fieldID && $0.occurrence == target.occurrence }
                 Button {
                     Task { @MainActor in
@@ -444,7 +449,7 @@ struct GuidedSigningView: View {
                         }
                         renderedTargetKeys.insert(targetKey(target))
                         targetAvailabilityChecked = true
-                        selectedTargetIndex = index
+                        selectedTargetIndex = targets.firstIndex(where: { $0.id == row.id }) ?? 0
                         session.renderer.scroll(toField: target.fieldID, occurrence: target.occurrence)
                     }
                 } label: {
@@ -625,6 +630,21 @@ struct GuidedSigningView: View {
         }
     }
 
+}
+
+/// A value snapshot for one rendered location. SwiftUI may retain a row while
+/// the session changes (for example when Pause clears the active targets), so
+/// row actions must never subscript the session's mutable target array.
+struct GuidedSigningTargetRow: Identifiable, Equatable {
+    let target: LeonardoSigningLocationTarget
+
+    var id: String {
+        "\(target.positionID)#\(target.fieldID)#\(target.occurrence)"
+    }
+
+    static func snapshot(_ targets: [LeonardoSigningLocationTarget]) -> [Self] {
+        targets.map(Self.init)
+    }
 }
 
 private struct GuidedSigningCredentialEnrollment: View {

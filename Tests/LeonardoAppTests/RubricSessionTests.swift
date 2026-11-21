@@ -37,6 +37,22 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: libraryURL.path))
     }
 
+    func testGuidedSigningTargetRowsSnapshotKeepsOccurrenceIdentityWhenTargetsClear() {
+        let targets = [
+            LeonardoSigningLocationTarget(positionID: "owner", fieldID: "signature", occurrence: 0,
+                                          sourceOffset: 12, contextSHA256: Data([0x01])),
+            LeonardoSigningLocationTarget(positionID: "owner", fieldID: "signature", occurrence: 1,
+                                          sourceOffset: 48, contextSHA256: Data([0x02]))
+        ]
+        let rows = GuidedSigningTargetRow.snapshot(targets)
+        var liveTargets = targets
+        liveTargets.removeAll()
+
+        XCTAssertEqual(rows.map(\.id), ["owner#signature#0", "owner#signature#1"])
+        XCTAssertEqual(rows.map { $0.target.occurrence }, [0, 1])
+        XCTAssertTrue(liveTargets.isEmpty)
+    }
+
     func testIndependentLibrariesMergeWritesAndFailClosedOnCorruption() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
