@@ -213,12 +213,13 @@ final class MobileReaderSpacingTests: XCTestCase {
                         type: .rubric, label: "Signature", signerPosition: "owner"
                     )
                 ],
-                values: ["name": .string("Ada Lovelace")]
+                values: ["name": .string("Ada & Lovelace")]
             )
         )
 
         let readable = MobileGuidedSigningNativeContent.readableBody(from: document)
-        XCTAssertTrue(readable.contains("Ada Lovelace"))
+        XCTAssertTrue(readable.contains("Ada & Lovelace"))
+        XCTAssertFalse(readable.contains("&#38;"))
         XCTAssertFalse(readable.contains("{{field:name}}"))
         XCTAssertEqual(
             MobileGuidedSigningNativeContent.referencedResourceReferences(from: document),

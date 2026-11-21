@@ -162,23 +162,29 @@ struct MobileGuidedSigningDocumentReader: View {
         .padding(.vertical, 4)
         .onAppear { refreshAvailableTargets() }
         .onChange(of: controller.isReady) { _, ready in
-            if ready {
-                let targets = renderedTargets
-                let expectedKeys = Set(targets.map {
-                    MobileGuidedSigningTargetKey.make(fieldID: $0.fieldID, occurrence: $0.occurrence)
-                })
-                Task { @MainActor in
-                    let available = await availableTargetKeys(for: targets)
-                    guard Set(renderedTargetKeys) == expectedKeys else { return }
-                    availableTargetKeys = available
-                    // A WebKit host can report ready after a document that is
-                    // visibly empty. Keep the native fallback selected until
-                    // every exact occurrence is actually present.
-                    if expectedKeys.isEmpty || expectedKeys.isSubset(of: available) {
-                        showingNativeFallback = false
-                        focusPendingTarget()
-                    }
+            guard ready else {
+                // Native content owns the shared availability while WebKit is
+                // absent or being replaced. Clear first so stale DOM results
+                // cannot keep a confirmation button enabled.
+                if !showingNativeFallback {
+                    availableTargetKeys = []
+                    showingNativeFallback = true
                 }
+                return
+            }
+            let targets = renderedTargets
+            let expectedKeys = targetKeys(for: targets)
+            Task { @MainActor in
+                let available = await availableTargetKeys(for: targets)
+                guard showingNativeFallback,
+                      Set(renderedTargetKeys) == expectedKeys,
+                      controller.isReady else { return }
+                // A ready host can still be visibly empty. Keep native
+                // ownership until every exact occurrence is present.
+                guard expectedKeys.isEmpty || expectedKeys.isSubset(of: available) else { return }
+                showingNativeFallback = false
+                availableTargetKeys = available
+                focusPendingTarget()
             }
         }
         .onChange(of: renderedTargetKeys) { _, _ in refreshAvailableTargets() }
@@ -189,18 +195,33 @@ struct MobileGuidedSigningDocumentReader: View {
         renderedTargets.map { MobileGuidedSigningTargetKey.make(fieldID: $0.fieldID, occurrence: $0.occurrence) }
     }
 
+    private func targetKeys(for targets: [LeonardoSigningLocationTarget]) -> Set<String> {
+        Set(targets.map {
+            MobileGuidedSigningTargetKey.make(fieldID: $0.fieldID, occurrence: $0.occurrence)
+        })
+    }
+
     private func refreshAvailableTargets() {
+        // The native reader publishes its own exact anchors. WebKit may only
+        // publish after it has been promoted by the readiness check above.
+        guard !showingNativeFallback else { return }
         guard controller.isReady else {
             availableTargetKeys = []
+            showingNativeFallback = true
             return
         }
         let targets = renderedTargets
-        let expectedKeys = Set(targets.map {
-            MobileGuidedSigningTargetKey.make(fieldID: $0.fieldID, occurrence: $0.occurrence)
-        })
+        let expectedKeys = targetKeys(for: targets)
         Task { @MainActor in
             let available = await availableTargetKeys(for: targets)
-            guard Set(renderedTargetKeys) == expectedKeys else { return }
+            guard !showingNativeFallback,
+                  controller.isReady,
+                  Set(renderedTargetKeys) == expectedKeys else { return }
+            guard expectedKeys.isEmpty || expectedKeys.isSubset(of: available) else {
+                availableTargetKeys = []
+                showingNativeFallback = true
+                return
+            }
             availableTargetKeys = available
         }
     }
@@ -219,10 +240,15 @@ struct MobileGuidedSigningDocumentReader: View {
     }
 
     private func focusPendingTarget() {
-        guard let focusTarget, controller.isReady else { return }
+        guard !showingNativeFallback,
+              let focusTarget, controller.isReady else { return }
         Task { @MainActor in
             let key = MobileGuidedSigningTargetKey.make(fieldID: focusTarget.fieldID, occurrence: focusTarget.occurrence)
-            guard await controller.hasFieldTarget(focusTarget.fieldID, occurrence: focusTarget.occurrence) else {
+            let available = await controller.hasFieldTarget(
+                focusTarget.fieldID, occurrence: focusTarget.occurrence
+            )
+            guard !showingNativeFallback, controller.isReady else { return }
+            guard available else {
                 availableTargetKeys.remove(key)
                 onFocusConsumed()
                 return
@@ -242,7 +268,28 @@ enum MobileGuidedSigningTargetKey {
 
 enum MobileGuidedSigningNativeContent {
     static func readableBody(from document: LeonardoDocument) -> String {
-        LeonardoMarkdownExport.markdown(from: document)
+        var result = LeonardoMarkdownExport.markdown(from: document)
+            .replacingOccurrences(of: "<br>", with: "\n")
+            .replacingOccurrences(of: "<br/>", with: "\n")
+            .replacingOccurrences(of: "<br />", with: "\n")
+        guard let expression = try? NSRegularExpression(
+            pattern: #"&#(?:([0-9]+)|x([0-9A-Fa-f]+));"#
+        ) else { return result }
+        let matches = expression.matches(in: result, range: NSRange(result.startIndex..., in: result))
+        for match in matches.reversed() {
+            let value: UInt32?
+            if let decimalRange = Range(match.range(at: 1), in: result) {
+                value = UInt32(String(result[decimalRange]))
+            } else if let hexadecimalRange = Range(match.range(at: 2), in: result) {
+                value = UInt32(String(result[hexadecimalRange]), radix: 16)
+            } else {
+                value = nil
+            }
+            guard let value, let scalar = UnicodeScalar(value) else { continue }
+            guard let range = Range(match.range, in: result) else { continue }
+            result.replaceSubrange(range, with: String(scalar))
+        }
+        return result
     }
 
     static func referencedResourceReferences(from document: LeonardoDocument) -> Set<String> {
