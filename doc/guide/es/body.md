@@ -206,7 +206,10 @@ las apariciones exactas de los campos en orden de origen. Para cada aparición,
 lee el contexto mostrado, dibuja una rúbrica nueva en el lienzo exclusivo de firma o elige una guardada,
 confirma expresamente cualquier reutilización y confirma esa aparición exacta.
 Para dibujar en un Little Leonardo vinculado, elige **Usar un Little Leonardo
-enlazado** desde el lienzo. En el Mac, revisa el trazo recibido y pulsa
+enlazado** desde el lienzo. El panel de espera muestra el dispositivo
+seleccionado. Pulsa **Cancelar petición** para detener la solicitud, **Dibujar en
+este Mac** para volver al lienzo o **Cerrar** para salir del diálogo. En el Mac,
+revisa el trazo recibido y pulsa
 **Usar rúbrica**. El dispositivo vinculado solo captura el trazo. El documento
 y la credencial de firma permanecen en el Mac.
 Dibujar en este flujo nunca añade la rúbrica a la biblioteca compartida; guardar

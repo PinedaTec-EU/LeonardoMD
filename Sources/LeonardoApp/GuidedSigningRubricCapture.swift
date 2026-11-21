@@ -11,6 +11,7 @@ struct GuidedSigningRubricCapture: View {
     let title: String
     let complete: (LeonardoRubric) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.leonardoAccent) private var accent
     @State private var rubric: LeonardoRubric
     @State private var color = Color.black
     @State private var width = 3.0
@@ -24,25 +25,17 @@ struct GuidedSigningRubricCapture: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Label(title, systemImage: "signature").font(.title2.bold())
-            Text(L10n.text("This rubric is used only for guided signing and is not added to the shared rubric library."))
-                .font(.caption).foregroundStyle(.secondary)
-            if linkedDevice {
-                GuidedSigningLinkedRubric(controller: .shared) { received in
-                    complete(received)
-                    dismiss()
-                }
-            } else {
+        if linkedDevice {
+            linkedCapture
+        } else {
+            VStack(alignment: .leading, spacing: 16) {
+                Label(title, systemImage: "signature").font(.title2.bold())
+                scopeNote
                 localCanvas
-            }
-            HStack {
-                Button(linkedDevice ? L10n.text("Draw your rubric") : L10n.text("Use a linked Little Leonardo")) {
-                    linkedDevice.toggle()
-                }
-                Spacer()
-                Button(L10n.text("Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
-                if !linkedDevice {
+                HStack {
+                    Button(L10n.text("Use a linked Little Leonardo")) { linkedDevice = true }
+                    Spacer()
+                    Button(L10n.text("Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
                     Button(L10n.text("Use rubric")) {
                         complete(rubric)
                         dismiss()
@@ -50,11 +43,49 @@ struct GuidedSigningRubricCapture: View {
                     .buttonStyle(PremiumButtonStyle(prominent: true))
                     .disabled(!rubric.isValid)
                 }
+                .buttonStyle(PremiumButtonStyle())
             }
-            .buttonStyle(PremiumButtonStyle())
+            .padding(24)
+            .frame(width: 648)
+        }
+    }
+
+    private var linkedCapture: some View {
+        VStack(spacing: 16) {
+            VStack(spacing: 6) {
+                Image(systemName: "signature")
+                    .font(.title2)
+                    .foregroundStyle(accent)
+                    .accessibilityHidden(true)
+                Text(title).font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+            }
+
+            GuidedSigningLinkedRubric(controller: .shared) { received in
+                complete(received)
+                dismiss()
+            }
+
+            scopeNote
+                .multilineTextAlignment(.center)
+            Divider()
+            HStack {
+                Spacer()
+                Button(L10n.text("Draw on this Mac")) { linkedDevice = false }
+                    .buttonStyle(PremiumButtonStyle())
+                Button(L10n.text("Close")) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                    .accessibilityLabel(L10n.text("Close rubric window"))
+            }
         }
         .padding(24)
-        .frame(width: 648)
+        .frame(width: 460)
+    }
+
+    private var scopeNote: some View {
+        Text(L10n.text("This rubric is used only for guided signing and is not added to the shared rubric library."))
+            .font(.callout)
+            .foregroundStyle(.secondary)
     }
 
     private var localCanvas: some View {
@@ -109,7 +140,7 @@ private struct GuidedSigningLinkedRubric: View {
     @State private var error: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 12) {
             if let capture {
                 if !capture.isCancellationRequested, let response = capture.response {
                     Label(L10n.text("Review received rubric"), systemImage: "signature")
@@ -121,7 +152,23 @@ private struct GuidedSigningLinkedRubric: View {
                         .buttonStyle(PremiumButtonStyle(prominent: true))
                         .disabled(!response.rubric.isValid)
                 } else if !capture.isTerminal && !capture.isCancellationResolvedByCompletion {
-                    Label(L10n.format("Waiting for %@ to draw the rubric…", capture.targetDeviceName), systemImage: "iphone")
+                    VStack(spacing: 8) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "iphone")
+                                .font(.system(size: 34))
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        .accessibilityHidden(true)
+                        Text(L10n.text("Waiting for rubric"))
+                            .font(.headline)
+                        Text(capture.targetDeviceName)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .padding(.top, 4)
                     Button(L10n.text("Cancel request")) { cancel(capture.id) }
                 } else {
                     Button(L10n.text("Request another rubric")) {
