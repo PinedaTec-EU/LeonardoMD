@@ -1,0 +1,31 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 2,
+  "document": {
+    "id": "guided-signing-example",
+    "title": "Guided signing example",
+    "kind": "form",
+    "revision": 1,
+    "signing": {
+      "positions": [
+        { "id": "titular", "label": "Titular" },
+        { "id": "testigo", "label": "Testigo" }
+      ]
+    }
+  },
+  "fields": {
+    "fullName": { "type": "text", "required": true, "label": "Full name" },
+    "titularRubric": { "type": "rubric", "signerPosition": "titular", "label": "Titular signature" },
+    "testigoRubric": { "type": "rubric", "signerPosition": "testigo", "label": "Witness signature" }
+  },
+  "values": { "fullName": null }
+}
+---
+# Guided signing example
+
+Full name: {{field:fullName}}
+
+Titular: {{field:titularRubric}}
+
+Testigo: {{field:testigoRubric}}

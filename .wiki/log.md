@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-11-21: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) adds the MDLF v2 guided-signing contract and protected sidecar foundation. The native and plugin validators select matching v1/v2 schemas; the session tracks exact source-order occurrences, per-position rubric reuse, late first assignment only for still-pending positions, salted identity commitments, external trust and chained detached proofs. Persistence uses locked CAS transactions, size/type checks before reads and 0600 atomic publication. Focused Swift verification is pending a source PR/ledger entry; plugin tests pass 39/39.
+
 - 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
 
 - 2026-11-20: [#502](https://github.com/PinedaTec-EU/LeonardoMD/issues/502) splits `.github/workflows/ci.yml` into concurrent macOS test, Little Leonardo simulator, and package jobs. The existing `test` check requires success in all three. Little Leonardo installs the test build and seeds recovery before running the selected unit and UI cases in one XCTest invocation.

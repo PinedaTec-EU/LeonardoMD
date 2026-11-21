@@ -185,6 +185,44 @@ indicado y revisa el formulario completo antes de exportar una respuesta.
 Cambiar una etiqueta no debe alterar silenciosamente el identificador ni
 invalidar respuestas anteriores.
 
+### Firma guiada (MDLF v2)
+
+Los documentos que declaran la versión de formato 2 pueden mostrar el botón
+**Firmar** en la barra del documento. La cabecera enumera todos los puestos de
+firma obligatorios y los campos de rúbrica asignados a cada uno, junto con una
+ID estable del documento y una revisión semántica positiva. Los documentos
+de la versión 1 mantienen el flujo normal de **Rellenar formulario**; Little
+Leonardo puede previsualizar ambas versiones, pero sigue siendo de solo lectura.
+
+Antes de revisar un puesto, elige un perfil local o crea uno con el nombre
+completo de la persona, el tipo de documento de identidad y su número. Después
+elige su credencial personal y autoriza explícitamente la asignación. Guardar
+los datos de identidad y guardar una rúbrica de perfil son decisiones
+independientes. La identidad declarada se muestra como declarada: una rúbrica o
+un aviso biométrico local no demuestra una verificación independiente.
+
+La persona revisora debe seleccionar el puesto, iniciar la revisión y seguir
+las apariciones exactas de los campos en orden de origen. Para cada aparición,
+lee el contexto mostrado, dibuja una rúbrica nueva o elige una guardada,
+confirma expresamente cualquier reutilización y confirma esa aparición exacta.
+Los campos repetidos son ubicaciones distintas. La revisión se puede pausar y
+reanudar; **Firmar** sigue disponible mientras quede otro puesto declarado
+pendiente. La contraseña personal y el llavero del dispositivo protegen la
+credencial privada. Touch ID u otro aviso compartido solo desbloquea material
+local del llavero: no identifica qué persona está firmando.
+
+La primera aparición confirmada sella los datos obligatorios del formulario,
+las asignaciones, la revisión del documento y los recursos referenciados. Un
+valor obligatorio ausente, una aparición que no exista en el documento
+renderizado o un documento cambiado bloquean la confirmación. A partir de ese
+momento, las correcciones requieren **Iniciar una revisión nueva para corregir…**
+y hay que asignar y revisar de nuevo todos los puestos. Las firmas y los
+registros públicos de confianza permanecen fuera del documento editable, en un
+almacenamiento local protegido; cambiar o quitar la cabecera no permite saltar
+una revisión existente. Si el flujo aparece obsoleto o no verificado, recárgalo
+e inicia una revisión nueva en vez de aceptar una clave suministrada por el
+documento.
+
 ## 5. Exportar y compartir
 
 ![Elegir una exportación según el destinatario](assets/exportar.png)

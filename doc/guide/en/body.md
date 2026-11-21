@@ -184,6 +184,41 @@ answers but do not block saving an unfinished draft. Fix the reported issue,
 then recheck the whole form before exporting a response. Changing a label must
 not silently change its field identifier or invalidate previous answers.
 
+### Guided signing (MDLF v2)
+
+Documents that declare format version 2 can show a **Sign** button in the
+document toolbar. The header lists every required signer position and the
+rubric fields assigned to it, together with a stable document ID and positive
+semantic revision. Version 1 documents keep the ordinary Fill form flow; Little
+Leonardo can preview both versions but remains read-only.
+
+Before a position can review a location, choose an existing local profile or
+create one with the signer’s full name, identity-document type and number.
+Then choose that signer’s personal credential and explicitly authorize the
+assignment. Saving identity details and saving a profile rubric are separate
+choices. A declared identity is shown as declared; a rubric or a local
+biometric prompt does not prove independent identity verification.
+
+The reviewer must select the position, begin the review and follow the exact
+field occurrences in source order. For each occurrence, read the displayed
+context, draw a new rubric or choose a saved rubric, explicitly confirm any
+reuse, and confirm that exact occurrence. Repeated fields are separate
+locations. The review can be paused and resumed; **Sign** remains available
+while another declared position is still pending. The personal password and
+the device keychain protect the private credential. Touch ID or another
+shared device prompt only unlocks local keychain material; it does not
+identify which person is signing.
+
+The first confirmed location seals the required form data, assignments,
+document revision and referenced resources. A missing required value, an
+unavailable rendered occurrence or a changed document blocks confirmation.
+After that point, corrections require **Start a new revision for corrections…**
+and every position must be assigned and reviewed again. Signatures and the
+public trust records stay outside the editable document in protected local
+sidecar storage, so changing or removing the header cannot bypass an existing
+review. If a signing review is reported as stale or unverified, reload it and
+start a new revision rather than accepting a key supplied by the document.
+
 ## 5. Export and share
 
 ![Choose an export for its recipient](assets/export.png)

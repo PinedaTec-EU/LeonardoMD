@@ -1,4 +1,5 @@
 import SwiftUI
+import LeonardoCore
 import LeonardoSync
 import LeonardoRender
 
@@ -81,9 +82,28 @@ public struct RemoteDocumentPreview: View {
                 if source || fileExtension == "txt" {
                     ScrollView { Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled).padding() }
                 } else {
-                    MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
-                        configuration: previewConfiguration,
-                        onLinkActivation: followLink)
+                    VStack(alignment: .leading, spacing: 0) {
+                        if let declaration = guidedSigningDeclaration(in: text) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Label(t("Guided signing · read-only preview",
+                                       "Firma guiada · vista de solo lectura"), systemImage: "signature")
+                                    .font(.headline)
+                                Text(t("Signing positions are reviewed and authorized on the desktop document. This mobile view never grants form editing or signing access.",
+                                       "Los puestos de firma se revisan y autorizan en el documento de escritorio. Esta vista móvil nunca concede edición ni acceso para firmar."))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(declaration.positions.map(\.label).joined(separator: ", "))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.accentColor.opacity(0.08))
+                        }
+                        MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
+                            configuration: previewConfiguration,
+                            onLinkActivation: followLink)
+                    }
                 }
             } else if file != nil { Text(t("File downloaded", "Archivo descargado")) }
             else if failure == nil { ProgressView(t("Downloading…", "Descargando…")) }
@@ -134,6 +154,13 @@ public struct RemoteDocumentPreview: View {
         if let recorded = library.failures[DownloadLibrary.key(id: projectID, path: path)] { return recorded }
         return error.localizedDescription
     }
+
+    private func guidedSigningDeclaration(in text: String) -> LeonardoSigningDeclaration? {
+        guard let document = try? LeonardoFormatParser.parse(text),
+              document.metadata.formatVersion >= LeonardoFormat.signingVersion else { return nil }
+        return document.metadata.document.signing
+    }
+
     private func followLink(_ url: URL) {
         guard let path = RemoteDocumentResources.path(url: url, virtualRoot: virtualRoot),
               let entry = project?.catalogue.files.first(where: { $0.path == path }),

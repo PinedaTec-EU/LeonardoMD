@@ -76,6 +76,11 @@ extension AppSession {
             let loaded = try await documents.read(workspace.documentURL)
             let parsed = try LeonardoFormatParser.parse(loaded.content)
             guard packageReloadMayApply(identity) else { return }
+            guard !rejectGuidedSigningContentChange(loaded.content) else {
+                await disposePackageWorkspace(workspace)
+                replacement = nil
+                return
+            }
 
             let kind = AppDocumentKind.classify(workspace.documentURL)
             let nextMode: DocumentMode
@@ -101,6 +106,7 @@ extension AppSession {
             replacement = nil
             await disposePackageWorkspace(identity.workspace)
             updateTitle()
+            await prepareGuidedSigningIfNeeded()
         } catch {
             // An authorization/read/parse callback may have moved the tab to
             // another document.  Preserve that newer identity and discard
@@ -124,11 +130,13 @@ extension AppSession {
                 saveStatus = "External conflict · edits protected"
                 return
             }
+            guard !rejectGuidedSigningContentChange(loaded.content) else { return }
             snapshot = loaded
             content = loaded.content
             externalConflict = false
             saveStatus = "Saved · local file"
             updateTitle()
+            await prepareGuidedSigningIfNeeded()
         } catch {
             externalConflict = true
             report(error)

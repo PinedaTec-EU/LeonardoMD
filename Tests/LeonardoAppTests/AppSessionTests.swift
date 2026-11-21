@@ -335,6 +335,57 @@ final class AppSessionTests: XCTestCase {
         XCTAssertTrue(session.leonardoFormatWarning)
     }
 
+    func testReopenWithoutInspectorKeepsBoundSigningProgressFailClosedAfterHeaderRemoval() async throws {
+        let (root, first) = try fixture()
+        defer { first.stop(); try? FileManager.default.removeItem(at: root) }
+        let documentURL = root.appendingPathComponent("guided.mdlf")
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let v2 = LeonardoDocument(
+            body: "Signature: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "bound-document", title: "Bound", kind: .form, revision: 1, signing: declaration
+                ),
+                fields: ["signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner")]
+            )
+        )
+        try LeonardoFormatParser.serialize(v2).write(to: documentURL, atomically: true, encoding: .utf8)
+        first.authorizePath = { _, _ in }
+        await first.openDocument(documentURL)
+        XCTAssertTrue(first.guidedSigningReady)
+        XCTAssertNotNil(first.guidedSigningSession)
+        XCTAssertFalse(first.showInspector)
+
+        let legacy = LeonardoDocument(
+            body: "Name: {{field:name}}",
+            metadata: LeonardoMetadata(
+                document: LeonardoDocumentDescriptor(id: "bound-document", title: "Bound", kind: .form),
+                fields: ["name": LeonardoFieldDefinition(type: .text, required: true)]
+            )
+        )
+        try LeonardoFormatParser.serialize(legacy).write(to: documentURL, atomically: true, encoding: .utf8)
+
+        let reopened = AppSession(preferencesURL: first.globalPreferencesURL)
+        defer { reopened.stop() }
+        reopened.authorizePath = { _, _ in }
+        await reopened.openDocument(documentURL)
+        reopened.isProtected = false
+        reopened.mode = .fill
+
+        XCTAssertFalse(reopened.showInspector)
+        XCTAssertNotNil(reopened.guidedSigningSession)
+        XCTAssertNotNil(reopened.guidedSigningError)
+        XCTAssertTrue(reopened.guidedSigningContentLocked)
+        XCTAssertFalse(reopened.editDocument(expected: reopened.content, replacement: "edited source"))
+        XCTAssertNil(reopened.updateLeonardoFields(
+            expected: reopened.content,
+            changes: ["name": .string("edited form")]
+        ))
+    }
+
     func testCheckboxAppearancesPreserveFillGuardsAndManualSaving() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

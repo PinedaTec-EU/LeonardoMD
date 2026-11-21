@@ -366,6 +366,34 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
+    func scroll(toField fieldID: String, occurrence: Int) {
+        guard occurrence >= 0,
+              let fieldData = try? JSONEncoder().encode(fieldID),
+              let fieldJSON = String(data: fieldData, encoding: .utf8) else { return }
+        evaluate("window.LeonardoForms?.scrollToField(\(fieldJSON), \(occurrence));")
+    }
+
+    /// Returns whether the exact occurrence is present in the current DOM.
+    /// Guided signing must not offer a confirmation control for a source
+    /// token that the renderer did not materialize as a form target.
+    func hasFieldTarget(_ fieldID: String, occurrence: Int) async -> Bool {
+        guard occurrence >= 0, let webView,
+              let fieldData = try? JSONEncoder().encode(fieldID),
+              let fieldJSON = String(data: fieldData, encoding: .utf8) else { return false }
+        let expected = content
+        do {
+            try await flushPendingRender()
+            try await waitUntilReady()
+            guard self.webView === webView, content == expected else { return false }
+            let value = try await webView.evaluateJavaScript(
+                "window.LeonardoForms?.hasFieldTarget(\(fieldJSON), \(occurrence)) === true"
+            )
+            return value as? Bool == true
+        } catch {
+            return false
+        }
+    }
+
     func scroll(toFraction fraction: Double) {
         let bounded = fraction.isFinite ? min(1, max(0, fraction)) : 0
         evaluate("window.LeonardoPreview && window.LeonardoPreview.scrollToFraction(\(bounded));")

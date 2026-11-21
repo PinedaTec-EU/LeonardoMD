@@ -2,6 +2,7 @@
   "use strict";
   let payload = {}, root, changes = Object.create(null), sequence = 0;
   const controls = new Map();
+  const occurrences = new Map();
   const label = key => payload.formLabels?.[key] || key;
   const valueText = (value, field) => {
     if (value === null || value === undefined) return "";
@@ -104,12 +105,17 @@
   }
   window.LeonardoForms = {
     begin(nextPayload, nextRoot) {
-      payload = nextPayload; root = nextRoot; changes = Object.create(null); controls.clear(); sequence = 0;
+      payload = nextPayload; root = nextRoot; changes = Object.create(null); controls.clear(); occurrences.clear(); sequence = 0;
     },
     field(fieldID, field, value) {
       const wrapper = document.createElement("span");
       wrapper.className = "leonardo-field-value";
       wrapper.dataset.field = fieldID;
+      const occurrence = occurrences.get(fieldID) || 0;
+      occurrences.set(fieldID, occurrence + 1);
+      wrapper.dataset.fieldOccurrence = String(occurrence);
+      wrapper.dataset.leonardoFieldTarget = `${fieldID}#${occurrence}`;
+      wrapper.id = `leonardo-field-${fieldID}-${occurrence}`;
       if (field.type === "rubric") return rubricField(wrapper, fieldID, field, value);
       const output = document.createElement("span");
       output.className = "leonardo-field-output";
@@ -178,6 +184,21 @@
         for (const entry of entries) if (entry.input) entry.input.disabled = !value;
       }
     },
-    setExporting(value) { root?.classList.toggle("leonardo-form-export", value); }
+    setExporting(value) { root?.classList.toggle("leonardo-form-export", value); },
+    hasFieldTarget(fieldID, occurrence) {
+      const target = `${fieldID}#${Number(occurrence)}`;
+      return Array.from(root?.querySelectorAll("[data-leonardo-field-target]") || [])
+        .some(candidate => candidate.dataset.leonardoFieldTarget === target);
+    },
+    scrollToField(fieldID, occurrence) {
+      const target = `${fieldID}#${Number(occurrence)}`;
+      const element = Array.from(root?.querySelectorAll("[data-leonardo-field-target]") || [])
+        .find(candidate => candidate.dataset.leonardoFieldTarget === target);
+      if (!element) return false;
+      element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+      element.classList.add("leonardo-guided-target");
+      window.setTimeout(() => element.classList.remove("leonardo-guided-target"), 1400);
+      return true;
+    }
   };
 })();

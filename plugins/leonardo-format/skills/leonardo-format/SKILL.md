@@ -8,10 +8,11 @@ description: Read, validate, fill, edit, extract, and repackage open Leonardo Ma
 Treat the repository's versioned Leonardo format specification and schema as
 the authority. Read the relevant files under `doc/format/` before interpreting
 fields, layout, form values, or version-specific behavior. When the repository
-is not available, use the bundled `references/format-contract.md` and
-`references/mdlf-v1.schema.json` as the portable v1 references and stop on
-fields or versions they do not define. The bundled references explain how this
-skill maps to the specification; they are not a second format implementation.
+is not available, use the bundled `references/format-contract.md` and the
+matching `references/mdlf-v1.schema.json` or `references/mdlf-v2.schema.json`
+as portable references and stop on fields or versions they do not define. The
+bundled references explain how this skill maps to the specification; they are
+not a second format implementation.
 
 ## Extension and mode rules
 
@@ -36,11 +37,14 @@ editing and report the version and the supported range.
 1. Identify the input extension and read the format declaration/version before
    changing bytes. For `.md`, keep the standard Markdown path unless the
    explicit declaration is present.
-2. For `.mdlf` and `.mdlr`, consult `doc/format/mdlf-v1.schema.json` and its
-   examples (or the bundled `references/mdlf-v1.schema.json` when working from
-   an installed plugin). Keep form values in metadata; do not write answers
-   into the prose body. Preserve field identifiers when labels or layout
-   change.
+2. For `.mdlf` and `.mdlr`, select the schema matching `formatVersion`:
+   `doc/format/mdlf-v1.schema.json` for legacy documents or
+   `doc/format/mdlf-v2.schema.json` for guided-signing documents (or the
+   corresponding bundled reference when working from an installed plugin).
+   Keep form values in metadata; do not write answers into the prose body.
+   Preserve field identifiers when labels or layout change. A v2 signing
+   declaration is a public header plan only; profiles, credentials, trust and
+   detached signatures remain outside the editable document.
 3. For `.mdlz`, inspect the archive with the bundled `mdlz.py` helper before
    opening entries. Do not use an ad-hoc unzip command on an untrusted package.
 4. Ask whether the user wants to work in the package or in an extracted folder
@@ -65,8 +69,7 @@ running it.
 python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" inspect document.mdlz
 python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" extract document.mdlz ./document-extracted
 python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" pack ./document-extracted response.mdlz
-python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" validate document.mdlf \
-  --schema "${CLAUDE_SKILL_DIR}/references/mdlf-v1.schema.json"
+python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" validate document.mdlf
 ```
 
 `inspect` is read-only. `extract` refuses unsafe paths, symlinks, special
@@ -79,8 +82,8 @@ Each ZIP member is limited to 64 slash-separated path components, including
 its filename.
 Directory records are ignored as nonsemantic transport noise: `pack` omits
 them and `inspect`/`extract` do not report or recreate empty directories.
-Every command validates the UTF-8/front-matter envelope and the bundled v1
-metadata schema before reporting or writing anything. The optional
+Every command validates the UTF-8/front-matter envelope and the bundled
+version-matched metadata schema before reporting or writing anything. The optional
 `validate --schema` flag applies an additional explicit JSON Schema after the
 bundled contract; the helper remains dependency-free. Bundled semantic checks
 also reject unsafe metadata asset references, invalid definition ranges or
@@ -236,7 +239,8 @@ separate that request from Leonardo format handling and ask for an explicit,
 appropriate workflow.
 
 The helper's default `validate` command checks the UTF-8/front-matter envelope,
-the bundled v1 metadata schema, and the bundled definition/layout safety rules.
+the bundled version-matched metadata schema, and the bundled definition/layout
+safety rules.
 `inspect`, `extract`, and `pack` apply the same validation to the root document
 before producing output or creating an extraction directory. Pass `--schema`
 only when an additional explicit schema constraint is needed. The application

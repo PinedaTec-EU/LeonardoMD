@@ -15,6 +15,18 @@ final class AppSession {
                 clearGraphicSelection()
                 editHistory = DocumentEditHistory()
                 extensionRecommendations.resetOpening()
+                guidedSigningSession = nil
+                guidedSigningProfiles = []
+                guidedSigningCredentialIDs = []
+                guidedSigningTrustStore = nil
+                guidedSigningVerification = [:]
+                guidedSigningTargets = []
+                guidedSigningStatus = nil
+                guidedSigningError = nil
+                guidedSigningReady = false
+                guidedSigningLoading = false
+                guidedSigningRevisionEditing = false
+                guidedSigningPreparationToken = UUID()
             }
         }
     }
@@ -64,7 +76,10 @@ final class AppSession {
     var closePreviewActionFailed = false
     var isCapturingPreview = false
     var isProtected = true { didSet { if isProtected { clearGraphicSelection() } } }
-    var canEditDocumentIgnoringClose: Bool { documentURL != nil && !isProtected && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
+    var canEditDocumentIgnoringClose: Bool {
+        documentURL != nil && !isProtected && !isCapturingPreview && !isSyncSuspended && !busy && !stopped
+            && !guidedSigningContentLocked
+    }
     var canEditDocument: Bool { canEditDocumentIgnoringClose && !isClosing }
     @ObservationIgnored weak var presentationWindow: NSWindow?
     var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
@@ -75,6 +90,23 @@ final class AppSession {
     var focus = false
     var rubricLibrary = RubricLibrary.shared
     var rubricRequest: RubricRequest?
+    /// v2 guided-signing state is kept outside the editable MDLF bytes. The
+    /// sidecar contains progress and public assignment facts only; private
+    /// credentials are provided by the protected credential adapter at sign.
+    var guidedSigningSession: LeonardoGuidedSigningSession?
+    var guidedSigningProfiles: [LeonardoSignerProfile] = []
+    var guidedSigningCredentialIDs: [String] = []
+    var guidedSigningTrustStore: LeonardoSigningTrustRegistry?
+    var guidedSigningVerification: [String: LeonardoSignatureVerification] = [:]
+    var guidedSigningTargets: [LeonardoSigningLocationTarget] = []
+    var guidedSigningStatus: String?
+    var guidedSigningError: String?
+    var guidedSigningReady = false
+    var guidedSigningLoading = false
+    var guidedSigningRevisionEditing = false
+    var guidedSigningPreparationToken = UUID()
+    let guidedSigningStore: LeonardoSigningStore
+    let guidedSigningCredentialStore: LeonardoSigningCredentialStore
     var selectedGraphicID: String?
     var showsGraphicInspector = false
     var selectedLeonardoFieldID: String?
@@ -174,6 +206,10 @@ final class AppSession {
         self.extensionRecommendations = ExtensionRecommendations(preferences: extensionWarningPreferences)
         self.files = files
         globalPreferencesURL = preferencesURL
+        let signingDirectory = preferencesURL.deletingLastPathComponent()
+            .appendingPathComponent("Signing", isDirectory: true)
+        guidedSigningStore = LeonardoSigningStore(directoryURL: signingDirectory)
+        guidedSigningCredentialStore = LeonardoSigningCredentialStore()
         self.openSystemURL = openSystemURL
         let existingAuthorization = authorizePath
         authorizePath = { url, intent in
@@ -312,6 +348,7 @@ final class AppSession {
             if let previousPackageWorkspace {
                 await disposePackageWorkspace(previousPackageWorkspace)
             }
+            await prepareGuidedSigningIfNeeded()
             return
         }
         busy = true
@@ -345,6 +382,7 @@ final class AppSession {
             externalConflict = false
             saveStatus = "Saved · local file"
             updateTitle()
+            await prepareGuidedSigningIfNeeded()
             let elapsed = started.duration(to: .now).components
             let milliseconds = Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15
             logger.info("document_opened duration_ms=\(milliseconds, privacy: .public) bytes=\(loaded.content.utf8.count, privacy: .public)")

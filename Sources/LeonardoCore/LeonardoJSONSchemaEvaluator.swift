@@ -15,7 +15,7 @@ enum LeonardoJSONSchemaFailure: Error {
 
 /// A deliberately small, closed evaluator for the JSON Schema vocabulary used
 /// by MDLF. It is data-driven: MDLF property names, types and bounds live in
-/// `mdlf-v1.schema.json`, not in this evaluator.
+/// the versioned schema resources, not in this evaluator.
 struct LeonardoJSONSchemaEvaluator {
     private static let assertionKeywords: Set<String> = [
         "$defs", "$ref", "additionalProperties", "const", "enum", "items",

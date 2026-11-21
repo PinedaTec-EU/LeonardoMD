@@ -1,4 +1,4 @@
-# Leonardo document format (MDLF v1)
+# Leonardo document format (MDLF v1 and v2)
 
 MDLF (`.mdlf`) is Markdown with a typed JSON front matter block. The body
 remains ordinary Markdown and is kept outside the metadata so an agent can
@@ -50,9 +50,10 @@ line endings are preserved by `LeonardoFormatParser`.
 # Markdown body
 ```
 
-`format` and `formatVersion` are mandatory. Version `1` is the only version
-currently supported. Readers must reject a future version instead of guessing
-its meaning. The v1 structural vocabulary is closed: an unknown property is a
+`format` and `formatVersion` are mandatory. Version `1` is the legacy contract;
+version `2` adds the opt-in guided-signing header and signer-position field
+assignments. Readers must reject a future version instead of guessing its
+meaning. Both versioned vocabularies are closed: an unknown property is a
 parse error with its JSON path, which prevents an editor from silently
 discarding data it cannot preserve. Arbitrary JSON remains valid inside
 `values` and `defaultValue`. Structural entries with an identity (`field.type`,
@@ -366,6 +367,38 @@ reader fallback is introduced: earlier strict v1 readers reject documents that
 use these properties rather than silently discarding geometry. Update those
 readers before sharing resized documents. Native and plugin validators use the
 same updated schema.
+
+## Guided signing (MDLF v2)
+
+Version 2 is opt-in. A signed form declares every required signer position in
+`document.signing.positions`; each position must own at least one rubric field,
+and each assigned field uses `signerPosition`. It also declares a stable
+`document.id` and positive semantic `document.revision`. The editable document contains
+only this public plan. Profiles, declared name/document details, rubric reuse,
+credentials and detached signatures stay in protected local progress.
+The minimal [`guided-signing.mdlf`](examples/guided-signing.mdlf) example shows
+the header and field mapping; it intentionally contains no profile or key data.
+
+The guided workflow assigns a distinct local profile and personal signing
+credential to every position before that position confirms a location, requires
+all required ordinary form data before the first location confirmation, and
+then freezes the document revision, referenced resources and links for positions
+already started. A position still pending at that point may receive its first
+assignment afterwards. The signer reads and confirms each exact
+placeholder occurrence, including repeated occurrences of one field. A signer
+may pause and resume independently; reusing a session or profile rubric always
+requires an explicit confirmation scoped to that position. A correction must
+advance the semantic document revision and starts a new session without
+carrying signatures forward.
+
+The identity entered in a local profile is a declaration, not independent
+identity verification. Trust records and public keys are resolved outside the
+document; a key or credential identifier found in a file is never accepted as
+trust. Biometric unlock (including a shared Touch ID account) is not an
+identity assertion. MDLF v1 remains unchanged and legacy readers reject v2
+instead of opening a signed form as editable content. Little Leonardo may
+preview v2 documents through its existing read-only corpus boundary; signing
+credentials and write permissions are not transferred by the format.
 
 ## Exporting a plain Markdown copy
 

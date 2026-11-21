@@ -69,6 +69,17 @@ public final class MarkdownPreviewController: ObservableObject {
         host?.scroll(toSourceLine: line)
     }
 
+    /// Scrolls to one exact form occurrence. A field may occur more than once
+    /// on one source line, so the occurrence is part of the DOM target.
+    public func scroll(toField fieldID: String, occurrence: Int) {
+        host?.scroll(toField: fieldID, occurrence: occurrence)
+    }
+
+    /// Checks that the renderer exposed one exact occurrence as a DOM target.
+    public func hasFieldTarget(_ fieldID: String, occurrence: Int) async -> Bool {
+        await host?.hasFieldTarget(fieldID, occurrence: occurrence) ?? false
+    }
+
     public func scroll(toFraction fraction: Double) {
         host?.scroll(toFraction: fraction)
     }
