@@ -6,7 +6,7 @@ struct MobileRubricInkTools: View {
     @Binding var width: Double
     @Binding var style: LeonardoInkStyle
     let enabled: Bool
-    var spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    var spanish = true
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 12) { selectors; thickness }

@@ -110,8 +110,17 @@ public actor LeonardoSigningStore {
 
     public func saveSession(_ session: LeonardoGuidedSigningSession) throws {
         try loadSessionsIfNeeded()
-        guard session.isPersistable else { throw LeonardoSigningError.storageFailure }
-        let baseline = sessionsByID[session.id]
+        try saveSession(session, replacing: sessionsByID[session.id])
+    }
+
+    /// Saves a change against the exact value held by the caller, even if
+    /// another view refreshed the store while this workflow was open.
+    public func saveSession(
+        _ session: LeonardoGuidedSigningSession, replacing baseline: LeonardoGuidedSigningSession?
+    ) throws {
+        guard session.isPersistable, baseline == nil || baseline?.id == session.id else {
+            throw LeonardoSigningError.storageFailure
+        }
         let result = try updateSessions(id: session.id, baseline: baseline) { values in
             if let index = values.firstIndex(where: { $0.id == session.id }) {
                 values[index] = session

@@ -6,6 +6,7 @@ import LeonardoCore
 /// read; the result leaves the phone as a user-exported exchange file.
 struct MobileGuidedSigningView: View {
     let library: MobileLibrary
+    private let localDocumentLocation: String?
     private let initialExchange: LeonardoSigningExchange
     @Environment(\.dismiss) private var dismiss
     @State private var document: LeonardoDocument?
@@ -43,16 +44,22 @@ struct MobileGuidedSigningView: View {
     @State private var showingExportDisclosure = false
     @State private var exporting = false
     @State private var exportDocument: MobileSigningExchangeDocument?
+    @State private var ready = false
+    @State private var storedBaseline: LeonardoGuidedSigningSession?
+    @State private var verification: [String: LeonardoSignatureVerification] = [:]
+    @State private var showingProfileRubric = false
     @State private var busy = false
     @State private var errorMessage: String?
 
     init(
         library: MobileLibrary,
         exchange: LeonardoSigningExchange,
+        localDocumentLocation: String? = nil,
         initiallyShowingDocumentReader: Bool = false
     ) {
         self.library = library
         self.initialExchange = exchange
+        self.localDocumentLocation = localDocumentLocation
         _document = State(initialValue: try? exchange.document())
         _session = State(initialValue: exchange.session)
         _resources = State(initialValue: (try? exchange.signingResources()) ?? [])
@@ -84,12 +91,30 @@ struct MobileGuidedSigningView: View {
         trustedCredentials.filter { !locallyTrustedCredentialIDs.contains($0.id) }
     }
 
+    private var workflowAllowed: Bool {
+        ready && trustAccepted && verification.values.allSatisfy { $0 == .valid }
+            && session.state != .invalidated
+            && (session.snapshot.map { snapshot in
+                document.map { snapshot.matches(document: $0, resources: resources) } ?? false
+            } ?? true)
+    }
+
+    private var selectedProfile: LeonardoSignerProfile? {
+        profiles.first { $0.id == selectedProfileID }
+    }
+
+    private var needsIdentity: Bool {
+        creatingProfile || selectedProfile?.identity == nil
+    }
+
     private var canAssign: Bool {
         guard let selectedPositionID,
               selectedProgress?.state == .pending,
               !selectedCredentialID.isEmpty else { return false }
-        if creatingProfile {
-            return !fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard creatingProfile || selectedProfile != nil else { return false }
+        if needsIdentity {
+            return (!creatingProfile || !saveRubric || profileRubric != nil)
+                && !fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !documentNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
         return selectedProfileID != nil
@@ -127,6 +152,14 @@ struct MobileGuidedSigningView: View {
         } message: {
             Text(exportDisclosureMessage)
         }
+        .sheet(isPresented: $showingProfileRubric) {
+            MobileGuidedRubricSheet(rubric: Binding(
+                get: { profileRubric ?? LeonardoRubric() },
+                set: { profileRubric = $0 }
+            ), spanish: spanish) {
+                showingProfileRubric = false
+            }
+        }
         .sheet(isPresented: $showingRubric) {
             MobileGuidedRubricSheet(rubric: $rubric, spanish: spanish) {
                 showingRubric = false
@@ -140,8 +173,8 @@ struct MobileGuidedSigningView: View {
                         document: document,
                         resources: resources,
                         session: session,
-                        trustedCredentials: trustedCredentials,
-                        trustAccepted: trustAccepted,
+                        trustedCredentials: trustedCredentials.filter { locallyTrustedCredentialIDs.contains($0.id) },
+                        trustAccepted: ready,
                         focusTarget: previewFocusTarget,
                         availableTargetKeys: $availableTargetKeys
                     ) {
@@ -218,6 +251,13 @@ struct MobileGuidedSigningView: View {
                 )
                 .font(.footnote)
                 .foregroundStyle(MobileClassic.secondary)
+                if ready && verification.values.contains(where: { $0 == .invalidSignature || $0 == .modifiedSnapshot }) {
+                    Label(
+                        spanish ? "La copia contiene firmas no válidas o el documento ha cambiado." : "The copy contains invalid signatures or the document has changed.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .foregroundStyle(.red)
+                }
                 if session.snapshot == nil {
                     let names = session.optionalBlankFieldIDs(document: document).map { fieldID in
                         document.metadata.fields[fieldID]?.label ?? fieldID
@@ -301,12 +341,14 @@ struct MobileGuidedSigningView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(position.label).font(.headline)
-                                Text(positionState(progress?.state))
+                                Text(progress?.state == .signed ? verificationLabel(verification[position.id]) : positionState(progress?.state))
                                     .font(.caption).foregroundStyle(MobileClassic.secondary)
                             }
                             Spacer()
                             if progress?.state == .signed {
-                                Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
+                                let verified = verification[position.id] == .valid
+                                Image(systemName: verified ? "checkmark.seal.fill" : "exclamationmark.triangle")
+                                    .foregroundStyle(verified ? .green : .orange)
                             } else if progress?.assignment != nil {
                                 Image(systemName: "person.crop.circle.badge.checkmark")
                                     .foregroundStyle(MobileClassic.accent)
@@ -321,8 +363,10 @@ struct MobileGuidedSigningView: View {
 
             if let position = selectedPosition, let progress = selectedProgress {
                 assignmentSection(position: position, progress: progress)
+                    .disabled(!workflowAllowed)
                     .listRowBackground(MobileClassic.inset)
                 reviewSection(position: position, progress: progress, document: document)
+                    .disabled(!workflowAllowed && progress.state != .signed)
                     .listRowBackground(MobileClassic.paper)
             }
 
@@ -332,7 +376,7 @@ struct MobileGuidedSigningView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .foregroundStyle(MobileClassic.paper)
-                .disabled(busy)
+                .disabled(busy || !workflowAllowed)
                 .accessibilityIdentifier("export-mobile-signing-copy")
                 Text(spanish
                      ? "La exportación es un intercambio explícito; no actualiza el proyecto compartido."
@@ -368,21 +412,7 @@ struct MobileGuidedSigningView: View {
                     Text(spanish ? "Perfil guardado" : "Saved profile").tag(false)
                 }
                 .pickerStyle(.segmented)
-                if creatingProfile {
-                    TextField(spanish ? "Nombre completo" : "Full name", text: $fullName)
-                    Picker(spanish ? "Tipo de documento" : "Document type", selection: $documentType) {
-                        ForEach(LeonardoIdentityDocumentType.allCases, id: \.rawValue) { type in
-                            Text(documentTypeLabel(type)).tag(type)
-                        }
-                    }
-                    TextField(spanish ? "Número de documento" : "Document number", text: $documentNumber)
-                    Toggle(spanish ? "Guardar datos de identidad" : "Save identity details", isOn: $saveIdentityDetails)
-                    Toggle(spanish ? "Guardar rúbrica del perfil" : "Save profile rubric", isOn: $saveRubric)
-                    if let profileRubric {
-                        MobileRubricPreview(rubric: profileRubric)
-                            .frame(height: 100)
-                    }
-                } else {
+                if !creatingProfile {
                     Picker(spanish ? "Perfil" : "Profile", selection: $selectedProfileID) {
                         Text(spanish ? "Selecciona un perfil" : "Select a profile").tag(UUID?.none)
                         ForEach(profiles) { profile in
@@ -390,6 +420,27 @@ struct MobileGuidedSigningView: View {
                         }
                     }
                     .onChange(of: selectedProfileID) { _, value in loadProfile(value) }
+                }
+                if needsIdentity && (creatingProfile || selectedProfile != nil) {
+                    TextField(spanish ? "Nombre completo" : "Full name", text: $fullName)
+                    Picker(spanish ? "Tipo de documento" : "Document type", selection: $documentType) {
+                        ForEach(LeonardoIdentityDocumentType.allCases, id: \.rawValue) { type in
+                            Text(documentTypeLabel(type)).tag(type)
+                        }
+                    }
+                    TextField(spanish ? "Número de documento" : "Document number", text: $documentNumber)
+                }
+                if creatingProfile {
+                    Toggle(spanish ? "Guardar datos de identidad" : "Save identity details", isOn: $saveIdentityDetails)
+                    Toggle(spanish ? "Guardar rúbrica del perfil" : "Save profile rubric", isOn: $saveRubric)
+                    if saveRubric {
+                        Button(spanish ? "Dibujar rúbrica del perfil" : "Draw profile rubric", systemImage: "signature") {
+                            showingProfileRubric = true
+                        }
+                        if let profileRubric {
+                            MobileRubricPreview(rubric: profileRubric).frame(height: 100)
+                        }
+                    }
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     Picker(spanish ? "Credencial personal" : "Personal credential", selection: $selectedCredentialID) {
@@ -440,8 +491,10 @@ struct MobileGuidedSigningView: View {
                 .foregroundStyle(MobileClassic.paper)
                 .disabled(busy)
             } else if progress.state == .signed {
-                Label(spanish ? "Puesto firmado y verificado localmente." : "Position signed and verified locally.", systemImage: "checkmark.seal.fill")
-                    .foregroundStyle(.green)
+                let verified = verification[position.id] == .valid
+                Label(verificationLabel(verification[position.id]),
+                      systemImage: verified ? "checkmark.seal.fill" : "exclamationmark.triangle")
+                    .foregroundStyle(verified ? .green : .orange)
             } else {
                 let targets = selectedTargets
                 if targets.isEmpty {
@@ -546,11 +599,68 @@ struct MobileGuidedSigningView: View {
             })
             selectedTrustCredentialID = untrustedPackageCredentials.first?.id
             trustAccepted = untrustedPackageCredentials.isEmpty
+            try await restoreProgress(trustStore: localTrust)
+            locallyTrustedCredentialIDs = Set(trustedCredentials.compactMap { credential in
+                localTrust.credential(id: credential.id) == credential ? credential.id : nil
+            })
+            trustAccepted = untrustedPackageCredentials.isEmpty
+            updateVerification(trustStore: localTrust)
+            ready = true
         } catch {
             errorMessage = String(describing: error)
         }
         if selectedPositionID == nil {
             selectedPositionID = session.pendingPositionIDs.first ?? session.declaration.positions.first?.id
+        }
+    }
+
+    private func saveProgress(_ updated: LeonardoGuidedSigningSession) async throws {
+        try await library.signingStore.saveSession(updated, replacing: storedBaseline)
+        storedBaseline = updated
+    }
+
+    private func restoreProgress(trustStore: LeonardoSigningTrustRegistry) async throws {
+        guard let document else { throw LeonardoSigningError.integrityFailure }
+        let stored = try await library.signingStore.session(id: session.id)
+        storedBaseline = stored
+        let location = stored?.documentLocation ?? localDocumentLocation ?? "mobile://exchange/\(session.id)"
+        if var stored {
+            stored.documentLocation = location
+            let localCopy = try LeonardoSigningExchange(
+                document: document, resources: resources, session: stored,
+                trustedCredentials: trustStore.allCredentials, at: Date()
+            )
+            let incoming = try initialExchange.reboundSession(onto: nil, documentLocation: location)
+            if (try? localCopy.reboundSession(onto: incoming, documentLocation: location)) != nil {
+                session = stored
+            } else {
+                let advanced = try initialExchange.reboundSession(onto: stored, documentLocation: location)
+                if trustAccepted {
+                    try initialExchange.validate(against: document, resources: resources, trustStore: trustStore)
+                }
+                session = advanced
+            }
+        } else {
+            session = try initialExchange.reboundSession(onto: nil, documentLocation: location)
+        }
+        let referencedIDs = Set(session.positions.values.compactMap { $0.assignment?.credentialID })
+        trustedCredentials += trustStore.allCredentials.filter { credential in
+            referencedIDs.contains(credential.id) && !trustedCredentials.contains { $0.id == credential.id }
+        }
+    }
+
+    private func updateVerification(trustStore: LeonardoSigningTrustRegistry) {
+        guard let document else { return }
+        verification = session.signatureVerification(document: document, resources: resources, trustStore: trustStore)
+    }
+
+    private func verificationLabel(_ result: LeonardoSignatureVerification?) -> String {
+        switch result {
+        case .valid: return spanish ? "Firma verificada" : "Signature verified"
+        case .invalidSignature, .modifiedSnapshot:
+            return spanish ? "Firma no válida" : "Invalid signature"
+        case .unknownCredential, nil:
+            return spanish ? "Firma pendiente de verificar" : "Signature awaiting verification"
         }
     }
 
@@ -573,7 +683,7 @@ struct MobileGuidedSigningView: View {
                     identity: LeonardoDeclaredIdentity(
                         fullName: fullName, documentType: documentType, documentNumber: documentNumber
                     ),
-                    rubric: profileRubric
+                    rubric: saveRubric ? profileRubric : nil
                 )
                 if saveIdentityDetails || saveRubric {
                     try await library.signingStore.saveProfile(
@@ -587,7 +697,13 @@ struct MobileGuidedSigningView: View {
                       let existing = profiles.first(where: { $0.id == selectedProfileID }) else {
                     throw LeonardoSigningError.invalidProfile
                 }
-                profile = existing
+                profile = LeonardoSignerProfile(
+                    id: existing.id, displayName: existing.displayName,
+                    identity: existing.identity ?? LeonardoDeclaredIdentity(
+                        fullName: fullName, documentType: documentType, documentNumber: documentNumber
+                    ),
+                    rubric: existing.rubric
+                )
             }
             let localTrust = try await library.signingCredentialStore.trustStore(
                 credentialIDs: [selectedCredentialID]
@@ -602,9 +718,10 @@ struct MobileGuidedSigningView: View {
             var updated = session
             try updated.assign(positionID: positionID, profile: profile, credential: credential,
                                authorization: authorization, at: Date())
-            try await library.signingStore.saveSession(updated)
+            try await saveProgress(updated)
             // Publish state only after the actor has accepted the CAS write.
             session = updated
+            locallyTrustedCredentialIDs.insert(credential.id)
             if !trustedCredentials.contains(where: { $0.id == credential.id }) {
                 trustedCredentials.append(credential)
             }
@@ -619,7 +736,7 @@ struct MobileGuidedSigningView: View {
         do {
             var updated = session
             _ = try updated.begin(positionID: positionID, document: document, resources: resources)
-            try await library.signingStore.saveSession(updated)
+            try await saveProgress(updated)
             session = updated
         } catch {
             errorMessage = String(describing: error)
@@ -632,7 +749,7 @@ struct MobileGuidedSigningView: View {
         do {
             var updated = session
             try updated.pause(positionID: positionID, at: Date())
-            try await library.signingStore.saveSession(updated)
+            try await saveProgress(updated)
             session = updated
         } catch {
             errorMessage = String(describing: error)
@@ -644,8 +761,10 @@ struct MobileGuidedSigningView: View {
         defer { busy = false }
         do {
             var updated = session
+            guard let document else { throw LeonardoSigningError.integrityFailure }
             try updated.resume(positionID: positionID, at: Date())
-            try await library.signingStore.saveSession(updated)
+            _ = try updated.begin(positionID: positionID, document: document, resources: resources)
+            try await saveProgress(updated)
             session = updated
         } catch {
             errorMessage = String(describing: error)
@@ -679,7 +798,7 @@ struct MobileGuidedSigningView: View {
             busy = true
             Task {
                 do {
-                    try await library.signingStore.saveSession(updated)
+                    try await saveProgress(updated)
                     session = updated
                     busy = false
                 }
@@ -711,12 +830,13 @@ struct MobileGuidedSigningView: View {
             let key = try await library.signingCredentialStore.keyPair(
                 credentialID: assignment.credentialID, password: password
             )
-            let trust = try LeonardoSigningTrustRegistry(credentials: trustedCredentials)
+            let trust = try await library.signingCredentialStore.trustStore()
             var updated = session
             _ = try updated.sign(positionID: selectedPositionID, keyPair: key, document: document,
                                   resources: resources, trustStore: trust, at: Date())
-            try await library.signingStore.saveSession(updated)
+            try await saveProgress(updated)
             session = updated
+            updateVerification(trustStore: trust)
         } catch {
             errorMessage = String(describing: error)
         }
@@ -756,6 +876,7 @@ struct MobileGuidedSigningView: View {
         do {
             try await library.signingCredentialStore.trustPublicCredential(credential)
             locallyTrustedCredentialIDs.insert(credential.id)
+            updateVerification(trustStore: try await library.signingCredentialStore.trustStore())
             trustFingerprintInput = ""
             selectedTrustCredentialID = untrustedPackageCredentials.first?.id
             trustAccepted = untrustedPackageCredentials.isEmpty
@@ -765,6 +886,7 @@ struct MobileGuidedSigningView: View {
     }
 
     private func exportSigningCopy(document: LeonardoDocument) {
+        guard workflowAllowed else { return }
         do {
             let exchange = try LeonardoSigningExchange(
                 document: document, resources: resources, session: session,

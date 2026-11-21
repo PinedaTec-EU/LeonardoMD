@@ -92,6 +92,30 @@ final class LeonardoSigningPersistenceRevisionTests: XCTestCase {
         XCTAssertNotNil(final.first(where: { $0.id == unrelated.id }))
     }
 
+    func testExplicitBaselineRejectsStaleWorkflowAfterStoreRefresh() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LeonardoSigningStore(directoryURL: directory)
+        let original = try LeonardoGuidedSigningSession(document: makeDocument(revision: 1), at: now)
+        try await store.saveSession(original, replacing: nil)
+
+        var newer = original
+        newer.updatedAt = now.addingTimeInterval(1)
+        try await store.saveSession(newer, replacing: original)
+        _ = try await store.session(id: original.id)
+
+        var stale = original
+        stale.updatedAt = now.addingTimeInterval(2)
+        do {
+            try await store.saveSession(stale, replacing: original)
+            XCTFail("Refreshing the store must not advance an open workflow’s write baseline")
+        } catch let error as LeonardoSigningError {
+            XCTAssertEqual(error, .staleStorage)
+        }
+        let stored = try await store.session(id: original.id)
+        XCTAssertEqual(stored, newer)
+    }
+
     private func makeDocument(revision: Int) -> LeonardoDocument {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "signer", label: "Signer")

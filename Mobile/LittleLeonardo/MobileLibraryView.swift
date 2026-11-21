@@ -681,7 +681,7 @@ struct MobileDocumentView: View {
                 .accessibilityIdentifier("document-sync")
             if guidedSigningDeclaration != nil {
                 Button(spanishErrors ? "Firmar copia" : "Sign copy", systemImage: "signature") {
-                    prepareSigningCopy()
+                    Task { await prepareSigningCopy() }
                 }
                 .accessibilityIdentifier("prepare-mobile-signing-copy")
             }
@@ -698,7 +698,7 @@ struct MobileDocumentView: View {
             }
         }
         .navigationDestination(item: $signingCopy) { copy in
-            MobileGuidedSigningView(library: library, exchange: copy.exchange)
+            MobileGuidedSigningView(library: library, exchange: copy.exchange, localDocumentLocation: signingLocation)
         }
         .onChange(of: previewController.isReady) { _, ready in
             if ready, !didScrollToInitialAnchor, let initialAnchor {
@@ -723,7 +723,9 @@ struct MobileDocumentView: View {
         } else { linkedDocument = target }
     }
 
-    private func prepareSigningCopy() {
+    private var signingLocation: String { "mobile://\(projectID.uuidString)/\(file.path)" }
+
+    private func prepareSigningCopy() async {
         guard let liveProject,
               let document = try? LeonardoFormatParser.parse(text),
               document.metadata.formatVersion >= LeonardoFormat.signingVersion,
@@ -738,16 +740,20 @@ struct MobileDocumentView: View {
             let resources = liveProject.files
                 .filter { referencedPaths.contains($0.path) && $0.path != file.path }
                 .map { LeonardoSigningResource(reference: $0.path, bytes: $0.content) }
-            let session = try LeonardoGuidedSigningSession(
-                document: document,
-                at: Date(),
-                documentLocation: "mobile://\(projectID.uuidString)/\(file.path)"
+            let stored = try await library.signingStore.sessions().last {
+                $0.documentLocation == signingLocation && $0.documentID == document.metadata.document.id
+                    && $0.initialRevision == document.metadata.document.revision
+            }
+            let session = try stored ?? LeonardoGuidedSigningSession(
+                document: document, at: Date(), documentLocation: signingLocation
             )
+            let credentialIDs = Set(session.positions.values.compactMap { $0.assignment?.credentialID })
+            let trust = try await library.signingCredentialStore.trustStore()
             let exchange = try LeonardoSigningExchange(
                 document: document,
                 resources: resources,
                 session: session,
-                trustedCredentials: [],
+                trustedCredentials: trust.allCredentials.filter { credentialIDs.contains($0.id) },
                 at: Date()
             )
             signingCopy = MobileSigningExchangeDocument(exchange: exchange)
