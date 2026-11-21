@@ -199,8 +199,10 @@ The reviewer must select the position, begin the review and follow the exact
 field occurrences in source order. For each occurrence, read the displayed
 context, draw a new rubric in the signing-only canvas or choose a saved profile rubric, explicitly confirm any
 reuse, and confirm that exact occurrence. To draw on a linked Little Leonardo,
-choose **Use a linked Little Leonardo** from the rubric canvas. Review the
-received stroke and choose **Use rubric** back on the Mac. The request carries
+choose **Use a linked Little Leonardo** from the rubric canvas. The waiting
+panel shows the selected device. Choose **Cancel request** to stop the request,
+**Draw on this Mac** to return to the canvas, or **Close** to leave the dialog.
+Review the received stroke and choose **Use rubric** back on the Mac. The request carries
 ink capture only. The document and signing credential stay on the Mac.
 Drawing in this workflow never adds
 a rubric to the shared rubric library; saving a profile rubric remains a
