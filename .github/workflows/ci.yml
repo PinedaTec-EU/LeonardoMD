@@ -366,7 +366,7 @@ jobs:
           -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests
           -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests
           -only-testing:LittleLeonardoTests/MobileProjectFileVisibilityTests
-          -only-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo
+          -only-testing:LittleLeonardoTests/MobileReaderSpacingTests
           -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending
           -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInEnglish
           -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInSpanish
