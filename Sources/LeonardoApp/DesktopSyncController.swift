@@ -224,6 +224,21 @@ final class DesktopSyncController {
         } catch { self.error = error.localizedDescription }
     }
 
+    func relocateSharedProject(_ project: MobileSharedProject, to destination: URL) async -> Bool {
+        let path = destination.standardizedFileURL.resolvingSymlinksInPath().path
+        guard !busy, !InstanceRuntime.isAdditional,
+              let index = settings.projects.firstIndex(of: project),
+              !settings.projects.contains(where: {
+                  $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path == path
+              }) else { return false }
+        let replacement = MobileSharedProject(id: project.id, rootURL: destination, name: project.name,
+                                              folders: project.folders, documents: project.documents)
+        var updated = settings
+        updated.projects[index] = replacement
+        await update(updated)
+        return settings.projects.contains(replacement)
+    }
+
     private func start() async throws {
         let host: String
         if let configured = settings.host {
