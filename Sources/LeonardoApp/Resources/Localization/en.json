@@ -1,6 +1,7 @@
 {
   "Email diagnostics…": "Email diagnostics…",
-  "Could not open a mail draft. Copy the diagnostics to send them manually.": "Could not open a mail draft. Copy the diagnostics to send them manually.",
+  "Could not open a mail draft.": "Could not open a mail draft.",
+  "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.": "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.",
   "Leonardo Sync diagnostics": "Leonardo Sync diagnostics",
   "View diagnostics…": "View diagnostics…",
   "Copy diagnostics": "Copy diagnostics",

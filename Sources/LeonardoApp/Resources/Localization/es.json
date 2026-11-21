@@ -1,6 +1,7 @@
 {
   "Email diagnostics…": "Enviar diagnóstico por correo…",
-  "Could not open a mail draft. Copy the diagnostics to send them manually.": "No se pudo abrir un borrador de correo. Copia el diagnóstico para enviarlo manualmente.",
+  "Could not open a mail draft.": "No se pudo abrir un borrador de correo.",
+  "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.": "Si no se abre un borrador, pulsa Copiar diagnóstico y pega el informe en un correo a %@.",
   "Leonardo Sync diagnostics": "Diagnóstico de Leonardo Sync",
   "View diagnostics…": "Ver diagnóstico…",
   "Copy diagnostics": "Copiar diagnóstico",
