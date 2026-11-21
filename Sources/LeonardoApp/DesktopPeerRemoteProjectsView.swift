@@ -1,9 +1,13 @@
+import AppKit
 import SwiftUI
 import LeonardoCore
 import LeonardoSync
 import LeonardoSyncUI
 
 struct DesktopPeerRemoteProjectsView: View {
+    private static let computerArtwork = Bundle.module.url(forResource: "sync-computer", withExtension: "png")
+        .flatMap { NSImage(contentsOf: $0) }
+
     @Bindable var controller: DesktopPeerController
     let showNonDocumentFiles: Bool
     @Environment(\.leonardoAccent) private var accent
@@ -71,11 +75,15 @@ struct DesktopPeerRemoteProjectsView: View {
                             .foregroundStyle(.secondary)
                             .frame(width: 12)
                             .accessibilityHidden(true)
-                        Image("sync-computer", bundle: .module)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 42, height: 34)
-                            .accessibilityHidden(true)
+                        Group {
+                            if let artwork = Self.computerArtwork {
+                                Image(nsImage: artwork).resizable().scaledToFit()
+                            } else {
+                                Image(systemName: "laptopcomputer").imageScale(.large)
+                            }
+                        }
+                        .frame(width: 42, height: 34)
+                        .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(controller.reviewStore.hostName(for: connection))
                                 .font(.headline)
