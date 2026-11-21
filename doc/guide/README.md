@@ -1,10 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v111-en.mdlz` and `Guide-v111-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v113-en.mdlz` and `Guide-v113-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v111/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v113/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v113 describes the redesigned linked-device rubric panel and its
+three actions in the guided signing chapter. Fresh packaged Help and practice
+acceptance remains pending.
+Guide v113 EN SHA-256: `5a7ef62b1618bba62ced3c14dc0e8fe0864eb5cfe7c09e98e02a692dc7c30670`
+Guide v113 ES SHA-256: `5533118ca68988561d063e20c3d722236d2cc1b9638ac4e5a2ca91a1d1b17f7d`
 
 Guide v111 adds linked Little Leonardo rubric capture to the Mac signing flow.
 It carries the MDLF v2 guided-signing workflow and clarifies that its
@@ -78,7 +84,7 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v111 with a new
+historical review record. The current app resources use Guide v113 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
