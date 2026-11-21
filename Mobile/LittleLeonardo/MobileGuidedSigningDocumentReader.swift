@@ -22,6 +22,10 @@ struct MobileGuidedSigningDocumentReader: View {
     // it only after it has exposed every exact target occurrence.
     @State private var showingNativeFallback = true
 
+    private var spanish: Bool {
+        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    }
+
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoSigning", isDirectory: true)
 
     init(
@@ -107,12 +111,12 @@ struct MobileGuidedSigningDocumentReader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(
-                "Documento completo · solo lectura / Full document · read-only",
+                spanish ? "Documento completo · solo lectura" : "Full document · read-only",
                 systemImage: "doc.text.magnifyingglass"
             )
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(MobileClassic.heading)
-            Text("Lee la copia completa y usa «Ver ubicación» para saltar a la aparición exacta. / Read the complete copy and use “View location” to jump to the exact occurrence.")
+            Text(spanish ? "Lee la copia completa y usa «Ver ubicación» para saltar a la aparición exacta." : "Read the complete copy and use “View location” to jump to the exact occurrence.")
                 .font(.caption)
                 .foregroundStyle(MobileClassic.secondary)
 
@@ -137,6 +141,7 @@ struct MobileGuidedSigningDocumentReader: View {
                     if showingNativeFallback {
                         MobileGuidedSigningSourceFallback(
                             document: document,
+                            spanish: spanish,
                             resources: resources,
                             session: session,
                             rubricOverlays: verifiedRubricOverlays,
@@ -152,7 +157,7 @@ struct MobileGuidedSigningDocumentReader: View {
                 }
             } else {
                 Label(
-                    "No se puede renderizar la copia / The signing copy cannot be rendered",
+                    spanish ? "No se puede renderizar la copia" : "The signing copy cannot be rendered",
                     systemImage: "exclamationmark.triangle"
                 )
                 .font(.footnote)
@@ -311,6 +316,7 @@ private extension LeonardoSigningLocationTarget {
 /// confirmation still goes through the existing Core validation.
 private struct MobileGuidedSigningSourceFallback: View {
     let document: LeonardoDocument
+    let spanish: Bool
     let resources: [LeonardoSigningResource]
     let session: LeonardoGuidedSigningSession
     let rubricOverlays: [String: LeonardoRubric]
@@ -362,12 +368,12 @@ private struct MobileGuidedSigningSourceFallback: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Label(
-                        "Lectura nativa de respaldo · Native read-only fallback",
+                        spanish ? "Vista de texto" : "Text view",
                         systemImage: "text.book.closed"
                     )
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(MobileClassic.secondary)
-                    Text(document.metadata.document.title ?? "Signing copy")
+                    Text(document.metadata.document.title ?? (spanish ? "Copia de firma" : "Signing copy"))
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(MobileClassic.heading)
                     Text(readableBody)
@@ -381,7 +387,7 @@ private struct MobileGuidedSigningSourceFallback: View {
 
                     if !referencedResources.isEmpty || !missingResourceReferences.isEmpty {
                         Divider()
-                        Text("Recursos sellados / Sealed resources")
+                        Text(spanish ? "Recursos sellados" : "Sealed resources")
                             .font(.headline)
                             .foregroundStyle(MobileClassic.heading)
                         ForEach(referencedResources, id: \.reference) { resource in
@@ -397,7 +403,7 @@ private struct MobileGuidedSigningSourceFallback: View {
                                         .accessibilityLabel(resource.reference)
                                 } else {
                                     Label(
-                                        "Este recurso no se puede mostrar aquí; la confirmación queda bloqueada. / This resource cannot be shown here; confirmation is blocked.",
+                                        spanish ? "Este recurso no se puede mostrar aquí; la confirmación queda bloqueada." : "This resource cannot be shown here; confirmation is blocked.",
                                         systemImage: "exclamationmark.triangle"
                                     )
                                     .font(.footnote)
@@ -412,7 +418,7 @@ private struct MobileGuidedSigningSourceFallback: View {
                         }
                         ForEach(missingResourceReferences, id: \.self) { reference in
                             Label(
-                                "Falta el recurso sellado \(reference); la confirmación queda bloqueada. / Sealed resource \(reference) is missing; confirmation is blocked.",
+                                spanish ? "Falta el recurso sellado \(reference); la confirmación queda bloqueada." : "Sealed resource \(reference) is missing; confirmation is blocked.",
                                 systemImage: "exclamationmark.triangle"
                             )
                             .font(.footnote)
@@ -422,7 +428,7 @@ private struct MobileGuidedSigningSourceFallback: View {
 
                     if !nativeContentComplete {
                         Label(
-                            "La lectura nativa no representa todo el material sellado; no se puede confirmar hasta mostrarlo. / The native reader does not represent all sealed material; confirmation is blocked until it is shown.",
+                            spanish ? "La lectura nativa no representa todo el material sellado; no se puede confirmar hasta mostrarlo." : "The native reader does not represent all sealed material; confirmation is blocked until it is shown.",
                             systemImage: "lock.fill"
                         )
                         .font(.footnote.weight(.semibold))
@@ -432,7 +438,7 @@ private struct MobileGuidedSigningSourceFallback: View {
 
                     if !targets.isEmpty {
                         Divider()
-                        Text("Apariciones exactas / Exact occurrences")
+                        Text(spanish ? "Apariciones exactas" : "Exact occurrences")
                             .font(.headline)
                             .foregroundStyle(MobileClassic.heading)
                         ForEach(targets, id: \.mobileStableID) { target in
@@ -460,7 +466,7 @@ private struct MobileGuidedSigningSourceFallback: View {
                         }
                     } else {
                         Label(
-                            "No hay apariciones exactas disponibles; la confirmación permanece bloqueada. / No exact occurrences are available; confirmation remains blocked.",
+                            spanish ? "No hay apariciones exactas disponibles; la confirmación permanece bloqueada." : "No exact occurrences are available; confirmation remains blocked.",
                             systemImage: "exclamationmark.triangle"
                         )
                         .font(.footnote)

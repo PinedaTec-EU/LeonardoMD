@@ -43,13 +43,14 @@ enum MobileSigningCopyError: Error, Equatable {
     case invalidExchange
 
     var message: String {
-        switch self {
+        let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+        return switch self {
         case .unsupportedDocument:
-            return "Este documento no declara una firma guiada v2. / This document has no v2 guided-signing declaration."
+            spanish ? "Este documento no declara una firma guiada v2." : "This document has no v2 guided-signing declaration."
         case .missingSource:
-            return "La copia local ya no está disponible. / The local copy is no longer available."
+            spanish ? "La copia local ya no está disponible." : "The local copy is no longer available."
         case .invalidExchange:
-            return "La copia de intercambio no coincide con el documento. / The exchange copy does not match the document."
+            spanish ? "La copia de intercambio no coincide con el documento." : "The exchange copy does not match the document."
         }
     }
 }
