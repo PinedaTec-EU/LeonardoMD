@@ -360,7 +360,7 @@ struct RubricEditor: View {
     }
 }
 
-private struct RubricCanvas: NSViewRepresentable {
+struct RubricCanvas: NSViewRepresentable {
     @Binding var rubric: LeonardoRubric
     let color: String
     let width: Double
@@ -372,7 +372,7 @@ private struct RubricCanvas: NSViewRepresentable {
     }
 }
 
-private final class InkCanvasView: NSView {
+final class InkCanvasView: NSView {
     var rubric = LeonardoRubric()
     var color = "#000000"
     var inkWidth = 3.0

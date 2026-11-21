@@ -2,6 +2,7 @@
   "use strict";
   let payload = {}, root, changes = Object.create(null), sequence = 0;
   const controls = new Map();
+  const occurrences = new Map();
   const label = key => payload.formLabels?.[key] || key;
   const valueText = (value, field) => {
     if (value === null || value === undefined) return "";
@@ -78,18 +79,26 @@
     return input;
   }
   function rubricField(wrapper, fieldID, field, value) {
+    const guidedSigning = Array.isArray(payload.guidedSigningFieldIDs)
+      && payload.guidedSigningFieldIDs.includes(fieldID);
+    if (guidedSigning) {
+      wrapper.classList.add("leonardo-guided-signing-field");
+      wrapper.dataset.guidedSigning = "true";
+    }
     wrapper.classList.add("leonardo-form-field");
     const caption = document.createElement("span"); caption.className = "leonardo-field-label";
     caption.textContent = (field.label || fieldID) + (field.required ? " *" : "");
     const help = document.createElement("button"); help.type = "button"; help.className = "leonardo-field-help";
     help.textContent = "?"; help.setAttribute("aria-label", `${label("Help for")} ${field.label || fieldID}`);
-    help.disabled = !payload.allowsFormFilling;
-    help.onclick = () => post("leonardoFieldHelp", {source: payload.source, fieldID}); caption.append(help); wrapper.append(caption);
+    help.disabled = !payload.allowsFormFilling || guidedSigning;
+    if (!guidedSigning) help.onclick = () => post("leonardoFieldHelp", {source: payload.source, fieldID});
+    caption.append(help); wrapper.append(caption);
     const button = document.createElement("button"); button.type = "button"; button.className = "leonardo-form-input leonardo-rubric-field";
-    button.disabled = !payload.allowsFormFilling || field.readOnly;
-    button.setAttribute("aria-label", `${label("Insert rubric")} ${field.label || fieldID}`);
-    if (value?.strokes) button.append(window.LeonardoObjects.rubric(value)); else button.textContent = label("Insert rubric");
-    button.addEventListener("click", () => post("leonardoObject", {source: payload.source, fieldID}));
+    button.disabled = !payload.allowsFormFilling || field.readOnly || guidedSigning;
+    const actionLabel = guidedSigning ? label("Guided signing") : label("Insert rubric");
+    button.setAttribute("aria-label", `${actionLabel} ${field.label || fieldID}`);
+    if (value?.strokes) button.append(window.LeonardoObjects.rubric(value)); else button.textContent = actionLabel;
+    if (!guidedSigning) button.addEventListener("click", () => post("leonardoObject", {source: payload.source, fieldID}));
     const output = document.createElement("span"); output.className = "leonardo-field-output leonardo-rubric-field";
     if (value?.strokes) output.append(window.LeonardoObjects.rubric(value));
     for (const element of [button, output]) {
@@ -104,12 +113,18 @@
   }
   window.LeonardoForms = {
     begin(nextPayload, nextRoot) {
-      payload = nextPayload; root = nextRoot; changes = Object.create(null); controls.clear(); sequence = 0;
+      payload = nextPayload; root = nextRoot; changes = Object.create(null); controls.clear(); occurrences.clear(); sequence = 0;
     },
+    occurrenceCount(fieldID) { return occurrences.get(fieldID) || 0; },
     field(fieldID, field, value) {
       const wrapper = document.createElement("span");
       wrapper.className = "leonardo-field-value";
       wrapper.dataset.field = fieldID;
+      const occurrence = occurrences.get(fieldID) || 0;
+      occurrences.set(fieldID, occurrence + 1);
+      wrapper.dataset.fieldOccurrence = String(occurrence);
+      wrapper.dataset.leonardoFieldTarget = `${fieldID}#${occurrence}`;
+      wrapper.id = `leonardo-field-${fieldID}-${occurrence}`;
       if (field.type === "rubric") return rubricField(wrapper, fieldID, field, value);
       const output = document.createElement("span");
       output.className = "leonardo-field-output";
@@ -175,9 +190,26 @@
     },
     setEditable(value) {
       for (const entries of controls.values()) {
-        for (const entry of entries) if (entry.input) entry.input.disabled = !value;
+        for (const entry of entries) if (entry.input) {
+          entry.input.disabled = !value || entry.input.closest("[data-guided-signing=\"true\"]") !== null;
+        }
       }
     },
-    setExporting(value) { root?.classList.toggle("leonardo-form-export", value); }
+    setExporting(value) { root?.classList.toggle("leonardo-form-export", value); },
+    hasFieldTarget(fieldID, occurrence) {
+      const target = `${fieldID}#${Number(occurrence)}`;
+      return Array.from(root?.querySelectorAll("[data-leonardo-field-target]") || [])
+        .some(candidate => candidate.dataset.leonardoFieldTarget === target);
+    },
+    scrollToField(fieldID, occurrence) {
+      const target = `${fieldID}#${Number(occurrence)}`;
+      const element = Array.from(root?.querySelectorAll("[data-leonardo-field-target]") || [])
+        .find(candidate => candidate.dataset.leonardoFieldTarget === target);
+      if (!element) return false;
+      element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+      element.classList.add("leonardo-guided-target");
+      window.setTimeout(() => element.classList.remove("leonardo-guided-target"), 1400);
+      return true;
+    }
   };
 })();

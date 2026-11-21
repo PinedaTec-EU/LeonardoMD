@@ -123,6 +123,8 @@ struct MobileLibraryView: View {
     @State private var host = ""
     @State private var port = "40882"
     @State private var selectedRemoteFile: MobileRemoteFileRoute?
+    @State private var importedSigningCopy: MobileSigningExchangeDocument?
+    @State private var importingSigningCopy = false
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @AppStorage(LeonardoProjectFileVisibility.showNonDocumentFilesPreferenceKey) private var showNonDocumentFiles = false
@@ -201,6 +203,18 @@ struct MobileLibraryView: View {
                 case .settings: synchronizationSettings
                 case .about: MobileAboutView()
                 }
+            }
+            .sheet(item: $importedSigningCopy) { copy in
+                NavigationStack {
+                    MobileGuidedSigningView(library: library, exchange: copy.exchange)
+                }
+            }
+            .fileImporter(
+                isPresented: $importingSigningCopy,
+                allowedContentTypes: MobileSigningExchangeDocument.readableContentTypes,
+                allowsMultipleSelection: false
+            ) { result in
+                importSigningCopy(result)
             }
             .fullScreenCover(item: $presentedRubricRequest) { request in
                 MobileRubricCaptureView(request: request, library: library)
@@ -337,6 +351,11 @@ struct MobileLibraryView: View {
             Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                 Task { await library.synchronize() }
             }.disabled(library.connecting)
+            Button(spanishErrors ? "Importar copia firmada" : "Import signing copy",
+                   systemImage: "square.and.arrow.down") {
+                importingSigningCopy = true
+            }
+            .accessibilityIdentifier("import-mobile-signing-copy")
             if let request = library.pendingRubricRequests.first {
                 Button("Solicitud de rúbrica", systemImage: "signature") {
                     presentedRubricRequest = request
@@ -346,6 +365,28 @@ struct MobileLibraryView: View {
                     presentedRubricRequest = draft.request
                 }.accessibilityIdentifier("open-rubric-draft")
             }
+        }
+    }
+
+    private func importSigningCopy(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result, let url = urls.first else { return }
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+            guard values.isRegularFile == true,
+                  let fileSize = values.fileSize,
+                  fileSize <= 40 * 1_024 * 1_024 else {
+                throw LeonardoSigningError.storageFailure
+            }
+            importedSigningCopy = MobileSigningExchangeDocument(
+                exchange: try LeonardoSigningExchange.decoded(Data(contentsOf: url, options: [.mappedIfSafe]))
+            )
+        } catch {
+            library.presentError(error, operation: .library,
+                                 message: spanishErrors
+                                 ? "No se pudo abrir la copia de firma."
+                                 : "The signing copy could not be opened.")
         }
     }
 
@@ -578,6 +619,7 @@ struct MobileDocumentView: View {
     @State private var assets: MarkdownMemoryAssets?
     @State private var linkedDocument: CachedDocumentLink?
     @State private var unavailableLink = false
+    @State private var signingCopy: MobileSigningExchangeDocument?
     @State private var didScrollToInitialAnchor = false
     @StateObject private var previewController = MarkdownPreviewController()
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
@@ -592,6 +634,16 @@ struct MobileDocumentView: View {
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
     private var liveFile: CorpusFile? { library.currentFile(projectID: projectID, path: file.path) }
+    private var spanishErrors: Bool {
+        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    }
+    private var guidedSigningDeclaration: LeonardoSigningDeclaration? {
+        guard !source,
+              Self.leonardoFormatExtensions.contains(fileExtension),
+              let document = try? LeonardoFormatParser.parse(text),
+              document.metadata.formatVersion >= LeonardoFormat.signingVersion else { return nil }
+        return document.metadata.document.signing
+    }
 
     var body: some View {
         Group {
@@ -603,9 +655,16 @@ struct MobileDocumentView: View {
                 ContentUnavailableView("Archivo conservado", systemImage: "doc",
                     description: Text("Este archivo se conserva en la copia de recuperación. Expórtala para abrirlo en un ordenador."))
             } else if !source, Self.markdownPreviewExtensions.contains(fileExtension) {
-                MarkdownPreview(content: text,
-                    baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
-                    configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)
+                VStack(alignment: .leading, spacing: 0) {
+                    if let guidedSigningDeclaration {
+                        LeonardoGuidedSigningReadOnlyBanner(
+                            declaration: guidedSigningDeclaration,
+                            spanish: MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first))
+                    }
+                    MarkdownPreview(content: text,
+                        baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
+                        configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)
+                }
             } else {
                 ScrollView {
                     Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled)
@@ -620,6 +679,12 @@ struct MobileDocumentView: View {
                 Task { await library.synchronize() }
             }.disabled(library.connecting || liveProject?.isRecoveryArchive == true)
                 .accessibilityIdentifier("document-sync")
+            if guidedSigningDeclaration != nil {
+                Button(spanishErrors ? "Firmar copia" : "Sign copy", systemImage: "signature") {
+                    prepareSigningCopy()
+                }
+                .accessibilityIdentifier("prepare-mobile-signing-copy")
+            }
             Button(source ? "Ver documento" : "Ver texto", systemImage: "chevron.left.forwardslash.chevron.right") { source.toggle() }
         }
         .onAppear { updateContent() }
@@ -631,6 +696,9 @@ struct MobileDocumentView: View {
             if let target = linkedDocument {
                 MobileDocumentView(library: library, projectID: projectID, file: target.file, initialAnchor: target.anchor)
             }
+        }
+        .navigationDestination(item: $signingCopy) { copy in
+            MobileGuidedSigningView(library: library, exchange: copy.exchange)
         }
         .onChange(of: previewController.isReady) { _, ready in
             if ready, !didScrollToInitialAnchor, let initialAnchor {
@@ -653,5 +721,55 @@ struct MobileDocumentView: View {
         if target.file.path == file.path {
             if let anchor = target.anchor { previewController.scroll(to: anchor) }
         } else { linkedDocument = target }
+    }
+
+    private func prepareSigningCopy() {
+        guard let liveProject,
+              let document = try? LeonardoFormatParser.parse(text),
+              document.metadata.formatVersion >= LeonardoFormat.signingVersion,
+              document.metadata.document.signing != nil else {
+            unavailableLink = true
+            return
+        }
+        do {
+            let referencedPaths = Set(LeonardoLocalImagePolicy.localReferences(in: text).compactMap {
+                Self.localResourcePath($0, documentPath: file.path)
+            })
+            let resources = liveProject.files
+                .filter { referencedPaths.contains($0.path) && $0.path != file.path }
+                .map { LeonardoSigningResource(reference: $0.path, bytes: $0.content) }
+            let session = try LeonardoGuidedSigningSession(
+                document: document,
+                at: Date(),
+                documentLocation: "mobile://\(projectID.uuidString)/\(file.path)"
+            )
+            let exchange = try LeonardoSigningExchange(
+                document: document,
+                resources: resources,
+                session: session,
+                trustedCredentials: [],
+                at: Date()
+            )
+            signingCopy = MobileSigningExchangeDocument(exchange: exchange)
+        } catch {
+            library.presentError(error, operation: .export,
+                                 message: spanishErrors
+                                 ? "No se pudo preparar la copia de firma."
+                                 : "The signing copy could not be prepared.")
+        }
+    }
+
+    private static func localResourcePath(_ reference: String, documentPath: String) -> String? {
+        guard let parsed = URL(string: reference),
+              parsed.scheme?.lowercased() != "http",
+              parsed.scheme?.lowercased() != "https" else { return nil }
+        let base = URL(fileURLWithPath: "/" + documentPath)
+            .deletingLastPathComponent()
+        guard let resolved = URL(string: reference, relativeTo: base)?.standardizedFileURL else {
+            return nil
+        }
+        let path = resolved.path
+        guard path.hasPrefix("/") else { return nil }
+        return String(path.dropFirst())
     }
 }

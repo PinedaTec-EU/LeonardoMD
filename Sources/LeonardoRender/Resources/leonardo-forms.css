@@ -32,6 +32,7 @@ input.leonardo-form-switch:checked::after { transform: translateX(15px); backgro
 .leonardo-field-status { color: var(--ld-field-muted); font-size: 0.9em; font-weight: 400; }
 .leonardo-field-diagnostic { font-size: 0.8em; color: var(--ld-text); border-left: 2px solid var(--ld-accent); padding-left: 7px; white-space: normal; }
 .leonardo-field-diagnostic:empty { display: none; }
+.leonardo-guided-target { outline: 3px solid var(--ld-accent); outline-offset: 5px; border-radius: 6px; transition: outline-color 140ms; }
 .leonardo-form-export .leonardo-field-label, .leonardo-form-export .leonardo-form-input, .leonardo-form-export .leonardo-field-diagnostic { display: none; }
 .leonardo-form-export .leonardo-form-row { display: block; }
 .leonardo-form-export .leonardo-form-field.leonardo-form-boolean, .leonardo-form-export .leonardo-form-field { display: inline; min-width: 0; margin: 0; }

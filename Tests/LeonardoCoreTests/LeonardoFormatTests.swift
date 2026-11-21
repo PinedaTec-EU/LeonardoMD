@@ -172,10 +172,14 @@ final class LeonardoFormatTests: XCTestCase {
     }
 
     func testVersionAndFormatFailuresAreExplicit() throws {
-        let future = "---\n{\"format\":\"mdlf\",\"formatVersion\":2}\n---\nBody"
-        XCTAssertEqual(LeonardoFormatParser.detect(future), .leonardo(version: 2))
+        let signingVersion = "---\n{\"format\":\"mdlf\",\"formatVersion\":2}\n---\nBody"
+        XCTAssertEqual(LeonardoFormatParser.detect(signingVersion), .leonardo(version: 2))
+        XCTAssertEqual(try LeonardoFormatParser.parse(signingVersion).metadata.formatVersion, 2)
+
+        let future = "---\n{\"format\":\"mdlf\",\"formatVersion\":3}\n---\nBody"
+        XCTAssertEqual(LeonardoFormatParser.detect(future), .leonardo(version: 3))
         XCTAssertThrowsError(try LeonardoFormatParser.parse(future)) { error in
-            XCTAssertEqual(error as? LeonardoFormatError, .unsupportedVersion(2))
+            XCTAssertEqual(error as? LeonardoFormatError, .unsupportedVersion(3))
         }
 
         let wrong = "---\n{\"format\":\"other\",\"formatVersion\":1}\n---\nBody"
@@ -351,6 +355,11 @@ final class LeonardoFormatTests: XCTestCase {
         let plugin = try Data(contentsOf: repository.appendingPathComponent("plugins/leonardo-format/skills/leonardo-format/references/mdlf-v1.schema.json"))
         XCTAssertEqual(canonical, plugin, "The plugin must ship the canonical MDLF schema byte-for-byte.")
         XCTAssertEqual(canonical, try LeonardoFormatMetadataSchema.bundledSchemaData(), "The Core resource must match the canonical MDLF schema byte-for-byte.")
+
+        let signingCanonical = try Data(contentsOf: repository.appendingPathComponent("doc/format/mdlf-v2.schema.json"))
+        let signingPlugin = try Data(contentsOf: repository.appendingPathComponent("plugins/leonardo-format/skills/leonardo-format/references/mdlf-v2.schema.json"))
+        XCTAssertEqual(signingCanonical, signingPlugin, "The plugin must ship the canonical MDLF v2 schema byte-for-byte.")
+        XCTAssertEqual(signingCanonical, try LeonardoFormatMetadataSchema.bundledSchemaData(for: LeonardoFormat.signingVersion), "The Core resource must match the canonical MDLF v2 schema byte-for-byte.")
     }
 
     func testSharedContractFixturesMatchNativeAcceptanceRules() throws {

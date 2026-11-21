@@ -108,3 +108,27 @@ been removed. The standalone import package reuses the same image as chapter 6.
 Resource versions/copy paths and maintenance references must move together;
 original UI captures and prior user-owned copies remain untouched. Preview image
 limits are unchanged; native checks load every image in both languages.
+
+Guided signing foundation ([#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517)):
+MDLF v2 is an opt-in, closed schema selected by `formatVersion`; its public
+header declares required signer positions and maps rubric fields with
+`signerPosition`; signing documents also require a stable document ID and
+positive semantic revision. Profiles, declared identity data, personal credentials,
+trust, rubrics, resources and detached signatures stay in protected local
+progress. `LeonardoGuidedSigningSession` confirms exact repeated placeholder
+occurrences in source order, freezes the document/resources at the first
+confirmation, supports pause/resume and per-position rubric reuse, and starts a
+fresh session for a higher semantic revision. A position still pending may get
+its first assignment after the seal, but an existing assignment cannot be
+relinked. `LeonardoSigningStore` uses locked read/CAS/write transactions,
+pre-read file limits and 0600-before-publish atomic replacement. Read-time
+verification recomputes the signature chain, assignment/identity commitment,
+snapshot and location/rubric digests against an external trust store; no key in
+the document is trusted. Public trust discovery never authorizes a Keychain
+item; macOS legacy-login reads suppress interaction and restore the process
+setting, while private-key access remains an explicit final-sign authorization.
+Native/UI integration now includes a read-only full-document mobile preview:
+exact `fieldID#occurrence` DOM targets gate navigation/actions and verified
+rubric overlays only appear after independent proof verification. The macOS and
+mobile panels disclose optional fields that will remain blank before the first
+seal; bilingual Help is revision v110.

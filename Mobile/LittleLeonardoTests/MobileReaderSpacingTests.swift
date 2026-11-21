@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import XCTest
+import LeonardoCore
 import LeonardoRender
 import LeonardoSync
 import LeonardoSyncUI
@@ -84,6 +85,274 @@ final class MobileReaderSpacingTests: XCTestCase {
             try await assertReadOnlyMobilePreview(library: library, projectID: projectID, file: file,
                                                   expectedHeading: expectedHeading, expectedValue: expectedValue)
         }
+    }
+
+    func testGuidedSigningCopyPreviewRendersWithVirtualDirectoryBaseURL() async throws {
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "# Mobile signing practice\n\n{{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "mobile-reader-preview", title: "Mobile signing practice", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "signature": LeonardoFieldDefinition(
+                        type: .rubric, label: "Signature", signerPosition: "owner"
+                    )
+                ]
+            )
+        )
+        let session = try LeonardoGuidedSigningSession(
+            document: document, at: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let priorWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        defer { window.isHidden = true; priorWindow?.makeKeyAndVisible() }
+        var available = Set<String>()
+        let binding = Binding<Set<String>>(
+            get: { available },
+            set: { available = $0 }
+        )
+        window.rootViewController = UIHostingController(rootView: NavigationStack {
+            MobileGuidedSigningDocumentReader(
+                document: document,
+                resources: [],
+                session: session,
+                trustedCredentials: [],
+                trustAccepted: true,
+                focusTarget: nil,
+                availableTargetKeys: binding,
+                onFocusConsumed: {}
+            )
+        })
+        window.makeKeyAndVisible()
+
+        let deadline = ContinuousClock.now.advanced(by: .seconds(12))
+        var heading = ""
+        repeat {
+            if let web = findWebView(window),
+               let value = try? await web.evaluateJavaScript("document.querySelector('h1')?.textContent || ''") as? String {
+                heading = value
+                if heading == "Mobile signing practice", available.contains("signature#0") {
+                    return
+                }
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        } while ContinuousClock.now < deadline
+        XCTFail("Guided signing copy did not render its heading and target (heading: \(heading), available: \(available.sorted()))")
+    }
+
+    func testSignedGuidedSigningViewPresentsReaderOutsideList() async throws {
+        let exchange = try makeSignedGuidedSigningExchange()
+        XCTAssertTrue(exchange.session.isComplete)
+        XCTAssertEqual(exchange.trustedCredentials.count, 1)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MobileLibrary(
+            rootURL: root.appendingPathComponent("Corpus", isDirectory: true),
+            credentials: ReaderSpacingCredentials()
+        )
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let priorWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        defer { window.isHidden = true; priorWindow?.makeKeyAndVisible() }
+        window.rootViewController = UIHostingController(rootView: NavigationStack {
+            MobileGuidedSigningView(
+                library: library,
+                exchange: exchange,
+                initiallyShowingDocumentReader: true
+            )
+        })
+        window.makeKeyAndVisible()
+
+        let deadline = ContinuousClock.now.advanced(by: .seconds(15))
+        var heading = ""
+        repeat {
+            let web = scene.windows.lazy.compactMap(findWebView).first
+            if let web,
+               let value = try? await web.evaluateJavaScript("""
+                (() => ({
+                  heading: document.querySelector('h1')?.textContent || '',
+                  guidedFields: document.querySelectorAll('[data-guided-signing="true"]').length
+                }))()
+                """) as? [String: Any],
+               let valueHeading = value["heading"] as? String {
+                heading = valueHeading
+                if heading == "Mobile signing practice" {
+                    XCTAssertGreaterThan(value["guidedFields"] as? Int ?? 0, 0)
+                    return
+                }
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        } while ContinuousClock.now < deadline
+        XCTFail("Signed guided-signing container did not render its full-copy heading (received: \(heading))")
+    }
+
+    func testNativeSigningContentSubstitutesValuesAndKeepsSealedResourceReferences() throws {
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "# Review copy\n\nSigner: {{field:name}}\n\nSignature: {{field:signature}}\n\n![Seal](assets/seal.png)",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "native-content-test", title: "Review copy", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "name": LeonardoFieldDefinition(type: .text, label: "Name"),
+                    "signature": LeonardoFieldDefinition(
+                        type: .rubric, label: "Signature", signerPosition: "owner"
+                    )
+                ],
+                values: ["name": .string("Ada & Lovelace")]
+            )
+        )
+
+        let readable = MobileGuidedSigningNativeContent.readableBody(from: document)
+        XCTAssertTrue(readable.contains("Ada & Lovelace"))
+        XCTAssertFalse(readable.contains("&#38;"))
+        XCTAssertFalse(readable.contains("{{field:name}}"))
+        XCTAssertEqual(
+            MobileGuidedSigningNativeContent.referencedResourceReferences(from: document),
+            ["assets/seal.png"]
+        )
+
+        let session = try LeonardoGuidedSigningSession(
+            document: document, at: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let target = try XCTUnwrap(session.targets(for: "owner", document: document).first)
+        XCTAssertEqual(
+            MobileGuidedSigningTargetKey.make(fieldID: target.fieldID, occurrence: target.occurrence),
+            "signature#0"
+        )
+    }
+
+    func testTrustedSignedReaderRendersVerifiedRubricOverlay() async throws {
+        let exchange = try makeSignedGuidedSigningExchange()
+        let document = try exchange.document()
+        let resources = try exchange.signingResources()
+        let trustStore = try LeonardoSigningTrustRegistry(credentials: exchange.trustedCredentials)
+        XCTAssertEqual(
+            exchange.session.signatureVerification(
+                document: document, resources: resources, trustStore: trustStore
+            )["owner"],
+            .valid
+        )
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let priorWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        defer { window.isHidden = true; priorWindow?.makeKeyAndVisible() }
+        var available = Set<String>()
+        let binding = Binding<Set<String>>(
+            get: { available },
+            set: { available = $0 }
+        )
+        window.rootViewController = UIHostingController(rootView: NavigationStack {
+            MobileGuidedSigningDocumentReader(
+                document: document,
+                resources: resources,
+                session: exchange.session,
+                trustedCredentials: exchange.trustedCredentials,
+                trustAccepted: true,
+                focusTarget: nil,
+                availableTargetKeys: binding,
+                onFocusConsumed: {}
+            )
+        })
+        window.makeKeyAndVisible()
+
+        let deadline = ContinuousClock.now.advanced(by: .seconds(15))
+        var snapshot: [String: Any] = [:]
+        repeat {
+            if let web = findWebView(window),
+               let value = try? await web.evaluateJavaScript("""
+                (() => ({
+                  heading: document.querySelector('h1')?.textContent || '',
+                  guidedFields: document.querySelectorAll('.leonardo-guided-signing-field').length,
+                  overlaySVGs: document.querySelectorAll('.leonardo-guided-signing-field svg').length,
+                  overlayLines: document.querySelectorAll('.leonardo-guided-signing-field svg line').length
+                }))()
+                """) as? [String: Any] {
+                snapshot = value
+                if snapshot["heading"] as? String == "Mobile signing practice",
+                   (snapshot["guidedFields"] as? Int ?? 0) > 0,
+                   (snapshot["overlaySVGs"] as? Int ?? 0) > 0,
+                   (snapshot["overlayLines"] as? Int ?? 0) > 0,
+                   available.contains("signature#0") {
+                    return
+                }
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        } while ContinuousClock.now < deadline
+        XCTFail("Trusted signed reader did not render its verified rubric overlay (snapshot: \(snapshot), available: \(available.sorted()))")
+    }
+
+    private func makeSignedGuidedSigningExchange() throws -> LeonardoSigningExchange {
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "# Mobile signing practice\n\nPlease sign here: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "signed-mobile-reader", title: "Mobile signing practice", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "signature": LeonardoFieldDefinition(
+                        type: .rubric, label: "Signature", required: true, signerPosition: "owner"
+                    )
+                ]
+            )
+        )
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        var session = try LeonardoGuidedSigningSession(document: document, at: date)
+        let keyPair = LeonardoSigningKeyPair(credentialID: "fixture-owner")
+        let profile = LeonardoSignerProfile(
+            displayName: "Ana Example",
+            identity: LeonardoDeclaredIdentity(
+                fullName: "Ana Example", documentType: .nationalID, documentNumber: "QA-0001"
+            )
+        )
+        let authorization = try LeonardoSigningAuthorization(
+            positionID: "owner", profileID: profile.id, credentialID: keyPair.credential.id,
+            confirmedAt: date, explicitlyConfirmed: true
+        )
+        try session.assign(
+            positionID: "owner", profile: profile, credential: keyPair.credential,
+            authorization: authorization, at: date
+        )
+        let targets = try session.begin(positionID: "owner", document: document)
+        let rubric = LeonardoRubric(strokes: [LeonardoInkStroke(
+            color: "#111111", width: 2, style: .solid,
+            points: [LeonardoInkPoint(x: 20, y: 20), LeonardoInkPoint(x: 120, y: 80)]
+        )])
+        let target = try XCTUnwrap(targets.first)
+        try session.confirmLocation(
+            positionID: "owner", fieldID: target.fieldID, occurrence: target.occurrence,
+            document: document, contextRead: true, rubric: rubric, at: date
+        )
+        let trustStore = try LeonardoSigningTrustRegistry(credentials: [keyPair.credential])
+        _ = try session.sign(
+            positionID: "owner", keyPair: keyPair, document: document,
+            trustStore: trustStore, at: date
+        )
+        return try LeonardoSigningExchange(
+            document: document, session: session,
+            trustedCredentials: [keyPair.credential], at: date
+        )
     }
 
     private func assertReadOnlyMobilePreview(library: MobileLibrary, projectID: UUID, file: CorpusFile,

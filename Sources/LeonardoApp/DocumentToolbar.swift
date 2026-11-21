@@ -50,6 +50,18 @@ struct DocumentToolbar: View {
             Spacer(minLength: 8)
             InstanceSwitcher(session: session)
             if session.documentURL != nil {
+                if session.isGuidedSigningDocument {
+                    Button {
+                        Task {
+                            await session.setDocumentMode(.fill)
+                            session.showInspector = true
+                        }
+                    } label: {
+                        Label(L10n.text(session.guidedSigningWorkflowOperable ? "Sign" : "View signatures"), systemImage: "signature")
+                    }
+                    .accessibilityIdentifier("guided-signing")
+                    .disabled(session.busy || session.isSyncSuspended || session.guidedSigningLoading)
+                }
                 Button { Task { await session.toggleProtection() } } label: {
                     Image(systemName: session.isProtected ? "lock.fill" : "lock.open")
                         .opacity(session.isProtected ? 1 : 0.5)

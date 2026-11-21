@@ -22,6 +22,11 @@ final class MobileLibrary {
     let projectLifecycle: MobileProjectLifecycle
     let downloads: DownloadLibrary
     let store: OfflineCorpusStore
+    /// Offline signing progress and credentials are deliberately separate
+    /// from the shared project/cache. Signing a copy never grants write access
+    /// to the synchronized source.
+    let signingStore: LeonardoSigningStore
+    let signingCredentialStore: LeonardoSigningCredentialStore
     let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
     private let statusRequest: DirectStatusRequest
@@ -69,6 +74,12 @@ final class MobileLibrary {
         store = OfflineCorpusStore(root: root)
         projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
             .appendingPathComponent("project-removals.json"))
+        signingStore = LeonardoSigningStore(directoryURL: root.deletingLastPathComponent()
+            .appendingPathComponent("Signing", isDirectory: true))
+        signingCredentialStore = LeonardoSigningCredentialStore(
+            service: "eu.pinedatec.LittleLeonardo.signing",
+            prompt: "Authorize this personal mobile signing credential"
+        )
         let remoteDownloadCache: any RemoteDownloadCache
         if let downloadCache {
             remoteDownloadCache = downloadCache
