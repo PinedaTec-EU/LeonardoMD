@@ -407,6 +407,46 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertEqual(permissions?.intValue, 0o600)
     }
 
+    func testStoreReplacesOnlyPristineLocalSessionForImportedCopy() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LeonardoSigningStore(directoryURL: directory)
+        let document = try makeDocument(requiredName: "Form complete")
+        let location = "/Users/example/private.mdlf"
+        let local = try LeonardoGuidedSigningSession(document: document, at: now,
+                                                     documentLocation: location)
+        let imported = try LeonardoGuidedSigningSession(document: document,
+                                                        at: now.addingTimeInterval(1),
+                                                        documentLocation: location)
+        XCTAssertTrue(local.isPristine)
+        XCTAssertTrue(imported.isPristine)
+        try await store.saveSession(local)
+        try await store.replacePristineSession(id: local.id, with: imported)
+        let removedLocal = try await store.session(id: local.id)
+        let storedImported = try await store.session(id: imported.id)
+        XCTAssertNil(removedLocal)
+        XCTAssertEqual(storedImported?.documentLocation, location)
+
+        var assigned = try LeonardoGuidedSigningSession(document: document, at: now,
+                                                        documentLocation: location)
+        let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        try assign(signer, key: key, to: "titular", session: &assigned)
+        XCTAssertFalse(assigned.isPristine)
+        let competing = try LeonardoGuidedSigningSession(document: document,
+                                                          at: now.addingTimeInterval(2))
+        try await store.removeSession(id: imported.id)
+        try await store.saveSession(assigned)
+        do {
+            try await store.replacePristineSession(id: assigned.id, with: competing)
+            XCTFail("A session with an assignment must not be replaced")
+        } catch let error as LeonardoSigningError {
+            XCTAssertEqual(error, .staleStorage)
+        }
+        let retainedAssigned = try await store.session(id: assigned.id)
+        XCTAssertEqual(retainedAssigned, assigned)
+    }
+
     private func assign(
         _ profile: LeonardoSignerProfile,
         key: LeonardoSigningKeyPair,

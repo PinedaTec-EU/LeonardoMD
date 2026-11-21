@@ -333,16 +333,33 @@ extension AppSession {
         let localSessions = try await guidedSigningStore.sessions()
             .filter { $0.documentLocation == expectedLocation }
         let local = localSessions.first { $0.id == exchange.session.id }
-        guard localSessions.allSatisfy({ $0.id == exchange.session.id }) else {
+        guard localSessions.count <= 1 else {
+            // Historical or competing sessions at this path are real
+            // progress, even when one of them happens to be pristine.
             throw LeonardoSigningError.staleStorage
         }
-        let rebound = try exchange.reboundSession(onto: local, documentLocation: expectedLocation)
+        let pristineReplacement = local == nil && localSessions.count == 1
+            ? localSessions.first(where: { $0.isPristine })
+            : nil
+        guard local != nil || localSessions.isEmpty || pristineReplacement != nil else {
+            // A different local session means this file already has progress
+            // from another signing copy. Never overwrite or merge that fork.
+            throw LeonardoSigningError.staleStorage
+        }
+        let rebound = try exchange.reboundSession(
+            onto: local,
+            documentLocation: expectedLocation
+        )
         // Persist accepted public records only after the detached proof has
         // passed validation. These records never contain private key bytes.
         for credential in unknown {
             try await guidedSigningCredentialStore.trustPublicCredential(credential)
         }
-        try await guidedSigningStore.saveSession(rebound)
+        if let pristineReplacement {
+            try await guidedSigningStore.replacePristineSession(id: pristineReplacement.id, with: rebound)
+        } else {
+            try await guidedSigningStore.saveSession(rebound)
+        }
         guidedSigningSession = rebound
         guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
         guidedSigningVerification = rebound.signatureVerification(

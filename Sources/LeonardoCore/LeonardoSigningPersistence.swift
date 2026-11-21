@@ -127,6 +127,33 @@ public actor LeonardoSigningStore {
         sessionsFileDigest = result.digest
     }
 
+    /// Replaces the one local session created when a document was opened with
+    /// an explicitly imported copy only while that local session is entirely
+    /// unused. The read, prerequisite check and replacement share the same
+    /// file-lock/CAS transaction, so another instance cannot add progress
+    /// between the check and the write.
+    public func replacePristineSession(
+        id: UUID,
+        with replacement: LeonardoGuidedSigningSession
+    ) throws {
+        try loadSessionsIfNeeded()
+        guard replacement.isPersistable else { throw LeonardoSigningError.storageFailure }
+        let result = try updateSessions { values in
+            guard Set(values.map(\.id)).count == values.count,
+                  let index = values.firstIndex(where: { $0.id == id }),
+                  values[index].isPristine,
+                  values[index].documentLocation == replacement.documentLocation,
+                  !values.contains(where: { $0.id == replacement.id && $0.id != id }) else {
+                throw LeonardoSigningError.staleStorage
+            }
+            values[index] = replacement
+        }
+        sessionsByID = result.values.reduce(into: [:]) { result, value in
+            result[value.id] = value
+        }
+        sessionsFileDigest = result.digest
+    }
+
     public func removeSession(id: UUID) throws {
         try loadSessionsIfNeeded()
         guard sessionsByID[id] != nil else { return }
@@ -316,6 +343,26 @@ public actor LeonardoSigningStore {
 }
 
 extension LeonardoGuidedSigningSession {
+    /// A session is replaceable by an imported copy only before any signing
+    /// decision has been persisted. Assignment, snapshot capture, rubric
+    /// reuse, authorization consumption and even a paused/reviewing state are
+    /// all real progress and therefore make replacement unsafe.
+    public var isPristine: Bool {
+        isPersistable
+            && state == .active
+            && snapshot == nil
+            && completionOrder.isEmpty
+            && rubricByPosition.isEmpty
+            && currentPositionID == nil
+            && consumedAuthorizationIDs.isEmpty
+            && positions.values.allSatisfy { progress in
+                progress.state == .pending
+                    && progress.assignment == nil
+                    && progress.locations.isEmpty
+                    && progress.signature == nil
+            }
+    }
+
     /// Structural validation used for both local persistence and explicit
     /// exchange import. It is intentionally independent of cryptographic
     /// verification so an incomplete (zero-signature) session is still
