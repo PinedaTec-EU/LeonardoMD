@@ -224,6 +224,10 @@ public actor LeonardoSigningStore {
         _ type: T.Type,
         from url: URL
     ) throws -> (values: [T], digest: Data?) {
+        if let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: url.path),
+           !destination.isEmpty {
+            throw LeonardoSigningError.storageFailure
+        }
         guard FileManager.default.fileExists(atPath: url.path) else {
             return ([], nil)
         }
@@ -300,7 +304,8 @@ public actor LeonardoSigningStore {
         }
         guard attributes[.type] as? FileAttributeType == .typeRegular,
               let size = attributes[.size] as? NSNumber,
-              size.intValue <= maximumBytes else {
+              size.int64Value >= 0,
+              size.int64Value <= Int64(maximumBytes) else {
             throw LeonardoSigningError.storageFailure
         }
     }
