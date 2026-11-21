@@ -107,6 +107,7 @@ private struct SyncHelperDiagnosticSheet: View {
             ))
             .font(.caption)
             .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)
             if let feedback {
                 Text(feedback).font(.caption).foregroundStyle(.secondary)
