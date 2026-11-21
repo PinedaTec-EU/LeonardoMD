@@ -33,6 +33,17 @@ private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend
             kSecAttrSynchronizable as String: false,
             kSecValueData as String: data
         ]
+#if os(macOS)
+        // The SwiftPM/macOS product is also shipped as an ad-hoc signed QA
+        // bundle. Data Protection keychain attributes and SecAccessControl
+        // require an application entitlement there and otherwise fail with
+        // errSecMissingEntitlement (-34018). A generic item in the user's
+        // login keychain remains protected by the OS keychain and, unlike a
+        // file fallback, never leaves the encrypted record in the document.
+        // The private record is additionally encrypted with the signer's
+        // personal PBKDF2-derived AES-GCM key below. This is an explicit
+        // macOS storage contract, not a silent downgrade to plaintext.
+#else
         switch item {
         case .publicRecord:
             attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
@@ -44,6 +55,7 @@ private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend
             }
             attributes[kSecAttrAccessControl as String] = access
         }
+#endif
         return SecItemAdd(attributes as CFDictionary, nil)
     }
 
@@ -58,9 +70,11 @@ private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
+#if !os(macOS)
         if case .privateRecord = item, let prompt {
             request[kSecUseOperationPrompt as String] = prompt
         }
+#endif
         var result: CFTypeRef?
         let status = SecItemCopyMatching(request as CFDictionary, &result)
         return (status, result as? Data)
@@ -122,6 +136,11 @@ public actor LeonardoSigningCredentialStore {
 
     private static let publicSuffix = ".public"
     private static let privateSuffix = ".private"
+    /// Imported verification keys are kept in a separate public-only
+    /// namespace. They are never returned by `credentialIDs()` and therefore
+    /// cannot be selected for a new signature without a locally enrolled
+    /// private credential.
+    private static let trustedPublicSuffix = ".trusted-public"
     private static let passwordIterations: UInt32 = 120_000
     private static let maximumPasswordIterations: UInt32 = 1_000_000
     private static let maximumRecordBytes = 1 * 1_024 * 1_024
@@ -201,17 +220,62 @@ public actor LeonardoSigningCredentialStore {
     /// is the trust anchor used to verify every detached signature.
     public func trustStore(credentialIDs: [String]? = nil) throws -> LeonardoSigningTrustRegistry {
         let IDs: [String]
-        if let credentialIDs { IDs = credentialIDs } else { IDs = try self.credentialIDs() }
+        if let credentialIDs {
+            IDs = credentialIDs
+        } else {
+            let personalIDs = try self.credentialIDs()
+            let trustedIDs = try trustedPublicCredentialIDs()
+            IDs = Set(personalIDs + trustedIDs).sorted()
+        }
         let credentials = try IDs.map { id -> LeonardoSigningCredential in
-            guard let record = try publicRecord(credentialID: id) else {
+            guard let credential = try knownPublicCredential(credentialID: id) else {
                 throw LeonardoSigningError.unknownCredential(id)
             }
-            guard record.credential.id == id else {
+            guard credential.id == id else {
                 throw LeonardoSigningError.invalidCredential
             }
-            return record.credential
+            return credential
         }
         return try LeonardoSigningTrustRegistry(credentials: credentials)
+    }
+
+    /// Adds a public verification record only after the caller has obtained
+    /// explicit consent (normally by showing its fingerprint alongside the
+    /// exchange disclosure). This operation cannot create a signing-capable
+    /// credential because no private record is written.
+    public func trustPublicCredential(_ credential: LeonardoSigningCredential) throws {
+        guard credential.isValid else { throw LeonardoSigningError.invalidCredential }
+        if let existing = try trustedPublicCredential(id: credential.id) {
+            guard existing == credential else { throw LeonardoSigningError.invalidCredential }
+            return
+        }
+        if let existing = try publicRecord(credentialID: credential.id)?.credential {
+            guard existing == credential else { throw LeonardoSigningError.invalidCredential }
+            return
+        }
+        let data = try JSONEncoder().encode(credential)
+        let status = keychain.add(service: service + Self.trustedPublicSuffix,
+                                  account: credential.id, data: data,
+                                  item: .publicRecord)
+        guard status == errSecSuccess || status == errSecDuplicateItem else {
+            throw CredentialStorageError(status: status)
+        }
+        if status == errSecDuplicateItem,
+           try trustedPublicCredential(id: credential.id) != credential {
+            throw LeonardoSigningError.invalidCredential
+        }
+    }
+
+    public func trustedPublicCredentials() throws -> [LeonardoSigningCredential] {
+        try trustedPublicCredentialIDs().compactMap { try trustedPublicCredential(id: $0) }
+    }
+
+    public func removeTrustedPublicCredential(id: String) throws {
+        let status = keychain.delete(service: service + Self.trustedPublicSuffix,
+                                     account: id, item: .publicRecord)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw CredentialStorageError(status: status)
+        }
     }
 
     public func credentialIDs() throws -> [String] {
@@ -224,6 +288,16 @@ public actor LeonardoSigningCredentialStore {
         return result.accounts
             .filter { !$0.isEmpty }
             .sorted()
+    }
+
+    private func trustedPublicCredentialIDs() throws -> [String] {
+        let result = keychain.accounts(service: service + Self.trustedPublicSuffix,
+                                       item: .publicRecord)
+        if result.status == errSecItemNotFound { return [] }
+        guard result.status == errSecSuccess else {
+            throw CredentialStorageError(status: result.status)
+        }
+        return result.accounts.filter { !$0.isEmpty }.sorted()
     }
 
     public func remove(credentialID: String) throws {
@@ -287,6 +361,26 @@ public actor LeonardoSigningCredentialStore {
             throw CredentialStorageError(status: status)
         }
         return record
+    }
+
+    private func trustedPublicCredential(id: String) throws -> LeonardoSigningCredential? {
+        let result = keychain.read(service: service + Self.trustedPublicSuffix,
+                                   account: id, item: .publicRecord, prompt: nil)
+        if result.status == errSecItemNotFound { return nil }
+        guard result.status == errSecSuccess, let data = result.data,
+              data.count <= Self.maximumRecordBytes,
+              let credential = try? JSONDecoder().decode(LeonardoSigningCredential.self, from: data),
+              credential.id == id, credential.isValid else {
+            throw CredentialStorageError(status: result.status)
+        }
+        return credential
+    }
+
+    private func knownPublicCredential(credentialID: String) throws -> LeonardoSigningCredential? {
+        if let record = try publicRecord(credentialID: credentialID) {
+            return record.credential
+        }
+        return try trustedPublicCredential(id: credentialID)
     }
 
     private func privateBytes(credentialID: String) throws -> Data? {

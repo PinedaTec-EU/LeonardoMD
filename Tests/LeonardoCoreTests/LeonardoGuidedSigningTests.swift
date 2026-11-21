@@ -292,6 +292,62 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertTrue(corrected.pendingPositionIDs.allSatisfy { corrected.positions[$0]?.signature == nil })
     }
 
+    func testOfflineSigningExchangeRoundTripsAndRejectsChangedAuthoritativeSource() throws {
+        let document = try makeDocument(requiredName: "Form complete")
+        var session = try LeonardoGuidedSigningSession(
+            document: document, at: now, documentLocation: "/Users/example/private.mdlf"
+        )
+        let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        try assign(signer, key: key, to: "titular", session: &session)
+        _ = try session.begin(positionID: "titular", document: document)
+        let targets = try session.targets(for: "titular", document: document)
+        for (index, target) in targets.enumerated() {
+            try session.confirmLocation(
+                positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+                document: document, contextRead: true,
+                rubric: rubric(seed: index + 1), at: now.addingTimeInterval(Double(index + 1))
+            )
+        }
+        let trust = try LeonardoSigningTrustRegistry(credentials: [key.credential])
+        _ = try session.sign(
+            positionID: "titular", keyPair: key, document: document,
+            trustStore: trust, at: now.addingTimeInterval(10)
+        )
+
+        let resource = LeonardoSigningResource(reference: "assets/evidence.txt", bytes: Data("evidence".utf8))
+        // The resource is intentionally not in the snapshot, so an exchange
+        // must carry exactly the same resource set as its session snapshot.
+        XCTAssertThrowsError(try LeonardoSigningExchange(
+            document: document, resources: [resource], session: session,
+            trustedCredentials: [key.credential], at: now
+        ))
+
+        let exchange = try LeonardoSigningExchange(
+            document: document, session: session,
+            trustedCredentials: [key.credential], at: now.addingTimeInterval(0.123456789)
+        )
+        let encoded = try LeonardoSigningExchange.encoded(exchange)
+        let decoded = try LeonardoSigningExchange.decoded(encoded)
+        XCTAssertEqual(decoded, exchange)
+        XCTAssertNil(decoded.session.documentLocation)
+        XCTAssertEqual(try decoded.document(), document)
+        XCTAssertEqual(decoded.trustedCredentials, [key.credential])
+        try decoded.validate(against: document, trustStore: trust)
+        let rebound = try decoded.reboundSession(onto: nil, documentLocation: "/Users/example/private.mdlf")
+        XCTAssertEqual(rebound.documentLocation, "/Users/example/private.mdlf")
+        XCTAssertEqual(
+            try decoded.reboundSession(onto: rebound, documentLocation: "/Users/example/private.mdlf"),
+            rebound
+        )
+
+        var changed = document
+        changed.metadata.values["requiredName"] = .string("Changed elsewhere")
+        XCTAssertThrowsError(try decoded.validate(against: changed, trustStore: trust)) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .integrityFailure)
+        }
+    }
+
     func testProfileIdentityDocumentAndCredentialCannotBeReused() throws {
         let document = try makeDocument(requiredName: "Form complete")
         var session = try LeonardoGuidedSigningSession(document: document, at: now)

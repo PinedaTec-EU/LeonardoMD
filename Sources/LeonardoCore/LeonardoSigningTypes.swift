@@ -186,6 +186,14 @@ public struct LeonardoSigningTrustRegistry: LeonardoSigningTrustStore, Sendable 
     }
 
     public func credential(id: String) -> LeonardoSigningCredential? { credentials[id] }
+
+    /// Public records are useful when an explicit exchange needs to disclose
+    /// which keys were used for verification. This never exposes private key
+    /// material; callers still need separate consent before persisting or
+    /// using an imported key.
+    public var allCredentials: [LeonardoSigningCredential] {
+        credentials.values.sorted { $0.id < $1.id }
+    }
 }
 
 public struct LeonardoSigningResource: Equatable, Sendable {

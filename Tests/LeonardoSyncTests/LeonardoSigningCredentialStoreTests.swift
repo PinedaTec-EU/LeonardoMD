@@ -1,6 +1,7 @@
 import Foundation
 import Security
 import XCTest
+import LeonardoCore
 @testable import LeonardoSync
 
 final class LeonardoSigningCredentialStoreTests: XCTestCase {
@@ -43,6 +44,29 @@ final class LeonardoSigningCredentialStoreTests: XCTestCase {
         }
         let credentialIDs = try await store.credentialIDs()
         XCTAssertEqual(credentialIDs, [])
+    }
+
+    func testImportedPublicTrustIsSeparateFromSigningCredentialSelection() async throws {
+        let keychain = InMemorySigningKeychain()
+        let store = LeonardoSigningCredentialStore(
+            service: "eu.pinedatec.LeonardoMD.tests.signing.\(UUID().uuidString)",
+            prompt: "Test credential",
+            keychain: keychain
+        )
+        _ = try await store.enroll(password: "test-password-123", credentialID: "local")
+        let imported = LeonardoSigningCredential(
+            id: "remote", publicKey: LeonardoSigningKeyPair(credentialID: "remote").credential.publicKey
+        )
+
+        try await store.trustPublicCredential(imported)
+        let credentialIDs = try await store.credentialIDs()
+        XCTAssertEqual(credentialIDs, ["local"])
+        let trust = try await store.trustStore()
+        XCTAssertEqual(trust.credential(id: "remote"), imported)
+
+        try await store.removeTrustedPublicCredential(id: "remote")
+        let trustAfter = try await store.trustStore()
+        XCTAssertNil(trustAfter.credential(id: "remote"))
     }
 }
 

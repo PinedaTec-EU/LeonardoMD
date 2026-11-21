@@ -220,6 +220,17 @@ struct GuidedSigningView: View {
                 .disabled(!(session.guidedSigningSession?.canSign ?? false) || !session.guidedSigningReady
                           || session.guidedSigningTrustStore == nil)
                 .accessibilityIdentifier("guided-sign")
+                Menu {
+                    Button(L10n.text("Export signing copy"), systemImage: "square.and.arrow.up") {
+                        session.exportGuidedSigningExchange()
+                    }
+                    Button(L10n.text("Import signed copy"), systemImage: "square.and.arrow.down") {
+                        session.importGuidedSigningExchange()
+                    }
+                } label: {
+                    Label(L10n.text("Exchange"), systemImage: "arrow.left.arrow.right")
+                }
+                .disabled(!session.guidedSigningReady || session.guidedSigningError != nil)
             }
             Text(L10n.text("The first confirmed location seals form data, assignments and referenced resources."))
                 .font(.caption).foregroundStyle(.secondary)
@@ -354,7 +365,7 @@ struct GuidedSigningView: View {
             }
             Button(L10n.text("Enroll personal credential…")) { showCredentialEnrollment = true }
                 .font(.caption)
-            Text(L10n.text("A local password and keychain presence protect the private key. Touch ID does not identify the signer."))
+            Text(L10n.text("The private key is encrypted with a personal password and stored in the device keychain. Touch ID does not identify the signer."))
                 .font(.caption2).foregroundStyle(.secondary)
         }
     }
@@ -623,7 +634,7 @@ private struct GuidedSigningCredentialEnrollment: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.text("Enroll personal credential")).font(.title3.bold())
-            Text(L10n.text("Choose a personal password. It protects the signing key in addition to local keychain presence."))
+            Text(L10n.text("Choose a personal password. It encrypts the signing key before the device keychain stores it."))
                 .font(.caption).foregroundStyle(.secondary)
             SecureField(L10n.text("Personal credential password"), text: $password)
             SecureField(L10n.text("Confirm password"), text: $confirmation)
@@ -647,7 +658,7 @@ private struct GuidedSigningPassword: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.text("Authorize signature")).font(.title3.bold())
-            Text(L10n.text("Enter the personal credential password. A keychain presence prompt may also appear."))
+            Text(L10n.text("Enter the personal credential password to decrypt the encrypted signing key."))
                 .font(.caption).foregroundStyle(.secondary)
             SecureField(L10n.text("Personal credential password"), text: $password)
             HStack {

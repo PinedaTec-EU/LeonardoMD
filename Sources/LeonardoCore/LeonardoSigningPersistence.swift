@@ -315,8 +315,12 @@ public actor LeonardoSigningStore {
     }
 }
 
-private extension LeonardoGuidedSigningSession {
-    var isPersistable: Bool {
+extension LeonardoGuidedSigningSession {
+    /// Structural validation used for both local persistence and explicit
+    /// exchange import. It is intentionally independent of cryptographic
+    /// verification so an incomplete (zero-signature) session is still
+    /// checked before it is accepted.
+    public var isPersistable: Bool {
         guard !positions.isEmpty,
               id.uuidString != "00000000-0000-0000-0000-000000000000",
               identityCommitmentSalt.count == 32,
@@ -327,6 +331,7 @@ private extension LeonardoGuidedSigningSession {
               Set(completionOrder).count == completionOrder.count,
               completionOrder.allSatisfy({ positions[$0]?.state == .signed }),
               positions.values.filter({ $0.signature != nil }).count == completionOrder.count,
+              currentPositionID.map({ positions[$0] != nil }) ?? true,
               rubricByPosition.keys.allSatisfy({ positions[$0] != nil }),
               rubricByPosition.values.allSatisfy(\.isValid),
               positions.allSatisfy({ positionID, progress in
@@ -334,6 +339,9 @@ private extension LeonardoGuidedSigningSession {
                       && progress.updatedAt.timeIntervalSince1970.isFinite
                       && progress.locations.allSatisfy { location in
                           location.positionID == positionID
+                              && !location.fieldID.isEmpty
+                              && location.fieldID.count <= 200
+                              && !location.fieldID.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
                               && location.occurrence >= 0
                               && location.sourceOffset >= 0
                               && location.contextSHA256.count == 32
@@ -345,7 +353,13 @@ private extension LeonardoGuidedSigningSession {
                       && (progress.assignment == nil || (
                           progress.assignment?.positionID == positionID
                               && progress.assignment?.identity.isValid == true
+                          && progress.assignment?.profileID.uuidString != "00000000-0000-0000-0000-000000000000"
+                          && progress.assignment?.credentialID.isEmpty == false
+                          && (progress.assignment?.credentialID.count ?? 0) <= 200
+                          && progress.assignment?.credentialID.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }) == false
+                          && (progress.assignment?.profileRubric.map(\.isValid) ?? true)
                           && (progress.assignment?.publicKeyDigest.count ?? 0) == 32
+                          && progress.assignment?.authorizationID.uuidString != "00000000-0000-0000-0000-000000000000"
                           && progress.assignment?.authorizedAt.timeIntervalSince1970.isFinite == true
                       ))
                       && (progress.signature == nil || (
@@ -365,11 +379,32 @@ private extension LeonardoGuidedSigningSession {
         if state == .complete && positions.values.contains(where: { $0.state != .signed }) {
             return false
         }
+        if state == .complete && completionOrder.count != positions.count { return false }
+        if state != .complete && positions.values.allSatisfy({ $0.state == .signed }) { return false }
+        var profileIDs = Set<UUID>()
+        var identityKeys = Set<String>()
+        var credentialIDs = Set<String>()
+        var authorizationIDs = Set<UUID>()
+        for progress in positions.values {
+            guard let assignment = progress.assignment else { continue }
+            guard profileIDs.insert(assignment.profileID).inserted,
+                  identityKeys.insert(assignment.identity.normalizedDocumentKey).inserted,
+                  credentialIDs.insert(assignment.credentialID).inserted,
+                  authorizationIDs.insert(assignment.authorizationID).inserted else {
+                return false
+            }
+        }
         if let snapshot {
             guard !snapshot.source.isEmpty,
                   snapshot.sourceSHA256.count == 32,
                   snapshot.capturedAt.timeIntervalSince1970.isFinite,
                   Set(snapshot.resources.map(\.reference)).count == snapshot.resources.count,
+                  snapshot.resources.allSatisfy({
+                      !$0.reference.hasPrefix("/")
+                          && !$0.reference.contains("\\")
+                          && !$0.reference.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
+                          && !$0.reference.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
+                  }),
                   snapshot.resources.allSatisfy({
                       !$0.reference.isEmpty
                           && $0.sha256.count == 32

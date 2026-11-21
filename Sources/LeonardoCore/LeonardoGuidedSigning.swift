@@ -100,7 +100,9 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
     /// Canonical local document identity supplied by the host app. This is
     /// deliberately independent from the mutable MDLF header ID and keeps a
     /// persisted session bound to the coordinated file it was created for.
-    public let documentLocation: String?
+    /// A local binding only. Explicit signing exchanges redact this value;
+    /// an importer must bind the accepted copy to its own coordinated path.
+    public var documentLocation: String?
     public let initialRevision: Int?
     public let declaration: LeonardoSigningDeclaration
     /// A per-document random commitment salt. It is protected sidecar state,

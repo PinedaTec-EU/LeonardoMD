@@ -200,10 +200,12 @@ field occurrences in source order. For each occurrence, read the displayed
 context, draw a new rubric or choose a saved rubric, explicitly confirm any
 reuse, and confirm that exact occurrence. Repeated fields are separate
 locations. The review can be paused and resumed; **Sign** remains available
-while another declared position is still pending. The personal password and
-the device keychain protect the private credential. Touch ID or another
-shared device prompt only unlocks local keychain material; it does not
-identify which person is signing.
+while another declared position is still pending. The private key is encrypted
+with the personal password before it is stored in the device keychain. On
+macOS this is the user's login keychain, so it retains OS keychain protection
+but does not claim a per-signature biometric identity. Touch ID or another
+shared device prompt only unlocks local keychain material; it does not identify
+which person is signing.
 
 The first confirmed location seals the required form data, assignments,
 document revision and referenced resources. A missing required value, an
@@ -624,7 +626,20 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 *Synchronization → Share from this Mac; the common service and sharing are off in this example.*
 
-Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
+Little Leonardo is a **read-only companion for the shared source**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
+
+For an MDLF v2 guided-signing document, Little Leonardo can also make an explicit
+offline signing copy from the document view. **Sign copy** opens the local
+workflow without editing or synchronizing the shared source. Assign each declared
+position to a local profile or a newly entered full name, document type and
+number; identity details and a profile rubric have separate save choices. Enrol
+and authorize a personal credential, read each exact occurrence in source order,
+draw or explicitly confirm reuse of a rubric, and pause or resume as needed.
+**Export signed copy** shows the declared identities and rubrics that will leave
+the device. It includes no private key, local path or unrelated profile. Import
+the JSON copy on the Mac only after it verifies the local source, frozen snapshot,
+chain prefix and the public-key fingerprints checked through a separate channel;
+the import is a compare-and-swap and never overwrites newer progress.
 
 1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a short status message. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
    Use **View diagnostics…** above the role selector to see the Sync service status, the last check, the LeonardoMD version and recent service events from this session. **Copy diagnostics** puts that report on the clipboard. It excludes invitations, pairing codes, device names, network addresses and file paths. **Email diagnostics…** opens a draft in your default mail app with the same report in the message body, addressed to `leonardo@pinedatec.eu`. Review the draft and send it from your mail app. If your default app opens but no draft appears, return to the diagnostic sheet, choose **Copy diagnostics**, and paste the report into a new email to `leonardo@pinedatec.eu`. You can use your usual mail app or webmail.
@@ -898,7 +913,7 @@ Menu availability depends on the current document and state. Text fields keep no
 
 ## 18. Availability, privacy and limits
 
-This guide describes the macOS application. Little Leonardo's read-only role is distinct from the desktop. Do not infer Windows availability or a visual form designer from the open format. Field definitions and advanced layout are authored in metadata/source or with an appropriately equipped agent. A displayed math formula does not compute field values.
+This guide describes the macOS application. Little Leonardo's read-only shared-source role is distinct from the desktop, although its explicit signing-copy exchange can collect detached proofs offline. Do not infer Windows availability or a visual form designer from the open format. Field definitions and advanced layout are authored in metadata/source or with an appropriately equipped agent. A displayed math formula does not compute field values.
 
 Local reading, packaged images and bundled rendering engines work offline. Remote images, external links, updates and transfers have their own network requirements. Project settings are portable configuration, not a place to put passwords. Pairing, sharing, Git Push and sending a document to an AI provider are distinct disclosure decisions. Review the target and content each time.
 

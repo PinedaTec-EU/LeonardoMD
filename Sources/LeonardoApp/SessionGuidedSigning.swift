@@ -1,7 +1,10 @@
 import AppKit
+import CryptoKit
+import Darwin
 import Foundation
 import LeonardoCore
 import LeonardoSync
+import UniformTypeIdentifiers
 
 extension AppSession {
     private var guidedSigningLocation: String? {
@@ -198,6 +201,223 @@ extension AppSession {
 
     func refreshGuidedSigningTrust() async throws {
         guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
+    }
+
+    /// Exports an explicit offline signing exchange. The source document is
+    /// never changed and the package contains only public trust records and
+    /// the current sidecar progress; local paths and private keys stay local.
+    func exportGuidedSigningExchange() {
+        guard let document = leonardoDocument,
+              let current = guidedSigningSession,
+              let expectedLocation = guidedSigningLocation else { return }
+        let expectedContent = content
+        do {
+            let exchange = try LeonardoSigningExchange(
+                document: document,
+                resources: try guidedSigningResources(),
+                session: current,
+                trustedCredentials: guidedSigningTrustStore?.allCredentials ?? [],
+                at: Date()
+            )
+            let data = try LeonardoSigningExchange.encoded(exchange)
+            let panel = NSSavePanel()
+            panel.title = L10n.text("Export signing copy")
+            panel.nameFieldStringValue = documentURL?.deletingPathExtension().lastPathComponent
+                .appending("-signing-copy.json") ?? "Leonardo-signing-copy.json"
+            panel.allowedContentTypes = [.json]
+            presentFilePanel(panel) { [weak self] destination in
+                Task {
+                    await self?.writeGuidedSigningExchange(
+                        data,
+                        to: destination,
+                        expectedLocation: expectedLocation,
+                        expectedContent: expectedContent,
+                        sessionID: current.id
+                    )
+                }
+            }
+        } catch {
+            guidedSigningError = String(describing: error)
+        }
+    }
+
+    /// Opens a signed-copy exchange and merges it only when the local source,
+    /// snapshot, assignments and signature-chain prefix still match. Unknown
+    /// public keys are shown with fingerprints and must be checked through a
+    /// separate channel before they are stored in the public-only trust area.
+    func importGuidedSigningExchange() {
+        guard documentURL != nil else { return }
+        let panel = NSOpenPanel()
+        panel.title = L10n.text("Import signed copy")
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        presentFilePanel(panel) { [weak self] source in
+            Task { await self?.readGuidedSigningExchange(from: source) }
+        }
+    }
+
+    private func writeGuidedSigningExchange(
+        _ data: Data,
+        to destination: URL,
+        expectedLocation: String,
+        expectedContent: String,
+        sessionID: UUID
+    ) async {
+        guard data.count <= LeonardoSigningExchange.maximumEnvelopeBytes,
+              guidedSigningLocation == expectedLocation,
+              content == expectedContent,
+              guidedSigningSession?.id == sessionID,
+              !stopped else { return }
+        do {
+            try InstancePathOwnership.shared.claim(destination)
+            try Self.writeSigningExchangeAtomically(data, to: destination)
+            saveStatus = L10n.text("Signing copy exported")
+        } catch {
+            guidedSigningError = String(describing: error)
+        }
+    }
+
+    private func readGuidedSigningExchange(from source: URL) async {
+        let expectedLocation = guidedSigningLocation
+        let expectedContent = content
+        do {
+            let values = try source.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+            guard values.isRegularFile == true,
+                  let fileSize = values.fileSize,
+                  fileSize <= LeonardoSigningExchange.maximumEnvelopeBytes else {
+                throw LeonardoSigningError.storageFailure
+            }
+            let data = try Data(contentsOf: source, options: [.mappedIfSafe])
+            guard data.count <= LeonardoSigningExchange.maximumEnvelopeBytes else {
+                throw LeonardoSigningError.storageFailure
+            }
+            let exchange = try LeonardoSigningExchange.decoded(data)
+            try await importGuidedSigningExchange(
+                exchange,
+                expectedLocation: expectedLocation,
+                expectedContent: expectedContent
+            )
+        } catch {
+            guidedSigningError = String(describing: error)
+        }
+    }
+
+    private func importGuidedSigningExchange(
+        _ exchange: LeonardoSigningExchange,
+        expectedLocation: String?,
+        expectedContent: String
+    ) async throws {
+        guard let expectedLocation,
+              guidedSigningLocation == expectedLocation,
+              content == expectedContent,
+              let document = leonardoDocument else {
+            throw LeonardoSigningError.integrityFailure
+        }
+        let localResources = try guidedSigningResources()
+        let localTrust = try await guidedSigningCredentialStore.trustStore()
+        let unknown = exchange.trustedCredentials.filter { credential in
+            localTrust.credential(id: credential.id) != credential
+        }
+        let effectiveTrust: LeonardoSigningTrustRegistry
+        if unknown.isEmpty {
+            effectiveTrust = localTrust
+        } else {
+            guard confirmImportedPublicKeys(unknown) else {
+                throw LeonardoSigningError.trustStoreRequired
+            }
+            effectiveTrust = try LeonardoSigningTrustRegistry(
+                credentials: localTrust.allCredentials + unknown
+            )
+        }
+        try exchange.validate(against: document, resources: localResources, trustStore: effectiveTrust)
+        let localSessions = try await guidedSigningStore.sessions()
+            .filter { $0.documentLocation == expectedLocation }
+        let local = localSessions.first { $0.id == exchange.session.id }
+        guard localSessions.allSatisfy({ $0.id == exchange.session.id }) else {
+            throw LeonardoSigningError.staleStorage
+        }
+        let rebound = try exchange.reboundSession(onto: local, documentLocation: expectedLocation)
+        // Persist accepted public records only after the detached proof has
+        // passed validation. These records never contain private key bytes.
+        for credential in unknown {
+            try await guidedSigningCredentialStore.trustPublicCredential(credential)
+        }
+        try await guidedSigningStore.saveSession(rebound)
+        guidedSigningSession = rebound
+        guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
+        guidedSigningVerification = rebound.signatureVerification(
+            document: document,
+            resources: localResources,
+            trustStore: guidedSigningTrustStore!
+        )
+        refreshGuidedSigningTargets()
+        guidedSigningError = nil
+        guidedSigningStatus = L10n.text("Signed copy imported after local integrity and trust checks.")
+    }
+
+    @MainActor
+    private func confirmImportedPublicKeys(_ credentials: [LeonardoSigningCredential]) -> Bool {
+        let fields = credentials.map { credential -> (LeonardoSigningCredential, NSTextField) in
+            let field = NSTextField(string: "")
+            field.placeholderString = L10n.text("Enter fingerprint received separately")
+            field.translatesAutoresizingMaskIntoConstraints = false
+            return (credential, field)
+        }
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 8
+        for (credential, field) in fields {
+            let label = NSTextField(labelWithString: "\(credential.id)\n\(Self.publicFingerprint(credential))")
+            label.font = .monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+            stack.addArrangedSubview(label)
+            stack.addArrangedSubview(field)
+        }
+        stack.frame = NSRect(x: 0, y: 0, width: 430, height: CGFloat(fields.count * 78))
+        let alert = NSAlert()
+        alert.messageText = L10n.text("Verify public signing keys")
+        alert.informativeText = L10n.text("Compare every fingerprint through a separate trusted channel. The exchange file is not itself a trust anchor.")
+        alert.accessoryView = stack
+        alert.addButton(withTitle: L10n.text("Trust and import"))
+        alert.addButton(withTitle: L10n.text("Cancel"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return false }
+        return fields.allSatisfy { credential, field in
+            Self.normalizedFingerprint(field.stringValue) == Self.normalizedFingerprint(Self.publicFingerprint(credential))
+        }
+    }
+
+    private static func publicFingerprint(_ credential: LeonardoSigningCredential) -> String {
+        SHA256.hash(data: credential.publicKey).map { String(format: "%02x", $0) }
+            .joined(separator: ":")
+    }
+
+    private static func normalizedFingerprint(_ value: String) -> String {
+        value.filter(\.isHexDigit).lowercased()
+    }
+
+    private static func writeSigningExchangeAtomically(_ data: Data, to destination: URL) throws {
+        let directory = destination.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let temporary = directory.appendingPathComponent(".\(destination.lastPathComponent).\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        guard FileManager.default.createFile(
+            atPath: temporary.path,
+            contents: nil,
+            attributes: [.posixPermissions: NSNumber(value: Int16(0o600))]
+        ) else { throw LeonardoSigningError.storageFailure }
+        do {
+            let handle = try FileHandle(forWritingTo: temporary)
+            try handle.write(contentsOf: data)
+            try handle.synchronize()
+            try handle.close()
+            guard Darwin.rename(temporary.path, destination.path) == 0 else {
+                throw LeonardoSigningError.storageFailure
+            }
+        } catch let error as LeonardoSigningError {
+            throw error
+        } catch {
+            throw LeonardoSigningError.storageFailure
+        }
     }
 
     func refreshGuidedSigningTargets() {

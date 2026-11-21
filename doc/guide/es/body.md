@@ -207,9 +207,12 @@ lee el contexto mostrado, dibuja una rúbrica nueva o elige una guardada,
 confirma expresamente cualquier reutilización y confirma esa aparición exacta.
 Los campos repetidos son ubicaciones distintas. La revisión se puede pausar y
 reanudar; **Firmar** sigue disponible mientras quede otro puesto declarado
-pendiente. La contraseña personal y el llavero del dispositivo protegen la
-credencial privada. Touch ID u otro aviso compartido solo desbloquea material
-local del llavero: no identifica qué persona está firmando.
+pendiente. La clave privada se cifra con la contraseña personal antes de
+guardarse en el llavero del dispositivo. En macOS es el llavero de inicio de
+sesión del usuario: conserva la protección del llavero del sistema, pero no
+declara una identidad biométrica para cada firma. Touch ID u otro aviso
+compartido solo desbloquea material local del llavero: no identifica qué
+persona está firmando.
 
 La primera aparición confirmada sella los datos obligatorios del formulario,
 las asignaciones, la revisión del documento y los recursos referenciados. Un
@@ -641,7 +644,22 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 *Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.*
 
-Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
+Little Leonardo es un **compañero de solo lectura para la fuente compartida**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
+
+Para un documento MDLF v2 con firma guiada, Little Leonardo también puede crear
+una copia explícita de firma desde la vista del documento. **Firmar copia** abre
+el flujo local sin editar ni sincronizar la fuente compartida. Asigna cada puesto
+declarado a un perfil local o a un nombre completo, tipo y número de documento
+nuevos; guardar los datos de identidad y guardar una rúbrica de perfil son
+decisiones separadas. Inscribe y autoriza una credencial personal, lee cada
+aparición exacta en el orden de la fuente, dibuja una rúbrica o confirma
+expresamente su reutilización, y pausa o reanuda cuando sea necesario.
+**Exportar copia firmada** muestra las identidades declaradas y las rúbricas que
+saldrán del dispositivo. No incluye claves privadas, rutas locales ni perfiles no
+asignados. Importa el JSON en el Mac solo después de comprobar la fuente local,
+la instantánea congelada, el prefijo de la cadena y las huellas de las claves
+públicas mediante un canal independiente; la importación usa compare-and-swap y
+nunca sobrescribe progreso más reciente.
 
 1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador verde confirma que el asistente funciona; un fallo real lo muestra en rojo con un mensaje breve. Durante la comprobación conserva el estado anterior: no aparece un estado gris temporal ni la línea «Servicio de sincronización en ejecución».
    Pulsa **Ver diagnóstico…** encima del selector para consultar el estado del servicio, la última comprobación, la versión de LeonardoMD y los eventos recientes del servicio en esta sesión. **Copiar diagnóstico** lleva ese informe al portapapeles. El informe excluye invitaciones, códigos de emparejamiento, nombres de dispositivos, direcciones de red y rutas de archivos. **Enviar diagnóstico por correo…** abre un borrador en tu aplicación de correo predeterminada, con el mismo informe en el cuerpo y `leonardo@pinedatec.eu` como destinatario. Revisa el borrador y envíalo desde tu aplicación de correo. Si se abre la aplicación predeterminada pero no aparece el borrador, vuelve a la hoja, pulsa **Copiar diagnóstico** y pega el informe en un correo nuevo a `leonardo@pinedatec.eu`. Puedes usar tu aplicación de correo habitual o el correo web.
@@ -923,7 +941,7 @@ La disponibilidad depende del documento y estado actuales. Los campos de texto c
 
 ## 18. Disponibilidad, privacidad y límites
 
-Esta guía describe la aplicación macOS. El papel de solo lectura de Little Leonardo es distinto del escritorio. No deduzcas disponibilidad en Windows ni un diseñador visual de formularios a partir del formato abierto. Las definiciones y el diseño avanzado se escriben en metadatos/fuente o con un agente equipado para ello. Una fórmula visible no calcula valores de campos.
+Esta guía describe la aplicación macOS. El papel de solo lectura de Little Leonardo sobre la fuente compartida es distinto del escritorio, aunque su intercambio explícito de copias de firma puede recoger pruebas separadas sin conexión. No deduzcas disponibilidad en Windows ni un diseñador visual de formularios a partir del formato abierto. Las definiciones y el diseño avanzado se escriben en metadatos/fuente o con un agente equipado para ello. Una fórmula visible no calcula valores de campos.
 
 La lectura local, las imágenes empaquetadas y los motores incluidos funcionan sin conexión. Imágenes remotas, enlaces externos, actualizaciones y transferencias tienen sus propios requisitos de red. Los ajustes de proyecto son configuración portable, no un lugar para contraseñas. Emparejar, compartir, hacer Push o enviar documentos a un proveedor de IA son decisiones de divulgación distintas. Revisa destino y contenido cada vez.
 
