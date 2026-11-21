@@ -2,7 +2,22 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="stable">
+        <item leonardo:channel="beta">
+            <title>0.3.1968</title>
+            <pubDate>Sat, 21 Nov 2026 14:49:16 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>1968</sparkle:version>
+            <sparkle:shortVersionString>0.3.1968</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Synchronization diagnostics
+
+- Synchronization preferences use less space. View diagnostics shows the service status, last check, app version and recent service events. Copy the report or open it in a draft to Leonardo support.
+- If your default mail app opens without a draft, return to the diagnostics sheet, choose **Copy diagnostics**, and paste the report into a new message to **leonardo@pinedatec.eu**. You can use your usual mail app or webmail.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1968/LeonardoMD-0.3.1968.zip" length="25660206" type="application/octet-stream" sparkle:edSignature="EV1Z2N6l+81OBfDrIIAqs+SSJlObik/e/BG5SM4o/ydXwDBhvZkqSDS3D7ai1ZxWuieCWqPfJOsF1vnfUU7+Dg==" />
+        </item>
+    <item leonardo:channel="stable">
             <title>0.3.1959</title>
             <pubDate>Fri, 20 Nov 2026 04:00:44 +0100</pubDate>
             <sparkle:version>1959</sparkle:version>
