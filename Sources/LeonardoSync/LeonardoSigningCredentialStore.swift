@@ -1,4 +1,5 @@
 import CryptoKit
+import CommonCrypto
 import Foundation
 import LeonardoCore
 import Security
@@ -150,7 +151,7 @@ public actor LeonardoSigningCredentialStore {
         let pair = LeonardoSigningKeyPair(credentialID: credentialID)
         let salt = try Self.randomBytes(count: 16)
         let iterations = Self.passwordIterations
-        let key = Self.deriveKey(password: password, salt: salt, iterations: iterations)
+        let key = try Self.deriveKey(password: password, salt: salt, iterations: iterations)
         let sealed: AES.GCM.SealedBox
         do {
             sealed = try AES.GCM.seal(pair.privateKeyRepresentation, using: key)
@@ -185,8 +186,8 @@ public actor LeonardoSigningCredentialStore {
               let sealed = try? AES.GCM.SealedBox(combined: record.sealedPrivateKey) else {
             throw LeonardoSigningError.invalidCredential
         }
-        let key = Self.deriveKey(password: password, salt: publicRecord.salt,
-                                 iterations: publicRecord.iterations)
+        let key = try Self.deriveKey(password: password, salt: publicRecord.salt,
+                                     iterations: publicRecord.iterations)
         guard let privateKey = try? AES.GCM.open(sealed, using: key),
               let pair = try? LeonardoSigningKeyPair(credentialID: credentialID,
                                                       privateKeyRepresentation: privateKey),
@@ -307,27 +308,31 @@ public actor LeonardoSigningCredentialStore {
 
     /// PBKDF2-HMAC-SHA256 with a per-credential salt. The salt and cost are
     /// public metadata; no password-derived digest is put in the document or
-    /// signing proof. One 32-byte block is sufficient for the AES-256 key.
-    private static func deriveKey(password: String, salt: Data, iterations: UInt32) -> SymmetricKey {
-        let passwordKey = SymmetricKey(data: Data(password.utf8))
-        var blockInput = salt
-        var blockNumber = UInt32(1).bigEndian
-        withUnsafeBytes(of: &blockNumber) { blockInput.append(contentsOf: $0) }
-        var u = Data(HMAC<SHA256>.authenticationCode(for: blockInput, using: passwordKey))
-        var output = u
+    /// signing proof. Use Apple's CommonCrypto implementation so the KDF is a
+    /// standard primitive rather than an application-maintained loop. One
+    /// 32-byte block is sufficient for the AES-256 key.
+    private static func deriveKey(password: String, salt: Data, iterations: UInt32) throws -> SymmetricKey {
+        let passwordBytes = Data(password.utf8)
+        var output = Data(repeating: 0, count: 32)
         let outputLength = output.count
-        if iterations > 1 {
-            for _ in 1..<iterations {
-                u = Data(HMAC<SHA256>.authenticationCode(for: u, using: passwordKey))
-                output.withUnsafeMutableBytes { (outputBytes: UnsafeMutableRawBufferPointer) in
-                    u.withUnsafeBytes { (uBytes: UnsafeRawBufferPointer) in
-                        for index in 0..<outputLength {
-                            outputBytes[index] ^= uBytes[index]
-                        }
-                    }
+        let status: Int32 = output.withUnsafeMutableBytes { outputBytes in
+            passwordBytes.withUnsafeBytes { passwordBuffer in
+                salt.withUnsafeBytes { saltBuffer in
+                    CCKeyDerivationPBKDF(
+                        CCPBKDFAlgorithm(kCCPBKDF2),
+                        passwordBuffer.bindMemory(to: CChar.self).baseAddress,
+                        passwordBytes.count,
+                        saltBuffer.bindMemory(to: UInt8.self).baseAddress,
+                        salt.count,
+                        CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
+                        iterations,
+                        outputBytes.bindMemory(to: UInt8.self).baseAddress,
+                        outputLength
+                    )
                 }
             }
         }
+        guard status == kCCSuccess else { throw CredentialStorageError(status: status) }
         return SymmetricKey(data: output)
     }
 
