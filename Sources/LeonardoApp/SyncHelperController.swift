@@ -8,6 +8,7 @@ import LeonardoDesktopSync
 @MainActor @Observable
 final class SyncHelperController {
     enum State { case notInstalled, disabled, approvalRequired, starting, running, failed }
+    private(set) var diagnostics = SyncHelperDiagnostics()
     private(set) var state = State.disabled
     private(set) var enabled = false
     private(set) var busy = false
@@ -93,16 +94,7 @@ final class SyncHelperController {
     var displayedError: String? { errorBeforeRefresh }
     var displayedSharing: RunningDirectService? { sharingBeforeRefresh }
     var showsApprovalAction: Bool { displayedState == .approvalRequired }
-    var statusText: String {
-        switch displayedState {
-        case .notInstalled: L10n.text("Sync helper is not installed")
-        case .disabled: L10n.text("Offline · sync helper disabled")
-        case .approvalRequired: L10n.text("Offline · approve the sync helper in System Settings")
-        case .starting: L10n.text("Offline · sync helper starting")
-        case .running: L10n.text("Sync helper running")
-        case .failed: L10n.text("Offline · sync helper unavailable")
-        }
-    }
+    var statusText: String { displayedState.diagnosticLabel }
 
     func refresh() async {
         guard !busy, !installation.blocksOperations else { return }
@@ -111,7 +103,10 @@ final class SyncHelperController {
         presentationRevision += 1
         let presentation = presentationRevision
         defer {
-            if presentation == presentationRevision && !Task.isCancelled { presentCurrentState() }
+            if presentation == presentationRevision && !Task.isCancelled {
+                diagnostics.lastCheck = now()
+                presentCurrentState()
+            }
             activeRefreshes -= 1
             checking = activeRefreshes > 0
         }
@@ -142,6 +137,7 @@ final class SyncHelperController {
         // result arrives. Keep the last confirmed presentation until it settles.
         if state == .starting && hasPresentedStatus { return }
         if state == .failed { lastFailureRevision = revision }
+        diagnostics.record(state: state, hasError: error != nil, at: now())
         hasPresentedStatus = true
         stateBeforeRefresh = state
         errorBeforeRefresh = error

@@ -13,10 +13,22 @@ import LeonardoSyncTransport
 final class SyncHelperControllerTests: XCTestCase {
     private let replacement = SyncHelperBuildIdentity(build: 200, bundlePath: "/Applications/LeonardoMD.app")
 
-    func testStatusSubtitleHidesHealthyLineAndKeepsOnlyConfirmedDiagnostic() {
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: true, diagnostic: "Offline"), " ")
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: nil), " ")
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: "Offline"), "Offline")
+    func testDiagnosticHistoryKeepsOnlyRecentDistinctSafeServiceEvents() {
+        var diagnostics = SyncHelperDiagnostics()
+        let initial = Date(timeIntervalSince1970: 1_000)
+        diagnostics.record(state: .running, hasError: false, at: initial)
+        diagnostics.record(state: .running, hasError: false, at: initial.addingTimeInterval(1))
+        XCTAssertEqual(diagnostics.events.map(\.date), [initial])
+
+        for index in 1...24 {
+            diagnostics.record(state: index.isMultiple(of: 2) ? .running : .failed,
+                               hasError: true, at: initial.addingTimeInterval(Double(index)))
+        }
+        XCTAssertEqual(diagnostics.events.count, 20)
+        XCTAssertEqual(diagnostics.events.first?.date, initial.addingTimeInterval(5))
+        XCTAssertEqual(diagnostics.status, L10n.text("Sync helper reported a warning"))
+        XCTAssertTrue(diagnostics.report.contains(L10n.text("Sync helper reported a warning")))
+        XCTAssertTrue(diagnostics.report.contains(L10n.text("Offline · sync helper unavailable")))
     }
 
     func testPreferencesRefreshesOnOpenAndOnlyOnExplicitRefreshes() async throws {

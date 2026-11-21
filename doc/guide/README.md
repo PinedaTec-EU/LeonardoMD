@@ -1,10 +1,15 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v103-en.mdlz` and `Guide-v103-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v104-en.mdlz` and `Guide-v104-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v103/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v104/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v104 documents the desktop Sync diagnostics sheet, session service events
+and clipboard report. Fresh packaged Help acceptance is tracked under issue #510.
+Guide v104 EN SHA-256: `af7c49c9b213ec939e168e03a6a8ee91017dcd7cb9a054b28100a384291b6c3d`
+and ES SHA-256: `83a89287234a8a2f042094fe407b4f2ec68604be09b6c919718a0b3d24b4ee1f`.
 
 Guide v103 carries forward v102's project file deletion shortcut and updates
 chapters 8, 11 and 14–15 with the off-by-default non-document file preference on
