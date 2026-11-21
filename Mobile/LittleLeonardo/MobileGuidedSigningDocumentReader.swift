@@ -111,15 +111,11 @@ struct MobileGuidedSigningDocumentReader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(
-                spanish ? "Documento completo · solo lectura" : "Full document · read-only",
-                systemImage: "doc.text.magnifyingglass"
+                spanish ? "Solo lectura" : "Read-only",
+                systemImage: "lock"
             )
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(MobileClassic.heading)
-            Text(spanish ? "Lee la copia completa y usa «Ver ubicación» para saltar a la aparición exacta." : "Read the complete copy and use “View location” to jump to the exact occurrence.")
-                .font(.caption)
-                .foregroundStyle(MobileClassic.secondary)
-
             if let source {
                 ZStack(alignment: .topLeading) {
                     MarkdownPreview(
@@ -133,7 +129,7 @@ struct MobileGuidedSigningDocumentReader: View {
                         configuration: previewConfiguration,
                         controller: controller
                     )
-                    .frame(height: 420)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .opacity(showingNativeFallback ? 0 : 1)
                     .accessibilityIdentifier("mobile-signing-document-preview")
@@ -149,8 +145,7 @@ struct MobileGuidedSigningDocumentReader: View {
                             availableTargetKeys: $availableTargetKeys,
                             onFocusConsumed: onFocusConsumed
                         )
-                        .frame(maxHeight: 420)
-                        .background(MobileClassic.paper)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .accessibilityIdentifier("mobile-signing-native-fallback")
                     }
@@ -164,7 +159,10 @@ struct MobileGuidedSigningDocumentReader: View {
                 .foregroundStyle(.orange)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(MobileClassic.paper)
         .onAppear { refreshAvailableTargets() }
         .onChange(of: controller.isReady) { _, ready in
             guard ready else {

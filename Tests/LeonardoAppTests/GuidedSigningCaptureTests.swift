@@ -37,6 +37,8 @@ final class GuidedSigningCaptureTests: XCTestCase {
         )
         let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
         defer { session.stop() }
+        await session.initialize()
+        session.globalPreferences.palette = .leonardoClassic
         session.documentURL = root.appendingPathComponent("Acuerdo de ejemplo.mdlf")
         session.documentKind = .leonardoTemplate
         session.content = try LeonardoFormatParser.serialize(document)
@@ -44,6 +46,11 @@ final class GuidedSigningCaptureTests: XCTestCase {
         session.guidedSigningTrustStore = try LeonardoSigningTrustRegistry(credentials: [])
         session.guidedSigningReady = true
         XCTAssertTrue(session.guidedSigningWorkflowOperable)
+        session.mode = .fill
+        session.showInspector = true
+
+        try await capture(WorkspaceView(session: session), name: "mac-documento-con-firmas",
+                          size: NSSize(width: 1260, height: 740), session: session, folder: folder)
 
         try await capture(DocumentToolbar(session: session), name: "mac-barra-documento",
                           size: NSSize(width: 1260, height: 72), session: session, folder: folder)
