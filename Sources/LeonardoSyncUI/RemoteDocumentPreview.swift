@@ -84,21 +84,7 @@ public struct RemoteDocumentPreview: View {
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
                         if let declaration = guidedSigningDeclaration(in: text) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Label(t("Guided signing · read-only preview",
-                                       "Firma guiada · vista de solo lectura"), systemImage: "signature")
-                                    .font(.headline)
-                                Text(t("Signing positions are reviewed and authorized on the desktop document. This mobile view never grants form editing or signing access.",
-                                       "Los puestos de firma se revisan y autorizan en el documento de escritorio. Esta vista móvil nunca concede edición ni acceso para firmar."))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(declaration.positions.map(\.label).joined(separator: ", "))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.accentColor.opacity(0.08))
+                            LeonardoGuidedSigningReadOnlyBanner(declaration: declaration, spanish: spanish)
                         }
                         MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
                             configuration: previewConfiguration,
@@ -166,5 +152,38 @@ public struct RemoteDocumentPreview: View {
               let entry = project?.catalogue.files.first(where: { $0.path == path }),
               Self.previewableDocumentExtensions.contains((path as NSString).pathExtension.lowercased()) else { return }
         linked = entry
+    }
+}
+
+/// Shared by remote and offline Little Leonardo readers. It is deliberately a
+/// presentation-only notice: the mobile reader never receives the desktop
+/// signing coordinator or any form-editing capability.
+public struct LeonardoGuidedSigningReadOnlyBanner: View {
+    private let declaration: LeonardoSigningDeclaration
+    private let spanish: Bool
+
+    public init(declaration: LeonardoSigningDeclaration, spanish: Bool) {
+        self.declaration = declaration
+        self.spanish = spanish
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label(spanish ? "Firma guiada · vista de solo lectura" : "Guided signing · read-only preview",
+                  systemImage: "signature")
+                .font(.headline)
+            Text(spanish
+                 ? "Los puestos de firma se revisan y autorizan en el documento de escritorio. Esta vista móvil nunca concede edición ni acceso para firmar."
+                 : "Signing positions are reviewed and authorized on the desktop document. This mobile view never grants form editing or signing access.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(declaration.positions.map(\.label).joined(separator: ", "))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.accentColor.opacity(0.08))
+        .accessibilityIdentifier("guided-signing-read-only-banner")
     }
 }

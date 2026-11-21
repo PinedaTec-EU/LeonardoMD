@@ -592,6 +592,13 @@ struct MobileDocumentView: View {
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
     private var liveFile: CorpusFile? { library.currentFile(projectID: projectID, path: file.path) }
+    private var guidedSigningDeclaration: LeonardoSigningDeclaration? {
+        guard !source,
+              Self.leonardoFormatExtensions.contains(fileExtension),
+              let document = try? LeonardoFormatParser.parse(text),
+              document.metadata.formatVersion >= LeonardoFormat.signingVersion else { return nil }
+        return document.metadata.document.signing
+    }
 
     var body: some View {
         Group {
@@ -603,9 +610,16 @@ struct MobileDocumentView: View {
                 ContentUnavailableView("Archivo conservado", systemImage: "doc",
                     description: Text("Este archivo se conserva en la copia de recuperación. Expórtala para abrirlo en un ordenador."))
             } else if !source, Self.markdownPreviewExtensions.contains(fileExtension) {
-                MarkdownPreview(content: text,
-                    baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
-                    configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)
+                VStack(alignment: .leading, spacing: 0) {
+                    if let guidedSigningDeclaration {
+                        LeonardoGuidedSigningReadOnlyBanner(
+                            declaration: guidedSigningDeclaration,
+                            spanish: MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first))
+                    }
+                    MarkdownPreview(content: text,
+                        baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
+                        configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)
+                }
             } else {
                 ScrollView {
                     Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled)
