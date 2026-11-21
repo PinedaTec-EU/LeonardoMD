@@ -43,7 +43,7 @@ struct PreferencesView: View {
                     generalPreferences
                 }
             }
-        }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
+        }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: selectedTab == "sync" ? 700 : 580, height: 620)
         .background(UpdatePreferencesWindowIdentity())
         .onAppear { projectScope = session.projectURL != nil }
         .onChange(of: session.projectURL) { _, root in
