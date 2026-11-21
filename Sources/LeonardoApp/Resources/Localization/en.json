@@ -784,6 +784,7 @@
   "No signer selected": "No signer selected",
   "No signer positions are available.": "No signer positions are available.",
   "No rubric field assigned": "No rubric field assigned",
+  "%d of %d positions complete": "%d of %d signed",
   "All declared positions are complete.": "All declared positions are complete.",
   "Signatures verified against the local trust registry.": "Signatures verified against the local trust registry.",
   "One or more signatures need trust or integrity review.": "One or more signatures need trust or integrity review.",

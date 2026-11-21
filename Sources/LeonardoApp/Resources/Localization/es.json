@@ -784,6 +784,7 @@
   "No signer selected": "No hay firmante seleccionado",
   "No signer positions are available.": "No hay puestos de firma disponibles.",
   "No rubric field assigned": "No hay campo de rúbrica asignado",
+  "%d of %d positions complete": "%d de %d firmados",
   "All declared positions are complete.": "Todos los puestos declarados están completos.",
   "Signatures verified against the local trust registry.": "Firmas verificadas contra el registro de confianza local.",
   "One or more signatures need trust or integrity review.": "Una o más firmas requieren revisar confianza o integridad.",
