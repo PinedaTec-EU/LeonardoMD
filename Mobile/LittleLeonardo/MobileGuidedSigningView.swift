@@ -101,20 +101,20 @@ struct MobileGuidedSigningView: View {
                 signingContent(document: document)
             } else {
                 ContentUnavailableView(
-                    "Copia no válida / Invalid copy",
+                    spanish ? "Copia no válida" : "Invalid copy",
                     systemImage: "exclamationmark.triangle",
                     description: Text(MobileSigningCopyError.invalidExchange.message)
                 )
             }
         }
-        .navigationTitle("Firma de copia / Sign copy")
+        .navigationTitle(spanish ? "Firma de copia" : "Sign copy")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadLocalSigningData() }
-        .alert("Firma guiada / Guided signing", isPresented: Binding(
+        .alert(spanish ? "Firma guiada" : "Guided signing", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("Aceptar / OK") { errorMessage = nil }
+            Button(spanish ? "Aceptar" : "OK") { errorMessage = nil }
         } message: { Text(errorMessage ?? "") }
         .alert(
             spanish ? "Contenido de la copia" : "Signing copy contents",
@@ -161,26 +161,26 @@ struct MobileGuidedSigningView: View {
             }
         }
         .sheet(isPresented: $showingEnrollment) {
-            MobileSigningCredentialEnrollment { password in
+            MobileSigningCredentialEnrollment(spanish: spanish) { password in
                 showingEnrollment = false
                 Task { await enrollCredential(password: password) }
             }
         }
         .sheet(isPresented: $showingPassword) {
-            MobileSigningPassword { password in
+            MobileSigningPassword(spanish: spanish) { password in
                 showingPassword = false
                 Task { await signSelectedPosition(password: password) }
             }
         }
         .confirmationDialog(
-            "Confirmar reutilización / Confirm reuse",
+            spanish ? "Confirmar reutilización" : "Confirm reuse",
             isPresented: Binding(
                 get: { rubricReuseChoice != nil },
                 set: { if !$0 { rubricReuseChoice = nil } }
             ),
             titleVisibility: .visible
         ) {
-            Button("Reutilizar y confirmar / Reuse and confirm") {
+            Button(spanish ? "Reutilizar y confirmar" : "Reuse and confirm") {
                 guard let reuse = rubricReuseChoice,
                       let selectedPositionID,
                       let value = reuseRubric(for: reuse) else { return }
@@ -188,9 +188,11 @@ struct MobileGuidedSigningView: View {
                 confirmSelectedTarget(reuse: reuse, rubric: value, reuseConfirmed: true)
                 _ = selectedPositionID
             }
-            Button("Cancelar / Cancel", role: .cancel) { rubricReuseChoice = nil }
+            Button(spanish ? "Cancelar" : "Cancel", role: .cancel) { rubricReuseChoice = nil }
         } message: {
-            Text("La rúbrica se reutilizará solo en este puesto y esta aparición exacta. / The rubric is reused only for this position and exact occurrence.")
+            Text(spanish
+                 ? "La rúbrica se reutilizará solo en este puesto y esta aparición exacta."
+                 : "The rubric is reused only for this position and exact occurrence.")
         }
         .fileExporter(
             isPresented: $exporting,
@@ -258,7 +260,8 @@ struct MobileGuidedSigningView: View {
                         Button(spanish ? "Confirmar huella y confiar" : "Confirm fingerprint and trust") {
                             Task { await acceptSelectedPublicKey() }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedProminent)
+                        .foregroundStyle(MobileClassic.paper)
                         .disabled(selectedTrustCredentialID == nil || trustFingerprintInput.isEmpty || busy)
                     }
                 } else if !trustedCredentials.isEmpty {
@@ -278,6 +281,7 @@ struct MobileGuidedSigningView: View {
                     )
                 }
                 .buttonStyle(.borderedProminent)
+                .foregroundStyle(MobileClassic.paper)
                 .accessibilityIdentifier("mobile-signing-open-document")
                 Text(spanish
                      ? "La copia completa se abre en una página independiente para leerla sin editarla."
@@ -326,6 +330,8 @@ struct MobileGuidedSigningView: View {
                 Button(spanish ? "Exportar copia de firma" : "Export signed copy", systemImage: "square.and.arrow.up") {
                     showingExportDisclosure = true
                 }
+                .buttonStyle(.borderedProminent)
+                .foregroundStyle(MobileClassic.paper)
                 .disabled(busy)
                 .accessibilityIdentifier("export-mobile-signing-copy")
                 Text(spanish
@@ -351,7 +357,7 @@ struct MobileGuidedSigningView: View {
         Section(spanish ? "Identidad y credencial · \(position.label)" : "Identity and credential · \(position.label)") {
             if let assignment = progress.assignment {
                 Label(
-                    "\(assignment.identity.fullName) · \(assignment.identity.documentType.rawValue) · \(assignment.identity.redactedDocumentNumber)",
+                    "\(assignment.identity.fullName) · \(documentTypeLabel(assignment.identity.documentType)) · \(assignment.identity.redactedDocumentNumber)",
                     systemImage: "person.crop.circle"
                 )
                 Text(spanish ? "Identidad declarada; la credencial es un registro distinto." : "Declared identity; the credential is a separate record.")
@@ -366,7 +372,7 @@ struct MobileGuidedSigningView: View {
                     TextField(spanish ? "Nombre completo" : "Full name", text: $fullName)
                     Picker(spanish ? "Tipo de documento" : "Document type", selection: $documentType) {
                         ForEach(LeonardoIdentityDocumentType.allCases, id: \.rawValue) { type in
-                            Text(type.rawValue).tag(type)
+                            Text(documentTypeLabel(type)).tag(type)
                         }
                     }
                     TextField(spanish ? "Número de documento" : "Document number", text: $documentNumber)
@@ -403,6 +409,7 @@ struct MobileGuidedSigningView: View {
                     Task { await assignSelectedPosition(position.id) }
                 }
                 .buttonStyle(.borderedProminent)
+                .foregroundStyle(MobileClassic.paper)
                 .disabled(!canAssign || busy)
             }
         }
@@ -422,11 +429,15 @@ struct MobileGuidedSigningView: View {
                 Button(spanish ? "Iniciar revisión" : "Begin review", systemImage: "play.circle") {
                     Task { await beginReview(position.id, document: document) }
                 }
+                .buttonStyle(.borderedProminent)
+                .foregroundStyle(MobileClassic.paper)
                 .disabled(busy || !trustAccepted)
             } else if progress.state == .paused {
                 Button(spanish ? "Reanudar revisión" : "Resume review", systemImage: "play.circle") {
                     Task { await resumeReview(position.id) }
                 }
+                .buttonStyle(.borderedProminent)
+                .foregroundStyle(MobileClassic.paper)
                 .disabled(busy)
             } else if progress.state == .signed {
                 Label(spanish ? "Puesto firmado y verificado localmente." : "Position signed and verified locally.", systemImage: "checkmark.seal.fill")
@@ -473,6 +484,7 @@ struct MobileGuidedSigningView: View {
                                         showingRubric = true
                                     }
                                     .buttonStyle(.borderedProminent)
+                                    .foregroundStyle(MobileClassic.paper)
                                     .disabled(!targetAvailable || busy)
                                     if session.rubricByPosition[position.id] != nil {
                                         Button(spanish ? "Reutilizar última" : "Reuse last") {
@@ -480,6 +492,7 @@ struct MobileGuidedSigningView: View {
                                             previewFocusTarget = target
                                             rubricReuseChoice = .session
                                         }
+                                        .buttonStyle(.bordered)
                                         .disabled(!targetAvailable || busy)
                                     }
                                     if progress.assignment?.profileRubric != nil {
@@ -488,6 +501,7 @@ struct MobileGuidedSigningView: View {
                                             previewFocusTarget = target
                                             rubricReuseChoice = .profile
                                         }
+                                        .buttonStyle(.bordered)
                                         .disabled(!targetAvailable || busy)
                                     }
                                 }
@@ -507,12 +521,14 @@ struct MobileGuidedSigningView: View {
                         Button(spanish ? "Pausar" : "Pause", systemImage: "pause.circle") {
                             Task { await pauseReview(position.id) }
                         }
+                        .buttonStyle(.bordered)
                         .disabled(busy)
                         Spacer()
                         Button(spanish ? "Firmar" : "Sign", systemImage: "signature") {
                             showingPassword = true
                         }
                         .buttonStyle(.borderedProminent)
+                        .foregroundStyle(MobileClassic.paper)
                         .disabled(progress.state != .readyToSign || busy || !trustAccepted)
                     }
                 }
@@ -764,8 +780,10 @@ struct MobileGuidedSigningView: View {
     private var exportDisclosureMessage: String {
         let assignments: [String] = session.declaration.positions.compactMap { position in
             guard let assignment = session.positions[position.id]?.assignment else { return nil }
-            let rubric = assignment.profileRubric == nil ? "no profile rubric" : "profile rubric"
-            return "• \(position.label): \(assignment.identity.fullName) · \(assignment.identity.documentType.rawValue) · \(assignment.identity.redactedDocumentNumber) · \(rubric)"
+            let rubric = assignment.profileRubric == nil
+                ? (spanish ? "sin rúbrica de perfil" : "no profile rubric")
+                : (spanish ? "rúbrica de perfil" : "profile rubric")
+            return "• \(position.label): \(assignment.identity.fullName) · \(documentTypeLabel(assignment.identity.documentType)) · \(assignment.identity.redactedDocumentNumber) · \(rubric)"
         }
         let details = assignments.isEmpty ? "• No assigned signer yet." : assignments.joined(separator: "\n")
         if spanish {
@@ -800,6 +818,15 @@ struct MobileGuidedSigningView: View {
         case nil: return spanish ? "No disponible" : "Unavailable"
         }
     }
+
+    private func documentTypeLabel(_ type: LeonardoIdentityDocumentType) -> String {
+        switch type {
+        case .nationalID: return spanish ? "DNI" : "National ID"
+        case .passport: return spanish ? "Pasaporte" : "Passport"
+        case .driverLicense: return spanish ? "Permiso de conducir" : "Driver license"
+        case .other: return spanish ? "Otro documento" : "Other document"
+        }
+    }
 }
 
 private struct MobileGuidedRubricSheet: View {
@@ -824,11 +851,12 @@ private struct MobileGuidedRubricSheet: View {
                     .background(MobileClassic.canvas)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 if limitReached {
-                    Text("La rúbrica supera el límite portable. / Rubric exceeds the portable limit.")
+                    Text(spanish ? "La rúbrica supera el límite portable." : "Rubric exceeds the portable limit.")
                         .font(.caption).foregroundStyle(.orange)
                 }
                 Button(spanish ? "Confirmar aparición" : "Confirm occurrence", action: confirm)
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(MobileClassic.paper)
                     .disabled(!rubric.isValid || limitReached)
             }
             .padding()
@@ -840,6 +868,7 @@ private struct MobileGuidedRubricSheet: View {
 }
 
 private struct MobileSigningCredentialEnrollment: View {
+    let spanish: Bool
     let onEnroll: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var password = ""
@@ -849,21 +878,26 @@ private struct MobileSigningCredentialEnrollment: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("La contraseña personal cifra la clave privada antes de guardarla en el llavero. / The personal password encrypts the private key before it is stored in the keychain.")
+                    Text(spanish
+                         ? "La contraseña personal cifra la clave privada antes de guardarla en el llavero."
+                         : "The personal password encrypts the private key before it is stored in the keychain.")
                         .font(.footnote)
-                    SecureField("Contraseña / Password", text: $password)
-                    SecureField("Confirmar / Confirm", text: $confirmation)
+                    SecureField(spanish ? "Contraseña" : "Password", text: $password)
+                    SecureField(spanish ? "Confirmar" : "Confirm", text: $confirmation)
                 }
-                Button("Inscribir / Enroll") { onEnroll(password) }
+                Button(spanish ? "Inscribir" : "Enroll") { onEnroll(password) }
+                    .buttonStyle(.borderedProminent)
+                    .foregroundStyle(MobileClassic.paper)
                     .disabled(password.count < 8 || password != confirmation)
             }
-            .navigationTitle("Credencial / Credential")
-            .toolbar { Button("Cerrar / Close") { dismiss() } }
+            .navigationTitle(spanish ? "Credencial" : "Credential")
+            .toolbar { Button(spanish ? "Cerrar" : "Close") { dismiss() } }
         }
     }
 }
 
 private struct MobileSigningPassword: View {
+    let spanish: Bool
     let onSubmit: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var password = ""
@@ -871,12 +905,14 @@ private struct MobileSigningPassword: View {
     var body: some View {
         NavigationStack {
             Form {
-                SecureField("Contraseña personal / Personal password", text: $password)
-                Button("Firmar / Sign") { onSubmit(password) }
+                SecureField(spanish ? "Contraseña personal" : "Personal password", text: $password)
+                Button(spanish ? "Firmar" : "Sign") { onSubmit(password) }
+                    .buttonStyle(.borderedProminent)
+                    .foregroundStyle(MobileClassic.paper)
                     .disabled(password.isEmpty)
             }
-            .navigationTitle("Autorizar firma / Authorize signature")
-            .toolbar { Button("Cancelar / Cancel") { dismiss() } }
+            .navigationTitle(spanish ? "Autorizar firma" : "Authorize signature")
+            .toolbar { Button(spanish ? "Cancelar" : "Cancel") { dismiss() } }
         }
     }
 }

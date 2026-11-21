@@ -82,6 +82,16 @@ struct GuidedSigningView: View {
         return true
     }
 
+    private var completedPositionCount: Int {
+        positions.reduce(into: 0) { count, position in
+            if session.guidedSigningSession?.positions[position.id]?.state == .signed { count += 1 }
+        }
+    }
+
+    private var allPositionsComplete: Bool {
+        !positions.isEmpty && completedPositionCount == positions.count
+    }
+
     private var currentTarget: LeonardoSigningLocationTarget? {
         guard session.guidedSigningTargets.indices.contains(selectedTargetIndex) else { return nil }
         return session.guidedSigningTargets[selectedTargetIndex]
@@ -113,9 +123,11 @@ struct GuidedSigningView: View {
         .task {
             if selectedPositionID == nil { selectedPositionID = positions.first?.id }
             if selectedCredentialID.isEmpty { selectedCredentialID = session.guidedSigningCredentialIDs.first ?? "" }
+            profileOptionsChanged()
             await refreshRenderedTargets()
         }
         .onChange(of: session.guidedSigningCredentialIDs) { _, values in credentialIDsChanged(values) }
+        .onChange(of: session.guidedSigningProfiles) { _, _ in profileOptionsChanged() }
         .onChange(of: selectedPositionID) { _, _ in selectedPositionChanged() }
         .onChange(of: selectedTargetIndex) { _, _ in selectedTargetChanged() }
         .onChange(of: session.guidedSigningTargets) { _, _ in refreshTargetsSoon() }
@@ -169,29 +181,44 @@ struct GuidedSigningView: View {
 
     @ViewBuilder
     private var signingContent: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            Divider()
-            if session.guidedSigningLoading {
-                ProgressView(L10n.text("Preparing the protected signing workflow…"))
-            } else if let error = session.guidedSigningError {
-                integrityWarning(error)
-            } else if let selectedPosition {
-                positionPicker
-                assignmentSection(selectedPosition)
-                reviewSection(selectedPosition)
-            } else {
-                Text(L10n.text("No signer positions are available.")).foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                header
+                Divider()
+                if session.guidedSigningLoading {
+                    ProgressView(L10n.text("Preparing the protected signing workflow…"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else if let error = session.guidedSigningError {
+                    integrityWarning(error)
+                } else if let selectedPosition {
+                    positionPicker
+                    assignmentSection(selectedPosition)
+                    reviewSection(selectedPosition)
+                } else {
+                    Text(L10n.text("No signer positions are available.")).foregroundStyle(.secondary)
+                }
+                if let status = session.guidedSigningStatus {
+                    Label(status, systemImage: "checkmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
             }
-            if let status = session.guidedSigningStatus {
-                Label(status, systemImage: "checkmark.circle").font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
         }
     }
 
     private func credentialIDsChanged(_ values: [String]) {
         if !values.contains(selectedCredentialID) { selectedCredentialID = values.first ?? "" }
+    }
+
+    private func profileOptionsChanged() {
+        guard selectedProgress?.assignment == nil, !creatingProfile, selectedProfileID == nil else { return }
+        if session.guidedSigningProfiles.isEmpty {
+            creatingProfile = true
+        } else {
+            selectedProfileID = session.guidedSigningProfiles.first?.id
+        }
     }
 
     private func selectedPositionChanged() {
@@ -218,19 +245,19 @@ struct GuidedSigningView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(L10n.text("Guided signing"), systemImage: "signature").font(.headline)
-                Spacer()
-                Button {
-                    if selectedProgress?.state == .readyToSign { showPassword = true }
-                    else { session.guidedSigningStatus = L10n.text("Review every assigned occurrence before signing.") }
-                } label: {
-                    Label(L10n.text("Sign"), systemImage: "signature")
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!(session.guidedSigningSession?.canSign ?? false) || !session.guidedSigningReady
-                          || session.guidedSigningTrustStore == nil)
-                .accessibilityIdentifier("guided-sign")
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Label(L10n.text("Guided signing"), systemImage: "signature")
+                    .font(.headline)
+                Spacer(minLength: 6)
+                Label(
+                    L10n.format("%d of %d positions complete", completedPositionCount, positions.count),
+                    systemImage: allPositionsComplete ? "checkmark.circle.fill" : "person.2"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(allPositionsComplete ? .green : .secondary)
+                .accessibilityLabel(L10n.format("%d of %d positions complete", completedPositionCount, positions.count))
+            }
+            HStack(spacing: 8) {
                 Menu {
                     Button(L10n.text("Export signing copy"), systemImage: "square.and.arrow.up") {
                         session.exportGuidedSigningExchange()
@@ -241,7 +268,9 @@ struct GuidedSigningView: View {
                 } label: {
                     Label(L10n.text("Exchange"), systemImage: "arrow.left.arrow.right")
                 }
+                .buttonStyle(PremiumButtonStyle(compact: true))
                 .disabled(!session.guidedSigningReady || session.guidedSigningError != nil)
+                Spacer(minLength: 0)
             }
             Text(L10n.text("The first confirmed location seals form data, assignments and referenced resources."))
                 .font(.caption).foregroundStyle(.secondary)
@@ -261,8 +290,11 @@ struct GuidedSigningView: View {
                         Text(fields.isEmpty ? L10n.text("No rubric field assigned") : fields.joined(separator: ", "))
                             .font(.caption).foregroundStyle(fields.isEmpty ? .red : .secondary)
                     }
-                    Spacer()
+                    positionStatusBadge(for: position.id)
                 }
+                .padding(.vertical, 7)
+                .padding(.horizontal, 9)
+                .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
             }
             if session.guidedSigningSession?.state == .complete {
                 Label(L10n.text("All declared positions are complete."), systemImage: "checkmark.seal")
@@ -276,26 +308,52 @@ struct GuidedSigningView: View {
         let values = session.guidedSigningVerification
         return Group {
             if !values.isEmpty {
+                let valid = values.values.allSatisfy { $0 == .valid }
                 Label(values.values.allSatisfy({ $0 == .valid })
                       ? L10n.text("Signatures verified against the local trust registry.")
                       : L10n.text("One or more signatures need trust or integrity review."),
-                      systemImage: values.values.allSatisfy({ $0 == .valid }) ? "checkmark.shield" : "exclamationmark.shield")
-                    .font(.caption).foregroundStyle(values.values.allSatisfy({ $0 == .valid }) ? .green : .orange)
+                      systemImage: valid ? "checkmark.shield" : "exclamationmark.shield")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(valid ? .green : .orange)
+                    .padding(.vertical, 7)
+                    .padding(.horizontal, 9)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background((valid ? Color.green : Color.orange).opacity(0.10),
+                                in: RoundedRectangle(cornerRadius: 8))
             }
         }
     }
 
+    private func positionStatusBadge(for positionID: String) -> some View {
+        let state = session.guidedSigningSession?.positions[positionID]?.state
+        return Text(state.map { stateLabel($0) } ?? L10n.text("Pending"))
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(statusColor(for: positionID))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(statusColor(for: positionID).opacity(0.12), in: Capsule())
+    }
+
     private var positionPicker: some View {
-        Picker(L10n.text("Signer position"), selection: Binding(
-            get: { selectedPositionID ?? positions.first?.id ?? "" },
-            set: { selectedPositionID = $0 }
-        )) {
-            ForEach(positions) { position in
-                Text(position.label).tag(position.id)
+        HStack(spacing: 8) {
+            Label(L10n.text("Signer position"), systemImage: "person.2")
+                .font(.caption.weight(.semibold))
+            Spacer(minLength: 8)
+            Picker(L10n.text("Signer position"), selection: Binding(
+                get: { selectedPositionID ?? positions.first?.id ?? "" },
+                set: { selectedPositionID = $0 }
+            )) {
+                ForEach(positions) { position in
+                    Text(position.label).tag(position.id)
+                }
             }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .accessibilityLabel(L10n.text("Signer position"))
         }
-        .labelsHidden()
-        .accessibilityLabel(L10n.text("Signer position"))
+        .padding(.vertical, 7)
+        .padding(.horizontal, 9)
+        .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
     }
 
     @ViewBuilder
@@ -305,7 +363,7 @@ struct GuidedSigningView: View {
                 Label(L10n.text("Assigned signer"), systemImage: "person.crop.circle.badge.checkmark")
                     .font(.subheadline.weight(.semibold))
                 Text(assignment.identity.fullName)
-                Text(L10n.format("Declared identity · %@ · %@", assignment.identity.documentType.rawValue,
+                Text(L10n.format("Declared identity · %@ · %@", documentTypeLabel(assignment.identity.documentType),
                                  assignment.identity.redactedDocumentNumber))
                     .font(.caption).foregroundStyle(.secondary)
                 Text(L10n.format("Credential %@", assignment.credentialID.suffix(12).description))
@@ -318,7 +376,8 @@ struct GuidedSigningView: View {
                         .font(.caption).foregroundStyle(.green)
                 }
             }
-            .padding(10).background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            .padding(12)
+            .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
         } else {
             VStack(alignment: .leading, spacing: 9) {
                 Label(L10n.text("Assign this position"), systemImage: "person.badge.plus")
@@ -332,6 +391,8 @@ struct GuidedSigningView: View {
                         Text(profile.displayName).tag(Optional(profile.id))
                     }
                 }
+                .pickerStyle(.menu)
+                .accessibilityLabel(L10n.text("Local profile"))
                 if creatingProfile { newProfileForm }
                 credentialPicker
                 Button {
@@ -339,8 +400,11 @@ struct GuidedSigningView: View {
                 } label: {
                     Label(L10n.text("Review and assign"), systemImage: "checkmark.circle")
                 }
+                .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
                 .disabled(!assignmentCanBeSubmitted)
             }
+            .padding(12)
+            .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -362,6 +426,7 @@ struct GuidedSigningView: View {
                     rubricEditorPurpose = .profile
                     showRubricEditor = true
                 }
+                .buttonStyle(PremiumButtonStyle(compact: true))
             }
             Toggle(L10n.text("Save this profile rubric separately"), isOn: $saveRubric)
                 .disabled(draftProfileRubric == nil)
@@ -382,7 +447,7 @@ struct GuidedSigningView: View {
                 }
             }
             Button(L10n.text("Enroll personal credential…")) { showCredentialEnrollment = true }
-                .font(.caption)
+                .buttonStyle(PremiumButtonStyle(compact: true))
             Text(L10n.text("The private key is encrypted with a personal password and stored in the device keychain. Touch ID does not identify the signer."))
                 .font(.caption2).foregroundStyle(.secondary)
         }
@@ -392,10 +457,10 @@ struct GuidedSigningView: View {
     private func reviewSection(_ position: LeonardoSignerPosition) -> some View {
         if let progress = selectedProgress {
             VStack(alignment: .leading, spacing: 9) {
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 Text(L10n.text("Review locations")).font(.subheadline.weight(.semibold))
                 Spacer()
-                Text(stateLabel(progress.state)).font(.caption).foregroundStyle(.secondary)
+                positionStatusBadge(for: position.id)
             }
             if progress.state == .pending, progress.assignment != nil {
                 Button(L10n.text("Begin review")) {
@@ -404,6 +469,7 @@ struct GuidedSigningView: View {
                         await refreshRenderedTargets()
                     }
                 }
+                .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
             } else if progress.state == .paused {
                 Button(L10n.text("Resume review")) {
                     Task {
@@ -411,6 +477,7 @@ struct GuidedSigningView: View {
                         await refreshRenderedTargets()
                     }
                 }
+                .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
             } else if progress.state == .signed {
                 Label(L10n.text("This position is signed; its signed proof remains in the sidecar."), systemImage: "checkmark.seal")
                     .font(.caption).foregroundStyle(.green)
@@ -419,10 +486,11 @@ struct GuidedSigningView: View {
                 targetControls(progress)
                 HStack {
                     Button(L10n.text("Pause")) { Task { await session.pauseGuidedPosition() } }
+                        .buttonStyle(PremiumButtonStyle(compact: true))
                         .disabled(progress.state == .signed)
                     Spacer()
                     Button(L10n.text("Sign")) { showPassword = true }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
                         .disabled(progress.state != .readyToSign)
                 }
             }
@@ -432,6 +500,7 @@ struct GuidedSigningView: View {
                 Button(L10n.text("Start a new revision for corrections…")) {
                     Task { await session.startGuidedSigningRevision() }
                 }
+                .buttonStyle(PremiumButtonStyle(compact: true))
                 .disabled(session.isProtected)
                 if session.isProtected {
                     Text(L10n.text("Unlock the document before creating a corrected revision."))
@@ -439,6 +508,8 @@ struct GuidedSigningView: View {
                 }
             }
             }
+            .padding(12)
+            .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -517,6 +588,7 @@ struct GuidedSigningView: View {
                         rubricEditorPurpose = .location
                         showRubricEditor = true
                     }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
                 } else {
                     Toggle(L10n.text("I explicitly confirm reusing this rubric"), isOn: $reuseConfirmed)
                         .font(.caption)
@@ -530,7 +602,7 @@ struct GuidedSigningView: View {
                         if let next = nextTargetIndex { selectedTargetIndex = next }
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(PremiumButtonStyle(prominent: true))
                 .disabled(nextTargetIndex != selectedTargetIndex || !contextRead || rubricForCurrentChoice?.isValid != true
                           || (reuse != .new && !reuseConfirmed))
             }
@@ -588,9 +660,12 @@ struct GuidedSigningView: View {
                 Button(L10n.text("Start a new revision for corrections…")) {
                     Task { await session.startGuidedSigningRevision() }
                 }
+                .buttonStyle(PremiumButtonStyle(compact: true))
                 .disabled(session.isProtected)
             }
         }
+        .padding(12)
+        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func assignSigner() {
@@ -615,6 +690,15 @@ struct GuidedSigningView: View {
 
     private func fieldLabel(_ fieldID: String) -> String {
         session.leonardoFieldDefinition(fieldID)?.label ?? fieldID
+    }
+
+    private func documentTypeLabel(_ type: LeonardoIdentityDocumentType) -> String {
+        switch type {
+        case .nationalID: return L10n.text("National ID")
+        case .passport: return L10n.text("Passport")
+        case .driverLicense: return L10n.text("Driver license")
+        case .other: return L10n.text("Other document")
+        }
     }
 
     private func statusIcon(for positionID: String) -> String {
@@ -679,8 +763,9 @@ private struct GuidedSigningCredentialEnrollment: View {
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel")) { dismiss() }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
                 Button(L10n.text("Enroll")) { onEnroll(password) }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
                     .disabled(password.count < 8 || password != confirmation)
             }
         }
@@ -702,8 +787,9 @@ private struct GuidedSigningPassword: View {
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel")) { dismiss() }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
                 Button(L10n.text("Sign")) { onUnlock(password) }
-                    .buttonStyle(.borderedProminent).disabled(password.isEmpty)
+                    .buttonStyle(PremiumButtonStyle(prominent: true, compact: true)).disabled(password.isEmpty)
             }
         }
         .padding(22).frame(width: 410)
