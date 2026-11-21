@@ -1,12 +1,13 @@
 import Foundation
 import SwiftUI
+import UIKit
 import LeonardoCore
 import LeonardoRender
 
-/// The signing-copy reader is deliberately presentation-only. It renders the
-/// immutable source carried by the exchange and reports only the exact DOM
-/// occurrences that the renderer exposed. It has no document-store or form
-/// editing capability.
+/// The signing-copy reader is deliberately presentation-only. It presents the
+/// immutable source carried by the exchange, with native exact occurrences
+/// available before an optional WebKit render proves itself. It has no
+/// document-store or form editing capability.
 struct MobileGuidedSigningDocumentReader: View {
     let document: LeonardoDocument
     let resources: [LeonardoSigningResource]
@@ -17,7 +18,9 @@ struct MobileGuidedSigningDocumentReader: View {
     let onFocusConsumed: () -> Void
     @Binding private var availableTargetKeys: Set<String>
     @StateObject private var controller = MarkdownPreviewController()
-    @State private var showingNativeFallback = false
+    // The native source is available from the first frame. WebKit may replace
+    // it only after it has exposed every exact target occurrence.
+    @State private var showingNativeFallback = true
 
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoSigning", isDirectory: true)
 
@@ -134,6 +137,7 @@ struct MobileGuidedSigningDocumentReader: View {
                     if showingNativeFallback {
                         MobileGuidedSigningSourceFallback(
                             document: document,
+                            resources: resources,
                             session: session,
                             rubricOverlays: verifiedRubricOverlays,
                             focusTarget: focusTarget,
@@ -179,32 +183,6 @@ struct MobileGuidedSigningDocumentReader: View {
         }
         .onChange(of: renderedTargetKeys) { _, _ in refreshAvailableTargets() }
         .onChange(of: focusTarget) { _, _ in focusPendingTarget() }
-        .task(id: source) {
-            showingNativeFallback = false
-            do {
-                try await Task.sleep(for: .seconds(5))
-            } catch {
-                return
-            }
-            guard !Task.isCancelled else { return }
-            let targets = renderedTargets
-            let expectedKeys = Set(targets.map {
-                MobileGuidedSigningTargetKey.make(fieldID: $0.fieldID, occurrence: $0.occurrence)
-            })
-            guard Set(renderedTargetKeys) == expectedKeys else { return }
-            guard controller.isReady else {
-                showingNativeFallback = true
-                return
-            }
-            let available = await availableTargetKeys(for: targets)
-            guard Set(renderedTargetKeys) == expectedKeys else { return }
-            if !expectedKeys.isEmpty && !expectedKeys.isSubset(of: available) {
-                // Do not leave the signing flow waiting on a DOM target that
-                // the host never materialized. The fallback is explicit and
-                // still exposes only Core's exact source occurrences.
-                showingNativeFallback = true
-            }
-        }
     }
 
     private var renderedTargetKeys: [String] {
@@ -262,19 +240,31 @@ enum MobileGuidedSigningTargetKey {
     }
 }
 
+enum MobileGuidedSigningNativeContent {
+    static func readableBody(from document: LeonardoDocument) -> String {
+        LeonardoMarkdownExport.markdown(from: document)
+    }
+
+    static func referencedResourceReferences(from document: LeonardoDocument) -> Set<String> {
+        guard let source = try? LeonardoFormatParser.serialize(document) else { return [] }
+        return Set(LeonardoLocalImagePolicy.localReferences(in: source))
+    }
+}
+
 private extension LeonardoSigningLocationTarget {
     var mobileStableID: String {
         "\(positionID)#\(fieldID)#\(occurrence)"
     }
 }
 
-/// A deliberately plain, read-only path for a WebKit document that never
-/// reports ready. It keeps the exchange usable without pretending that the
-/// DOM location is available: targets are exposed only at the exact source
-/// occurrences represented by the native session, and every confirmation
-/// still goes through the existing Core validation.
+/// A deliberately plain, read-only path that is available while WebKit loads
+/// (or when it never reports ready). It keeps the exchange usable without
+/// pretending that a DOM location exists: targets are exposed only at the
+/// exact source occurrences represented by the native session, and every
+/// confirmation still goes through the existing Core validation.
 private struct MobileGuidedSigningSourceFallback: View {
     let document: LeonardoDocument
+    let resources: [LeonardoSigningResource]
     let session: LeonardoGuidedSigningSession
     let rubricOverlays: [String: LeonardoRubric]
     let focusTarget: LeonardoSigningLocationTarget?
@@ -285,6 +275,39 @@ private struct MobileGuidedSigningSourceFallback: View {
         session.declaration.positions.flatMap { position in
             (try? session.targets(for: position.id, document: document)) ?? []
         }
+    }
+
+    /// The native reader must not leave ordinary form values as raw
+    /// `{{field:...}}` tokens. LeonardoMarkdownExport also removes local image
+    /// syntax, which is why the sealed resources are listed/rendered below.
+    private var readableBody: String {
+        MobileGuidedSigningNativeContent.readableBody(from: document)
+    }
+
+    private var referencedResourceReferences: Set<String> {
+        MobileGuidedSigningNativeContent.referencedResourceReferences(from: document)
+    }
+
+    private var referencedResources: [LeonardoSigningResource] {
+        let references = referencedResourceReferences
+        return resources
+            .filter { references.contains($0.reference) }
+            .sorted { $0.reference < $1.reference }
+    }
+
+    private var missingResourceReferences: [String] {
+        let available = Set(resources.map(\.reference))
+        return referencedResourceReferences.subtracting(available).sorted()
+    }
+
+    private var unrenderedResourceReferences: [String] {
+        referencedResources.compactMap { resource in
+            UIImage(data: resource.bytes) == nil ? resource.reference : nil
+        }
+    }
+
+    private var nativeContentComplete: Bool {
+        missingResourceReferences.isEmpty && unrenderedResourceReferences.isEmpty
     }
 
     var body: some View {
@@ -300,7 +323,7 @@ private struct MobileGuidedSigningSourceFallback: View {
                     Text(document.metadata.document.title ?? "Signing copy")
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(MobileClassic.heading)
-                    Text(document.body)
+                    Text(readableBody)
                         .font(.system(.body, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -308,6 +331,57 @@ private struct MobileGuidedSigningSourceFallback: View {
                         .background(MobileClassic.inset)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .accessibilityIdentifier("mobile-signing-native-source")
+
+                    if !referencedResources.isEmpty || !missingResourceReferences.isEmpty {
+                        Divider()
+                        Text("Recursos sellados / Sealed resources")
+                            .font(.headline)
+                            .foregroundStyle(MobileClassic.heading)
+                        ForEach(referencedResources, id: \.reference) { resource in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(resource.reference)
+                                    .font(.subheadline.weight(.semibold))
+                                if let image = UIImage(data: resource.bytes) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(maxHeight: 180)
+                                        .frame(maxWidth: .infinity)
+                                        .accessibilityLabel(resource.reference)
+                                } else {
+                                    Label(
+                                        "Este recurso no se puede mostrar aquí; la confirmación queda bloqueada. / This resource cannot be shown here; confirmation is blocked.",
+                                        systemImage: "exclamationmark.triangle"
+                                    )
+                                    .font(.footnote)
+                                    .foregroundStyle(.orange)
+                                }
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(MobileClassic.inset)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .accessibilityIdentifier("mobile-signing-native-resource-\(resource.reference)")
+                        }
+                        ForEach(missingResourceReferences, id: \.self) { reference in
+                            Label(
+                                "Falta el recurso sellado \(reference); la confirmación queda bloqueada. / Sealed resource \(reference) is missing; confirmation is blocked.",
+                                systemImage: "exclamationmark.triangle"
+                            )
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                        }
+                    }
+
+                    if !nativeContentComplete {
+                        Label(
+                            "La lectura nativa no representa todo el material sellado; no se puede confirmar hasta mostrarlo. / The native reader does not represent all sealed material; confirmation is blocked until it is shown.",
+                            systemImage: "lock.fill"
+                        )
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("mobile-signing-native-content-incomplete")
+                    }
 
                     if !targets.isEmpty {
                         Divider()
@@ -349,9 +423,11 @@ private struct MobileGuidedSigningSourceFallback: View {
                 .padding(12)
             }
             .onAppear {
-                availableTargetKeys.formUnion(targets.map {
-                    MobileGuidedSigningTargetKey.make(fieldID: $0.fieldID, occurrence: $0.occurrence)
-                })
+                if nativeContentComplete {
+                    availableTargetKeys.formUnion(targets.map {
+                        MobileGuidedSigningTargetKey.make(fieldID: $0.fieldID, occurrence: $0.occurrence)
+                    })
+                }
                 focus(focusTarget, using: proxy)
             }
             .onChange(of: focusTarget) { _, target in

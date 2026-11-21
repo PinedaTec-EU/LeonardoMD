@@ -195,6 +195,46 @@ final class MobileReaderSpacingTests: XCTestCase {
         XCTFail("Signed guided-signing container did not render its full-copy heading (received: \(heading))")
     }
 
+    func testNativeSigningContentSubstitutesValuesAndKeepsSealedResourceReferences() throws {
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "# Review copy\n\nSigner: {{field:name}}\n\nSignature: {{field:signature}}\n\n![Seal](assets/seal.png)",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "native-content-test", title: "Review copy", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "name": LeonardoFieldDefinition(type: .text, label: "Name"),
+                    "signature": LeonardoFieldDefinition(
+                        type: .rubric, label: "Signature", signerPosition: "owner"
+                    )
+                ],
+                values: ["name": .string("Ada Lovelace")]
+            )
+        )
+
+        let readable = MobileGuidedSigningNativeContent.readableBody(from: document)
+        XCTAssertTrue(readable.contains("Ada Lovelace"))
+        XCTAssertFalse(readable.contains("{{field:name}}"))
+        XCTAssertEqual(
+            MobileGuidedSigningNativeContent.referencedResourceReferences(from: document),
+            ["assets/seal.png"]
+        )
+
+        let session = try LeonardoGuidedSigningSession(
+            document: document, at: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let target = try XCTUnwrap(session.targets(for: "owner", document: document).first)
+        XCTAssertEqual(
+            MobileGuidedSigningTargetKey.make(fieldID: target.fieldID, occurrence: target.occurrence),
+            "signature#0"
+        )
+    }
+
     func testTrustedSignedReaderRendersVerifiedRubricOverlay() async throws {
         let exchange = try makeSignedGuidedSigningExchange()
         let document = try exchange.document()
