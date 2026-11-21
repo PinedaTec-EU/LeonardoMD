@@ -197,10 +197,12 @@ biometric prompt does not prove independent identity verification.
 
 The reviewer must select the position, begin the review and follow the exact
 field occurrences in source order. For each occurrence, read the displayed
-context, draw a new rubric or choose a saved rubric, explicitly confirm any
-reuse, and confirm that exact occurrence. Repeated fields are separate
-locations. The review can be paused and resumed; **Sign** remains available
-while another declared position is still pending. The private key is encrypted
+context, draw a new rubric in the signing-only canvas or choose a saved profile rubric, explicitly confirm any
+reuse, and confirm that exact occurrence. Drawing in this workflow never adds
+a rubric to the shared rubric library; saving a profile rubric remains a
+separate, explicit choice. Repeated fields are separate locations. The review
+can be paused and resumed; **Sign** remains available while another declared
+position is still pending. The private key is encrypted
 with the personal password before it is stored in the device keychain. On
 macOS this is the user's login keychain, so it retains OS keychain protection
 but does not claim a per-signature biometric identity. Touch ID or another

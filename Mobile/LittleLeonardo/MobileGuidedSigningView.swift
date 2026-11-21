@@ -316,17 +316,19 @@ struct MobileGuidedSigningView: View {
                     }
                     .onChange(of: selectedProfileID) { _, value in loadProfile(value) }
                 }
-                HStack {
+                VStack(alignment: .leading, spacing: 8) {
                     Picker(spanish ? "Credencial personal" : "Personal credential", selection: $selectedCredentialID) {
                         Text(spanish ? "Selecciona una credencial" : "Select a credential").tag("")
                         ForEach(credentialIDs, id: \.self) { id in
                             Text(String(id.suffix(12))).tag(id)
                         }
                     }
-                    Button { showingEnrollment = true } label: {
-                        Image(systemName: "plus.circle")
+                    .accessibilityIdentifier("mobile-signing-credential-picker")
+                    Button(spanish ? "Inscribir credencial personal" : "Enroll personal credential", systemImage: "plus.circle") {
+                        showingEnrollment = true
                     }
-                    .accessibilityLabel(spanish ? "Inscribir credencial" : "Enroll credential")
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("mobile-signing-enroll-credential")
                 }
                 Button(spanish ? "Asignar y revisar" : "Assign and review", systemImage: "person.badge.plus") {
                     Task { await assignSelectedPosition(position.id) }

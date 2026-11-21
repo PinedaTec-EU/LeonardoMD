@@ -19,6 +19,24 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertTrue(RubricLibrary(url: url).entries.isEmpty)
         XCTAssertEqual(inserted.rubric, ink)
     }
+
+    func testGuidedSigningRubricCaptureOnlyReturnsRubricWithoutWritingLibrary() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let libraryURL = root.appendingPathComponent("library.json")
+        let library = RubricLibrary(url: libraryURL)
+        let capture = GuidedSigningRubricCapture(title: "Guided", initialRubric: nil) { rubric in
+            XCTAssertEqual(rubric, self.ink)
+        }
+
+        // The guided canvas has no RubricRequest/RubricLibrary dependency. Its
+        // completion is the only handoff; the caller decides separately
+        // whether a profile store or signing sidecar receives the rubric.
+        capture.complete(ink)
+        XCTAssertTrue(library.entries.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: libraryURL.path))
+    }
+
     func testIndependentLibrariesMergeWritesAndFailClosedOnCorruption() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -129,5 +147,36 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertEqual(session.leonardoDocument?.body, document.body)
         XCTAssertEqual(session.leonardoDocument?.metadata.fields, document.metadata.fields)
         XCTAssertFalse(session.finishRubric(request, label: "Stale", rubric: ink, saveToLibrary: false))
+    }
+
+    func testGuidedAssignedRubricCannotOpenGenericInsertionEditor() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("guided.mdlf")
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "{{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "guided-editor-guard", title: "Guided editor guard", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: ["signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner")]
+            )
+        )
+        try LeonardoFormatParser.serialize(document).write(to: url, atomically: true, encoding: .utf8)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("prefs.json"))
+        session.authorizePath = { _, _ in }
+        defer { session.stop() }
+        await session.openDocument(url)
+
+        session.requestRubric(fieldID: "signature")
+        XCTAssertNil(session.rubricRequest)
+        XCTAssertFalse(session.handleGraphicAction(expected: session.content, object: nil, remove: nil, fieldID: "signature"))
+        XCTAssertNil(session.rubricRequest)
     }
 }

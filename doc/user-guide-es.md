@@ -199,9 +199,11 @@ un aviso biométrico local no demuestra una verificación independiente.
 
 La persona revisora debe seleccionar el puesto, iniciar la revisión y seguir
 las apariciones exactas de los campos en orden de origen. Para cada aparición,
-lee el contexto mostrado, dibuja una rúbrica nueva o elige una guardada,
+lee el contexto mostrado, dibuja una rúbrica nueva en el lienzo exclusivo de firma o elige una guardada,
 confirma expresamente cualquier reutilización y confirma esa aparición exacta.
-Los campos repetidos son ubicaciones distintas. La revisión se puede pausar y
+Dibujar en este flujo nunca añade la rúbrica a la biblioteca compartida; guardar
+una rúbrica de perfil sigue siendo una decisión separada y explícita. Los
+campos repetidos son ubicaciones distintas. La revisión se puede pausar y
 reanudar; **Firmar** sigue disponible mientras quede otro puesto declarado
 pendiente. La clave privada se cifra con la contraseña personal antes de
 guardarse en el llavero del dispositivo. En macOS es el llavero de inicio de

@@ -1,6 +1,7 @@
 import AppKit
 import WebKit
 import XCTest
+import LeonardoCore
 @testable import LeonardoRender
 
 @MainActor
@@ -67,6 +68,90 @@ final class FormCalendarTests: XCTestCase {
         let checks = try XCTUnwrap(result)
         for (name, passed) in checks { XCTAssertTrue(passed, name) }
         XCTAssertEqual(checks.count, 12)
+    }
+
+    func testGuidedSigningRubricFieldsCannotUseInsertRubricBypass() async throws {
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 700))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        let ready = expectation(description: "Guided form renderer ready")
+        host.onReady = { [weak host] isReady in
+            guard isReady else { return }
+            host?.onReady = nil
+            ready.fulfill()
+        }
+        var configuration = MarkdownPreviewConfiguration.default
+        configuration.allowsFormFilling = true
+        configuration.allowsLeonardoFormat = true
+        configuration.guidedSigningFieldIDs = ["signature"]
+        configuration.guidedSigningRubricOverlays = [
+            "signature#1": LeonardoRubric(strokes: [
+                .init(color: "#224488", width: 3, style: .solid,
+                      points: [.init(x: 20, y: 40), .init(x: 300, y: 100)])
+            ])
+        ]
+        let source = """
+        ---
+        {"format":"mdlf","formatVersion":2,"document":{"id":"guided-render-test","kind":"form","title":"Guided signing","revision":1},"fields":{"signature":{"type":"rubric","label":"Signature"}},"values":{}}
+        ---
+        # Guided signing
+
+        Signature: {{field:signature}} / {{field:signature}}
+        """
+        host.apply(content: source, baseURL: nil, configuration: configuration,
+                   onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        let result = try await webView.evaluateJavaScript("""
+        (() => {
+          const payload = JSON.parse(document.getElementById('leonardo-payload').textContent);
+          const root = document.createElement('main'); document.body.append(root);
+          LeonardoForms.begin(payload, root);
+          const field = LeonardoForms.field('signature', {type: 'rubric', label: 'Signature'}, null);
+          root.append(field);
+          const button = field.querySelector('button.leonardo-rubric-field');
+          button.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+          field.querySelector('.leonardo-field-help').dispatchEvent(new MouseEvent('click', {bubbles: true}));
+          const overlayRoot = document.createElement('main');
+          overlayRoot.innerHTML = '<p>{{field:signature}} / {{field:signature}}</p>';
+          document.body.append(overlayRoot);
+          const overlayPayload = Object.assign({}, payload, {
+            leonardo: {fields: {signature: {type: 'rubric', label: 'Signature'}}, values: {}, layout: {}}
+          });
+          LeonardoLayout.apply(overlayRoot, overlayPayload);
+          const occurrences = [...overlayRoot.querySelectorAll('.leonardo-form-field')];
+          return {
+            payloadIDs: payload.guidedSigningFieldIDs,
+            overlayKeys: Object.keys(payload.guidedSigningRubricOverlays || {}),
+            disabled: button.disabled,
+            text: button.textContent,
+            aria: button.getAttribute('aria-label'),
+            helpDisabled: field.querySelector('.leonardo-field-help').disabled,
+            guidedClass: field.classList.contains('leonardo-guided-signing-field'),
+            changes: Object.keys(LeonardoForms.snapshot().changes).length,
+            overlayCount: occurrences.length,
+            firstOverlay: occurrences[0].querySelector('svg') !== null,
+            secondOverlay: occurrences[1].querySelector('svg') !== null,
+            secondOccurrence: occurrences[1].dataset.fieldOccurrence === '1'
+          };
+        })()
+        """) as? [String: Any]
+        let checks = try XCTUnwrap(result)
+        XCTAssertEqual(checks["payloadIDs"] as? [String], ["signature"])
+        XCTAssertEqual(checks["overlayKeys"] as? [String], ["signature#1"])
+        XCTAssertEqual(checks["disabled"] as? Bool, true)
+        XCTAssertEqual(checks["text"] as? String, "Guided signing")
+        XCTAssertEqual(checks["aria"] as? String, "Guided signing Signature")
+        XCTAssertEqual(checks["helpDisabled"] as? Bool, true)
+        XCTAssertEqual(checks["guidedClass"] as? Bool, true)
+        XCTAssertEqual(checks["changes"] as? Int, 0)
+        XCTAssertEqual(checks["overlayCount"] as? Int, 2)
+        XCTAssertEqual(checks["firstOverlay"] as? Bool, false)
+        XCTAssertEqual(checks["secondOverlay"] as? Bool, true)
+        XCTAssertEqual(checks["secondOccurrence"] as? Bool, true)
     }
 
     func testBlurBeforePointerActivationDoesNotDismissInsideControls() async throws {

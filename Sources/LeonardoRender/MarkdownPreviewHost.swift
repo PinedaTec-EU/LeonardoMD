@@ -99,6 +99,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             || previousConfiguration.allowsLeonardoFormat != configuration.allowsLeonardoFormat
             || previousConfiguration.allowsFormFilling != configuration.allowsFormFilling
             || previousConfiguration.formLabels != configuration.formLabels
+            || previousConfiguration.guidedSigningFieldIDs != configuration.guidedSigningFieldIDs
+            || previousConfiguration.guidedSigningRubricOverlays != configuration.guidedSigningRubricOverlays
             || previousConfiguration.frontMatter != configuration.frontMatter
             || previousConfiguration.compactFirstHeading != configuration.compactFirstHeading
             || previousConfiguration.renderDebounce != configuration.renderDebounce

@@ -144,14 +144,16 @@ struct GuidedSigningView: View {
             }
         }
         .sheet(isPresented: $showRubricEditor) {
-            let request = RubricRequest(documentURL: session.documentURL, source: session.content, fieldID: nil)
-            RubricEditor(request: request, library: session.rubricLibrary) { label, rubric, save in
-                if save { try? session.rubricLibrary.add(label: label, rubric: rubric) }
+            GuidedSigningRubricCapture(
+                title: rubricEditorPurpose == .profile
+                    ? L10n.text("Profile rubric")
+                    : L10n.text("Location rubric"),
+                initialRubric: rubricEditorPurpose == .profile ? draftProfileRubric : locationRubric
+            ) { rubric in
                 switch rubricEditorPurpose {
                 case .profile: draftProfileRubric = rubric
                 case .location: locationRubric = rubric
                 }
-                return true
             }
         }
     }
