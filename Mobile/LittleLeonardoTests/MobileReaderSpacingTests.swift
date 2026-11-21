@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import XCTest
+import LeonardoCore
 import LeonardoRender
 import LeonardoSync
 import LeonardoSyncUI
@@ -84,6 +85,68 @@ final class MobileReaderSpacingTests: XCTestCase {
             try await assertReadOnlyMobilePreview(library: library, projectID: projectID, file: file,
                                                   expectedHeading: expectedHeading, expectedValue: expectedValue)
         }
+    }
+
+    func testGuidedSigningCopyPreviewRendersWithVirtualDirectoryBaseURL() async throws {
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "# Mobile signing practice\n\n{{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "mobile-reader-preview", title: "Mobile signing practice", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "signature": LeonardoFieldDefinition(
+                        type: .rubric, label: "Signature", signerPosition: "owner"
+                    )
+                ]
+            )
+        )
+        let session = try LeonardoGuidedSigningSession(
+            document: document, at: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let priorWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        defer { window.isHidden = true; priorWindow?.makeKeyAndVisible() }
+        var available = Set<String>()
+        let binding = Binding<Set<String>>(
+            get: { available },
+            set: { available = $0 }
+        )
+        window.rootViewController = UIHostingController(rootView: NavigationStack {
+            MobileGuidedSigningDocumentReader(
+                document: document,
+                resources: [],
+                session: session,
+                trustedCredentials: [],
+                trustAccepted: true,
+                focusTarget: nil,
+                availableTargetKeys: binding,
+                onFocusConsumed: {}
+            )
+        })
+        window.makeKeyAndVisible()
+
+        let deadline = ContinuousClock.now.advanced(by: .seconds(12))
+        var heading = ""
+        repeat {
+            if let web = findWebView(window),
+               let value = try? await web.evaluateJavaScript("document.querySelector('h1')?.textContent || ''") as? String {
+                heading = value
+                if heading == "Mobile signing practice" {
+                    XCTAssertTrue(available.contains("signature#0"))
+                    return
+                }
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        } while ContinuousClock.now < deadline
+        XCTFail("Guided signing copy did not render its heading (received: \(heading))")
     }
 
     private func assertReadOnlyMobilePreview(library: MobileLibrary, projectID: UUID, file: CorpusFile,

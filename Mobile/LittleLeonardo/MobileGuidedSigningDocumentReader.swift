@@ -115,7 +115,12 @@ struct MobileGuidedSigningDocumentReader: View {
             if let source {
                 MarkdownPreview(
                     content: source,
-                    baseURL: virtualRoot.appendingPathComponent("signing-copy.mdlf"),
+                    // MarkdownPreview receives the containing directory, as
+                    // does MobileDocumentView. Passing the synthetic file URL
+                    // makes the WebKit resource base one level too deep and
+                    // can leave a signing copy blank while ordinary readers
+                    // still render normally.
+                    baseURL: virtualRoot,
                     configuration: previewConfiguration,
                     controller: controller
                 )
