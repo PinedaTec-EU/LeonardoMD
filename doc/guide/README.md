@@ -1,10 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v107-en.mdlz` and `Guide-v107-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v108-en.mdlz` and `Guide-v108-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v107/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v108/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v108 documents saved-item recovery from Home and retains the Sync diagnostic instructions.
+Guide v108 EN SHA-256: `a4b736e0b54c25c36a1c4b946f0b5d337a6bb093b8b0800dd51ecd9985bf5d99`
+and ES SHA-256: `ea059fd9173a79296fb438a2f32c670358cfaacb24f82d3879f9a7fd7c4cef6c`.
 
 Guide v107 explains how to copy the Sync diagnostic report and send it manually
 when the default mail handler does not show a draft.

@@ -331,6 +331,7 @@ For example, if an instruction is separated from its field, ask the agent to cor
 Home separates **Projects** from **Documents**, with Favorites and Recents for each. Use Open document for one file; Open project for a working folder. A standalone file uses global preferences and does not expose its neighboring files. **Open folder as project** adds that folder's navigation when you need it.
 
 - Star an item to keep it independently of recent history. File → Favorites provides another way to open it.
+- Hover over a warning triangle to see why a saved item is unavailable and which path Leonardo checked. Open the triangle menu and choose **Retry saved location** if the drive or permissions have been restored, or **Locate moved item…** to choose the new file or project folder. The favorite and its theme follow the new location. For a project shared from this Mac, confirm that linked devices should keep access to the same share scope at the new folder.
 - Check the parent path when two entries share a name. Unavailable files are disabled: restore the volume or choose the new location with Open.
 - Clear a recent list from its own File submenu; this does not delete the documents.
 - A favorite project's **Theme** dropdown associates an appearance with that favorite on this Mac. **Inherit** returns to project/global appearance. It does not rewrite the project's shared settings.

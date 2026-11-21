@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-11-21: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) explains unavailable saved locations on Home and adds retry and path repair. Shared source relocation requires confirmation and retains the share identifier and scope. The English and Spanish guides describe the recovery.
+
 - 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
 
 - 2026-11-20: [#502](https://github.com/PinedaTec-EU/LeonardoMD/issues/502) splits `.github/workflows/ci.yml` into concurrent macOS test, Little Leonardo simulator, and package jobs. The existing `test` check requires success in all three. Little Leonardo installs the test build and seeds recovery before running the selected unit and UI cases in one XCTest invocation.
