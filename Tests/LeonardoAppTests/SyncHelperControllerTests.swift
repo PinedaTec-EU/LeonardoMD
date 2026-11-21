@@ -503,7 +503,7 @@ final class SyncHelperControllerTests: XCTestCase {
             screen: "Synchronization helper status")
     }
 
-    func testStatusSectionHeightDoesNotChangeWithDiagnosticOrApproval() async throws {
+    func testStatusSectionReservesSpaceOnlyForVisibleWarnings() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
         let registration = HelperRegistrationFake(); registration.status = .enabled
@@ -516,17 +516,29 @@ final class SyncHelperControllerTests: XCTestCase {
             return host.fittingSize.height
         }
         let baseline = sectionHeight()
-        await control.setStatusError("Previous error"); await controller.refresh()
-        XCTAssertEqual(controller.displayedError, "Previous error")
-        XCTAssertEqual(sectionHeight(), baseline, "A one-line diagnostic must not move the following controls")
-        let longError = String(repeating: "A long diagnostic message. ", count: 20)
-        await control.setStatusError(longError); await controller.refresh()
-        XCTAssertEqual(controller.displayedError, longError)
-        XCTAssertEqual(sectionHeight(), baseline, "A wrapped diagnostic must not move the following controls")
+        XCTAssertNotNil(controller.diagnostics.lastCheck)
+
+        let privateError = "/Users/example/Private.md https://192.0.2.1/invite?token=secret 123456"
+        await control.setStatusError(privateError); await controller.refresh()
+        XCTAssertEqual(controller.displayedError, privateError)
+        let warningHeight = sectionHeight()
+        XCTAssertGreaterThan(warningHeight, baseline)
+        for sensitiveValue in ["/Users/example", "192.0.2.1", "secret", "123456"] {
+            XCTAssertFalse(controller.diagnostics.report.contains(sensitiveValue))
+        }
+
+        await control.setStatusError(String(repeating: privateError, count: 20)); await controller.refresh()
+        XCTAssertEqual(sectionHeight(), warningHeight, "Private error length must not affect layout")
+
         registration.status = .requiresApproval
         await controller.refresh()
-        XCTAssertEqual(controller.state, .approvalRequired)
-        XCTAssertEqual(sectionHeight(), baseline, "The authorization action must not move the following controls")
+        XCTAssertTrue(controller.showsApprovalAction)
+        XCTAssertGreaterThan(sectionHeight(), baseline)
+
+        registration.status = .enabled
+        await control.setStatusError(nil); await controller.refresh()
+        XCTAssertEqual(sectionHeight(), baseline)
+
     }
 
     func testReturningFromApprovalRefreshesOnlyWhileApprovalIsRequired() async throws {
