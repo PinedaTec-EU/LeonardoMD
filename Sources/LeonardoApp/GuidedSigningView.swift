@@ -413,7 +413,7 @@ struct GuidedSigningView: View {
             TextField(L10n.text("Full name"), text: $fullName)
             Picker(L10n.text("Document type"), selection: $documentType) {
                 ForEach(LeonardoIdentityDocumentType.allCases, id: \.rawValue) { type in
-                    Text(type.rawValue).tag(type)
+                    Text(documentTypeLabel(type)).tag(type)
                 }
             }
             TextField(L10n.text("Document number"), text: $documentNumber)
