@@ -55,7 +55,7 @@ Forms support declared fields and validation, including saving incomplete drafts
 
 The optional [table-width directive](doc/table-widths.md) also works in ordinary Markdown: other viewers ignore its HTML comment and render the standard table.
 
-Explore the [format specification, schema and examples](doc/format/README.md), or use the [Codex/Claude plugin and MDLZ generation guide](doc/plugins/leonardo-format.md).
+Explore the [format specification, schema and examples](doc/format/README.md), or use the [Codex preview, plugin installation and MDLZ generation guide](doc/plugins/leonardo-format.md).
 
 ## Updates
 

@@ -1,7 +1,7 @@
 {
   "name": "leonardo-format",
-  "version": "0.2.6",
-  "description": "Read, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
+  "version": "0.3.1",
+  "description": "Preview, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
   "author": {
     "name": "PinedaTec",
     "url": "https://pinedatec.com"

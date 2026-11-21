@@ -17,6 +17,43 @@ descriptor-relative extraction boundary. The root
 and `.codex-plugin/plugin.json` supplies the Codex compatibility overlay. No
 MCP server, credentials, hooks, or network service are required.
 
+## Preview in Codex
+
+Add the public PinedaTec Leonardo marketplace using the Codex CLI:
+
+```bash
+codex plugin marketplace add PinedaTec-EU/LeonardoMD --sparse .agents/plugins --sparse plugins/leonardo-format
+```
+
+In Codex desktop, open **Plugins**, choose **PinedaTec Leonardo**, and install
+**Leonardo Format**. If the catalog is already installed, run
+`codex plugin marketplace upgrade pinedatec-leonardo` and refresh the app.
+With Python 3.9 or newer on the same computer, open a chat with access to
+your file and ask **“Preview this Leonardo document in Codex”**, including
+its path. The plugin opens an in-app browser tab for any supported v1
+`.mdlf`, `.mdlr` or `.mdlz`.
+
+The preview uses Leonardo's bundled renderer for form values, Mermaid,
+KaTeX, charts, citations, tables and local images. Standalone inputs resolve
+images below the document folder, while packages resolve them from their
+`assets/` entries. The viewer is read-only and blocks remote resources.
+Each preview runs on loopback for up to one hour. Ask again after editing
+the document to open a fresh view.
+
+### Automatic preview links in chats
+
+After installing or updating Leonardo Format, review and trust its
+`Stop` hook in Codex. In the Codex CLI, use `/hooks` to review it.
+This is a one-time step for the current hook definition. When the plugin is enabled and a response delivers a local
+Leonardo file as a Markdown link, the hook can request one continuation
+to add **Vista previa de Leonardo** next to that file. Click the preview
+link while its local server is active. The source link still opens the
+ordinary Codex file viewer.
+
+This works in local Codex sessions that support trusted plugin hooks and
+can run the preview helper on the computer with the browser. A remote or
+unavailable file can still be delivered with its original link.
+
 ## Local installation
 
 For Claude Code development, load the directory directly:
@@ -227,6 +264,11 @@ authoritative for host rendering and body behavior. The helper stays
 dependency-free; `--schema` adds an explicit second schema constraint.
 
 ## Release discipline
+
+Refresh the offline renderer archive with
+`python3 plugins/leonardo-format/package-renderer.py` whenever the shared renderer
+resources change. Plugin tests compare the archive contents with the
+canonical renderer, including its license notices.
 
 Bump the plugin version when the skill, helper behavior, or supported format
 contract changes. Keep the root and compatibility manifests aligned. A plugin

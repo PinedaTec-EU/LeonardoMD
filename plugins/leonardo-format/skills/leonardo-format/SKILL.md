@@ -1,6 +1,6 @@
 ---
 name: leonardo-format
-description: Read, validate, fill, edit, extract, and repackage open Leonardo Markdown documents with the .mdlf, .mdlr, and .mdlz extensions. Use when a request mentions Leonardo documents, Leonardo forms, MDLF, MDLR, MDLZ, or a Markdown file with an explicit Leonardo format declaration.
+description: Preview, read, validate, fill, edit, extract, and repackage open Leonardo Markdown documents with the .mdlf, .mdlr, and .mdlz extensions. Use when a request mentions Leonardo documents, Leonardo forms, MDLF, MDLR, MDLZ, or a Markdown file with an explicit Leonardo format declaration.
 ---
 
 # Leonardo documents
@@ -53,6 +53,32 @@ editing and report the version and the supported range.
 6. After a change, validate the document against the shared schema and run the
    archive helper's inspection/round-trip checks. Report the exact working
    location, mode, validation result, and save/export target.
+
+## Browser preview
+
+When a user asks to preview a local `.mdlf`, `.mdlr` or `.mdlz`, use
+the installed skill's `scripts/preview.py` with Python 3.9 or newer. Resolve
+the script relative to this installed skill, and pass the user's file as a
+separate argument. Use a long-running terminal session on the same computer
+as the browser so the server stays up while the user reads.
+
+```bash
+python3 /path/to/installed/leonardo-format/scripts/preview.py /path/to/document.mdlz
+```
+
+Wait for the command to print its local URL. In Codex desktop, open that URL
+in a visible in-app browser tab and leave the tab open for the user. If the
+in-app browser is unavailable, give the user the local URL. Never publish or
+forward the preview URL. The server binds to loopback, expires after one hour,
+and can be stopped earlier with Ctrl+C in its own terminal session. Start a
+new preview after changes to the source document. The preview is read-only
+and does not require choosing an extraction destination, even for MDLZ.
+
+For a file delivery in Codex, start the same preview before replying and
+include a clickable Markdown link labeled **Vista previa de Leonardo**
+beside each original local Leonardo document link. Use the actual loopback
+URL printed by the script. Let the user open that link by clicking it.
+The plugin's trusted Stop hook can request this step once if it was missed.
 
 ## Safe MDLZ helper
 
