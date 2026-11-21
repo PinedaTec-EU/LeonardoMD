@@ -133,6 +133,18 @@ struct MobileGuidedSigningView: View {
         .navigationTitle(spanish ? "Firma de copia" : "Sign copy")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadLocalSigningData() }
+        .onChange(of: selectedPositionID) { _, _ in
+            guard selectedProgress?.assignment == nil else { return }
+            creatingProfile = true
+            selectedProfileID = nil
+            selectedCredentialID = ""
+            fullName = ""
+            documentType = .nationalID
+            documentNumber = ""
+            saveIdentityDetails = false
+            saveRubric = false
+            profileRubric = nil
+        }
         .alert(spanish ? "Firma guiada" : "Guided signing", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
