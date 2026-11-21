@@ -3,6 +3,98 @@ import Foundation
 import LeonardoCore
 import Security
 
+enum LeonardoSigningCredentialKeychainItem: Hashable, Sendable {
+    case publicRecord
+    case privateRecord
+}
+
+/// The store keeps the Keychain boundary injectable so rollback and duplicate
+/// handling can be tested without weakening the production entitlement path.
+protocol LeonardoSigningCredentialKeychainBackend {
+    func add(service: String, account: String, data: Data,
+             item: LeonardoSigningCredentialKeychainItem) -> OSStatus
+    func read(service: String, account: String,
+              item: LeonardoSigningCredentialKeychainItem,
+              prompt: String?) -> (status: OSStatus, data: Data?)
+    func accounts(service: String,
+                  item: LeonardoSigningCredentialKeychainItem) -> (status: OSStatus, accounts: [String])
+    func delete(service: String, account: String,
+                item: LeonardoSigningCredentialKeychainItem) -> OSStatus
+}
+
+private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend {
+    func add(service: String, account: String, data: Data,
+             item: LeonardoSigningCredentialKeychainItem) -> OSStatus {
+        var attributes: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecAttrSynchronizable as String: false,
+            kSecValueData as String: data
+        ]
+        switch item {
+        case .publicRecord:
+            attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        case .privateRecord:
+            guard let access = SecAccessControlCreateWithFlags(
+                nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, .userPresence, nil
+            ) else {
+                return errSecParam
+            }
+            attributes[kSecAttrAccessControl as String] = access
+        }
+        return SecItemAdd(attributes as CFDictionary, nil)
+    }
+
+    func read(service: String, account: String,
+              item: LeonardoSigningCredentialKeychainItem,
+              prompt: String?) -> (status: OSStatus, data: Data?) {
+        var request: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecAttrSynchronizable as String: false,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        if case .privateRecord = item, let prompt {
+            request[kSecUseOperationPrompt as String] = prompt
+        }
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(request as CFDictionary, &result)
+        return (status, result as? Data)
+    }
+
+    func accounts(service: String,
+                  item: LeonardoSigningCredentialKeychainItem) -> (status: OSStatus, accounts: [String]) {
+        let request: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrSynchronizable as String: false,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll
+        ]
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(request as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let rows = result as? [[String: Any]] else {
+            return (status, [])
+        }
+        return (status, rows.compactMap { $0[kSecAttrAccount as String] as? String })
+    }
+
+    func delete(service: String, account: String,
+                item: LeonardoSigningCredentialKeychainItem) -> OSStatus {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecAttrSynchronizable as String: false
+        ]
+        return SecItemDelete(query as CFDictionary)
+    }
+}
+
 /// A device-local signing credential. The public part is kept in a separate
 /// keychain record so verification never unlocks or reads private material.
 /// The private part is encrypted with a per-credential password-derived key
@@ -13,6 +105,7 @@ public actor LeonardoSigningCredentialStore {
 
     private let service: String
     private let prompt: String
+    private let keychain: any LeonardoSigningCredentialKeychainBackend
 
     private struct PublicRecord: Codable {
         let credential: LeonardoSigningCredential
@@ -36,6 +129,15 @@ public actor LeonardoSigningCredentialStore {
                 prompt: String = "Authorize this personal signing credential") {
         self.service = service
         self.prompt = prompt
+        self.keychain = SecurityKeychainBackend()
+    }
+
+    init(service: String,
+         prompt: String,
+         keychain: any LeonardoSigningCredentialKeychainBackend) {
+        self.service = service
+        self.prompt = prompt
+        self.keychain = keychain
     }
 
     /// Enrols a personal credential. Only the public credential returns; a
@@ -55,8 +157,11 @@ public actor LeonardoSigningCredentialStore {
         } catch {
             throw LeonardoSigningError.invalidCredential
         }
+        guard let sealedBytes = sealed.combined else {
+            throw LeonardoSigningError.invalidCredential
+        }
         let privateRecord = PrivateRecord(version: 1, credentialID: credentialID,
-                                          sealedPrivateKey: sealed.combined)
+                                          sealedPrivateKey: sealedBytes)
         let publicRecord = PublicRecord(credential: pair.credential, salt: salt, iterations: iterations)
         try add(publicRecord: publicRecord, privateRecord: privateRecord)
         return pair.credential
@@ -109,29 +214,22 @@ public actor LeonardoSigningCredentialStore {
     }
 
     public func credentialIDs() throws -> [String] {
-        let request: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service + Self.publicSuffix,
-            kSecAttrSynchronizable as String: false,
-            kSecReturnAttributes as String: true,
-            kSecMatchLimit as String: kSecMatchLimitAll
-        ]
-        var result: CFTypeRef?
-        let status = SecItemCopyMatching(request as CFDictionary, &result)
+        let result = keychain.accounts(service: service + Self.publicSuffix, item: .publicRecord)
+        let status = result.status
         if status == errSecItemNotFound { return [] }
-        guard status == errSecSuccess, let rows = result as? [[String: Any]] else {
+        guard status == errSecSuccess else {
             throw CredentialStorageError(status: status)
         }
-        return rows.compactMap { $0[kSecAttrAccount as String] as? String }
+        return result.accounts
             .filter { !$0.isEmpty }
             .sorted()
     }
 
     public func remove(credentialID: String) throws {
-        let privateStatus = SecItemDelete(query(service: service + Self.privateSuffix,
-                                                 account: credentialID) as CFDictionary)
-        let publicStatus = SecItemDelete(query(service: service + Self.publicSuffix,
-                                                account: credentialID) as CFDictionary)
+        let privateStatus = keychain.delete(service: service + Self.privateSuffix,
+                                            account: credentialID, item: .privateRecord)
+        let publicStatus = keychain.delete(service: service + Self.publicSuffix,
+                                           account: credentialID, item: .publicRecord)
         let valid: Set<OSStatus> = [errSecSuccess, errSecItemNotFound]
         guard valid.contains(privateStatus), valid.contains(publicStatus) else {
             throw CredentialStorageError(status: privateStatus == errSecSuccess ? publicStatus : privateStatus)
@@ -147,58 +245,42 @@ public actor LeonardoSigningCredentialStore {
         let encoder = JSONEncoder()
         let publicData = try encoder.encode(publicRecord)
         let privateData = try encoder.encode(privateRecord)
-        let publicAttributes = query(service: service + Self.publicSuffix,
-                                     account: publicRecord.credential.id)
-            .merging([
-                kSecValueData as String: publicData,
-                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-            ]) { _, new in new }
-        var publicInserted = false
-        var privateInserted = false
+        var insertedServices = Set<String>()
         do {
-            let publicStatus = SecItemAdd(publicAttributes as CFDictionary, nil)
+            let publicStatus = keychain.add(service: service + Self.publicSuffix,
+                                            account: publicRecord.credential.id,
+                                            data: publicData, item: .publicRecord)
             guard publicStatus == errSecSuccess else { throw CredentialStorageError(status: publicStatus) }
-            publicInserted = true
+            insertedServices.insert(Self.publicSuffix)
 
-            guard let access = SecAccessControlCreateWithFlags(
-                nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, .userPresence, nil
-            ) else {
-                throw CredentialStorageError(status: errSecParam)
-            }
-            let privateAttributes = query(service: service + Self.privateSuffix,
-                                          account: privateRecord.credentialID)
-                .merging([
-                    kSecValueData as String: privateData,
-                    kSecAttrAccessControl as String: access
-                ]) { _, new in new }
-            let privateStatus = SecItemAdd(privateAttributes as CFDictionary, nil)
+            let privateStatus = keychain.add(service: service + Self.privateSuffix,
+                                             account: privateRecord.credentialID,
+                                             data: privateData, item: .privateRecord)
             guard privateStatus == errSecSuccess else {
                 throw CredentialStorageError(status: privateStatus)
             }
-            privateInserted = true
+            insertedServices.insert(Self.privateSuffix)
         } catch {
             // Only remove records created by this transaction. In particular,
             // a duplicate credential ID must never delete its existing pair.
-            if privateInserted {
-                _ = SecItemDelete(query(service: service + Self.privateSuffix,
-                                         account: privateRecord.credentialID) as CFDictionary)
+            if insertedServices.contains(Self.privateSuffix) {
+                _ = keychain.delete(service: service + Self.privateSuffix,
+                                     account: privateRecord.credentialID, item: .privateRecord)
             }
-            if publicInserted {
-                _ = SecItemDelete(query(service: service + Self.publicSuffix,
-                                         account: publicRecord.credential.id) as CFDictionary)
+            if insertedServices.contains(Self.publicSuffix) {
+                _ = keychain.delete(service: service + Self.publicSuffix,
+                                    account: publicRecord.credential.id, item: .publicRecord)
             }
             throw error
         }
     }
 
     private func publicRecord(credentialID: String) throws -> PublicRecord? {
-        var request = query(service: service + Self.publicSuffix, account: credentialID)
-        request[kSecReturnData as String] = true
-        request[kSecMatchLimit as String] = kSecMatchLimitOne
-        var result: CFTypeRef?
-        let status = SecItemCopyMatching(request as CFDictionary, &result)
+        let result = keychain.read(service: service + Self.publicSuffix,
+                                   account: credentialID, item: .publicRecord, prompt: nil)
+        let status = result.status
         if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess, let data = result as? Data,
+        guard status == errSecSuccess, let data = result.data,
               data.count <= Self.maximumRecordBytes,
               let record = try? JSONDecoder().decode(PublicRecord.self, from: data) else {
             throw CredentialStorageError(status: status)
@@ -207,27 +289,15 @@ public actor LeonardoSigningCredentialStore {
     }
 
     private func privateBytes(credentialID: String) throws -> Data? {
-        var request = query(service: service + Self.privateSuffix, account: credentialID)
-        request[kSecReturnData as String] = true
-        request[kSecMatchLimit as String] = kSecMatchLimitOne
-        request[kSecUseOperationPrompt as String] = prompt
-        var result: CFTypeRef?
-        let status = SecItemCopyMatching(request as CFDictionary, &result)
+        let result = keychain.read(service: service + Self.privateSuffix,
+                                   account: credentialID, item: .privateRecord, prompt: prompt)
+        let status = result.status
         if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess, let data = result as? Data,
+        guard status == errSecSuccess, let data = result.data,
               data.count <= Self.maximumRecordBytes else {
             throw CredentialStorageError(status: status)
         }
         return data
-    }
-
-    private func query(service: String, account: String) -> [String: Any] {
-        [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecAttrSynchronizable as String: false
-        ]
     }
 
     private static func isUsablePassword(_ password: String) -> Bool {
@@ -249,8 +319,8 @@ public actor LeonardoSigningCredentialStore {
         if iterations > 1 {
             for _ in 1..<iterations {
                 u = Data(HMAC<SHA256>.authenticationCode(for: u, using: passwordKey))
-                output.withUnsafeMutableBytes { outputBytes in
-                    u.withUnsafeBytes { uBytes in
+                output.withUnsafeMutableBytes { (outputBytes: UnsafeMutableRawBufferPointer) in
+                    u.withUnsafeBytes { (uBytes: UnsafeRawBufferPointer) in
                         for index in 0..<outputLength {
                             outputBytes[index] ^= uBytes[index]
                         }

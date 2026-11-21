@@ -95,27 +95,10 @@ struct GuidedSigningView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            Divider()
-            if session.guidedSigningLoading {
-                ProgressView(L10n.text("Preparing the protected signing workflow…"))
-            } else if let error = session.guidedSigningError {
-                integrityWarning(error)
-            } else if let selectedPosition {
-                positionPicker
-                assignmentSection(selectedPosition)
-                reviewSection(selectedPosition)
-            } else {
-                Text(L10n.text("No signer positions are available.")).foregroundStyle(.secondary)
-            }
-            if let status = session.guidedSigningStatus {
-                Label(status, systemImage: "checkmark.circle").font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-        }
+        signingContent
         .padding(18)
-        .frame(width: 370, maxHeight: .infinity, alignment: .topLeading)
+        .frame(width: 370)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
         .background(.regularMaterial)
         .accessibilityIdentifier("guided-signing-inspector")
         .task {
@@ -123,31 +106,11 @@ struct GuidedSigningView: View {
             if selectedCredentialID.isEmpty { selectedCredentialID = session.guidedSigningCredentialIDs.first ?? "" }
             await refreshRenderedTargets()
         }
-        .onChange(of: session.guidedSigningCredentialIDs) { _, values in
-            if !values.contains(selectedCredentialID) { selectedCredentialID = values.first ?? "" }
-        }
-        .onChange(of: selectedPositionID) { _, _ in
-            selectedTargetIndex = 0
-            contextRead = false
-            reuseConfirmed = false
-            locationRubric = nil
-            if let progress = selectedProgress,
-               (progress.state == .reviewing || progress.state == .readyToSign) {
-                session.refreshGuidedSigningTargets()
-            }
-        }
-        .onChange(of: selectedTargetIndex) { _, _ in
-            contextRead = false
-            reuseConfirmed = false
-            checkCurrentTarget()
-        }
-        .onChange(of: session.guidedSigningTargets) { _, _ in
-            Task { @MainActor in await refreshRenderedTargets() }
-        }
-        .onChange(of: session.renderer.isReady) { _, ready in
-            guard ready else { return }
-            Task { @MainActor in await refreshRenderedTargets() }
-        }
+        .onChange(of: session.guidedSigningCredentialIDs) { _, values in credentialIDsChanged(values) }
+        .onChange(of: selectedPositionID) { _, _ in selectedPositionChanged() }
+        .onChange(of: selectedTargetIndex) { _, _ in selectedTargetChanged() }
+        .onChange(of: session.guidedSigningTargets) { _, _ in refreshTargetsSoon() }
+        .onChange(of: session.renderer.isReady) { _, ready in rendererReadyChanged(ready) }
         .confirmationDialog(
             L10n.text("Authorize this signer and credential for this position?"),
             isPresented: $showAssignmentConfirmation,
@@ -191,6 +154,55 @@ struct GuidedSigningView: View {
                 return true
             }
         }
+    }
+
+    @ViewBuilder
+    private var signingContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            header
+            Divider()
+            if session.guidedSigningLoading {
+                ProgressView(L10n.text("Preparing the protected signing workflow…"))
+            } else if let error = session.guidedSigningError {
+                integrityWarning(error)
+            } else if let selectedPosition {
+                positionPicker
+                assignmentSection(selectedPosition)
+                reviewSection(selectedPosition)
+            } else {
+                Text(L10n.text("No signer positions are available.")).foregroundStyle(.secondary)
+            }
+            if let status = session.guidedSigningStatus {
+                Label(status, systemImage: "checkmark.circle").font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func credentialIDsChanged(_ values: [String]) {
+        if !values.contains(selectedCredentialID) { selectedCredentialID = values.first ?? "" }
+    }
+
+    private func selectedPositionChanged() {
+        selectedTargetIndex = 0
+        contextRead = false
+        reuseConfirmed = false
+        locationRubric = nil
+        if let progress = selectedProgress,
+           (progress.state == .reviewing || progress.state == .readyToSign) {
+            session.refreshGuidedSigningTargets()
+        }
+    }
+
+    private func selectedTargetChanged() {
+        contextRead = false
+        reuseConfirmed = false
+        checkCurrentTarget()
+    }
+
+    private func rendererReadyChanged(_ ready: Bool) {
+        guard ready else { return }
+        refreshTargetsSoon()
     }
 
     private var header: some View {
@@ -513,6 +525,10 @@ struct GuidedSigningView: View {
         if let target = currentTarget, !available.contains(targetKey(target)) {
             session.guidedSigningStatus = L10n.text("A field occurrence is missing from the rendered document; confirmation is blocked.")
         }
+    }
+
+    private func refreshTargetsSoon() {
+        Task { @MainActor in await refreshRenderedTargets() }
     }
 
     private func checkCurrentTarget() {

@@ -18,6 +18,9 @@ final class LeonardoGuidedSigningTests: XCTestCase {
     func testTargetsExcludeEveryMarkdownLiteralFormTheRendererLeavesUntouched() throws {
         var document = try makeDocument()
         document.body = """
+        {{field:z}}
+        {{field:a}}
+
         ```text
         {{field:z}}
         ```
@@ -35,7 +38,24 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         let session = try LeonardoGuidedSigningSession(document: document, at: now)
         let targets = try session.targets(for: "titular", document: document)
 
-        XCTAssertEqual(targets.map { "\($0.fieldID)#\($0.occurrence)" }, [])
+        XCTAssertEqual(targets.map { "\($0.fieldID)#\($0.occurrence)" }, ["z#0", "a#0"])
+    }
+
+    func testTargetsRejectWhenEveryAssignedOccurrenceIsMarkdownLiteral() throws {
+        var document = try makeDocument()
+        document.body = """
+        ```text
+        {{field:z}}
+        {{field:a}}
+        ```
+        """
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+
+        XCTAssertThrowsError(try session.targets(for: "titular", document: document)) { error in
+            guard case LeonardoSigningError.fieldNotAssigned = error else {
+                return XCTFail("Expected an assigned field with no rendered occurrence to fail closed")
+            }
+        }
     }
 
     func testFirstConfirmationRequiresCurrentAssignmentAndRequiredData() throws {
