@@ -844,7 +844,7 @@ private struct MobileGuidedRubricSheet: View {
             VStack(spacing: 14) {
                 Text(spanish ? "Lee el contexto y dibuja una rúbrica nueva." : "Read the context and draw a new rubric.")
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
-                MobileRubricInkTools(color: $color, width: $width, style: $style, enabled: true)
+                MobileRubricInkTools(color: $color, width: $width, style: $style, enabled: true, spanish: spanish)
                 MobileRubricCanvas(rubric: $rubric, color: color, width: width, style: style,
                                    isInteractive: true, limitReached: $limitReached)
                     .aspectRatio(3, contentMode: .fit)
@@ -860,6 +860,7 @@ private struct MobileGuidedRubricSheet: View {
                     .disabled(!rubric.isValid || limitReached)
             }
             .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .classicSurface()
             .navigationTitle(spanish ? "Rúbrica" : "Rubric")
             .toolbar { Button(spanish ? "Cancelar" : "Cancel") { dismiss() } }
