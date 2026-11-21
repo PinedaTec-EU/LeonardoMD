@@ -58,6 +58,27 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testConfirmationMustFollowRenderedSourceOrder() throws {
+        let document = try makeDocument(requiredName: "Form complete")
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let ana = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        let anaKey = LeonardoSigningKeyPair(credentialID: "ana")
+        try assign(ana, key: anaKey, to: "titular", session: &session)
+        _ = try session.begin(positionID: "titular", document: document)
+
+        XCTAssertThrowsError(try session.confirmLocation(
+            positionID: "titular", fieldID: "a", occurrence: 0, document: document,
+            contextRead: true, rubric: rubric(seed: 1), at: now.addingTimeInterval(1)
+        )) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .incompletePosition("titular"))
+        }
+        XCTAssertEqual(session.positions["titular"]?.locations, [])
+        XCTAssertNoThrow(try session.confirmLocation(
+            positionID: "titular", fieldID: "z", occurrence: 0, document: document,
+            contextRead: true, rubric: rubric(seed: 1), at: now.addingTimeInterval(2)
+        ))
+    }
+
     func testFirstConfirmationRequiresCurrentAssignmentAndRequiredData() throws {
         var document = try makeDocument(requiredName: nil)
         var session = try LeonardoGuidedSigningSession(document: document, at: now)

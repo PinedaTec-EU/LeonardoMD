@@ -289,6 +289,14 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         }) else {
             throw LeonardoSigningError.fieldNotAssigned(fieldID)
         }
+        // A target is an occurrence in the rendered source, not merely a
+        // field ID. Keep confirmation in source order so repeated occurrences
+        // cannot be skipped and the review cannot end in an unrecoverable
+        // "all confirmed but not ready" state.
+        guard expectedTargets.indices.contains(progress.locations.count),
+              expectedTargets[progress.locations.count] == target else {
+            throw LeonardoSigningError.incompletePosition(positionID)
+        }
         guard !progress.locations.contains(where: {
             $0.fieldID == fieldID && $0.occurrence == occurrence
         }) else {
