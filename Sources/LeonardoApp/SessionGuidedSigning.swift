@@ -20,6 +20,29 @@ extension AppSession {
         return guidedSigningSession?.documentLocation == guidedSigningLocation
     }
 
+    /// The toolbar can be rendered before the protected sidecar has finished
+    /// loading. Derive the pending state from the v2 header in that interval
+    /// instead of briefly presenting a completed-signatures label.
+    var guidedSigningHasPendingPositions: Bool {
+        if let current = guidedSigningSession { return current.canSign }
+        guard let document = leonardoDocument,
+              document.metadata.formatVersion >= LeonardoFormat.signingVersion,
+              let declaration = document.metadata.document.signing else { return false }
+        return !declaration.positions.isEmpty
+    }
+
+    /// Signing itself additionally needs a loaded trust registry and a clean,
+    /// active session. The toolbar still opens the inspector for blocked
+    /// states so the user can see the status and correction action.
+    var guidedSigningWorkflowOperable: Bool {
+        guidedSigningHasPendingPositions
+            && guidedSigningReady
+            && !guidedSigningLoading
+            && guidedSigningError == nil
+            && guidedSigningTrustStore != nil
+            && guidedSigningSession?.state == .active
+    }
+
     /// The first confirmed location seals data, assignments, header and
     /// resources. A correction is an explicit new revision, never an inline
     /// edit that silently keeps old signatures.
