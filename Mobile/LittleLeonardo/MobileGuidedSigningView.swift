@@ -45,6 +45,7 @@ struct MobileGuidedSigningView: View {
     @State private var exporting = false
     @State private var exportDocument: MobileSigningExchangeDocument?
     @State private var ready = false
+    @State private var hasInvalidSeal = false
     @State private var storedBaseline: LeonardoGuidedSigningSession?
     @State private var verification: [String: LeonardoSignatureVerification] = [:]
     @State private var showingProfileRubric = false
@@ -93,11 +94,7 @@ struct MobileGuidedSigningView: View {
     }
 
     private var workflowAllowed: Bool {
-        ready && trustAccepted && verification.values.allSatisfy { $0 == .valid }
-            && session.state != .invalidated
-            && (session.snapshot.map { snapshot in
-                document.map { snapshot.matches(document: $0, resources: resources) } ?? false
-            } ?? true)
+        ready && trustAccepted && !hasInvalidSeal && verification.values.allSatisfy { $0 == .valid }
     }
 
     private var selectedProfile: LeonardoSignerProfile? {
@@ -250,7 +247,9 @@ struct MobileGuidedSigningView: View {
                 )
                 .font(.footnote)
                 .foregroundStyle(MobileClassic.secondary)
-                if ready && verification.values.contains(where: { $0 == .invalidSignature || $0 == .modifiedSnapshot }) {
+                if ready && (hasInvalidSeal || verification.values.contains(where: {
+                    $0 == .invalidSignature || $0 == .modifiedSnapshot
+                })) {
                     Label(
                         spanish ? "La copia contiene firmas no válidas o el documento ha cambiado." : "The copy contains invalid signatures or the document has changed.",
                         systemImage: "exclamationmark.triangle"
@@ -661,6 +660,8 @@ struct MobileGuidedSigningView: View {
 
     private func updateVerification(trustStore: LeonardoSigningTrustRegistry) {
         guard let document else { return }
+        hasInvalidSeal = session.state == .invalidated
+            || (session.snapshot.map { !$0.matches(document: document, resources: resources) } ?? false)
         verification = session.signatureVerification(document: document, resources: resources, trustStore: trustStore)
     }
 
