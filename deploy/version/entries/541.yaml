@@ -1,0 +1,4 @@
+{
+  "summary": "Developer ID signed QA builds retain a consistent identity so macOS can remember Keychain access for peer synchronization across builds.",
+  "build": 1
+}

@@ -6,10 +6,12 @@ import importlib.util
 import json
 import os
 import plistlib
+import re
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import sys
 import uuid
 
 SPEC = importlib.util.spec_from_file_location('bundle_dependencies', Path(__file__).with_name('bundle-dependencies.py'))
@@ -87,13 +89,30 @@ def release_changes_report(bundle, source_root, checkout_sha):
     }
 
 
+QA_IDENTIFIER = 'eu.pinedatec.LeonardoMD.qa'
+
+
+def local_developer_id():
+    identities = subprocess.run(
+        ['/usr/bin/security', 'find-identity', '-v', '-p', 'codesigning'],
+        capture_output=True, text=True,
+    )
+    if identities.returncode != 0:
+        return None
+    matches = set(re.findall(
+        r'^\s*\d+\) ([0-9A-F]{40}) "Developer ID Application: [^"]+"\s*$',
+        identities.stdout, re.MULTILINE,
+    ))
+    return next(iter(matches)) if len(matches) == 1 else None
+
+
 def prepare_bundle(source, identity=None):
     metadata = verify_bundle(source)
     directory = Path(tempfile.mkdtemp(prefix='leonardo-native-qa-'))
     bundle = directory / 'LeonardoMDQA.app'
     try:
         subprocess.run(['/usr/bin/ditto', str(source), str(bundle)], check=True)
-        metadata['CFBundleIdentifier'] = 'eu.pinedatec.LeonardoMD.qa.' + uuid.uuid4().hex
+        metadata['CFBundleIdentifier'] = QA_IDENTIFIER if identity else f'{QA_IDENTIFIER}.{uuid.uuid4().hex}'
         metadata['CFBundleName'] = 'LeonardoMD QA'
         metadata['CFBundleDisplayName'] = 'LeonardoMD QA'
         with (bundle / 'Contents/Info.plist').open('wb') as stream:
@@ -113,7 +132,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source', type=Path, help='Packaged LeonardoMD.app from scripts/build-app.sh')
     parser.add_argument('--verify-only', action='store_true')
-    parser.add_argument('--sign-identity', help='Sign the disposable QA copy inside out with this Developer ID')
+    parser.add_argument('--sign-identity', help='Developer ID Application identity; use - for ad hoc signing')
     parser.add_argument('--report', type=Path, help='Write package inspection evidence; requires --verify-only')
     arguments = parser.parse_args()
     if arguments.report and not arguments.verify_only:
@@ -132,7 +151,13 @@ def main():
         elif arguments.verify_only:
             verify_bundle(arguments.source)
         else:
-            print(prepare_bundle(arguments.source, arguments.sign_identity))
+            identity = arguments.sign_identity or local_developer_id()
+            if not identity or identity == '-':
+                print('QA uses ad hoc signing. To retain Keychain permissions across builds, '
+                      'set LEONARDO_QA_SIGN_IDENTITY to a Developer ID Application identity.',
+                      file=sys.stderr)
+                identity = None
+            print(prepare_bundle(arguments.source, identity))
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'QA bundle rejected: {error}\n')
 
