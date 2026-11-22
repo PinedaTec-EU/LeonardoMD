@@ -61,6 +61,10 @@ final class GuidedSigningCaptureTests: XCTestCase {
         try await capture(GuidedSigningRubricCapture(title: "Rúbrica del titular", initialRubric: nil) { _ in },
                           name: "mac-lienzo-rubrica", size: NSSize(width: 660, height: 445),
                           session: session, folder: folder)
+        try await capture(GuidedSigningLinkedRubricPanel(title: "Rúbrica del titular", drawLocally: {}, close: {}) {
+            GuidedSigningRubricWaitingView(deviceName: "Little Leonardo de prueba", cancel: {})
+        }, name: "mac-espera-rubrica-enlazada", size: NSSize(width: 460, height: 380),
+           session: session, folder: folder)
     }
 
     private func capture<Content: View>(_ content: Content, name: String, size: NSSize,

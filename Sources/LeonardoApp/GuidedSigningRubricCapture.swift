@@ -11,7 +11,6 @@ struct GuidedSigningRubricCapture: View {
     let title: String
     let complete: (LeonardoRubric) -> Void
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.leonardoAccent) private var accent
     @State private var rubric: LeonardoRubric
     @State private var color = Color.black
     @State private var width = 3.0
@@ -30,7 +29,7 @@ struct GuidedSigningRubricCapture: View {
         } else {
             VStack(alignment: .leading, spacing: 16) {
                 Label(title, systemImage: "signature").font(.title2.bold())
-                scopeNote
+                Self.scopeNote
                 localCanvas
                 HStack {
                     Button(L10n.text("Use a linked Little Leonardo")) { linkedDevice = true }
@@ -51,38 +50,15 @@ struct GuidedSigningRubricCapture: View {
     }
 
     private var linkedCapture: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 6) {
-                Image(systemName: "signature")
-                    .font(.title2)
-                    .foregroundStyle(accent)
-                    .accessibilityHidden(true)
-                Text(title).font(.title2.bold())
-                    .accessibilityAddTraits(.isHeader)
-            }
-
+        GuidedSigningLinkedRubricPanel(title: title, drawLocally: { linkedDevice = false }, close: { dismiss() }) {
             GuidedSigningLinkedRubric(controller: .shared) { received in
                 complete(received)
                 dismiss()
             }
-
-            scopeNote
-                .multilineTextAlignment(.center)
-            Divider()
-            HStack {
-                Spacer()
-                Button(L10n.text("Draw on this Mac")) { linkedDevice = false }
-                    .buttonStyle(PremiumButtonStyle())
-                Button(L10n.text("Close")) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                    .accessibilityLabel(L10n.text("Close rubric window"))
-            }
         }
-        .padding(24)
-        .frame(width: 460)
     }
 
-    private var scopeNote: some View {
+    fileprivate static var scopeNote: some View {
         Text(L10n.text("This rubric is used only for guided signing and is not added to the shared rubric library."))
             .font(.callout)
             .foregroundStyle(.secondary)
@@ -130,6 +106,70 @@ struct GuidedSigningRubricCapture: View {
     }
 }
 
+struct GuidedSigningLinkedRubricPanel<Content: View>: View {
+    let title: String
+    let drawLocally: () -> Void
+    let close: () -> Void
+    @ViewBuilder let content: () -> Content
+    @Environment(\.leonardoAccent) private var accent
+
+    var body: some View {
+        VStack(spacing: 16) {
+            VStack(spacing: 6) {
+                Image(systemName: "signature")
+                    .font(.title2)
+                    .foregroundStyle(accent)
+                    .accessibilityHidden(true)
+                Text(title).font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+            }
+            content()
+            GuidedSigningRubricCapture.scopeNote
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Divider()
+            HStack {
+                Spacer()
+                Button(L10n.text("Draw on this Mac"), action: drawLocally)
+                    .buttonStyle(PremiumButtonStyle())
+                Button(L10n.text("Close"), action: close)
+                    .keyboardShortcut(.cancelAction)
+                    .accessibilityLabel(L10n.text("Close rubric window"))
+            }
+        }
+        .padding(24)
+        .frame(width: 460)
+    }
+}
+
+struct GuidedSigningRubricWaitingView: View {
+    let deviceName: String
+    let cancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            VStack(spacing: 8) {
+                HStack(spacing: 12) {
+                    Image(systemName: "iphone")
+                        .font(.system(size: 34))
+                    ProgressView().controlSize(.small)
+                }
+                .accessibilityHidden(true)
+                Text(L10n.text("Waiting for rubric"))
+                    .font(.headline)
+                Text(deviceName)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+            .padding(.top, 4)
+            Button(L10n.text("Cancel request"), action: cancel)
+                .buttonStyle(PremiumButtonStyle(compact: true))
+        }
+    }
+}
+
 /// Uses the existing device capture protocol with no document context. The
 /// received ink remains a draft until the Mac signer confirms its location.
 private struct GuidedSigningLinkedRubric: View {
@@ -152,24 +192,7 @@ private struct GuidedSigningLinkedRubric: View {
                         .buttonStyle(PremiumButtonStyle(prominent: true))
                         .disabled(!response.rubric.isValid)
                 } else if !capture.isTerminal && !capture.isCancellationResolvedByCompletion {
-                    VStack(spacing: 8) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "iphone")
-                                .font(.system(size: 34))
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                        .accessibilityHidden(true)
-                        Text(L10n.text("Waiting for rubric"))
-                            .font(.headline)
-                        Text(capture.targetDeviceName)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .padding(.top, 4)
-                    Button(L10n.text("Cancel request")) { cancel(capture.id) }
+                    GuidedSigningRubricWaitingView(deviceName: capture.targetDeviceName) { cancel(capture.id) }
                 } else {
                     Button(L10n.text("Request another rubric")) {
                         self.capture = nil
