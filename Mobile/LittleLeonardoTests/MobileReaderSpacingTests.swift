@@ -87,12 +87,12 @@ final class MobileReaderSpacingTests: XCTestCase {
         }
     }
 
-    func testGuidedSigningCopyPreviewRendersWithVirtualDirectoryBaseURL() async throws {
+    func testGuidedSigningCopyRendersNestedProjectResourcesUsingSourceReferences() async throws {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "owner", label: "Owner")
         ])
         let document = LeonardoDocument(
-            body: "# Mobile signing practice\n\n{{field:signature}}",
+            body: "# Mobile signing practice\n\n![Seal](assets/seal.png)\n\n{{field:signature}}",
             metadata: LeonardoMetadata(
                 formatVersion: LeonardoFormat.signingVersion,
                 document: LeonardoDocumentDescriptor(
@@ -109,6 +109,30 @@ final class MobileReaderSpacingTests: XCTestCase {
         let session = try LeonardoGuidedSigningSession(
             document: document, at: Date(timeIntervalSince1970: 1_700_000_000)
         )
+        let source = try LeonardoFormatParser.serialize(document)
+        let scope = try CorpusScope(folder: "forms")
+        let bitmap = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { context in
+            UIColor.blue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 4, height: 4))
+        }
+        let png = try XCTUnwrap(bitmap.pngData())
+        let file = CorpusFile(path: "forms/assets/seal.png", content: png)
+        let resources = try MobileDocumentView.signingResources(
+            source: source, documentPath: "forms/agreement.mdlf", scope: scope, files: [file]
+        )
+        XCTAssertEqual(resources.map(\.reference), ["assets/seal.png"])
+        XCTAssertThrowsError(try MobileDocumentView.signingResources(
+            source: source, documentPath: "forms/agreement.mdlf", scope: scope, files: []
+        ))
+        let exchange = try LeonardoSigningExchange(
+            document: document, resources: resources, session: session, trustedCredentials: [], at: Date()
+        )
+        try exchange.validate(
+            against: document,
+            resources: [LeonardoSigningResource(reference: "assets/seal.png", bytes: png)],
+            trustStore: try LeonardoSigningTrustRegistry(credentials: [])
+        )
+        let exchangedResources = try exchange.signingResources()
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let priorWindow = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
@@ -122,7 +146,7 @@ final class MobileReaderSpacingTests: XCTestCase {
         window.rootViewController = UIHostingController(rootView: NavigationStack {
             MobileGuidedSigningDocumentReader(
                 document: document,
-                resources: [],
+                resources: exchangedResources,
                 session: session,
                 trustedCredentials: [],
                 trustAccepted: true,
@@ -134,18 +158,23 @@ final class MobileReaderSpacingTests: XCTestCase {
         window.makeKeyAndVisible()
 
         let deadline = ContinuousClock.now.advanced(by: .seconds(12))
-        var heading = ""
+        var evidence = ""
         repeat {
             if let web = findWebView(window),
-               let value = try? await web.evaluateJavaScript("document.querySelector('h1')?.textContent || ''") as? String {
-                heading = value
-                if heading == "Mobile signing practice", available.contains("signature#0") {
+               let value = try? await web.evaluateJavaScript("""
+                    JSON.stringify([
+                      document.querySelector('h1')?.textContent,
+                      document.querySelector('img[alt=Seal]')?.naturalWidth > 0
+                    ])
+                    """) as? String {
+                evidence = value
+                if evidence == "[\"Mobile signing practice\",true]", available.contains("signature#0") {
                     return
                 }
             }
             try await Task.sleep(for: .milliseconds(100))
         } while ContinuousClock.now < deadline
-        XCTFail("Guided signing copy did not render its heading and target (heading: \(heading), available: \(available.sorted()))")
+        XCTFail("Guided signing copy did not render its nested image and target (rendered: \(evidence), available: \(available.sorted()))")
     }
 
     func testSignedGuidedSigningViewPresentsReaderOutsideList() async throws {

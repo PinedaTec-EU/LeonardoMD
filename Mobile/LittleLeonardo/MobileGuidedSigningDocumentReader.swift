@@ -18,6 +18,7 @@ struct MobileGuidedSigningDocumentReader: View {
     let onFocusConsumed: () -> Void
     @Binding private var availableTargetKeys: Set<String>
     @StateObject private var controller = MarkdownPreviewController()
+    @State private var memoryAssets: MarkdownMemoryAssets
     // The native source is available from the first frame. WebKit may replace
     // it only after it has exposed every exact target occurrence.
     @State private var showingNativeFallback = true
@@ -46,15 +47,16 @@ struct MobileGuidedSigningDocumentReader: View {
         self.focusTarget = focusTarget
         self._availableTargetKeys = availableTargetKeys
         self.onFocusConsumed = onFocusConsumed
+        self._memoryAssets = State(initialValue: Self.makeMemoryAssets(resources))
     }
 
     private var source: String? {
         try? LeonardoFormatParser.serialize(document)
     }
 
-    private var memoryAssets: MarkdownMemoryAssets {
+    private static func makeMemoryAssets(_ resources: [LeonardoSigningResource]) -> MarkdownMemoryAssets {
         MarkdownMemoryAssets(files: Dictionary(
-            resources.map { ($0.reference, $0.bytes) },
+            resources.map { ($0.reference.removingPercentEncoding ?? $0.reference, $0.bytes) },
             uniquingKeysWith: { first, _ in first }
         ))
     }
@@ -63,6 +65,11 @@ struct MobileGuidedSigningDocumentReader: View {
         document.metadata.fields.compactMap { fieldID, field in
             field.type == .rubric && field.signerPosition != nil ? fieldID : nil
         }.sorted()
+    }
+
+    private var hasReferencedResources: Bool {
+        MobileGuidedSigningNativeContent.referencedResourceReferences(from: document)
+            .isSubset(of: Set(resources.map(\.reference)))
     }
 
     private var verifiedRubricOverlays: [String: LeonardoRubric] {
@@ -191,6 +198,11 @@ struct MobileGuidedSigningDocumentReader: View {
             }
         }
         .onChange(of: renderedTargetKeys) { _, _ in refreshAvailableTargets() }
+        .onChange(of: resources) { _, resources in
+            availableTargetKeys = []
+            showingNativeFallback = true
+            memoryAssets = Self.makeMemoryAssets(resources)
+        }
         .onChange(of: focusTarget) { _, _ in focusPendingTarget() }
     }
 
@@ -230,7 +242,7 @@ struct MobileGuidedSigningDocumentReader: View {
     }
 
     private func availableTargetKeys(for targets: [LeonardoSigningLocationTarget]) async -> Set<String> {
-        guard controller.isReady else { return [] }
+        guard controller.isReady, hasReferencedResources else { return [] }
         var available = Set<String>()
         for target in targets {
             if await controller.hasFieldTarget(target.fieldID, occurrence: target.occurrence) {
@@ -243,7 +255,7 @@ struct MobileGuidedSigningDocumentReader: View {
     }
 
     private func focusPendingTarget() {
-        guard !showingNativeFallback,
+        guard !showingNativeFallback, hasReferencedResources,
               let focusTarget, controller.isReady else { return }
         Task { @MainActor in
             let key = MobileGuidedSigningTargetKey.make(fieldID: focusTarget.fieldID, occurrence: focusTarget.occurrence)

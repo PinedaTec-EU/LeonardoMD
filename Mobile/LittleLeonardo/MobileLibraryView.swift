@@ -734,12 +734,9 @@ struct MobileDocumentView: View {
             return
         }
         do {
-            let referencedPaths = Set(LeonardoLocalImagePolicy.localReferences(in: text).compactMap {
-                Self.localResourcePath($0, documentPath: file.path)
-            })
-            let resources = liveProject.files
-                .filter { referencedPaths.contains($0.path) && $0.path != file.path }
-                .map { LeonardoSigningResource(reference: $0.path, bytes: $0.content) }
+            let resources = try Self.signingResources(
+                source: text, documentPath: file.path, scope: liveProject.scope, files: liveProject.files
+            )
             let stored = try await library.signingStore.sessions().last {
                 $0.documentLocation == signingLocation && $0.documentID == document.metadata.document.id
                     && $0.initialRevision == document.metadata.document.revision
@@ -765,17 +762,25 @@ struct MobileDocumentView: View {
         }
     }
 
-    private static func localResourcePath(_ reference: String, documentPath: String) -> String? {
-        guard let parsed = URL(string: reference),
-              parsed.scheme?.lowercased() != "http",
-              parsed.scheme?.lowercased() != "https" else { return nil }
-        let base = URL(fileURLWithPath: "/" + documentPath)
-            .deletingLastPathComponent()
-        guard let resolved = URL(string: reference, relativeTo: base)?.standardizedFileURL else {
-            return nil
+    static func signingResources(
+        source: String, documentPath: String, scope: CorpusScope, files: [CorpusFile]
+    ) throws -> [LeonardoSigningResource] {
+        let base = URL(fileURLWithPath: "/" + documentPath).deletingLastPathComponent()
+        return try LeonardoLocalImagePolicy.localReferences(in: source).map { reference in
+            guard let parsed = URLComponents(string: reference),
+                  parsed.scheme == nil, parsed.host == nil,
+                  !parsed.path.hasPrefix("/"), !parsed.path.contains("\\"),
+                  !parsed.path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }),
+                  let resolved = parsed.url(relativeTo: base)?.standardizedFileURL,
+                  resolved.path.hasPrefix("/") else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            let path = String(resolved.path.dropFirst())
+            guard (try? scope.validate(path)) != nil,
+                  let asset = files.first(where: { $0.path == path }) else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            return LeonardoSigningResource(reference: reference, bytes: asset.content)
         }
-        let path = resolved.path
-        guard path.hasPrefix("/") else { return nil }
-        return String(path.dropFirst())
     }
 }
