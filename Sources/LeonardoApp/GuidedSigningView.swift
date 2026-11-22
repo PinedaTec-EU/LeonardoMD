@@ -26,6 +26,8 @@ struct GuidedSigningView: View {
     @State private var reviewedOccurrence: ReviewedOccurrence?
     @State private var showAssignmentConfirmation = false
     @State private var showCredentialEnrollment = false
+    @State private var enrollmentInProgress = false
+    @State private var enrollmentProblem: String?
     @State private var showPassword = false
     @State private var rubricEditor: RubricEditorRequest?
     @State private var selectedCredentialID = ""
@@ -143,7 +145,7 @@ struct GuidedSigningView: View {
     }
 
     private var allPositionsComplete: Bool {
-        !session.guidedSigningSnapshotChanged && !positions.isEmpty && completedPositionCount == positions.count
+        !positions.isEmpty && positions.allSatisfy { positionIsVerified($0.id) }
     }
 
     private var currentTarget: LeonardoSigningLocationTarget? {
@@ -207,8 +209,12 @@ struct GuidedSigningView: View {
             Text(L10n.text("The profile and personal credential are distinct records. This approval does not claim independent identity verification."))
         }
         .sheet(isPresented: $showCredentialEnrollment) {
-            GuidedSigningCredentialEnrollment { password in
+            GuidedSigningCredentialEnrollment(inProgress: enrollmentInProgress, problem: enrollmentProblem) { password in
+                guard !enrollmentInProgress else { return }
+                enrollmentInProgress = true
+                enrollmentProblem = nil
                 Task {
+                    defer { enrollmentInProgress = false }
                     do {
                         let credential = try await session.guidedSigningCredentialStore.enroll(password: password)
                         let trustStore = try? await session.guidedSigningCredentialStore.trustStore()
@@ -217,7 +223,7 @@ struct GuidedSigningView: View {
                         session.guidedSigningCredentialIDs = (try? await session.guidedSigningCredentialStore.credentialIDs()) ?? []
                         session.guidedSigningTrustStore = trustStore
                     } catch {
-                        session.guidedSigningError = String(describing: error)
+                        enrollmentProblem = L10n.text("The personal credential could not be saved. Try enrolling again.")
                     }
                 }
             }
@@ -417,7 +423,7 @@ struct GuidedSigningView: View {
                 .padding(.horizontal, 9)
                 .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
             }
-            if session.guidedSigningSession?.state == .complete && !session.guidedSigningSnapshotChanged {
+            if allPositionsComplete {
                 Label(L10n.text("All declared positions are complete."), systemImage: "checkmark.seal")
                     .font(.caption.weight(.semibold)).foregroundStyle(.green)
             }
@@ -426,11 +432,12 @@ struct GuidedSigningView: View {
     }
 
     private var verificationBanner: some View {
-        let values = session.guidedSigningVerification
-        return Group {
-            if !values.isEmpty {
-                let valid = values.values.allSatisfy { $0 == .valid }
-                Label(values.values.allSatisfy({ $0 == .valid })
+        Group {
+            if completedPositionCount > 0 && !session.guidedSigningSnapshotChanged {
+                let valid = positions
+                    .filter { session.guidedSigningSession?.positions[$0.id]?.state == .signed }
+                    .allSatisfy { positionIsVerified($0.id) }
+                Label(valid
                       ? L10n.text("Signatures verified against the local trust registry.")
                       : L10n.text("One or more signatures need trust or integrity review."),
                       systemImage: valid ? "checkmark.shield" : "exclamationmark.shield")
@@ -447,7 +454,8 @@ struct GuidedSigningView: View {
 
     private func positionStatusBadge(for positionID: String) -> some View {
         let state = session.guidedSigningSession?.positions[positionID]?.state
-        return Text(state.map { stateLabel($0) } ?? L10n.text("Pending"))
+        return Text(state == .signed ? signedPositionLabel(for: positionID)
+                    : state.map(stateLabel) ?? L10n.text("Pending"))
             .font(.caption2.weight(.semibold))
             .foregroundStyle(statusColor(for: positionID))
             .padding(.horizontal, 7)
@@ -592,7 +600,10 @@ struct GuidedSigningView: View {
                     }
                 }
             }
-            Button(L10n.text("Enroll personal credential…")) { showCredentialEnrollment = true }
+            Button(L10n.text("Enroll personal credential…")) {
+                enrollmentProblem = nil
+                showCredentialEnrollment = true
+            }
                 .buttonStyle(PremiumButtonStyle(compact: true))
             Text(L10n.text("The private key is encrypted with a personal password and stored in the device keychain. Touch ID does not identify the signer."))
                 .font(.caption2).foregroundStyle(.secondary)
@@ -627,8 +638,10 @@ struct GuidedSigningView: View {
                 }
                 .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
             } else if progress.state == .signed {
-                Label(L10n.text("This position is signed; its signed proof remains in the sidecar."), systemImage: "checkmark.seal")
-                    .font(.caption).foregroundStyle(.green)
+                let verified = positionIsVerified(position.id)
+                Label(verified ? L10n.text("This position is signed; its signed proof remains in the sidecar.")
+                      : signedPositionLabel(for: position.id), systemImage: statusIcon(for: position.id))
+                    .font(.caption).foregroundStyle(statusColor(for: position.id))
             } else if progress.state == .reviewing || progress.state == .readyToSign {
                 if session.guidedSigningTargets.isEmpty {
                     ProgressView(L10n.text("Preparing the exact field locations…"))
@@ -906,9 +919,25 @@ struct GuidedSigningView: View {
         }
     }
 
+    private func positionIsVerified(_ positionID: String) -> Bool {
+        !session.guidedSigningLoading && !session.guidedSigningSnapshotChanged
+            && session.guidedSigningError == nil
+            && session.guidedSigningVerification[positionID] == .valid
+    }
+
+    private func signedPositionLabel(for positionID: String) -> String {
+        if positionIsVerified(positionID) { return L10n.text("Signed and verified") }
+        switch session.guidedSigningVerification[positionID] {
+        case .unknownCredential: return L10n.text("Signing key not trusted")
+        case .invalidSignature: return L10n.text("Signature verification failed")
+        case .modifiedSnapshot: return L10n.text("Signed document changed")
+        default: return L10n.text("Signature needs verification")
+        }
+    }
+
     private func statusIcon(for positionID: String) -> String {
         switch session.guidedSigningSession?.positions[positionID]?.state {
-        case .some(.signed) where session.guidedSigningSnapshotChanged: return "exclamationmark.shield"
+        case .some(.signed) where !positionIsVerified(positionID): return "exclamationmark.shield"
         case .some(.signed): return "checkmark.seal.fill"
         case .some(.readyToSign): return "checkmark.circle"
         case .some(.reviewing): return "eye"
@@ -919,7 +948,7 @@ struct GuidedSigningView: View {
 
     private func statusColor(for positionID: String) -> Color {
         switch session.guidedSigningSession?.positions[positionID]?.state {
-        case .some(.signed) where session.guidedSigningSnapshotChanged: return .orange
+        case .some(.signed) where !positionIsVerified(positionID): return .orange
         case .some(.signed): return .green
         case .some(.readyToSign): return session.accentColor
         case .some(.paused): return .orange
@@ -968,6 +997,8 @@ struct GuidedSigningTargetRow: Identifiable, Equatable {
 }
 
 private struct GuidedSigningCredentialEnrollment: View {
+    let inProgress: Bool
+    let problem: String?
     let onEnroll: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var password = ""
@@ -980,13 +1011,18 @@ private struct GuidedSigningCredentialEnrollment: View {
                 .font(.caption).foregroundStyle(.secondary)
             SecureField(L10n.text("Personal credential password"), text: $password)
             SecureField(L10n.text("Confirm password"), text: $confirmation)
+            if let problem {
+                Label(problem, systemImage: "exclamationmark.circle")
+                    .font(.caption).foregroundStyle(.orange)
+            }
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel")) { dismiss() }
                     .buttonStyle(PremiumButtonStyle(compact: true))
                 Button(L10n.text("Enroll")) { onEnroll(password) }
                     .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
-                    .disabled(password.count < 8 || password != confirmation)
+                    .disabled(inProgress || password != confirmation
+                              || !LeonardoSigningCredentialStore.isUsablePassword(password))
             }
         }
         .padding(22).frame(width: 410)

@@ -977,6 +977,16 @@ final class AppSessionTests: XCTestCase {
             XCTAssertFalse(session.renderConfiguration.allowsRemoteImages)
             XCTAssertFalse(session.guidedSigningContentLocked, session.guidedSigningError ?? "Signing preparation is incomplete")
             XCTAssertEqual(session.guidedSigningActionProblem, L10n.text(warning))
+            await session.exportGuidedSigningExchange()
+            XCTAssertEqual(session.guidedSigningActionProblem, L10n.text(warning))
+            XCTAssertFalse(session.guidedSigningContentLocked)
+
+            let invalidCopy = root.appendingPathComponent("invalid-signing-copy.json")
+            try "{".write(to: invalidCopy, atomically: true, encoding: .utf8)
+            await session.readGuidedSigningExchange(from: invalidCopy)
+            XCTAssertEqual(session.guidedSigningActionProblem, L10n.text("Choose a readable, valid signing copy and try again."))
+            XCTAssertFalse(session.guidedSigningContentLocked)
+
             await session.assignGuidedSigner(
                 positionID: "owner", profile: signer, credential: credential,
                 saveOptions: .init(saveIdentityDetails: false, saveRubric: false)
@@ -995,6 +1005,19 @@ final class AppSessionTests: XCTestCase {
             await session.beginGuidedPosition("owner")
             XCTAssertNil(session.guidedSigningActionProblem)
             XCTAssertEqual(session.guidedSigningSession?.positions["owner"]?.state, .reviewing)
+            await session.pauseGuidedPosition(positionID: "owner")
+            XCTAssertEqual(session.guidedSigningSession?.positions["owner"]?.state, .paused)
+            document.body = reference + "\n\n{{field:signature}}"
+            XCTAssertTrue(session.editDocument(expected: session.content,
+                                               replacement: try LeonardoFormatParser.serialize(document)))
+            await session.resumeGuidedPosition(positionID: "owner")
+            XCTAssertEqual(session.guidedSigningActionProblem, L10n.text(warning))
+            XCTAssertFalse(session.guidedSigningContentLocked)
+            XCTAssertTrue(session.editDocument(expected: session.content, replacement: corrected))
+            await session.save()
+            await session.resumeGuidedPosition(positionID: "owner")
+            XCTAssertNil(session.guidedSigningActionProblem)
+
             let target = try XCTUnwrap(session.guidedSigningTargets.first)
             await session.confirmGuidedLocation(
                 target: target,
@@ -1008,6 +1031,79 @@ final class AppSessionTests: XCTestCase {
             XCTAssertNotNil(session.guidedSigningSession?.snapshot)
             XCTAssertTrue(session.guidedSigningContentLocked)
         }
+    }
+
+    func testExternalSigningResourceChangeInvalidatesOpenVerification() async throws {
+        let credentials = LeonardoSigningCredentialStore(
+            service: "eu.pinedatec.LeonardoMD.tests.signing.resource-change.\(UUID())"
+        )
+        let (root, session) = try fixture(signingCredentialStore: credentials)
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        session.authorizePath = { _, _ in }
+        let file = root.appendingPathComponent("sealed.mdlf")
+        let image = root.appendingPathComponent("sealed.png")
+        let declaration = LeonardoSigningDeclaration(positions: [.init(id: "owner", label: "Owner")])
+        let document = LeonardoDocument(
+            body: "![Sealed image](sealed.png)\n\n{{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: .init(id: "sealed-image", kind: .form, revision: 1, signing: declaration),
+                fields: ["signature": .init(type: .rubric, signerPosition: "owner")]
+            )
+        )
+        let imageBytes = Data([1, 2, 3])
+        try imageBytes.write(to: image)
+        try LeonardoFormatParser.serialize(document).write(to: file, atomically: true, encoding: .utf8)
+        let resources = [LeonardoSigningResource(reference: "sealed.png", bytes: imageBytes)]
+        let key = LeonardoSigningKeyPair(credentialID: "sealed-resource-owner")
+        let profile = LeonardoSignerProfile(displayName: "Owner", identity: .init(
+            fullName: "Owner", documentType: .nationalID, documentNumber: "QA-RESOURCE"))
+        let authorization = try LeonardoSigningAuthorization(positionID: "owner", profileID: profile.id,
+            credentialID: key.credential.id, confirmedAt: Date(), explicitlyConfirmed: true)
+        var sealed = try LeonardoGuidedSigningSession(
+            document: document, at: Date(), documentLocation: file.standardizedFileURL.resolvingSymlinksInPath().path
+        )
+        try sealed.assign(positionID: "owner", profile: profile, credential: key.credential,
+                          authorization: authorization, at: Date())
+        _ = try sealed.begin(positionID: "owner", document: document, resources: resources)
+        try sealed.confirmLocation(positionID: "owner", fieldID: "signature", occurrence: 0,
+            document: document, resources: resources, contextRead: true,
+            rubric: LeonardoRubric(strokes: [.init(color: "#111111", width: 2, style: .solid,
+                points: [.init(x: 1, y: 1), .init(x: 2, y: 2)])]), at: Date())
+        try await credentials.trustPublicCredential(key.credential)
+        let trust = try await credentials.trustStore()
+        _ = try sealed.sign(positionID: "owner", keyPair: key, document: document,
+                            resources: resources, trustStore: trust, at: Date())
+        try await session.guidedSigningStore.saveSession(sealed, replacing: nil)
+        await session.openDocument(file)
+        XCTAssertEqual(session.guidedSigningVerification["owner"], .valid)
+
+        try Data([1, 2, 4]).write(to: image)
+        await session.checkExternalChanges()
+        XCTAssertTrue(session.guidedSigningSnapshotChanged)
+        XCTAssertTrue(session.guidedSigningVerification.isEmpty)
+        XCTAssertTrue(session.guidedSigningContentLocked)
+        XCTAssertEqual(session.guidedSigningSession, sealed)
+
+        try imageBytes.write(to: image)
+        await session.openDocument(file)
+        XCTAssertEqual(session.guidedSigningVerification["owner"], .valid)
+        let destination = root.appendingPathComponent("stale-export.json")
+        var destinationRequested = false
+        await session.exportGuidedSigningExchange { _ in
+            destinationRequested = true
+            do {
+                try Data([1, 2, 4]).write(to: image)
+            } catch {
+                XCTFail("Could not change the image while the destination was being selected: \(error)")
+            }
+            return destination
+        }
+        XCTAssertTrue(destinationRequested)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        XCTAssertTrue(session.guidedSigningSnapshotChanged)
+        XCTAssertTrue(session.guidedSigningVerification.isEmpty)
+        XCTAssertEqual(session.guidedSigningSession, sealed)
     }
 
     func testGuidedReviewClearsWarningAfterRequiredDataIsCorrected() async throws {

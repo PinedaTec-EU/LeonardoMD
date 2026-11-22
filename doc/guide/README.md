@@ -1,10 +1,15 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v116-en.mdlz` and `Guide-v116-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v117-en.mdlz` and `Guide-v117-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v116/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v117/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v117 explains how to correct missing images in an unsigned draft and read
+per-signer verification indicators.
+Guide v117 EN SHA-256: `b10833121c1af021aba392de1dd329fb1f1789696cd340780ffd0b9460ec2d25`
+Guide v117 ES SHA-256: `d20b599442a2f9ccd9970ff09dc5fc510ba1e82575463471672ffa9b22b381b6`
 
 Guide v116 explains explicit identity entry when reusing an ink-only profile
 and the toolbar warning when the sealed document or its resources change. It also

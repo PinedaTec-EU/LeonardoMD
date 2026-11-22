@@ -225,8 +225,12 @@ Use local files for images in guided signing forms. Replace online images
 in the original before signing, so the seal can cover the actual image bytes.
 If an image changes or fails to open during review, check the updated preview
 before confirming again.
-Little Leonardo needs a fresh exported copy after you replace them. A guided
-rubric stays blank until Leonardo verifies its signature at that occurrence.
+You can edit and save an unsigned draft to replace a missing image or an
+online image before trying again. Little Leonardo needs a fresh exported copy
+after you replace an image. A guided rubric stays blank until Leonardo verifies
+its signature at that occurrence. The signing panel marks each verified position
+in green. If the key is unknown or the proof cannot be verified, the position
+shows the reason and keeps its rubric hidden.
 
 Save the completed form on the Mac before confirming the first location or
 exchanging a signing copy. The

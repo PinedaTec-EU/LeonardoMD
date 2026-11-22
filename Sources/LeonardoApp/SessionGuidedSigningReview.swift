@@ -194,7 +194,7 @@ extension AppSession {
                 }
             }
             let imageFiles = try guidedSigningResourceURLs(in: document)
-            let resources = try readGuidedSigningResources(imageFiles)
+            let resources = try Self.readGuidedSigningResources(imageFiles)
             if current.snapshot?.matches(document: document, resources: resources) != false {
                 guard try current.targets(for: target.positionID, document: document).contains(target) else {
                     guidedSigningActionProblem = L10n.text(
@@ -375,7 +375,7 @@ extension AppSession {
                     current, replacing: baseline, expectedSession: viewBaseline
                 )
             }
-            guidedSigningError = String(describing: error)
+            reportGuidedSigningActionFailure(error)
         }
     }
 

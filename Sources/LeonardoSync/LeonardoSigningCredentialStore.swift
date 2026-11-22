@@ -486,7 +486,7 @@ public actor LeonardoSigningCredentialStore {
         return data
     }
 
-    private static func isUsablePassword(_ password: String) -> Bool {
+    public static func isUsablePassword(_ password: String) -> Bool {
         password.count >= 8 && password.count <= 512
             && !password.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
     }

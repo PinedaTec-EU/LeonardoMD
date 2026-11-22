@@ -234,9 +234,13 @@ ubicación.
 Usa archivos locales para las imágenes de los formularios con firma guiada.
 Sustituye las imágenes en línea en el original antes de firmar para que el
 sello cubra su contenido. Si una imagen cambia o falla al abrirse durante la
-revisión, vuelve a leer la vista actualizada antes de confirmar. Vuelve a exportar la copia para Little Leonardo
-después de sustituirlas. Cada rúbrica guiada permanece vacía hasta que
-Leonardo verifica su firma en esa aparición.
+revisión, vuelve a leer la vista actualizada antes de confirmar. Puedes editar
+y guardar un borrador sin firmar para sustituir una imagen ausente o en línea
+antes de reintentar. Vuelve a exportar la copia para Little Leonardo después de
+sustituir una imagen. Cada rúbrica permanece vacía hasta que Leonardo verifica
+su firma en esa aparición. El panel muestra en verde cada puesto verificado.
+Si falta confirmar la clave o falla la verificación de la prueba, el puesto
+muestra el motivo y la rúbrica permanece oculta.
 
 Guarda el formulario cumplimentado en el Mac antes de confirmar la primera
 ubicación o intercambiar una copia de firma. La primera confirmación sella las respuestas guardadas, las

@@ -71,6 +71,51 @@ final class GuidedSigningCaptureTests: XCTestCase {
             GuidedSigningRubricWaitingView(deviceName: "Little Leonardo de prueba", cancel: {})
         }, name: "mac-espera-rubrica-enlazada", size: NSSize(width: 460, height: 380),
            session: session, folder: folder)
+        try await captureMixedVerification(document: document, session: session, folder: folder)
+    }
+
+    private func captureMixedVerification(document: LeonardoDocument, session: AppSession, folder: URL) async throws {
+        var document = document
+        document.body += "\n\n## Revisor\n{{field:reviewer}}"
+        let positions: [LeonardoSignerPosition] = [
+            .init(id: "holder", label: "Titular"),
+            .init(id: "witness", label: "Testigo"),
+            .init(id: "reviewer", label: "Revisor")
+        ]
+        document.metadata.document.signing = .init(positions: positions)
+        document.metadata.fields["reviewer"] = .init(type: .rubric, label: "Rúbrica del revisor", signerPosition: "reviewer")
+        let keys = positions.map { LeonardoSigningKeyPair(credentialID: "capture-" + $0.id) }
+        let initialTrust = try LeonardoSigningTrustRegistry(credentials: keys.map(\.credential))
+        var signed = try LeonardoGuidedSigningSession(document: document, at: Date())
+        for (position, key) in zip(positions, keys) {
+            let profile = LeonardoSignerProfile(displayName: position.label, identity: .init(
+                fullName: position.label, documentType: .nationalID, documentNumber: "QA-" + position.id
+            ))
+            let authorization = try LeonardoSigningAuthorization(positionID: position.id, profileID: profile.id,
+                credentialID: key.credential.id, confirmedAt: Date(), explicitlyConfirmed: true)
+            try signed.assign(positionID: position.id, profile: profile, credential: key.credential,
+                              authorization: authorization, at: Date())
+        }
+        let rubric = LeonardoRubric(strokes: [.init(color: "#111111", width: 2, style: .solid,
+            points: [.init(x: 1, y: 1), .init(x: 2, y: 2)])])
+        for (position, key) in zip(positions, keys) {
+            _ = try signed.begin(positionID: position.id, document: document)
+            try signed.confirmLocation(positionID: position.id, fieldID: position.id, occurrence: 0,
+                document: document, contextRead: true, rubric: rubric, at: Date())
+            _ = try signed.sign(positionID: position.id, keyPair: key, document: document,
+                                trustStore: initialTrust, at: Date())
+        }
+        let otherKey = LeonardoSigningKeyPair(credentialID: keys[2].credential.id)
+        let reducedTrust = try LeonardoSigningTrustRegistry(credentials: [keys[0].credential, otherKey.credential])
+        session.content = try LeonardoFormatParser.serialize(document)
+        session.guidedSigningSession = signed
+        session.guidedSigningTrustStore = reducedTrust
+        session.guidedSigningVerification = signed.signatureVerification(document: document, trustStore: reducedTrust)
+        XCTAssertEqual(session.guidedSigningVerification, [
+            "holder": .valid, "witness": .unknownCredential(keys[1].credential.id), "reviewer": .invalidSignature
+        ])
+        try await capture(GuidedSigningView(session: session), name: "mac-verificacion-por-firmante",
+                          size: NSSize(width: 460, height: 690), session: session, folder: folder)
     }
 
     private func captureRenderedDocument(session: AppSession, folder: URL) async throws {

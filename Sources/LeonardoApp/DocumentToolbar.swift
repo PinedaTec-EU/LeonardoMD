@@ -52,7 +52,10 @@ struct DocumentToolbar: View {
             if session.documentURL != nil {
                 if session.isGuidedSigningDocument {
                     Button {
+                        let location = session.guidedSigningLocation
                         Task {
+                            await session.recheckSealedSigningResources()
+                            guard session.guidedSigningLocation == location else { return }
                             await session.setDocumentMode(.fill)
                             session.showInspector = true
                         }

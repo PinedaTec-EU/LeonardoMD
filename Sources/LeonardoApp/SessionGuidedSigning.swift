@@ -101,7 +101,7 @@ extension AppSession {
         return target.reviewedContext(in: document.body)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
-    func reportGuidedSigningActionFailure(_ error: Error) {
+    func reportGuidedSigningActionFailure(_ error: Error, blocksReview: Bool = true) {
         switch error as? LeonardoSigningError {
         case .profileReused:
             guidedSigningActionProblem = L10n.text("Choose a different profile for this signer.")
@@ -129,7 +129,11 @@ extension AppSession {
             let names = fieldIDs.map { leonardoDocument?.metadata.fields[$0]?.label ?? $0 }
             guidedSigningActionProblem = L10n.format("Correct the required fields before signing: %@.", names.joined(separator: ", "))
         default:
-            guidedSigningError = error.localizedDescription
+            if blocksReview {
+                guidedSigningError = error.localizedDescription
+            } else {
+                guidedSigningActionProblem = error.localizedDescription
+            }
         }
     }
 
@@ -398,12 +402,37 @@ extension AppSession {
         return await renderer.hasReviewedSigningImages(expected, includesEmbeddedImages: embedded)
     }
 
-    func guidedSigningResources(for source: String? = nil) throws -> [LeonardoSigningResource] {
-        let document = try LeonardoFormatParser.parse(source ?? content)
-        return try readGuidedSigningResources(guidedSigningResourceURLs(in: document))
+    func markGuidedSigningSnapshotChanged() {
+        guidedSigningSnapshotChanged = true
+        guidedSigningVerification = [:]
+        guidedSigningTargets = []
+        // Keep the translation key for a live interface-language change.
+        guidedSigningError = "The document or one of its resources changed after signing began. To sign again, create a new revision."
     }
 
-    func readGuidedSigningResources(
+    func recheckSealedSigningResources() async {
+        guard !guidedSigningSnapshotChanged, !guidedSigningLoading,
+              let current = guidedSigningSession, let seal = current.snapshot,
+              !seal.resources.isEmpty, let location = guidedSigningLocation,
+              let document = leonardoDocument else { return }
+        let expectedContent = content
+        let files = try? guidedSigningResourceURLs(in: document)
+        let resourcesMatch = await Task.detached {
+            guard let files, let resources = try? Self.readGuidedSigningResources(files) else { return false }
+            return seal.matches(document: document, resources: resources)
+        }.value
+        guard !resourcesMatch,
+              guidedSigningViewStateMatches(expectedLocation: location, expectedContent: expectedContent,
+                                            expectedSession: current) else { return }
+        markGuidedSigningSnapshotChanged()
+    }
+
+    func guidedSigningResources(for source: String? = nil) throws -> [LeonardoSigningResource] {
+        let document = try LeonardoFormatParser.parse(source ?? content)
+        return try Self.readGuidedSigningResources(guidedSigningResourceURLs(in: document))
+    }
+
+    nonisolated static func readGuidedSigningResources(
         _ files: [(reference: String, url: URL)]
     ) throws -> [LeonardoSigningResource] {
         try files.map { reference, resolved in

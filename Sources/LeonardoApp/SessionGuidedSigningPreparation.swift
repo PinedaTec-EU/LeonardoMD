@@ -203,11 +203,7 @@ extension AppSession {
             let resources = Result { try guidedSigningResources() }
             if let snapshot = guidedSigningSession?.snapshot,
                (try? resources.get()).map({ snapshot.matches(document: document, resources: $0) }) != true {
-                guidedSigningSnapshotChanged = true
-                guidedSigningVerification = [:]
-                guidedSigningTargets = []
-                // Preserve the translation key so the warning follows live language changes.
-                guidedSigningError = "The document or one of its resources changed after signing began. To sign again, create a new revision."
+                markGuidedSigningSnapshotChanged()
             }
             let trustStore: LeonardoSigningTrustRegistry
             do {

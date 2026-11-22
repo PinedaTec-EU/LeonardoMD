@@ -10,7 +10,7 @@ extension AppSession {
     /// Exports an explicit offline signing exchange. The source document is
     /// never changed and the package contains only public trust records and
     /// the current sidecar progress; local paths and private keys stay local.
-    func exportGuidedSigningExchange() async {
+    func exportGuidedSigningExchange(chooseDestination: ((NSSavePanel) async -> URL?)? = nil) async {
         guard let current = guidedSigningSession,
               let expectedLocation = guidedSigningLocation,
               await flushPreviewEdits(),
@@ -22,9 +22,10 @@ extension AppSession {
             location: expectedLocation, content: expectedContent, session: current, snapshot: expectedSnapshot
         ) else { return }
         do {
+            let resources = try guidedSigningResources()
             let exchange = try LeonardoSigningExchange(
                 document: document,
-                resources: try guidedSigningResources(),
+                resources: resources,
                 session: current,
                 trustedCredentials: guidedSigningTrustStore?.allCredentials.filter { credential in
                     current.positions.values.contains { progress in
@@ -39,24 +40,26 @@ extension AppSession {
             panel.nameFieldStringValue = documentURL?.deletingPathExtension().lastPathComponent
                 .appending("-signing-copy.json") ?? "Leonardo-signing-copy.json"
             panel.allowedContentTypes = [.json]
-            presentFilePanel(panel) { [weak self] destination in
-                Task {
-                    await self?.writeGuidedSigningExchange(
-                        data,
-                        to: destination,
-                        expectedLocation: expectedLocation,
-                        expectedContent: expectedContent,
-                        expectedSession: current,
-                        expectedSnapshot: expectedSnapshot
-                    )
-                }
+            let destination: URL?
+            if let chooseDestination {
+                destination = await chooseDestination(panel)
+            } else {
+                destination = await NativeDialog.destination(panel, on: presentationWindow)
             }
+            guard let destination else { return }
+            await writeGuidedSigningExchange(
+                data,
+                to: destination,
+                expectedLocation: expectedLocation,
+                expectedContent: expectedContent,
+                expectedSession: current,
+                expectedSnapshot: expectedSnapshot,
+                expectedResources: resources
+            )
         } catch LeonardoSigningError.exchangeTooLarge {
             guidedSigningActionProblem = L10n.text("This signing copy exceeds the exchange size limit.")
-        } catch LeonardoSigningError.remoteImagesNotSealable {
-            guidedSigningActionProblem = L10n.text("Replace online images with local files before signing.")
         } catch {
-            guidedSigningError = String(describing: error)
+            reportGuidedSigningActionFailure(error, blocksReview: current.snapshot != nil)
         }
     }
 
@@ -81,18 +84,27 @@ extension AppSession {
         expectedLocation: String,
         expectedContent: String,
         expectedSession: LeonardoGuidedSigningSession,
-        expectedSnapshot: DocumentSnapshot?
+        expectedSnapshot: DocumentSnapshot?,
+        expectedResources: [LeonardoSigningResource]
     ) async {
         guard await guidedSigningExchangeSourceIsSaved(
                   location: expectedLocation, content: expectedContent,
                   session: expectedSession, snapshot: expectedSnapshot
               ) else { return }
+        guard (try? guidedSigningResources()) == expectedResources else {
+            if expectedSession.snapshot == nil {
+                guidedSigningActionProblem = L10n.text("A referenced image changed. Review the document and export a new signing copy.")
+            } else {
+                markGuidedSigningSnapshotChanged()
+            }
+            return
+        }
         do {
             try InstancePathOwnership.shared.claim(destination)
             try Self.writeSigningExchangeAtomically(data, to: destination)
             saveStatus = L10n.text("Signing copy exported")
         } catch {
-            guidedSigningError = String(describing: error)
+            reportGuidedSigningActionFailure(error, blocksReview: false)
         }
     }
 
@@ -103,6 +115,7 @@ extension AppSession {
               guidedSigningLocation == initialLocation, guidedSigningSession == initialSession else { return }
         let expectedLocation = guidedSigningLocation
         let expectedContent = content
+        let exchange: LeonardoSigningExchange
         do {
             let values = try source.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
             guard values.isRegularFile == true,
@@ -114,14 +127,20 @@ extension AppSession {
             guard data.count <= LeonardoSigningExchange.maximumEnvelopeBytes else {
                 throw LeonardoSigningError.storageFailure
             }
-            let exchange = try LeonardoSigningExchange.decoded(data)
+            exchange = try LeonardoSigningExchange.decoded(data)
+        } catch {
+            guidedSigningActionProblem = L10n.text("Choose a readable, valid signing copy and try again.")
+            return
+        }
+        do {
             try await importGuidedSigningExchange(
                 exchange,
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent
             )
         } catch {
-            guidedSigningError = String(describing: error)
+            guard guidedSigningLocation == expectedLocation, content == expectedContent else { return }
+            reportGuidedSigningActionFailure(error)
         }
     }
 
@@ -154,8 +173,13 @@ extension AppSession {
 
         guard await savedSourceMatches() else { return }
         let localResources = try guidedSigningResources()
-        let trust = try await signingExchangeTrust(exchange, isCurrent: isCurrent)
-        try exchange.validate(against: document, resources: localResources, trustStore: trust.effective)
+        guard let trust = try await signingExchangeTrust(exchange, isCurrent: isCurrent) else { return }
+        do {
+            try exchange.validate(against: document, resources: localResources, trustStore: trust.effective)
+        } catch {
+            reportGuidedSigningActionFailure(error, blocksReview: false)
+            return
+        }
         let localSessions = try await guidedSigningStore.sessions()
             .filter { $0.documentLocation == expectedLocation }
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
@@ -193,18 +217,19 @@ extension AppSession {
         )
         refreshGuidedSigningTargets()
         guidedSigningError = nil
+        guidedSigningActionProblem = nil
         guidedSigningStatus = L10n.text("Signed copy imported after local integrity and trust checks.")
     }
 
     private func signingExchangeTrust(
         _ exchange: LeonardoSigningExchange,
         isCurrent: () -> Bool
-    ) async throws -> (effective: LeonardoSigningTrustRegistry, unknown: [LeonardoSigningCredential]) {
+    ) async throws -> (effective: LeonardoSigningTrustRegistry, unknown: [LeonardoSigningCredential])? {
         let local = try await guidedSigningCredentialStore.trustStore()
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
         let unknown = exchange.trustedCredentials.filter { local.credential(id: $0.id) != $0 }
         guard !unknown.isEmpty else { return (local, []) }
-        guard confirmImportedPublicKeys(unknown) else { throw LeonardoSigningError.trustStoreRequired }
+        guard confirmImportedPublicKeys(unknown) else { return nil }
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
         return (try LeonardoSigningTrustRegistry(credentials: local.allCredentials + unknown), unknown)
     }
