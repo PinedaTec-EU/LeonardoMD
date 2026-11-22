@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-22T12:36:20.025643+00:00",
+  "capture": {
+    "captured_at": "2026-11-22T12:35:42.858900+00:00",
+    "route": "/native/macos/signing/imported-review-requires-local-consent",
+    "screen": "imported-review-requires-local-consent",
+    "browser_name": "Native AppKit and SwiftUI",
+    "browser_version": "macOS 27.2.1",
+    "state": "The signing inspector leaves a received unsigned position pending and asks the signer to confirm the remaining locations locally.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2744,
+    "height_px": 1924,
+    "sha256": "baa9fe4928bf32323efb8e1aed44aed19f8ab17e290e73b0fe75f7b5ac7c0b03"
+  },
+  "source": {
+    "revision_at_collection": "cdc13d084eca24b21c1846901c4268f09dc5d355",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

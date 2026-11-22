@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T12:35:45.876789+00:00",
+  "route": "/native/macos/signing/absolute-image-reference-blocked",
+  "screen": "absolute-image-reference-blocked",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The signed Mac requires an image path relative to the document before exporting a signing copy."
+}

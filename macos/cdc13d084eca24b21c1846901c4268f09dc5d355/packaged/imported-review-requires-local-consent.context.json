@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T12:35:42.858900+00:00",
+  "route": "/native/macos/signing/imported-review-requires-local-consent",
+  "screen": "imported-review-requires-local-consent",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The signing inspector leaves a received unsigned position pending and asks the signer to confirm the remaining locations locally."
+}

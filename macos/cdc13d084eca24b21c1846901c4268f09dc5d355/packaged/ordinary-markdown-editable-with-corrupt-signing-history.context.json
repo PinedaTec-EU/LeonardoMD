@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T12:32:35.843094+00:00",
+  "route": "/native/macos/signing/ordinary-markdown-editable-with-corrupt-signing-history",
+  "screen": "ordinary-markdown-editable-with-corrupt-signing-history",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The ordinary Markdown source editor is writable with a damaged signing record present."
+}
