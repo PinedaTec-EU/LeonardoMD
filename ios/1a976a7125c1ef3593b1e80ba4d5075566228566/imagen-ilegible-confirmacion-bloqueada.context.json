@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T11:59:11.466687+00:00",
+  "route": "/native/ios/signing/imagen-ilegible-confirmacion-bloqueada",
+  "screen": "imagen-ilegible-confirmacion-bloqueada",
+  "browser_name": "Native SwiftUI and WKWebView",
+  "browser_version": "iOS 26.5 Simulator runtime",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "data_provenance": "synthetic",
+  "state": "Signing review blocks confirmation when a sealed image does not render."
+}
