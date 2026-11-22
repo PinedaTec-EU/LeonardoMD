@@ -605,6 +605,42 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testRejectedFirstRubricReuseLeavesReviewUnsealedAndResumable() throws {
+        let document = try makeDocument()
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "first-rubric")
+        let ink = rubric(seed: 1)
+        try assign(profile(name: "Ana", number: "A-1", rubric: ink),
+                   key: key, to: "titular", session: &session)
+        let target = try XCTUnwrap(session.begin(positionID: "titular", document: document).first)
+        let baseline = session
+
+        XCTAssertThrowsError(try session.confirmLocation(
+            positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+            document: document, contextRead: true, rubric: ink, reuse: .profile, profileRubric: ink, at: now
+        )) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .reuseConfirmationRequired)
+        }
+        XCTAssertEqual(session, baseline)
+        XCTAssertNil(session.snapshot)
+        try session.validateExchangeProgress(document: document, resources: [])
+
+        var inconsistent = session
+        inconsistent.snapshot = try LeonardoSigningSnapshot.capture(document: document, at: now)
+        XCTAssertThrowsError(try inconsistent.validateExchangeProgress(document: document, resources: [])) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .integrityFailure)
+        }
+
+        try session.confirmLocation(
+            positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+            document: document, contextRead: true, rubric: ink, reuse: .profile,
+            profileRubric: ink, reuseConfirmed: true, at: now
+        )
+        XCTAssertNotNil(session.snapshot)
+        XCTAssertEqual(session.positions["titular"]?.locations.count, 1)
+        try session.validateExchangeProgress(document: document, resources: [])
+    }
+
     func testExchangeValidatesPartialProgressAgainstTheSealedDocument() throws {
         let document = try makeDocument()
         var session = try LeonardoGuidedSigningSession(document: document, at: now)

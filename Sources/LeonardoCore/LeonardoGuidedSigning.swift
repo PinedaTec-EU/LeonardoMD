@@ -316,11 +316,13 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         }) else {
             throw LeonardoSigningError.alreadyConfirmed(fieldID)
         }
+        let firstSnapshot: LeonardoSigningSnapshot?
         if snapshot == nil {
             try validateFirstConfirmationPrerequisites(document: document, resources: resources)
-            snapshot = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: at)
+            firstSnapshot = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: at)
         } else {
             try requireSnapshotMatches(document: document, resources: resources)
+            firstSnapshot = nil
         }
         try validateRubricReuse(
             positionID: positionID,
@@ -330,6 +332,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
             profileRubric: profileRubric,
             reuseConfirmed: reuseConfirmed
         )
+        if let firstSnapshot { snapshot = firstSnapshot }
         if reuse != .session { rubricByPosition[positionID] = rubric }
         progress.locations.append(LeonardoSigningLocationConfirmation(
             positionID: positionID,
@@ -634,6 +637,10 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         document: LeonardoDocument,
         resources: [LeonardoSigningResource]
     ) throws {
+        let hasConfirmedLocations = positions.values.contains { !$0.locations.isEmpty }
+        guard (snapshot != nil) == hasConfirmedLocations else {
+            throw LeonardoSigningError.integrityFailure
+        }
         if let snapshot {
             guard snapshot.matches(document: document, resources: resources) else {
                 throw LeonardoSigningError.integrityFailure
@@ -651,8 +658,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
     ) throws {
         let locations = progress.locations
         guard (progress.state == .pending || progress.assignment != nil),
-              (progress.state != .pending || locations.isEmpty),
-              (locations.isEmpty || snapshot != nil) else {
+              (progress.state != .pending || locations.isEmpty) else {
             throw LeonardoSigningError.integrityFailure
         }
         let targets = try targets(for: progress.positionID, document: document)
