@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T12:16:26.927719+00:00",
+  "route": "/native/macos/signing/guide-signing-verification-en",
+  "screen": "guide-signing-verification-en",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The bundled guide renders its new native signing verification illustration in en."
+}
