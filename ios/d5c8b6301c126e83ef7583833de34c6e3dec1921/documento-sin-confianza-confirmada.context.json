@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T09:08:57.586862+00:00",
+  "route": "/native/ios/signing/documento-sin-confianza-confirmada",
+  "screen": "documento-sin-confianza-confirmada",
+  "browser_name": "Native SwiftUI and WKWebView",
+  "browser_version": "iOS 26.5 Simulator runtime",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "data_provenance": "synthetic",
+  "state": "Explicit offline copy asks the signer to confirm the received fingerprint and offers the full reader."
+}
