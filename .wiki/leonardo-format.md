@@ -134,4 +134,7 @@ Native/UI integration now includes a read-only full-document mobile preview:
 exact `fieldID#occurrence` DOM targets gate navigation/actions and verified
 rubric overlays only appear after independent proof verification. The macOS and
 mobile panels disclose optional fields that will remain blank before the first
-seal; bilingual Help is revision v110.
+seal; bilingual Help is revision v114. Signed-copy exchange enforces the same
+40 MiB serialized envelope limit in both directions. Export rejects oversized
+JSON before the save panel, including when individually valid resources grow
+beyond the limit after Base64 encoding ([#557](https://github.com/PinedaTec-EU/LeonardoMD/issues/557)).
