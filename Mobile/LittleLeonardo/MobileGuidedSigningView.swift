@@ -772,6 +772,18 @@ struct MobileGuidedSigningView: View {
         }
     }
 
+    private func reportLocationReviewFailure(_ error: Error) {
+        switch error as? LeonardoSigningError {
+        case .requiredDataMissing(let fields), .requiredDataInvalid(let fields):
+            let labels = fields.map { document?.metadata.fields[$0]?.label ?? $0 }.joined(separator: ", ")
+            errorMessage = spanish
+                ? "Completa o corrige estos campos en el documento original y vuelve a exportar la copia: \(labels)."
+                : "Complete or correct these fields in the original document, then export the copy again: \(labels)."
+        default:
+            errorMessage = error.localizedDescription
+        }
+    }
+
     private func beginReview(_ positionID: String, document: LeonardoDocument) async {
         busy = true
         defer { busy = false }
@@ -781,7 +793,7 @@ struct MobileGuidedSigningView: View {
             try await saveProgress(updated)
             session = updated
         } catch {
-            errorMessage = String(describing: error)
+            reportLocationReviewFailure(error)
         }
     }
 
@@ -794,7 +806,7 @@ struct MobileGuidedSigningView: View {
             try await saveProgress(updated)
             session = updated
         } catch {
-            errorMessage = String(describing: error)
+            reportLocationReviewFailure(error)
         }
     }
 
@@ -809,7 +821,7 @@ struct MobileGuidedSigningView: View {
             try await saveProgress(updated)
             session = updated
         } catch {
-            errorMessage = String(describing: error)
+            reportLocationReviewFailure(error)
         }
     }
 
@@ -845,12 +857,12 @@ struct MobileGuidedSigningView: View {
                     busy = false
                 }
                 catch {
-                    errorMessage = String(describing: error)
+                    reportLocationReviewFailure(error)
                     busy = false
                 }
             }
         } catch {
-            errorMessage = String(describing: error)
+            reportLocationReviewFailure(error)
         }
     }
 
