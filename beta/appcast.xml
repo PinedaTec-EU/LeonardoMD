@@ -3,6 +3,22 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.2186</title>
+            <pubDate>Sun, 22 Nov 2026 14:17:59 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>2186</sparkle:version>
+            <sparkle:shortVersionString>0.3.2186</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">- Guided signing on Mac shows the declared signer positions and the remaining signatures when you open a form. Choose who is signing, review each location in order, and confirm its rubric individually.
+- Signers can pause and resume in any order. The first confirmation seals the saved form, assignments and referenced resources. Later signatures bind the previous signature history, and Leonardo blocks signing with a clear warning if the sealed content changes.
+- Reuse a signer profile or rubric only when explicitly chosen. A linked Little Leonardo can draw and return a rubric to Mac. Shared documents remain read-only on the companion, and an explicit signed copy can be reviewed separately.
+- Imported copies carry verified completed signatures. Unfinished review stays on the installation where it was confirmed. Use paths relative to the document for signing images.
+- The Spanish and English Help guides include the signing workflow and a practice form.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.2186/LeonardoMD-0.3.2186.zip" length="26851583" type="application/octet-stream" sparkle:edSignature="OVFpKUTR6Wn+sNuVk9kZNmUdpO3dhF+Q7BVS9wjE1LfVvuy/mDNoBgSCMdq8ytIBoDXTgUpDphmZ9mp/cPjcBg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.1968</title>
             <pubDate>Sat, 21 Nov 2026 14:49:16 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
@@ -888,45 +904,6 @@ Source: `49665943fe9d154988987d4204fbc1e1802fc53d`. Delta: `{"build": 4}`.
             <description sparkle:format="markdown">Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1333/LeonardoMD-0.3.1333.zip" length="24846834" type="application/octet-stream" sparkle:edSignature="GKz12raOn1i8LgZVPIvDSIlAUfDHA/HUb8Bmff4Iud6xegjllM12beeDw+zkPKqowFet0VCC8DIW0E3V1Jh+DQ==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.765</title>
-            <pubDate>Tue, 03 Nov 2026 23:44:12 +0100</pubDate>
-            <sparkle:version>765</sparkle:version>
-            <sparkle:shortVersionString>0.1.765</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Clearer file selection and readable Leonardo filenames
-
-The active file stays highlighted in the project explorer, including MDLF, MDLR and MDLZ, even when automatic following is turned off. Selection uses the system highlight with readable text and icons.
-
-Leonardo filenames retain their wine color in light appearance and use a brighter tint in dark appearance. The English and Spanish guides explain selection and automatic following separately; existing personal guide copies remain intact.
-
-This beta is for Apple silicon Macs running macOS 14 or later. Candidate-specific installed update and relaunch acceptance remains pending.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.765/LeonardoMD-0.1.765.zip" length="21355559" type="application/octet-stream" sparkle:edSignature="xcDAxbMu7Q7xJfZWHLcP6fpFYaUB/1CWfKKT7Q2Q3ICL5TSXSgthINc/jenqJJb8+hknzZytZ0S2iP65YkSZCg==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.349</title>
-            <pubDate>Mon, 12 Oct 2026 15:23:19 +0200</pubDate>
-            <sparkle:version>349</sparkle:version>
-            <sparkle:shortVersionString>0.1.349</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.349
-
-This stable release enables future beta subscriptions.
-
-- Open Preferences → Updates to choose Stable or Beta. Stable is the default; opting into Beta includes both stable and experimental releases.
-- Use Check for updates now or enable periodic automatic checks in Preferences. You decide when to install.
-- Active or deferred update decisions protect the channel selection and survive restart.
-- Returning from Beta to Stable waits for a newer stable build; the app never downgrades.
-
-This arm64 distribution requires macOS 14 or later. It preserves the existing stable signing trust root and user data. Old beta packages with a different update signing key must install a current signed/notarized package manually.
-
-Promoted from validated beta 0.1.348 with unchanged application and dependency sources, using a higher ledger-materialized build. Publication and hosted update evidence: https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6124736089
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.349/LeonardoMD-0.1.349.zip" length="15676621" type="application/octet-stream" sparkle:edSignature="c3Rz+eF7I6eIB4dBLE0PBX8qxIP4ODg5bTDknDTtbNw7RUcniXXlPFCNhiOAxjoF/LxKPfTYCVxRrv8PyC+4Dg==" />
         </item>
     </channel>
 </rss>
