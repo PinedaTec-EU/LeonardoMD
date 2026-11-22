@@ -81,12 +81,8 @@ struct GuidedSigningView: View {
                     documentType: documentType,
                     documentNumber: documentNumber
                 )
-                guard declaredIdentity.isValid, let transientProfileID else { return nil }
-                // An ink-only saved profile is not an identity record. Use a
-                // transient profile ID for this assignment so opting out of
-                // identity persistence cannot mutate or reuse that profile.
+                guard declaredIdentity.isValid else { return nil }
                 return GuidedSigningTransientProfile.make(
-                    id: transientProfileID,
                     savedProfile: selectedProfile,
                     identity: declaredIdentity
                 )
@@ -282,14 +278,12 @@ struct GuidedSigningView: View {
             transientProfileID = nil
             return
         }
+        transientProfileID = nil
         if profile.identity == nil {
-            transientProfileID = UUID()
             fullName = profile.displayName
             documentType = .nationalID
             documentNumber = ""
             saveIdentityDetails = false
-        } else {
-            transientProfileID = nil
         }
     }
 
@@ -883,18 +877,15 @@ struct GuidedSigningView: View {
 
 }
 
-/// Builds the one-off identity record needed when a saved profile contains
-/// only a rubric. The ID is supplied by the view state and is intentionally
-/// distinct from the saved profile's ID unless the caller explicitly chooses
-/// to persist a separate identity profile.
+/// Adds a declared identity for this assignment. Keeping the saved profile ID
+/// lets the session reject reuse. Only explicit save consent persists identity.
 struct GuidedSigningTransientProfile {
     static func make(
-        id: UUID,
         savedProfile: LeonardoSignerProfile,
         identity: LeonardoDeclaredIdentity
     ) -> LeonardoSignerProfile {
         LeonardoSignerProfile(
-            id: id,
+            id: savedProfile.id,
             displayName: identity.fullName,
             identity: identity,
             verificationStatus: savedProfile.verificationStatus,

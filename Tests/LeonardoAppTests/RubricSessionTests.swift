@@ -53,7 +53,7 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertTrue(liveTargets.isEmpty)
     }
 
-    func testInkOnlyProfileUsesTransientIdentityProfileID() {
+    func testInkOnlyProfileKeepsItsIDWhenDeclaringIdentityForAssignment() {
         let savedID = UUID()
         let saved = LeonardoSignerProfile(
             id: savedID,
@@ -61,18 +61,16 @@ final class RubricSessionTests: XCTestCase {
             identity: nil,
             rubric: ink
         )
-        let transientID = UUID()
         let identity = LeonardoDeclaredIdentity(
             fullName: "Ana Pineda",
             documentType: .nationalID,
             documentNumber: "A-1"
         )
         let assignmentProfile = GuidedSigningTransientProfile.make(
-            id: transientID, savedProfile: saved, identity: identity
+            savedProfile: saved, identity: identity
         )
 
-        XCTAssertEqual(assignmentProfile.id, transientID)
-        XCTAssertNotEqual(assignmentProfile.id, savedID)
+        XCTAssertEqual(assignmentProfile.id, savedID)
         XCTAssertEqual(assignmentProfile.identity, identity)
         XCTAssertEqual(assignmentProfile.rubric, ink)
         XCTAssertNil(saved.identity)
@@ -105,8 +103,12 @@ final class RubricSessionTests: XCTestCase {
         session.guidedSigningSession = try LeonardoGuidedSigningSession(document: document, at: Date(), documentLocation: url.path)
         let firstCredential = LeonardoSigningKeyPair(credentialID: "first").credential
         let secondCredential = LeonardoSigningKeyPair(credentialID: "second").credential
-        let first = LeonardoSignerProfile(displayName: "First", identity: .init(
+        let savedInk = LeonardoSignerProfile(displayName: "Saved rubric", rubric: ink)
+        try await session.guidedSigningStore.saveProfile(savedInk, options: .init(saveIdentityDetails: false, saveRubric: true))
+        let first = GuidedSigningTransientProfile.make(savedProfile: savedInk, identity: .init(
             fullName: "First Signer", documentType: .nationalID, documentNumber: "A-1"))
+        let reusedProfile = GuidedSigningTransientProfile.make(savedProfile: savedInk, identity: .init(
+            fullName: "Second Signer", documentType: .nationalID, documentNumber: "B-2"))
         let duplicate = LeonardoSignerProfile(displayName: "Second", identity: .init(
             fullName: "Second Signer", documentType: .nationalID, documentNumber: "A-1"))
         let corrected = LeonardoSignerProfile(displayName: "Second", identity: .init(
@@ -114,6 +116,13 @@ final class RubricSessionTests: XCTestCase {
         let options = LeonardoProfileSaveOptions(saveIdentityDetails: false, saveRubric: false)
 
         await session.assignGuidedSigner(positionID: "first", profile: first, credential: firstCredential, saveOptions: options)
+        await session.assignGuidedSigner(positionID: "second", profile: reusedProfile, credential: secondCredential, saveOptions: options)
+        XCTAssertNil(session.guidedSigningSession?.positions["second"]?.assignment)
+        XCTAssertNotNil(session.guidedSigningActionProblem)
+        let retained = try await session.guidedSigningStore.profiles().first { $0.id == savedInk.id }
+        XCTAssertNil(retained?.identity)
+        XCTAssertEqual(retained?.rubric, ink)
+
         await session.assignGuidedSigner(positionID: "second", profile: duplicate, credential: secondCredential, saveOptions: options)
         XCTAssertTrue(session.guidedSigningWorkflowOperable)
         XCTAssertNil(session.guidedSigningError)
