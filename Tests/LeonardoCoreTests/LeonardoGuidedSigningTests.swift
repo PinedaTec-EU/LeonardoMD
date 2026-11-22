@@ -390,7 +390,17 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         try assign(profile, key: key, to: "titular", session: &session)
         XCTAssertEqual(session.positions["titular"]?.assignment?.identityStatus, .declared)
 
-        let exchange = try LeonardoSigningExchange(document: document, session: session, trustedCredentials: [], at: now)
+        let targets = try session.begin(positionID: "titular", document: document)
+        for (index, target) in targets.enumerated() {
+            try session.confirmLocation(positionID: target.positionID, fieldID: target.fieldID,
+                                        occurrence: target.occurrence, document: document,
+                                        contextRead: true, rubric: rubric(seed: index + 1), at: now)
+        }
+        let trust = try LeonardoSigningTrustRegistry(credentials: [key.credential])
+        _ = try session.sign(positionID: "titular", keyPair: key, document: document, trustStore: trust, at: now)
+        let exchange = try LeonardoSigningExchange(document: document, session: session,
+                                                    trustedCredentials: [key.credential], at: now)
+        try exchange.validate(against: document, trustStore: trust)
         let encoded = try LeonardoSigningExchange.encoded(exchange)
         var copy = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
         var encodedSession = try XCTUnwrap(copy["session"] as? [String: Any])
