@@ -858,6 +858,8 @@
   "This position is signed; its signed proof remains in the sidecar.": "Este puesto está firmado; su prueba firmada permanece en el archivo lateral.",
   "Signing review blocked": "Revisión de firma bloqueada",
   "Save the document before confirming the first signing location.": "Guarda el documento antes de confirmar la primera ubicación de firma.",
+  "Save the document before exchanging a signing copy.": "Guarda el documento antes de intercambiar una copia de firma.",
+  "The document moved or changed while exchanging a signing copy. Reload it before continuing.": "El documento se movió o cambió mientras se intercambiaba la copia de firma. Vuelve a cargarlo antes de continuar.",
   "The saved signing document changed outside LeonardoMD. Reload it or save a copy before confirming.": "El documento de firma guardado ha cambiado fuera de LeonardoMD. Recárgalo o guarda una copia antes de confirmar.",
   "This file has signing progress, but its signing header changed. Create a new revision before continuing.": "Este archivo tiene progreso de firma, pero su cabecera de firma ha cambiado. Crea una revisión nueva antes de continuar.",
   "The document identity or signer assignments changed. Create a new revision before continuing.": "La identidad del documento o las asignaciones de firmantes han cambiado. Crea una revisión nueva antes de continuar.",

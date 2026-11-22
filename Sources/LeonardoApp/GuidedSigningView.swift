@@ -341,7 +341,7 @@ struct GuidedSigningView: View {
             HStack(spacing: 8) {
                 Menu {
                     Button(L10n.text("Export signing copy"), systemImage: "square.and.arrow.up") {
-                        session.exportGuidedSigningExchange()
+                        Task { await session.exportGuidedSigningExchange() }
                     }
                     Button(L10n.text("Import signed copy"), systemImage: "square.and.arrow.down") {
                         session.importGuidedSigningExchange()

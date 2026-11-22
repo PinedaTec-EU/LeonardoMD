@@ -225,7 +225,7 @@ segunda confirmación; desaparece cuando se sella la primera instantánea de
 ubicación.
 
 Guarda el formulario cumplimentado en el Mac antes de confirmar la primera
-ubicación. La primera confirmación sella las respuestas guardadas, las
+ubicación o intercambiar una copia de firma. La primera confirmación sella las respuestas guardadas, las
 asignaciones, la revisión del documento y los recursos referenciados. Los
 valores obligatorios inválidos, las ubicaciones que no se muestran y un
 documento cambiado bloquean la confirmación. Little Leonardo también la

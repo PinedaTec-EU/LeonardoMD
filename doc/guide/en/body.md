@@ -224,7 +224,8 @@ are currently blank and will remain blank. This is an informational notice,
 not a second confirmation; it disappears once the first location snapshot is
 sealed.
 
-Save the completed form on the Mac before confirming the first location. The
+Save the completed form on the Mac before confirming the first location or
+exchanging a signing copy. The
 first confirmation seals the saved answers, assignments, document revision
 and referenced resources. Invalid required answers, unavailable locations or
 a changed document block confirmation. Little Leonardo also blocks confirmation

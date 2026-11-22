@@ -6,11 +6,11 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v114 explains saving the form before the first confirmation, recovering a
+Guide v114 explains saving the form before the first confirmation or exchange, recovering a
 trusted sealed revision through Save Copy, and blocked confirmation when a local
 image cannot be displayed on Little Leonardo. Packaged Help validation remains pending.
-Guide v114 EN SHA-256: `ba0cd3ada2412ba7c1477d6ca47b029c558cfbd1ed7cb4d8801f1482a940c2b8`
-Guide v114 ES SHA-256: `93036991d8162335992f7a3c99cc0f35b4863aa9b03e84c199e0acfa0ef668d1`
+Guide v114 EN SHA-256: `3d54e605b0a79c06ac9f18bae4712d13081a1fcbbbe5d8a1a9eb1d41af3d643f`
+Guide v114 ES SHA-256: `590f551f99685255b9102cd8a68ff0e30b49a46a774e848709a8ceb3c83dd30f`
 
 Guide v113 describes the redesigned linked-device rubric panel and its
 three actions in the guided signing chapter. Both guides passed packaged Help

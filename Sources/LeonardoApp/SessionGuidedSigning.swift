@@ -399,11 +399,17 @@ extension AppSession {
     /// Exports an explicit offline signing exchange. The source document is
     /// never changed and the package contains only public trust records and
     /// the current sidecar progress; local paths and private keys stay local.
-    func exportGuidedSigningExchange() {
-        guard let document = leonardoDocument,
-              let current = guidedSigningSession,
-              let expectedLocation = guidedSigningLocation else { return }
+    func exportGuidedSigningExchange() async {
+        guard let current = guidedSigningSession,
+              let expectedLocation = guidedSigningLocation,
+              await flushPreviewEdits(),
+              guidedSigningSession == current, guidedSigningLocation == expectedLocation,
+              let document = leonardoDocument else { return }
         let expectedContent = content
+        let expectedSnapshot = snapshot
+        guard await guidedSigningExchangeSourceIsSaved(
+            location: expectedLocation, content: expectedContent, session: current, snapshot: expectedSnapshot
+        ) else { return }
         do {
             let exchange = try LeonardoSigningExchange(
                 document: document,
@@ -429,7 +435,8 @@ extension AppSession {
                         to: destination,
                         expectedLocation: expectedLocation,
                         expectedContent: expectedContent,
-                        sessionID: current.id
+                        expectedSession: current,
+                        expectedSnapshot: expectedSnapshot
                     )
                 }
             }
@@ -458,13 +465,14 @@ extension AppSession {
         to destination: URL,
         expectedLocation: String,
         expectedContent: String,
-        sessionID: UUID
+        expectedSession: LeonardoGuidedSigningSession,
+        expectedSnapshot: DocumentSnapshot?
     ) async {
         guard data.count <= LeonardoSigningExchange.maximumEnvelopeBytes,
-              guidedSigningLocation == expectedLocation,
-              content == expectedContent,
-              guidedSigningSession?.id == sessionID,
-              !stopped else { return }
+              await guidedSigningExchangeSourceIsSaved(
+                  location: expectedLocation, content: expectedContent,
+                  session: expectedSession, snapshot: expectedSnapshot
+              ) else { return }
         do {
             try InstancePathOwnership.shared.claim(destination)
             try Self.writeSigningExchangeAtomically(data, to: destination)
@@ -474,7 +482,11 @@ extension AppSession {
         }
     }
 
-    private func readGuidedSigningExchange(from source: URL) async {
+    func readGuidedSigningExchange(from source: URL) async {
+        let initialLocation = guidedSigningLocation
+        let initialSession = guidedSigningSession
+        guard await flushPreviewEdits(),
+              guidedSigningLocation == initialLocation, guidedSigningSession == initialSession else { return }
         let expectedLocation = guidedSigningLocation
         let expectedContent = content
         do {
@@ -504,8 +516,8 @@ extension AppSession {
         expectedLocation: String?,
         expectedContent: String
     ) async throws {
-        let expectedSession = guidedSigningSession
         guard let expectedLocation,
+              let expectedSession = guidedSigningSession,
               guidedSigningViewStateMatches(
                   expectedLocation: expectedLocation,
                   expectedContent: expectedContent,
@@ -514,6 +526,10 @@ extension AppSession {
               let document = leonardoDocument else {
             throw LeonardoSigningError.integrityFailure
         }
+        let expectedSnapshot = snapshot
+        guard await guidedSigningExchangeSourceIsSaved(
+            location: expectedLocation, content: expectedContent, session: expectedSession, snapshot: expectedSnapshot
+        ) else { return }
         let localResources = try guidedSigningResources()
         let localTrust = try await guidedSigningCredentialStore.trustStore()
         guard guidedSigningViewStateMatches(
@@ -585,6 +601,9 @@ extension AppSession {
             onto: local,
             documentLocation: expectedLocation
         )
+        guard await guidedSigningExchangeSourceIsSaved(
+            location: expectedLocation, content: expectedContent, session: expectedSession, snapshot: expectedSnapshot
+        ) else { return }
         // Persist accepted public records only after the detached proof has
         // passed validation. These records never contain private key bytes.
         for credential in unknown {
@@ -595,11 +614,10 @@ extension AppSession {
             ) else { throw LeonardoSigningError.integrityFailure }
             try await guidedSigningCredentialStore.trustPublicCredential(credential)
         }
-        guard guidedSigningViewStateMatches(
-            expectedLocation: expectedLocation,
-            expectedContent: expectedContent,
-            expectedSession: expectedSession
-        ) else { throw LeonardoSigningError.integrityFailure }
+        guard await guidedSigningExchangeSourceIsSaved(
+            location: expectedLocation, content: expectedContent, session: expectedSession, snapshot: expectedSnapshot
+        ) else { return }
+        guard localResources == (try guidedSigningResources()) else { throw LeonardoSigningError.integrityFailure }
         if let pristineReplacement {
             try await guidedSigningStore.replacePristineSession(
                 id: pristineReplacement.id,
@@ -1332,8 +1350,36 @@ extension AppSession {
         case stateChanged
     }
 
-    /// Re-checks the source after every suspension point in the first-seal
-    /// path. A clean buffer is not enough: the saved bytes, document identity,
+    private func guidedSigningExchangeSourceIsSaved(
+        location: String,
+        content: String,
+        session: LeonardoGuidedSigningSession,
+        snapshot: DocumentSnapshot?
+    ) async -> Bool {
+        guidedSigningActionProblem = nil
+        guard guidedSigningConflictAllowsProgress() else { return false }
+        switch await guidedSigningSavedSourceCheck(
+            expectedLocation: location,
+            expectedContent: content,
+            expectedSession: session,
+            expectedSnapshot: snapshot
+        ) {
+        case .ready:
+            return guidedSigningConflictAllowsProgress()
+        case .needsSave:
+            guidedSigningActionProblem = L10n.text("Save the document before exchanging a signing copy.")
+        case .externalChange:
+            externalConflict = true
+            saveStatus = "External conflict · signing review protected"
+            _ = guidedSigningConflictAllowsProgress()
+        case .stateChanged:
+            guidedSigningActionProblem = L10n.text("The document moved or changed while exchanging a signing copy. Reload it before continuing.")
+        }
+        return false
+    }
+
+    /// Verifies the coordinated source before the first seal or an exchange.
+    /// A clean buffer is not enough: the saved bytes, document identity,
     /// and package container (when applicable) must still be the same source
     /// represented by the open session.
     private func guidedSigningSavedSourceCheck(
@@ -1342,7 +1388,7 @@ extension AppSession {
         expectedSession: LeonardoGuidedSigningSession,
         expectedSnapshot: DocumentSnapshot?
     ) async -> GuidedSigningSavedSourceCheck {
-        guard guidedSigningViewStateMatches(
+        guard !stopped, !isClosing, guidedSigningViewStateMatches(
             expectedLocation: expectedLocation,
             expectedContent: expectedContent,
             expectedSession: expectedSession
@@ -1355,7 +1401,7 @@ extension AppSession {
         guard let authoritative = try? await documents.read(expectedSnapshot.url) else {
             return .externalChange
         }
-        guard guidedSigningViewStateMatches(
+        guard !stopped, !isClosing, snapshot == expectedSnapshot, guidedSigningViewStateMatches(
             expectedLocation: expectedLocation,
             expectedContent: expectedContent,
             expectedSession: expectedSession
