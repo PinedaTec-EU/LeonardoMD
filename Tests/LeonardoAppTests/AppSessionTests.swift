@@ -395,6 +395,112 @@ final class AppSessionTests: XCTestCase {
         ))
     }
 
+    func testReopenAfterDiscardingNewRevisionSelectsExactHistoricalSession() async throws {
+        let credentials = LeonardoSigningCredentialStore(
+            service: "eu.pinedatec.LeonardoMD.tests.signing.revision.\(UUID())"
+        )
+        let (root, first) = try fixture(signingCredentialStore: credentials)
+        defer { first.stop(); try? FileManager.default.removeItem(at: root) }
+        let documentURL = root.appendingPathComponent("revision-bound.mdlf")
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let original = LeonardoDocument(
+            body: "Signature: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "revision-bound", title: "Revision bound", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner")
+                ]
+            )
+        )
+        let originalSource = try LeonardoFormatParser.serialize(original)
+        try originalSource.write(to: documentURL, atomically: true, encoding: .utf8)
+        first.authorizePath = { _, _ in }
+        await first.openDocument(documentURL)
+        XCTAssertTrue(first.guidedSigningReady, first.guidedSigningError ?? "")
+        let originalSession = try XCTUnwrap(first.guidedSigningSession)
+        first.isProtected = false
+        first.mode = .fill
+
+        await first.startGuidedSigningRevision()
+        XCTAssertEqual(first.guidedSigningSession?.initialRevision, 2)
+        let history = try await first.guidedSigningStore.sessions()
+        XCTAssertEqual(history.compactMap(\.initialRevision).sorted(), [1, 2])
+
+        // The revision edit is intentionally discarded from the open buffer;
+        // the coordinated source on disk is still the original revision.
+        let reopened = AppSession(
+            preferencesURL: first.globalPreferencesURL,
+            signingCredentialStore: credentials
+        )
+        defer { reopened.stop() }
+        reopened.authorizePath = { _, _ in }
+        await reopened.openDocument(documentURL)
+
+        XCTAssertEqual(reopened.guidedSigningSession?.id, originalSession.id)
+        XCTAssertEqual(reopened.guidedSigningSession?.initialRevision, 1)
+        XCTAssertNil(reopened.guidedSigningError)
+        XCTAssertTrue(reopened.guidedSigningReady)
+    }
+
+    func testGuidedAssignmentRejectsStoreChangeAfterPreparationBaseline() async throws {
+        let credentials = LeonardoSigningCredentialStore(
+            service: "eu.pinedatec.LeonardoMD.tests.signing.baseline.\(UUID())"
+        )
+        let (root, session) = try fixture(signingCredentialStore: credentials)
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let documentURL = root.appendingPathComponent("baseline-bound.mdlf")
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "Signature: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "baseline-bound", title: "Baseline bound", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner")
+                ]
+            )
+        )
+        try LeonardoFormatParser.serialize(document).write(
+            to: documentURL, atomically: true, encoding: .utf8
+        )
+        session.authorizePath = { _, _ in }
+        await session.openDocument(documentURL)
+        let baseline = try XCTUnwrap(session.guidedSigningSession)
+        var newer = baseline
+        newer.updatedAt = baseline.updatedAt.addingTimeInterval(1)
+        try await session.guidedSigningStore.saveSession(newer, replacing: baseline)
+
+        let profile = LeonardoSignerProfile(
+            displayName: "Ana",
+            identity: LeonardoDeclaredIdentity(
+                fullName: "Ana Example", documentType: .nationalID, documentNumber: "BASE-1"
+            )
+        )
+        let credential = LeonardoSigningKeyPair(credentialID: "baseline-credential").credential
+        await session.assignGuidedSigner(
+            positionID: "owner",
+            profile: profile,
+            credential: credential,
+            saveOptions: .init(saveIdentityDetails: false, saveRubric: false)
+        )
+
+        XCTAssertEqual(session.guidedSigningSession, baseline)
+        XCTAssertNotNil(session.guidedSigningError)
+        let stored = try await session.guidedSigningStore.session(id: baseline.id)
+        XCTAssertEqual(stored, newer)
+    }
+
     func testCheckboxAppearancesPreserveFillGuardsAndManualSaving() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

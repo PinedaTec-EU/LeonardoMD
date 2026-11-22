@@ -116,6 +116,41 @@ final class LeonardoSigningPersistenceRevisionTests: XCTestCase {
         XCTAssertEqual(stored, newer)
     }
 
+    func testPristineReplacementUsesExplicitCallerBaseline() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let firstStore = LeonardoSigningStore(directoryURL: directory)
+        let secondStore = LeonardoSigningStore(directoryURL: directory)
+        let location = "/Users/example/private.mdlf"
+        let document = makeDocument(revision: 1)
+        let local = try LeonardoGuidedSigningSession(
+            document: document, at: now, documentLocation: location
+        )
+        try await firstStore.saveSession(local, replacing: nil)
+        let baselineValue = try await secondStore.session(id: local.id)
+        let baseline = try XCTUnwrap(baselineValue)
+        let imported = try LeonardoGuidedSigningSession(
+            document: document, at: now.addingTimeInterval(1), documentLocation: location
+        )
+        try await firstStore.replacePristineSession(id: local.id, with: imported)
+
+        let staleReplacement = try LeonardoGuidedSigningSession(
+            document: document, at: now.addingTimeInterval(2), documentLocation: location
+        )
+        do {
+            try await secondStore.replacePristineSession(
+                id: local.id,
+                baseline: baseline,
+                with: staleReplacement
+            )
+            XCTFail("A replacement must compare the caller's baseline inside the transaction")
+        } catch let error as LeonardoSigningError {
+            XCTAssertEqual(error, .staleStorage)
+        }
+        let stored = try await firstStore.session(id: imported.id)
+        XCTAssertEqual(stored, imported)
+    }
+
     private func makeDocument(revision: Int) -> LeonardoDocument {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "signer", label: "Signer")

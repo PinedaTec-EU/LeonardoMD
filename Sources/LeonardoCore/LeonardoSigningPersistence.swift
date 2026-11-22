@@ -144,9 +144,23 @@ public actor LeonardoSigningStore {
         with replacement: LeonardoGuidedSigningSession
     ) throws {
         try loadSessionsIfNeeded()
-        guard replacement.isPersistable else { throw LeonardoSigningError.storageFailure }
         guard let baseline = sessionsByID[id] else {
             throw LeonardoSigningError.staleStorage
+        }
+        try replacePristineSession(id: id, baseline: baseline, with: replacement)
+    }
+
+    /// Variant for a workflow that has already read its source session. The
+    /// caller's baseline is compared inside the same locked transaction; the
+    /// actor cache is not allowed to silently become the write precondition.
+    public func replacePristineSession(
+        id: UUID,
+        baseline: LeonardoGuidedSigningSession,
+        with replacement: LeonardoGuidedSigningSession
+    ) throws {
+        guard baseline.id == id,
+              replacement.isPersistable else {
+            throw LeonardoSigningError.storageFailure
         }
         let result = try updateSessions(id: id, baseline: baseline) { values in
             guard let index = values.firstIndex(where: { $0.id == id }),
