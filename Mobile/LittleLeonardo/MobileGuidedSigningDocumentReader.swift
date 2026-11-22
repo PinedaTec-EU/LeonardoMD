@@ -80,8 +80,8 @@ struct MobileGuidedSigningDocumentReader: View {
         }
         guard !references.isEmpty || embedded else { return true }
         return await controller.hasRenderedLocalImages(
-            references.map { URLComponents(string: $0)?.path ?? $0 },
-            includesEmbeddedImages: embedded
+            references.compactMap(LeonardoLocalImagePolicy.portableSigningImagePath),
+            references: Array(references), includesEmbeddedImages: embedded
         )
     }
 

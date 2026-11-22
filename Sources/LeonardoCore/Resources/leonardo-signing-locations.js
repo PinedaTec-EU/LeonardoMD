@@ -90,21 +90,74 @@ function leonardoSrcsetURLs(value) {
 }
 
 function leonardoSigningImageReferences(markdown) {
+  return leonardoRenderedSigningImageReferences(marked.parse(markdown, { gfm: true, breaks: false }));
+}
+
+function leonardoRenderedSigningImageReferences(html) {
   "use strict";
-  const html = marked.parse(markdown, { gfm: true, breaks: false });
   const attribute = /[\t\n\f\r ]+([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+  const rawText = new Set(["script", "style", "textarea", "title", "iframe", "xmp", "noembed", "noscript"]);
+  const voidElements = new Set([
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+    "meta", "param", "source", "track", "wbr"
+  ]);
+  const stack = [];
   const references = [];
-  for (const [raw, closing, tag] of html.matchAll(leonardoSigningHTMLTokens)) {
-    if (closing) continue;
-    const element = tag?.toLowerCase();
-    if (element !== "img" && element !== "source") continue;
+  let rawTextTag = null;
+  let inertDepth = 0;
+
+  function imageValues(raw, isImage) {
+    const result = [];
+    const seen = new Set();
     for (const [, name, doubleQuoted, singleQuoted, unquoted] of raw.matchAll(attribute)) {
       const kind = name.toLowerCase();
-      if (kind !== "srcset" && (kind !== "src" || element !== "img")) continue;
+      if (kind !== "srcset" && (kind !== "src" || !isImage)) continue;
+      if (seen.has(kind)) continue;
+      seen.add(kind);
       const value = decodeLeonardoHTMLText(doubleQuoted ?? singleQuoted ?? unquoted ?? "", true).trim();
       if (!value) continue;
-      if (kind === "src") references.push(value);
-      else references.push(...leonardoSrcsetURLs(value));
+      if (kind === "src") result.push(value);
+      else result.push(...leonardoSrcsetURLs(value));
+    }
+    return result;
+  }
+
+  for (const [raw, closing, tag] of html.matchAll(leonardoSigningHTMLTokens)) {
+    if (!tag) continue;
+    const element = tag.toLowerCase();
+    if (rawTextTag !== null) {
+      if (closing && rawTextTag === element) rawTextTag = null;
+      continue;
+    }
+    if (closing) {
+      const index = stack.findLastIndex(entry => entry.name === element);
+      if (index >= 0) {
+        for (const entry of stack.splice(index)) {
+          if (entry.inert) inertDepth--;
+        }
+      }
+      continue;
+    }
+    if (element === "plaintext") break;
+    if (rawText.has(element)) {
+      rawTextTag = element;
+      continue;
+    }
+    const parent = stack.at(-1);
+    if (inertDepth === 0 && element === "img") {
+      if (parent?.name === "picture") {
+        references.push(...parent.sources);
+        parent.sources = [];
+        parent.hasImage = true;
+      }
+      references.push(...imageValues(raw, true));
+    } else if (inertDepth === 0 && element === "source" && parent?.name === "picture" && !parent.hasImage) {
+      parent.sources.push(...imageValues(raw, false));
+    }
+    if (!voidElements.has(element)) {
+      const inert = element === "template" || element === "select";
+      stack.push({ name: element, inert, sources: [], hasImage: false });
+      if (inert) inertDepth++;
     }
   }
   return references;

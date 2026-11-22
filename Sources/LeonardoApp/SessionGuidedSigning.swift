@@ -391,7 +391,9 @@ extension AppSession {
                 return false
             }
         }
-        return await renderer.hasReviewedSigningImages(expected, includesEmbeddedImages: embedded)
+        return await renderer.hasReviewedSigningImages(
+            expected, references: files.map(\.reference), includesEmbeddedImages: embedded
+        )
     }
 
     func markGuidedSigningSnapshotChanged() {

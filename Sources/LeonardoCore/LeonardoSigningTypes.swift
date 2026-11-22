@@ -258,12 +258,10 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
             throw LeonardoSigningError.signingDeclarationRequired
         }
         let source = try LeonardoFormatParser.serialize(document)
+        try LeonardoLocalImagePolicy.validateSigningResources(resources, in: document)
         let snapshots = try resources
             .map { resource -> LeonardoSigningResourceSnapshot in
-                let reference = Self.canonicalReference(resource.reference)
-                guard LeonardoLocalImagePolicy.portableSigningImagePath(reference) != nil else {
-                    throw LeonardoSigningError.invalidResourceReference(resource.reference)
-                }
+                let reference = LeonardoLocalImagePolicy.canonicalSigningImageReference(resource.reference)
                 guard resource.bytes.count <= Self.maximumResourceBytes else {
                     throw LeonardoSigningError.resourceTooLarge(reference)
                 }
@@ -274,7 +272,6 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
                 )
             }
             .sorted { $0.reference < $1.reference }
-        try LeonardoLocalImagePolicy.validateSigningResourceReferences(snapshots.map(\.reference), in: document)
         guard at.timeIntervalSince1970.isFinite else { throw LeonardoSigningError.invalidTimestamp }
         return LeonardoSigningSnapshot(
             source: source,
@@ -287,25 +284,16 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
     public func matches(document: LeonardoDocument, resources: [LeonardoSigningResource] = []) -> Bool {
         guard let currentSource = try? LeonardoFormatParser.serialize(document),
               currentSource == source,
-              Data(SHA256.hash(data: Data(currentSource.utf8))) == sourceSHA256 else { return false }
+              Data(SHA256.hash(data: Data(currentSource.utf8))) == sourceSHA256,
+              (try? LeonardoLocalImagePolicy.validateSigningResources(resources, in: document)) != nil else { return false }
         guard let currentResources = try? resources.map({ resource in
-            let reference = Self.canonicalReference(resource.reference)
-            guard LeonardoLocalImagePolicy.portableSigningImagePath(reference) != nil else { throw LeonardoSigningError.invalidResourceReference(resource.reference) }
+            let reference = LeonardoLocalImagePolicy.canonicalSigningImageReference(resource.reference)
             guard resource.bytes.count <= Self.maximumResourceBytes else { throw LeonardoSigningError.resourceTooLarge(reference) }
             return LeonardoSigningResourceSnapshot(reference: reference,
                                                     sha256: Data(SHA256.hash(data: resource.bytes)),
                                                     byteCount: resource.bytes.count)
         }).sorted(by: { $0.reference < $1.reference }) else { return false }
-        guard currentResources == self.resources else { return false }
-        return (try? LeonardoLocalImagePolicy.validateSigningResourceReferences(
-            currentResources.map(\.reference), in: document
-        )) != nil
-    }
-
-    private static func canonicalReference(_ reference: String) -> String {
-        reference
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .precomposedStringWithCanonicalMapping
+        return currentResources == self.resources
     }
 }
 

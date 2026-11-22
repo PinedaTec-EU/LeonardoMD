@@ -345,9 +345,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         var total = 0
         var seen = Set<String>()
         let result = try resources.map { resource -> LeonardoSigningExchangeResource in
-            let reference = resource.reference
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .precomposedStringWithCanonicalMapping
+            let reference = LeonardoLocalImagePolicy.canonicalSigningImageReference(resource.reference)
             guard LeonardoLocalImagePolicy.portableSigningImagePath(reference) != nil else {
                 throw LeonardoSigningError.invalidResourceReference(reference)
             }

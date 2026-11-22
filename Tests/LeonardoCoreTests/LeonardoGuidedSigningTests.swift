@@ -179,6 +179,54 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertEqual(try LeonardoLocalImagePolicy.signingReferences(in: document), ["a&b.png", "café.png"])
     }
 
+    func testSigningResourcesFollowActiveImagesAndIndependentLayoutObjects() throws {
+        var document = try makeDocument()
+        document.body += """
+
+
+        <template><img src="template.png"></template>
+        <textarea><img src="textarea.png"></textarea>
+        <video><source srcset="video.png 2x"></video>
+        <picture><source srcset="no-fallback.png 2x"></picture>
+        <picture><source srcset="responsive.png 2x"><img src="cover.png"><source srcset="after.png"></picture>
+        """
+        document.metadata.layout = LeonardoLayout(
+            background: .init(image: "background.png"),
+            images: [.init(source: "removed.png"), .init(source: "cover.png")],
+            objects: [.init(id: "illustration", label: "Independent illustration", source: "object.png")]
+        )
+        let references = try LeonardoLocalImagePolicy.signingReferences(in: document)
+        XCTAssertEqual(references, ["responsive.png", "cover.png", "object.png", "background.png"])
+        let resources = references.map { LeonardoSigningResource(reference: $0, bytes: Data([1])) }
+        let snapshot = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: now)
+        XCTAssertTrue(snapshot.matches(document: document, resources: resources))
+    }
+
+    func testSigningResourceAliasesRequireTheSameBytes() throws {
+        var document = try makeDocument()
+        document.body += "\n\n![A](assets/same.png) ![B](assets/%73ame.png?version=1)"
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let first = LeonardoSigningResource(reference: "assets/same.png", bytes: Data([1]))
+        let consistent = LeonardoSigningResource(reference: "assets/%73ame.png?version=1", bytes: first.bytes)
+        let conflicting = LeonardoSigningResource(reference: consistent.reference, bytes: Data([2]))
+        let seal = try LeonardoSigningSnapshot.capture(document: document, resources: [first, consistent], at: now)
+        XCTAssertTrue(seal.matches(document: document, resources: [first, consistent]))
+        XCTAssertFalse(seal.matches(document: document, resources: [first, conflicting]))
+        XCTAssertThrowsError(try LeonardoSigningSnapshot.capture(document: document, resources: [first, conflicting], at: now))
+
+        let exchange = try LeonardoSigningExchange(
+            document: document, resources: [first, consistent], session: session, trustedCredentials: [], at: now
+        )
+        let encoded = try LeonardoSigningExchange.encoded(exchange)
+        XCTAssertEqual(try LeonardoSigningExchange.decoded(encoded), exchange)
+        var incoming = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var assets = try XCTUnwrap(incoming["resources"] as? [[String: Any]])
+        let aliasIndex = try XCTUnwrap(assets.firstIndex { $0["reference"] as? String == consistent.reference })
+        assets[aliasIndex]["bytes"] = conflicting.bytes.base64EncodedString()
+        incoming["resources"] = assets
+        XCTAssertThrowsError(try LeonardoSigningExchange.decoded(JSONSerialization.data(withJSONObject: incoming)))
+    }
+
     func testResponsiveImageMutationInvalidatesTheSealAndMissingCandidatesBlockIt() throws {
         var document = try makeDocument()
         let image = #"<picture><source srcset="better.png 2x, middle.png 1x"><img src="fallback.png"></picture>"#

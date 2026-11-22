@@ -699,7 +699,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
             }
             try validateRequiredSigningData(document)
         } else {
-            try LeonardoLocalImagePolicy.validateSigningResourceReferences(resources.map(\.reference), in: document)
+            try LeonardoLocalImagePolicy.validateSigningResources(resources, in: document)
         }
         for progress in positions.values {
             try validateExchangePosition(progress, document: document)

@@ -34,7 +34,17 @@ public enum LeonardoLocalImagePolicy {
     /// Returns all fixed local image candidates the signing renderer can
     /// display, including the sources behind responsive images.
     public static func signingReferences(in document: LeonardoDocument) throws -> [String] {
-        let references = try signingImageCandidates(in: document)
+        try validatedSigningReferences(signingImageCandidates(in: document))
+    }
+
+    /// Validates the references from actual image elements in the signing
+    /// preview against the same restrictions as the source document.
+    public static func signingReferences(inRenderedHTML html: String) throws -> [String] {
+        let references = try LeonardoSigningMarkdown.shared.renderedImageReferences(in: html)
+        return try validatedSigningReferences(references.map(canonicalSigningImageReference))
+    }
+
+    private static func validatedSigningReferences(_ references: [String]) throws -> [String] {
         guard !references.contains(where: { isRemoteImage($0) }) else {
             throw LeonardoSigningError.remoteImagesNotSealable
         }
@@ -49,18 +59,35 @@ public enum LeonardoLocalImagePolicy {
         }
     }
 
-    /// The signing payload covers exactly the resource set the reader uses.
-    static func validateSigningResourceReferences(
-        _ references: [String], in document: LeonardoDocument
+    /// The seal covers exactly the declared image references. References
+    /// resolving to one local path must all supply the same file bytes.
+    static func validateSigningResources(
+        _ resources: [LeonardoSigningResource], in document: LeonardoDocument
     ) throws {
         let expected = Set(try signingReferences(in: document))
-        let provided = Set(references)
-        guard provided.count == references.count else {
-            throw LeonardoSigningError.duplicateResourceReference
+        var provided = Set<String>()
+        var bytesByPath: [String: Data] = [:]
+        for resource in resources {
+            let reference = canonicalSigningImageReference(resource.reference)
+            guard let path = portableSigningImagePath(reference) else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            guard provided.insert(reference).inserted else {
+                throw LeonardoSigningError.duplicateResourceReference
+            }
+            let localPath = path.precomposedStringWithCanonicalMapping
+            if let bytes = bytesByPath[localPath], bytes != resource.bytes {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            bytesByPath[localPath] = resource.bytes
         }
         if let mismatch = expected.subtracting(provided).min() ?? provided.subtracting(expected).min() {
             throw LeonardoSigningError.invalidResourceReference(mismatch)
         }
+    }
+
+    static func canonicalSigningImageReference(_ reference: String) -> String {
+        reference.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
     }
 
     /// A signing copy travels between installations, so image references use
@@ -83,10 +110,14 @@ public enum LeonardoLocalImagePolicy {
     }
 
     private static func signingImageCandidates(in document: LeonardoDocument) throws -> [String] {
-        let body = try LeonardoSigningMarkdown.shared.imageReferences(in: document.body)
-        return (body + metadataReferences(in: document.metadata)).map {
-            $0.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
+        var references = try LeonardoSigningMarkdown.shared.imageReferences(in: document.body)
+        // layout.images positions existing body images. Only the background
+        // and independent page objects introduce additional image resources.
+        if let layout = document.metadata.layout {
+            references += layout.objects.compactMap(\.source)
+            if let image = layout.background?.image { references.append(image) }
         }
+        return references.map(canonicalSigningImageReference)
     }
 
     fileprivate struct BodyReference {

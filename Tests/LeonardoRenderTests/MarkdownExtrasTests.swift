@@ -131,9 +131,14 @@ final class MarkdownExtrasTests: XCTestCase {
         let selectedPath = try await evaluate("new URL(document.querySelector('picture img').currentSrc).pathname", in: web)
         XCTAssertEqual(selectedPath, "/selected.png")
         XCTAssertTrue(snapshot.resources.contains { $0.reference == String(selectedPath.dropFirst()) })
-        let decoded = await host.hasRenderedLocalImages(["selected.png", "fallback.png"])
+        let decoded = await host.hasRenderedLocalImages(["selected.png", "fallback.png"], references: ["selected.png", "fallback.png"])
         XCTAssertTrue(decoded)
-        let outsideSeal = await host.hasRenderedLocalImages(["fallback.png"])
+        let surplus = await host.hasRenderedLocalImages(
+            ["selected.png", "fallback.png", "unreferenced.png"],
+            references: ["selected.png", "fallback.png", "unreferenced.png"]
+        )
+        XCTAssertFalse(surplus)
+        let outsideSeal = await host.hasRenderedLocalImages(["fallback.png"], references: ["fallback.png"])
         XCTAssertFalse(outsideSeal)
     }
 
@@ -154,20 +159,20 @@ final class MarkdownExtrasTests: XCTestCase {
 
         let originalDigest = [file: Data(SHA256.hash(data: original))]
         let replacementDigest = [file: Data(SHA256.hash(data: replacement))]
-        let matchedOriginal = await host.hasReviewedSigningImages(originalDigest, includesEmbeddedImages: false)
+        let matchedOriginal = await host.hasReviewedSigningImages(originalDigest, references: ["a&b.png"], includesEmbeddedImages: false)
         XCTAssertTrue(matchedOriginal)
         try replacement.write(to: file, options: [.atomic])
-        let acceptedUnseenBytes = await host.hasReviewedSigningImages(replacementDigest, includesEmbeddedImages: false)
+        let acceptedUnseenBytes = await host.hasReviewedSigningImages(replacementDigest, references: ["a&b.png"], includesEmbeddedImages: false)
         XCTAssertFalse(acceptedUnseenBytes)
 
         host.reloadSigningImagePreview()
-        let reviewedNewBytes = await host.hasReviewedSigningImages(replacementDigest, includesEmbeddedImages: false)
+        let reviewedNewBytes = await host.hasReviewedSigningImages(replacementDigest, references: ["a&b.png"], includesEmbeddedImages: false)
         XCTAssertTrue(reviewedNewBytes)
 
         try Data("not a PNG".utf8).write(to: file, options: [.atomic])
         host.reloadSigningImagePreview()
         let acceptedCorrupt = await host.hasReviewedSigningImages(
-            [file: Data(SHA256.hash(data: Data("not a PNG".utf8)))], includesEmbeddedImages: false
+            [file: Data(SHA256.hash(data: Data("not a PNG".utf8)))], references: ["a&b.png"], includesEmbeddedImages: false
         )
         XCTAssertFalse(acceptedCorrupt)
     }
@@ -179,7 +184,7 @@ final class MarkdownExtrasTests: XCTestCase {
             let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsRemoteImages: false))
             window.orderFront(nil)
             defer { host.teardown(); window.close() }
-            let decoded = await host.hasRenderedLocalImages([], includesEmbeddedImages: true)
+            let decoded = await host.hasRenderedLocalImages([], references: [], includesEmbeddedImages: true)
             XCTAssertEqual(decoded, expected)
         }
     }

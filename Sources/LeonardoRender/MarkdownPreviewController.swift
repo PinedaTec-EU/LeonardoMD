@@ -84,13 +84,17 @@ public final class MarkdownPreviewController: ObservableObject {
         await host?.hasSigningFieldTargets(counts, source: source) ?? false
     }
 
-    /// Checks decoded images against the fixed set of available local candidates.
-    public func hasRenderedLocalImages(_ paths: [String], includesEmbeddedImages: Bool = false) async -> Bool {
-        await host?.hasRenderedLocalImages(paths, includesEmbeddedImages: includesEmbeddedImages) ?? false
+    /// Checks decoded images and the candidate set in the live preview.
+    public func hasRenderedLocalImages(
+        _ paths: [String], references: [String], includesEmbeddedImages: Bool = false
+    ) async -> Bool {
+        await host?.hasRenderedLocalImages(paths, references: references, includesEmbeddedImages: includesEmbeddedImages) ?? false
     }
 
-    public func hasReviewedSigningImages(_ digests: [URL: Data], includesEmbeddedImages: Bool) async -> Bool {
-        await host?.hasReviewedSigningImages(digests, includesEmbeddedImages: includesEmbeddedImages) ?? false
+    public func hasReviewedSigningImages(
+        _ digests: [URL: Data], references: [String], includesEmbeddedImages: Bool
+    ) async -> Bool {
+        await host?.hasReviewedSigningImages(digests, references: references, includesEmbeddedImages: includesEmbeddedImages) ?? false
     }
 
     public func reloadSigningImagePreview() {

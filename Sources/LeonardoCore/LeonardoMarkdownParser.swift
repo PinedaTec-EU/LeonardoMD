@@ -58,7 +58,15 @@ final class LeonardoSigningMarkdown: @unchecked Sendable {
 
     func imageReferences(in body: String) throws -> [String] {
         guard body.contains("!") || body.contains("<") else { return [] }
-        return try evaluate("leonardoSigningImageReferences", arguments: [body]) { result in
+        return try imageReferences(in: body, function: "leonardoSigningImageReferences")
+    }
+
+    func renderedImageReferences(in html: String) throws -> [String] {
+        try imageReferences(in: html, function: "leonardoRenderedSigningImageReferences")
+    }
+
+    private func imageReferences(in input: String, function: String) throws -> [String] {
+        try evaluate(function, arguments: [input]) { result in
             guard let references = result.toArray() as? [String] else {
                 throw LeonardoSigningError.storageFailure
             }

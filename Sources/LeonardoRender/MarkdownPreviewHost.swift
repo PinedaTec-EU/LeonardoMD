@@ -425,15 +425,19 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     }
 
     /// Checks the images actually selected by the preview from fixed candidates.
-    func hasRenderedLocalImages(_ paths: [String], includesEmbeddedImages: Bool = false) async -> Bool {
+    func hasRenderedLocalImages(
+        _ paths: [String], references: [String], includesEmbeddedImages: Bool = false
+    ) async -> Bool {
         guard !paths.isEmpty || includesEmbeddedImages else { return true }
-        return await decodedSigningImageURLs(allowedPaths: paths) != nil
+        return await decodedSigningImageURLs(allowedPaths: paths, references: references) != nil
     }
 
-    func hasReviewedSigningImages(_ digests: [URL: Data], includesEmbeddedImages: Bool) async -> Bool {
+    func hasReviewedSigningImages(
+        _ digests: [URL: Data], references: [String], includesEmbeddedImages: Bool
+    ) async -> Bool {
         guard !digests.isEmpty || includesEmbeddedImages else { return true }
         guard let handler = documentHandler,
-              let selected = await decodedSigningImageURLs(allowedPaths: nil),
+              let selected = await decodedSigningImageURLs(allowedPaths: nil, references: references),
               documentHandler === handler else { return false }
         return handler.matchesReviewedSigningImages(digests, selected: selected)
     }
@@ -443,7 +447,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         scheduleLoad(immediately: true)
     }
 
-    private func decodedSigningImageURLs(allowedPaths: [String]?) async -> [URL]? {
+    private func decodedSigningImageURLs(allowedPaths: [String]?, references: [String]) async -> [URL]? {
         guard let webView else { return nil }
         let expectedContent = content
         let expectedAssets = configuration.memoryAssets
@@ -457,6 +461,18 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                 const allowed = checksPaths ? new Set(paths) : null;
                 const images = Array.from(document.querySelectorAll("#leonardo-markdown img"));
                 if (images.length === 0) return null;
+                const markup = images.map(image => {
+                    const parent = image.parentElement;
+                    if (parent?.tagName !== "PICTURE") return image.outerHTML;
+                    const sources = [];
+                    let sibling = image.previousElementSibling;
+                    while (sibling && sibling.tagName !== "IMG") {
+                        if (sibling.tagName === "SOURCE") sources.unshift(sibling.outerHTML);
+                        sibling = sibling.previousElementSibling;
+                    }
+                    if (sibling) return image.outerHTML;
+                    return "<picture>" + sources.join("") + image.outerHTML + "</picture>";
+                }).join("");
                 const decoded = Promise.all(images.map(async image => {
                     try {
                         image.loading = "eager";
@@ -473,7 +489,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                     }
                 }));
                 return await Promise.race([
-                    decoded.then(results => results.includes(null) ? null : results.filter(Boolean)),
+                    decoded.then(results => results.includes(null) ? null : { urls: results.filter(Boolean), markup }),
                     new Promise(resolve => setTimeout(() => resolve(null), 2000))
                 ]);
                 """,
@@ -481,8 +497,13 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                 in: nil,
                 contentWorld: .page
             )
-            guard let URLs = result as? [String], self.webView === webView,
-                  content == expectedContent, configuration.memoryAssets == expectedAssets else { return nil }
+            guard let result = result as? [String: Any], let URLs = result["urls"] as? [String],
+                  self.webView === webView, content == expectedContent,
+                  configuration.memoryAssets == expectedAssets else { return nil }
+            guard let markup = result["markup"] as? String,
+                  Set(try LeonardoLocalImagePolicy.signingReferences(inRenderedHTML: markup)) == Set(references) else {
+                return nil
+            }
             let decodedURLs = URLs.compactMap { URL(string: $0) }
             return decodedURLs.count == URLs.count ? decodedURLs : nil
         } catch {
