@@ -143,7 +143,7 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         document.metadata.values["email"] = .string("invalid")
         var session = try LeonardoGuidedSigningSession(document: document, at: now)
         let key = LeonardoSigningKeyPair(credentialID: "ana")
-        try assign(profile(name: "Ana", number: "A-1", rubric: nil),
+        try assign(profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1)),
                    key: key, to: "titular", session: &session)
 
         XCTAssertThrowsError(try session.begin(positionID: "titular", document: document)) {
@@ -404,7 +404,7 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         copy["session"] = encodedSession
 
         XCTAssertThrowsError(try LeonardoSigningExchange.decoded(JSONSerialization.data(withJSONObject: copy))) {
-            XCTAssertEqual($0 as? LeonardoSigningError, .storageFailure)
+            XCTAssertEqual($0 as? LeonardoSigningError, .integrityFailure)
         }
     }
 

@@ -70,9 +70,6 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         _ = try exchange.document()
         _ = try exchange.signingResources()
         _ = try LeonardoSigningTrustRegistry(credentials: exchange.trustedCredentials)
-        guard exchange.session.documentLocation == nil,
-              exchange.session.hasOnlyDeclaredIdentities,
-              exchange.session.isPersistable else { throw LeonardoSigningError.storageFailure }
         return exchange
     }
 
