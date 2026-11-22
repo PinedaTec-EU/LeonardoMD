@@ -151,12 +151,143 @@ final class LeonardoSigningPersistenceRevisionTests: XCTestCase {
         XCTAssertEqual(stored, imported)
     }
 
-    private func makeDocument(revision: Int) -> LeonardoDocument {
+    func testLegacyHistoryRemainsReadableAlongsideShardedUpdates() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let legacy = try LeonardoGuidedSigningSession(
+            document: makeDocument(revision: 1), at: now
+        )
+        try JSONEncoder().encode([legacy]).write(
+            to: directory.appendingPathComponent("signing-progress.json")
+        )
+
+        let store = LeonardoSigningStore(directoryURL: directory)
+        let loadedLegacy = try await store.session(id: legacy.id)
+        XCTAssertEqual(loadedLegacy, legacy)
+
+        var updated = legacy
+        updated.updatedAt = now.addingTimeInterval(1)
+        try await store.saveSession(updated, replacing: legacy)
+        let loadedUpdated = try await store.session(id: legacy.id)
+        XCTAssertEqual(loadedUpdated, updated)
+
+        let recordsURL = directory.appendingPathComponent("signing-progress", isDirectory: true)
+        let recordNames = try FileManager.default.contentsOfDirectory(
+            at: recordsURL, includingPropertiesForKeys: nil
+        ).map(\.lastPathComponent)
+        XCTAssertTrue(recordNames.contains("\(legacy.id.uuidString).json"))
+    }
+
+    func testIndependentLargeHistoriesDoNotShareLegacyFileBudget() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LeonardoSigningStore(directoryURL: directory)
+        let source = String(repeating: "A", count: 3 * 1_024 * 1_024)
+
+        for revision in 1...3 {
+            var session = try LeonardoGuidedSigningSession(
+                document: makeDocument(revision: revision), at: now
+            )
+            session.snapshot = LeonardoSigningSnapshot(
+                source: source,
+                sourceSHA256: Data(repeating: UInt8(revision), count: 32),
+                resources: [],
+                capturedAt: now
+            )
+            try await store.saveSession(session)
+        }
+
+        let stored = try await store.sessions()
+        XCTAssertEqual(stored.count, 3)
+        XCTAssertEqual(stored.compactMap { $0.snapshot?.source.utf8.count }.min(), source.utf8.count)
+    }
+
+    func testFiveMegabyteSignedSourceRoundTripsWithCompactedProofSnapshot() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let body = String(repeating: "A", count: 5 * 1_024 * 1_024)
+            + "\n{{field:signature}}"
+        let document = makeDocument(revision: 1, body: body)
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "large-source")
+        let profile = LeonardoSignerProfile(
+            displayName: "Large source signer",
+            identity: LeonardoDeclaredIdentity(
+                fullName: "Large source signer",
+                documentType: .nationalID,
+                documentNumber: "LARGE-1"
+            ),
+            rubric: testRubric
+        )
+        let authorization = try LeonardoSigningAuthorization(
+            positionID: "signer",
+            profileID: profile.id,
+            credentialID: key.credential.id,
+            confirmedAt: now,
+            explicitlyConfirmed: true
+        )
+        try session.assign(
+            positionID: "signer",
+            profile: profile,
+            credential: key.credential,
+            authorization: authorization,
+            at: now
+        )
+        let targets = try session.begin(positionID: "signer", document: document)
+        XCTAssertEqual(targets.count, 1)
+        for target in targets {
+            try session.confirmLocation(
+                positionID: target.positionID,
+                fieldID: target.fieldID,
+                occurrence: target.occurrence,
+                document: document,
+                contextRead: true,
+                rubric: testRubric,
+                at: now
+            )
+        }
+        let store = LeonardoSigningStore(directoryURL: directory)
+        let sealed = session
+        try await store.saveSession(sealed)
+        let trustStore = try LeonardoSigningTrustRegistry(credentials: [key.credential])
+        _ = try session.sign(
+            positionID: "signer",
+            keyPair: key,
+            document: document,
+            trustStore: trustStore,
+            at: now
+        )
+        XCTAssertEqual(session.state, .complete)
+        let fullSessionBytes = try JSONEncoder().encode(session).count
+        XCTAssertGreaterThan(fullSessionBytes, 8 * 1_024 * 1_024)
+        let proof = try XCTUnwrap(session.positions["signer"]?.signature?.proof)
+        let canonicalProof = try LeonardoSignatureVerifier.canonicalData(proof)
+
+        try await store.saveSession(session, replacing: sealed)
+        let restoredValue = try await store.session(id: session.id)
+        let restored = try XCTUnwrap(restoredValue)
+        XCTAssertEqual(restored, session)
+        let restoredProof = try XCTUnwrap(restored.positions["signer"]?.signature?.proof)
+        XCTAssertEqual(try LeonardoSignatureVerifier.canonicalData(restoredProof), canonicalProof)
+    }
+
+    private var testRubric: LeonardoRubric {
+        LeonardoRubric(strokes: [LeonardoInkStroke(
+            color: "#000000",
+            width: 2,
+            style: .solid,
+            points: [LeonardoInkPoint(x: 1, y: 10), LeonardoInkPoint(x: 2, y: 11)]
+        )])
+    }
+
+    private func makeDocument(revision: Int, body: String = "{{field:signature}}") -> LeonardoDocument {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "signer", label: "Signer")
         ])
         return LeonardoDocument(
-            body: "{{field:signature}}",
+            body: body,
             metadata: LeonardoMetadata(
                 formatVersion: LeonardoFormat.signingVersion,
                 document: LeonardoDocumentDescriptor(

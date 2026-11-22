@@ -1,29 +1,25 @@
-import CryptoKit
 import Foundation
-#if canImport(Darwin)
-import Darwin
-#endif
 
 /// Saved profiles and resumable progress live outside the editable document.
 /// Every update is a locked read/compare-and-swap/write transaction so a stale
 /// app instance cannot erase another signer's completed progress.
 public actor LeonardoSigningStore {
-    private static let maximumFileBytes = 8 * 1_024 * 1_024
     private let directoryURL: URL
     private let profilesURL: URL
     private let sessionsURL: URL
+    private let sessionRecordsURL: URL
     private var profilesLoaded = false
     private var sessionsLoaded = false
     private var profilesByID: [UUID: LeonardoSignerProfile] = [:]
     private var sessionsByID: [UUID: LeonardoGuidedSigningSession] = [:]
     private var profilesFileDigest: Data?
-    private var sessionsFileDigest: Data?
 
     public init(directoryURL: URL) {
         let directory = directoryURL.standardizedFileURL
         self.directoryURL = directory
         self.profilesURL = directory.appendingPathComponent("signer-profiles.json")
         self.sessionsURL = directory.appendingPathComponent("signing-progress.json")
+        self.sessionRecordsURL = directory.appendingPathComponent("signing-progress", isDirectory: true)
     }
 
     public func profiles() throws -> [LeonardoSignerProfile] {
@@ -131,7 +127,6 @@ public actor LeonardoSigningStore {
         sessionsByID = result.values.reduce(into: [:]) { result, value in
             result[value.id] = value
         }
-        sessionsFileDigest = result.digest
     }
 
     /// Replaces the one local session created when a document was opened with
@@ -177,7 +172,6 @@ public actor LeonardoSigningStore {
         sessionsByID = result.values.reduce(into: [:]) { result, value in
             result[value.id] = value
         }
-        sessionsFileDigest = result.digest
     }
 
     public func removeSession(id: UUID) throws {
@@ -189,7 +183,6 @@ public actor LeonardoSigningStore {
         sessionsByID = result.values.reduce(into: [:]) { result, value in
             result[value.id] = value
         }
-        sessionsFileDigest = result.digest
     }
 
     private func loadProfilesIfNeeded() throws {
@@ -199,7 +192,7 @@ public actor LeonardoSigningStore {
 
     private func refreshProfiles() throws {
         let result = try ProcessFileLock.transaction(for: profilesURL) {
-            try Self.readArray(LeonardoSignerProfile.self, from: profilesURL)
+            try LeonardoSigningSessionShardStore.readArray(LeonardoSignerProfile.self, from: profilesURL)
         }
         var values: [UUID: LeonardoSignerProfile] = [:]
         for profile in result.values {
@@ -219,21 +212,15 @@ public actor LeonardoSigningStore {
     }
 
     private func refreshSessions() throws {
-        let result = try ProcessFileLock.transaction(for: sessionsURL) {
-            try Self.readArray(LeonardoGuidedSigningSession.self, from: sessionsURL)
-        }
-        var values: [UUID: LeonardoGuidedSigningSession] = [:]
-        for session in result.values {
-            guard session.isPersistable,
-                  values.updateValue(session, forKey: session.id) == nil else {
-                throw LeonardoSigningError.storageFailure
-            }
+        let values = try ProcessFileLock.transaction(for: sessionsURL) {
+            try LeonardoSigningSessionShardStore.readPersistedSessions(
+                legacyURL: sessionsURL, recordsURL: sessionRecordsURL
+            )
         }
         guard !Self.hasCompetingRevision(Array(values.values)) else {
             throw LeonardoSigningError.storageFailure
         }
         sessionsByID = values
-        sessionsFileDigest = result.digest
         sessionsLoaded = true
     }
 
@@ -250,31 +237,58 @@ public actor LeonardoSigningStore {
     ) throws -> (values: [LeonardoGuidedSigningSession], digest: Data?) {
         do {
             return try ProcessFileLock.transaction(for: sessionsURL) {
-                let current = try Self.readArray(LeonardoGuidedSigningSession.self, from: sessionsURL)
-                var values = current.values
-                var byID: [UUID: LeonardoGuidedSigningSession] = [:]
-                for value in values {
-                    guard value.isPersistable,
-                          byID.updateValue(value, forKey: value.id) == nil else {
-                        throw LeonardoSigningError.storageFailure
-                    }
-                }
-                guard !Self.hasCompetingRevision(values) else {
-                    throw LeonardoSigningError.storageFailure
-                }
-                // Compare only the session being changed. Unrelated progress
-                // added by another document can be retained safely, while a
-                // concurrent edit/removal of this session remains stale.
-                guard byID[id] == baseline else {
+                try LeonardoSigningSessionShardStore.recoverSessionTransaction(from: sessionRecordsURL)
+                let current = try LeonardoSigningSessionShardStore.readPersistedSessions(
+                    legacyURL: sessionsURL, recordsURL: sessionRecordsURL
+                )
+                guard current[id] == baseline else {
                     throw LeonardoSigningError.staleStorage
                 }
+                guard !Self.hasCompetingRevision(Array(current.values)) else {
+                    throw LeonardoSigningError.storageFailure
+                }
+                var values = Array(current.values)
                 try mutate(&values)
                 guard !Self.hasCompetingRevision(values) else {
                     throw LeonardoSigningError.staleStorage
                 }
-                let data = try Self.encoded(values)
-                try Self.writeAtomically(data, to: sessionsURL, directory: directoryURL)
-                return (values, Self.digest(data))
+                let updated = values.reduce(into: [:]) { result, value in
+                    result[value.id] = value
+                }
+                let changedIDs = Set(current.keys).union(updated.keys).filter {
+                    current[$0] != updated[$0]
+                }.sorted { $0.uuidString < $1.uuidString }
+                guard !changedIDs.isEmpty else { return (values, nil) }
+                // Keep a small legacy marker so existing permission checks and
+                // older stores continue to find their well-known file. New
+                // payloads never append to that cumulative history file.
+                try LeonardoSigningSessionShardStore.ensureLegacyMarker(at: sessionsURL, directory: directoryURL)
+                guard changedIDs.count <= LeonardoSigningSessionShardStore.SessionTransaction.maximumRecords else {
+                    throw LeonardoSigningError.storageFailure
+                }
+                var changedRecords: [UUID: LeonardoSigningSessionShardStore.SessionRecord] = [:]
+                for changedID in changedIDs {
+                    if let session = updated[changedID] {
+                        changedRecords[changedID] = try LeonardoSigningSessionShardStore.SessionRecord(session: session)
+                    } else {
+                        changedRecords[changedID] = .tombstone
+                    }
+                }
+                if changedRecords.count == 1, let (changedID, record) = changedRecords.first {
+                    _ = try LeonardoSigningSessionShardStore.encoded(
+                        record,
+                        maximumBytes: LeonardoSigningSessionShardStore.maximumSessionFileBytes
+                    )
+                    try LeonardoSigningSessionShardStore.writeSessionRecord(
+                        record, id: changedID, recordsURL: sessionRecordsURL
+                    )
+                } else {
+                    try LeonardoSigningSessionShardStore.applySessionTransaction(
+                        LeonardoSigningSessionShardStore.SessionTransaction(records: changedRecords),
+                        to: sessionRecordsURL
+                    )
+                }
+                return (values, nil)
             }
         } catch let error as LeonardoSigningError {
             throw error
@@ -323,15 +337,15 @@ public actor LeonardoSigningStore {
     ) throws -> (values: [T], digest: Data?) {
         do {
             return try ProcessFileLock.transaction(for: url) {
-                let current = try Self.readArray(T.self, from: url)
+                let current = try LeonardoSigningSessionShardStore.readArray(T.self, from: url)
                 guard current.digest == expectedDigest else {
                     throw LeonardoSigningError.staleStorage
                 }
                 var values = current.values
                 try mutate(&values)
-                let data = try Self.encoded(values)
-                try Self.writeAtomically(data, to: url, directory: directoryURL)
-                return (values, Self.digest(data))
+                let data = try LeonardoSigningSessionShardStore.encoded(values)
+                try LeonardoSigningSessionShardStore.writeAtomically(data, to: url, directory: directoryURL)
+                return (values, LeonardoSigningSessionShardStore.digest(data))
             }
         } catch let error as LeonardoSigningError {
             throw error
@@ -340,99 +354,6 @@ public actor LeonardoSigningStore {
         }
     }
 
-    private static func readArray<T: Decodable>(
-        _ type: T.Type,
-        from url: URL
-    ) throws -> (values: [T], digest: Data?) {
-        if let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: url.path),
-           !destination.isEmpty {
-            throw LeonardoSigningError.storageFailure
-        }
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            return ([], nil)
-        }
-        try validateRegularFile(url, maximumBytes: maximumFileBytes)
-        let data: Data
-        do {
-            data = try Data(contentsOf: url, options: [.mappedIfSafe])
-        } catch {
-            throw LeonardoSigningError.storageFailure
-        }
-        guard data.count <= maximumFileBytes else { throw LeonardoSigningError.storageFailure }
-        do {
-            return (try JSONDecoder().decode([T].self, from: data), digest(data))
-        } catch {
-            throw LeonardoSigningError.storageFailure
-        }
-    }
-
-    private static func encoded<T: Encodable>(_ values: T) throws -> Data {
-        do {
-            let data = try JSONEncoder().encode(values)
-            guard data.count <= maximumFileBytes else { throw LeonardoSigningError.storageFailure }
-            return data
-        } catch let error as LeonardoSigningError {
-            throw error
-        } catch {
-            throw LeonardoSigningError.storageFailure
-        }
-    }
-
-    private static func writeAtomically(_ data: Data, to url: URL, directory: URL) throws {
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        if let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: url.path), !destination.isEmpty {
-            throw LeonardoSigningError.storageFailure
-        }
-        let temporary = directory.appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).tmp")
-        defer { try? FileManager.default.removeItem(at: temporary) }
-        guard FileManager.default.createFile(
-            atPath: temporary.path,
-            contents: nil,
-            attributes: [.posixPermissions: NSNumber(value: Int16(0o600))]
-        ) else { throw LeonardoSigningError.storageFailure }
-        do {
-            let handle = try FileHandle(forWritingTo: temporary)
-            try handle.write(contentsOf: data)
-            try handle.synchronize()
-            try handle.close()
-        } catch {
-            throw LeonardoSigningError.storageFailure
-        }
-        #if canImport(Darwin)
-        guard rename(temporary.path, url.path) == 0 else {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
-        }
-        #else
-        do {
-            if FileManager.default.fileExists(atPath: url.path) {
-                try FileManager.default.replaceItemAt(url, withItemAt: temporary)
-            } else {
-                try FileManager.default.moveItem(at: temporary, to: url)
-            }
-        } catch {
-            throw LeonardoSigningError.storageFailure
-        }
-        #endif
-    }
-
-    private static func validateRegularFile(_ url: URL, maximumBytes: Int) throws {
-        let attributes: [FileAttributeKey: Any]
-        do {
-            attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-        } catch {
-            throw LeonardoSigningError.storageFailure
-        }
-        guard attributes[.type] as? FileAttributeType == .typeRegular,
-              let size = attributes[.size] as? NSNumber,
-              size.int64Value >= 0,
-              size.int64Value <= Int64(maximumBytes) else {
-            throw LeonardoSigningError.storageFailure
-        }
-    }
-
-    private static func digest(_ data: Data) -> Data {
-        Data(SHA256.hash(data: data))
-    }
 }
 
 extension LeonardoGuidedSigningSession {
