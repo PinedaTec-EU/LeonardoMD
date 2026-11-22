@@ -219,15 +219,18 @@ extension AppSession {
             guard isCurrentPreparation() else { return }
             guidedSigningTrustStore = trustStore
             guard !guidedSigningSnapshotChanged else { return }
+            guidedSigningVerification = [:]
             if let current = guidedSigningSession {
                 try LeonardoGuidedSigningSession.validate(declaration: current.declaration, document: document)
-                guidedSigningVerification = current.signatureVerification(
-                    document: document,
-                    resources: try resources.get(),
-                    trustStore: trustStore
-                )
-            } else {
-                guidedSigningVerification = [:]
+                if current.snapshot != nil {
+                    guidedSigningVerification = current.signatureVerification(
+                        document: document,
+                        resources: try resources.get(),
+                        trustStore: trustStore
+                    )
+                } else if case let .failure(error) = resources {
+                    reportGuidedSigningActionFailure(error)
+                }
             }
             refreshGuidedSigningTargets()
         } catch {

@@ -941,7 +941,8 @@ final class AppSessionTests: XCTestCase {
     }
 
     func testMacGuidedReviewDisablesLiveImagesAndExplainsHowToContinue() async throws {
-        let (root, session) = try fixture()
+        let credentials = LeonardoSigningCredentialStore(service: "eu.pinedatec.LeonardoMD.tests.signing.images.\(UUID())")
+        let (root, session) = try fixture(signingCredentialStore: credentials)
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
         session.authorizePath = { _, _ in }
         let ordinary = root.appendingPathComponent("ordinary.md")
@@ -950,30 +951,63 @@ final class AppSessionTests: XCTestCase {
         await session.openDocument(ordinary)
         XCTAssertTrue(session.renderConfiguration.allowsRemoteImages)
 
-        let file = root.appendingPathComponent("online-guided.mdlf")
-        let document = LeonardoDocument(
-            body: image + "\n\n{{field:signature}}",
-            metadata: LeonardoMetadata(
-                formatVersion: LeonardoFormat.signingVersion,
-                document: .init(id: "online-guided", title: "Signing example", kind: .form,
-                                revision: 1, signing: .init(positions: [.init(id: "owner", label: "Owner")])),
-                fields: ["signature": .init(type: .rubric, signerPosition: "owner")]
-            )
-        )
-        try LeonardoFormatParser.serialize(document).write(to: file, atomically: true, encoding: .utf8)
-        await session.openDocument(file)
-        XCTAssertFalse(session.renderConfiguration.allowsRemoteImages)
         let signer = LeonardoSignerProfile(displayName: "Ana", identity: .init(
-            fullName: "Ana Example", documentType: .nationalID, documentNumber: "QA-ONLINE"
+            fullName: "Ana Example", documentType: .nationalID, documentNumber: "QA-IMAGES"
         ))
-        let credential = LeonardoSigningKeyPair(credentialID: "qa-online").credential
-        await session.assignGuidedSigner(
-            positionID: "owner", profile: signer, credential: credential,
-            saveOptions: .init(saveIdentityDetails: false, saveRubric: false)
-        )
-        await session.beginGuidedPosition("owner")
-        XCTAssertNil(session.guidedSigningSession?.snapshot)
-        XCTAssertEqual(session.guidedSigningActionProblem, L10n.text("Replace online images with local files before signing."))
+        let credential = LeonardoSigningKeyPair(credentialID: "qa-images").credential
+        let invalidImages = [
+            (image, "Replace online images with local files before signing."),
+            ("![Missing](missing.png)",
+             "Use readable local images within the document or its project and within the signing size limits.")
+        ]
+        for (index, (reference, warning)) in invalidImages.enumerated() {
+            let id = "guided-images-\(index)"
+            let file = root.appendingPathComponent("\(id).mdlf")
+            var document = LeonardoDocument(
+                body: reference + "\n\n{{field:signature}}",
+                metadata: LeonardoMetadata(
+                    formatVersion: LeonardoFormat.signingVersion,
+                    document: .init(id: id, title: "Signing example", kind: .form,
+                                    revision: 1, signing: .init(positions: [.init(id: "owner", label: "Owner")])),
+                    fields: ["signature": .init(type: .rubric, signerPosition: "owner")]
+                )
+            )
+            try LeonardoFormatParser.serialize(document).write(to: file, atomically: true, encoding: .utf8)
+            await session.openDocument(file)
+            XCTAssertFalse(session.renderConfiguration.allowsRemoteImages)
+            XCTAssertFalse(session.guidedSigningContentLocked, session.guidedSigningError ?? "Signing preparation is incomplete")
+            XCTAssertEqual(session.guidedSigningActionProblem, L10n.text(warning))
+            await session.assignGuidedSigner(
+                positionID: "owner", profile: signer, credential: credential,
+                saveOptions: .init(saveIdentityDetails: false, saveRubric: false)
+            )
+            await session.beginGuidedPosition("owner")
+            XCTAssertNil(session.guidedSigningSession?.snapshot)
+            XCTAssertEqual(session.guidedSigningActionProblem, L10n.text(warning))
+            XCTAssertFalse(session.guidedSigningContentLocked)
+
+            session.isProtected = false
+            document.body = "{{field:signature}}"
+            let corrected = try LeonardoFormatParser.serialize(document)
+            XCTAssertTrue(session.editDocument(expected: session.content, replacement: corrected))
+            await session.save()
+            XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), corrected)
+            await session.beginGuidedPosition("owner")
+            XCTAssertNil(session.guidedSigningActionProblem)
+            XCTAssertEqual(session.guidedSigningSession?.positions["owner"]?.state, .reviewing)
+            let target = try XCTUnwrap(session.guidedSigningTargets.first)
+            await session.confirmGuidedLocation(
+                target: target,
+                rubric: LeonardoRubric(strokes: [LeonardoInkStroke(
+                    color: "#111111", width: 2, style: .solid,
+                    points: [LeonardoInkPoint(x: 1, y: 1), LeonardoInkPoint(x: 2, y: 2)]
+                )]),
+                reuse: .new, reuseConfirmed: false, contextRead: true,
+                renderedPlanMatches: { _, _ in true }
+            )
+            XCTAssertNotNil(session.guidedSigningSession?.snapshot)
+            XCTAssertTrue(session.guidedSigningContentLocked)
+        }
     }
 
     func testGuidedReviewClearsWarningAfterRequiredDataIsCorrected() async throws {

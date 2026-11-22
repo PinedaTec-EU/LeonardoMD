@@ -790,6 +790,7 @@
   "Enter fingerprint received separately": "Introduce la huella recibida por otra vía",
   "A rubric in the document does not match an exact location in the source. Check how the rubric field is written.": "Una rúbrica del documento no coincide con una ubicación exacta en la fuente. Revisa cómo está escrito el campo.",
   "An image changed or could not be displayed. Review the updated preview before confirming.": "Una imagen ha cambiado o no se ha podido mostrar. Revisa la vista actualizada antes de confirmar.",
+  "Use readable local images within the document or its project and within the signing size limits.": "Usa imágenes locales legibles, dentro de la carpeta del documento o de su proyecto, que cumplan los límites de tamaño de firma.",
   "Replace online images with local files before signing.": "Sustituye las imágenes en línea por archivos locales antes de firmar.",
   "This signing copy exceeds the exchange size limit.": "Esta copia de firma supera el tamaño máximo para el intercambio.",
   "Signing copy exported": "Copia de firma exportada",

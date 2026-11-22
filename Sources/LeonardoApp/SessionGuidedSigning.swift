@@ -117,6 +117,11 @@ extension AppSession {
             guidedSigningActionProblem = L10n.text("A rubric in the document does not match an exact location in the source. Check how the rubric field is written.")
         case .remoteImagesNotSealable:
             guidedSigningActionProblem = L10n.text("Replace online images with local files before signing.")
+        case .invalidResourceReference where guidedSigningSession?.snapshot == nil,
+             .resourceTooLarge where guidedSigningSession?.snapshot == nil:
+            guidedSigningActionProblem = L10n.text(
+                "Use readable local images within the document or its project and within the signing size limits."
+            )
         case .requiredDataMissing(let fieldIDs):
             let names = fieldIDs.map { leonardoDocument?.metadata.fields[$0]?.label ?? $0 }
             guidedSigningActionProblem = L10n.format("Complete the required fields before signing: %@.", names.joined(separator: ", "))
@@ -402,13 +407,16 @@ extension AppSession {
         _ files: [(reference: String, url: URL)]
     ) throws -> [LeonardoSigningResource] {
         try files.map { reference, resolved in
-            let values = try resolved.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
-            guard values.isRegularFile == true,
-                  let size = values.fileSize,
-                  size <= LeonardoSigningSnapshot.maximumResourceBytes else {
+            guard let values = try? resolved.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+                  values.isRegularFile == true, let size = values.fileSize else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            guard size <= LeonardoSigningSnapshot.maximumResourceBytes else {
                 throw LeonardoSigningError.resourceTooLarge(reference)
             }
-            let bytes = try Data(contentsOf: resolved)
+            guard let bytes = try? Data(contentsOf: resolved) else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
             guard bytes.count <= LeonardoSigningSnapshot.maximumResourceBytes else {
                 throw LeonardoSigningError.resourceTooLarge(reference)
             }

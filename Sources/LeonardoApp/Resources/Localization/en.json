@@ -790,6 +790,7 @@
   "Enter fingerprint received separately": "Enter fingerprint received separately",
   "A rubric in the document does not match an exact location in the source. Check how the rubric field is written.": "A rubric in the document does not match an exact location in the source. Check how the rubric field is written.",
   "An image changed or could not be displayed. Review the updated preview before confirming.": "An image changed or could not be displayed. Review the updated preview before confirming.",
+  "Use readable local images within the document or its project and within the signing size limits.": "Use readable local images within the document or its project and within the signing size limits.",
   "Replace online images with local files before signing.": "Replace online images with local files before signing.",
   "This signing copy exceeds the exchange size limit.": "This signing copy exceeds the exchange size limit.",
   "Signing copy exported": "Signing copy exported",

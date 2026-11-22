@@ -7,8 +7,8 @@ keeping `.md` on the standard Markdown path. The format contract and schema in
 [`doc/format`](../format) remain canonical; the plugin does not define a
 second parser or a private document dialect.
 
-The package contains one provider-neutral skill, a bundled copy of the v1
-machine schema, and dependency-free Python transport helpers. The runtime
+The package contains one provider-neutral skill, bundled MDLF v1 and v2
+schemas, and dependency-free Python transport helpers. The runtime
 modules are `mdlf_schema.py`, `mdlf_semantics.py`, `mdlz.py`, and
 `mdlz_extract.py` under `skills/leonardo-format/scripts/`; the latter owns the
 descriptor-relative extraction boundary. The root
@@ -35,11 +35,11 @@ manifest through the Codex plugin directory/marketplace workflow. The OpenAI
 plugin documentation describes the supported package layout and local testing:
 <https://developers.openai.com/plugins/build/plugins>.
 
-The two hosts consume the same `skills/leonardo-format/SKILL.md`, the bundled
-schema at `skills/leonardo-format/references/mdlf-v1.schema.json`, and the same
-references/scripts. Repository tests check the bundled schema byte-for-byte
-against the canonical `doc/format/mdlf-v1.schema.json`, so an installed plugin
-can carry the v1 contract offline. Keep those files provider-neutral; do not
+The two hosts consume the same `skills/leonardo-format/SKILL.md` and bundled
+schemas at `skills/leonardo-format/references/mdlf-v1.schema.json` and
+`skills/leonardo-format/references/mdlf-v2.schema.json`. Repository tests compare
+them byte-for-byte against the canonical schemas in `doc/format`, so the
+installed plugin can validate both versions offline. Keep those files provider-neutral; do not
 add Claude-only commands, settings, or hooks to the shared skill.
 
 ## Generate a package
@@ -190,11 +190,13 @@ aliases to `/private/tmp` and `/private/var`; user-controlled symlink
 components are rejected.
 
 The helper has no third-party runtime dependency. Every command validates the
-UTF-8/front-matter envelope, the bundled v1 metadata schema, and the bundled
-definition/layout safety rules before reporting or writing anything. Those
+UTF-8/front-matter envelope, the bundled schema for the declared MDLF version
+and the bundled definition and layout rules before reporting or writing
+anything. For v2 forms it also validates the signing declaration and signer
+references. Those
 semantic checks reject unsafe metadata asset references, invalid definition
 ranges or options, non-portable or unsafe regular expressions, and invalid
-layout bounds while leaving current draft values opaque. V1 patterns use the
+layout bounds while leaving current draft values opaque. Field patterns use the
 common Python `re`/ICU subset and reject engine-specific escapes such as
 `\p`, `\X` and `\z`, named/conditional/atomic groups, look-around,
 backreferences and quantified groups. Pass `--schema` only when an additional
@@ -221,8 +223,8 @@ file/symlink/directory conflicts, descriptor-relative parent-symlink races,
 atomic root-claim replacement, ownership-aware failure cleanup, the 64-component
 limit, duplicate keys, unknown metadata, unsupported versions and UTF-8/front-
 matter checks. The bundled evaluator and semantic checks apply the
-shared field and layout contract from `doc/format/mdlf-v1.schema.json` (or the
-bundled copy when the plugin is installed); the application parser remains
+shared field and layout contract from the canonical v1 and v2 schemas
+(or the corresponding bundled copy when the plugin is installed). The application parser remains
 authoritative for host rendering and body behavior. The helper stays
 dependency-free; `--schema` adds an explicit second schema constraint.
 
