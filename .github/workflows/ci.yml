@@ -303,6 +303,12 @@ jobs:
           print(matches[0][1]["udid"])
           ')"
           printf 'LITTLE_LEONARDO_SIMULATOR_ID=%s\n' "$device_id" >> "$GITHUB_ENV"
+      - name: Test Little Leonardo read-only document rendering
+        run: >-
+          xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO
+          -parallel-testing-enabled NO
+          -only-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo
+          test-without-building
       - name: Seed legacy recovery archive for UI coverage
         shell: bash
         run: |
@@ -312,7 +318,8 @@ jobs:
           actual_sha="$(shasum -a 256 "$fixture" | awk '{ print $1 }')"
           test "$actual_sha" = "$expected_sha"
           device_id="$LITTLE_LEONARDO_SIMULATOR_ID"
-          device_state="$(xcrun simctl list devices available -j | python3 -c '
+          simulator_state() {
+            xcrun simctl list devices available -j | python3 -c '
           import json
           import sys
 
@@ -326,7 +333,17 @@ jobs:
           if len(matches) != 1:
               raise SystemExit(f"selected simulator {target} is unavailable")
           print(matches[0]["state"])
-          ' "$device_id")"
+          ' "$device_id"
+          }
+          device_state="$(simulator_state)"
+          # XCTest can return while CoreSimulator is still shutting down.
+          for _ in {1..30}; do
+            if [ "$device_state" != "Shutting Down" ]; then
+              break
+            fi
+            sleep 2
+            device_state="$(simulator_state)"
+          done
           case "$device_state" in
             Booted|Booting) ;;
             Shutdown) xcrun simctl boot "$device_id" ;;
@@ -347,7 +364,6 @@ jobs:
           -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests
           -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests
           -only-testing:LittleLeonardoTests/MobileProjectFileVisibilityTests
-          -only-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo
           -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending
           -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInEnglish
           -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInSpanish
