@@ -761,6 +761,62 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertEqual(decoded.trustedCredentials.map(\.id), [participating.credential.id])
     }
 
+    func testUnfinishedExchangeRequiresConsumedAuthorizationAndMatchingPublicKey() throws {
+        let document = try makeDocument(requiredName: "Form complete")
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        let key = LeonardoSigningKeyPair(credentialID: "assigned")
+        try assign(signer, key: key, to: "titular", session: &session)
+
+        let exchange = try LeonardoSigningExchange(
+            document: document, session: session, trustedCredentials: [key.credential], at: now
+        )
+        let otherKey = LeonardoSigningKeyPair(credentialID: key.credential.id)
+        let incorrectTrust = try LeonardoSigningTrustRegistry(credentials: [otherKey.credential])
+        XCTAssertThrowsError(try exchange.validate(against: document, trustStore: incorrectTrust)) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .credentialMismatch)
+        }
+        XCTAssertThrowsError(try LeonardoSigningExchange(
+            document: document, session: session, trustedCredentials: [otherKey.credential], at: now
+        ))
+
+        let encoded = try LeonardoSigningExchange.encoded(exchange)
+        var source = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var payload = try XCTUnwrap(source["session"] as? [String: Any])
+        payload["consumedAuthorizationIDs"] = [String]()
+        source["session"] = payload
+        XCTAssertThrowsError(try LeonardoSigningExchange.decoded(
+            JSONSerialization.data(withJSONObject: source)
+        ))
+    }
+
+    func testLocalSessionRejectsDuplicatePublicKeyDigestsAcrossCredentialIDs() throws {
+        let document = try makeDocument(requiredName: "Form complete")
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let first = LeonardoSigningKeyPair(credentialID: "first")
+        let second = LeonardoSigningKeyPair(credentialID: "second")
+        let witness = try profile(name: "Bea", number: "B-1", rubric: rubric(seed: 2))
+        try assign(profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1)),
+                   key: first, to: "titular", session: &session)
+        let authorization = try LeonardoSigningAuthorization(
+            positionID: "testigo", profileID: witness.id, credentialID: second.credential.id,
+            confirmedAt: now, explicitlyConfirmed: true
+        )
+        try session.assign(
+            positionID: "testigo", profile: witness, credential: second.credential,
+            authorization: authorization, at: now
+        )
+        XCTAssertTrue(session.isPersistable)
+
+        let repeatedPublicKey = LeonardoSigningCredential(
+            id: second.credential.id, publicKey: first.credential.publicKey
+        )
+        session.positions["testigo"]?.assignment = try LeonardoSigningAssignment(
+            positionID: "testigo", profile: witness, credential: repeatedPublicKey, authorization: authorization
+        )
+        XCTAssertFalse(session.isPersistable)
+    }
+
     private func injectCredential(
         _ credential: LeonardoSigningCredential,
         into exchange: LeonardoSigningExchange

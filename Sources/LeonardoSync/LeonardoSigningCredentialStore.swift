@@ -193,9 +193,24 @@ public actor LeonardoSigningCredentialStore {
     private static let passwordIterations: UInt32 = 120_000
     private static let maximumPasswordIterations: UInt32 = 1_000_000
     private static let maximumRecordBytes = 1 * 1_024 * 1_024
-    // Store actors can share a Keychain service. Check and update the public
-    // namespace together even when an import and enrollment use separate actors.
-    private static let mutationLock = NSLock()
+    private static let registryLockDirectory = "SigningCredentials"
+
+    /// Returns a stable per-service lock below the per-user coordination
+    /// directory. Hashing keeps arbitrary Keychain service names as one safe
+    /// path component and prevents path normalization from aliasing services.
+    static func registryLockURL(for service: String) -> URL {
+        let digest = SHA256.hash(data: Data(service.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+        return ProcessFileLock.coordinationDirectory
+            .appendingPathComponent(Self.registryLockDirectory, isDirectory: true)
+            .appendingPathComponent(digest + ".lock")
+    }
+
+    private func withRegistryLock<T>(_ operation: () throws -> T) throws -> T {
+        let lock = try ProcessFileLock(at: Self.registryLockURL(for: service), wait: true)
+        return try withExtendedLifetime(lock, operation)
+    }
 
     public init(service: String = LeonardoSigningCredentialStore.defaultService,
                 prompt: String = "Authorize this personal signing credential") {
@@ -235,7 +250,7 @@ public actor LeonardoSigningCredentialStore {
         let privateRecord = PrivateRecord(version: 1, credentialID: credentialID,
                                           sealedPrivateKey: sealedBytes)
         let publicRecord = PublicRecord(credential: pair.credential, salt: salt, iterations: iterations)
-        try Self.mutationLock.withLock {
+        try withRegistryLock {
             let registry = try loadTrustStore()
             guard registry.credential(id: credentialID) == nil else {
                 throw LeonardoSigningError.invalidCredential
@@ -278,7 +293,7 @@ public actor LeonardoSigningCredentialStore {
     /// Reads only public records, with no password or biometric prompt. This
     /// is the trust anchor used to verify every detached signature.
     public func trustStore(credentialIDs: [String]? = nil) throws -> LeonardoSigningTrustRegistry {
-        try Self.mutationLock.withLock {
+        try withRegistryLock {
             try loadTrustStore(credentialIDs: credentialIDs)
         }
     }
@@ -288,8 +303,8 @@ public actor LeonardoSigningCredentialStore {
         if let credentialIDs {
             IDs = credentialIDs
         } else {
-            let personalIDs = try self.credentialIDs()
-            let trustedIDs = try trustedPublicCredentialIDs()
+            let personalIDs = try credentialIDsWithoutLock()
+            let trustedIDs = try trustedPublicCredentialIDsWithoutLock()
             IDs = Set(personalIDs + trustedIDs).sorted()
         }
         let credentials = try IDs.map { id -> LeonardoSigningCredential in
@@ -309,7 +324,7 @@ public actor LeonardoSigningCredentialStore {
     /// exchange disclosure). This operation cannot create a signing-capable
     /// credential because no private record is written.
     public func trustPublicCredential(_ credential: LeonardoSigningCredential) throws {
-        try Self.mutationLock.withLock {
+        try withRegistryLock {
             let registry = try loadTrustStore()
             if let existing = registry.credential(id: credential.id) {
                 guard existing == credential else { throw LeonardoSigningError.invalidCredential }
@@ -331,11 +346,13 @@ public actor LeonardoSigningCredentialStore {
     }
 
     public func trustedPublicCredentials() throws -> [LeonardoSigningCredential] {
-        try trustedPublicCredentialIDs().compactMap { try trustedPublicCredential(id: $0) }
+        try withRegistryLock {
+            try trustedPublicCredentialIDsWithoutLock().compactMap { try trustedPublicCredential(id: $0) }
+        }
     }
 
     public func removeTrustedPublicCredential(id: String) throws {
-        try Self.mutationLock.withLock {
+        try withRegistryLock {
             let status = keychain.delete(service: service + Self.trustedPublicSuffix,
                                          account: id, item: .publicRecord)
             guard status == errSecSuccess || status == errSecItemNotFound else {
@@ -345,6 +362,12 @@ public actor LeonardoSigningCredentialStore {
     }
 
     public func credentialIDs() throws -> [String] {
+        try withRegistryLock {
+            try credentialIDsWithoutLock()
+        }
+    }
+
+    private func credentialIDsWithoutLock() throws -> [String] {
         let result = keychain.accounts(service: service + Self.publicSuffix, item: .publicRecord)
         let status = result.status
         if status == errSecItemNotFound { return [] }
@@ -356,7 +379,7 @@ public actor LeonardoSigningCredentialStore {
             .sorted()
     }
 
-    private func trustedPublicCredentialIDs() throws -> [String] {
+    private func trustedPublicCredentialIDsWithoutLock() throws -> [String] {
         let result = keychain.accounts(service: service + Self.trustedPublicSuffix,
                                        item: .publicRecord)
         if result.status == errSecItemNotFound { return [] }
@@ -367,7 +390,7 @@ public actor LeonardoSigningCredentialStore {
     }
 
     public func remove(credentialID: String) throws {
-        try Self.mutationLock.withLock {
+        try withRegistryLock {
             let privateStatus = keychain.delete(service: service + Self.privateSuffix,
                                                 account: credentialID, item: .privateRecord)
             let publicStatus = keychain.delete(service: service + Self.publicSuffix,

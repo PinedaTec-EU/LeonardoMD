@@ -63,6 +63,21 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         Set(session.positions.values.compactMap { $0.assignment?.credentialID })
     }
 
+    private static func validateCredentialBindings(
+        in session: LeonardoGuidedSigningSession,
+        trustStore: LeonardoSigningTrustStore
+    ) throws {
+        for assignment in session.positions.values.compactMap(\.assignment) {
+            guard let credential = trustStore.credential(id: assignment.credentialID) else {
+                throw LeonardoSigningError.unknownCredential(assignment.credentialID)
+            }
+            guard credential.isValid,
+                  Data(SHA256.hash(data: credential.publicKey)) == assignment.publicKeyDigest else {
+                throw LeonardoSigningError.credentialMismatch
+            }
+        }
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decode(Int.self, forKey: .version)
@@ -162,6 +177,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         guard verification.values.allSatisfy({ $0 == .valid }) else {
             throw LeonardoSigningError.invalidSignature
         }
+        try Self.validateCredentialBindings(in: exchangeSession, trustStore: registry)
         self.version = Self.currentVersion
         self.documentID = documentID
         self.documentRevision = revision
@@ -193,6 +209,8 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
             throw LeonardoSigningError.integrityFailure
         }
         try session.validateExchangeProgress(document: document, resources: signingResources())
+        let disclosed = try LeonardoSigningTrustRegistry(credentials: trustedCredentials)
+        try Self.validateCredentialBindings(in: session, trustStore: disclosed)
         return document
     }
 
@@ -237,6 +255,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         guard verification.values.allSatisfy({ $0 == .valid }) else {
             throw LeonardoSigningError.invalidSignature
         }
+        try Self.validateCredentialBindings(in: session, trustStore: trustStore)
     }
 
     /// Rebinds an explicitly imported session to the receiver's local file

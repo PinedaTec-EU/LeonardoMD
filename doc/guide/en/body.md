@@ -672,6 +672,8 @@ source order, draw or explicitly confirm reuse of a rubric, and pause or resume
 as needed. The preview never edits the copy; only a detached, independently
 verified final signature paints a rubric at its exact occurrence. Partial review
 remains visibly pending. Use the full reader before confirming locations if the form contains ordinary rubric answers, embedded images or page objects such as a rubric inserted on the page.
+After you verify a newer copy, Little Leonardo keeps the newer progress when
+you reopen an older copy of the same signing session.
 **Export signed copy** shows the declared identities and rubrics that will leave
 the device. It includes no private key, local path or unrelated profile. Import
 the JSON copy on the Mac only after it verifies the local source, frozen snapshot,

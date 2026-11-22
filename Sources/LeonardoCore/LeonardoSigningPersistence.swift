@@ -445,12 +445,15 @@ extension LeonardoGuidedSigningSession {
         var profileIDs = Set<UUID>()
         var identityKeys = Set<String>()
         var credentialIDs = Set<String>()
+        var publicKeyDigests = Set<Data>()
         var authorizationIDs = Set<UUID>()
         for progress in positions.values {
             guard let assignment = progress.assignment else { continue }
             guard profileIDs.insert(assignment.profileID).inserted,
                   identityKeys.insert(assignment.identity.normalizedDocumentKey).inserted,
                   credentialIDs.insert(assignment.credentialID).inserted,
+                  publicKeyDigests.insert(assignment.publicKeyDigest).inserted,
+                  consumedAuthorizationIDs.contains(assignment.authorizationID),
                   authorizationIDs.insert(assignment.authorizationID).inserted else {
                 return false
             }

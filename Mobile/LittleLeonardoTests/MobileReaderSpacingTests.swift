@@ -410,7 +410,49 @@ final class MobileReaderSpacingTests: XCTestCase {
         XCTFail("Trusted signed reader did not render its verified rubric overlay (snapshot: \(snapshot), available: \(available.sorted()))")
     }
 
+    func testVerifiedIncomingAdvanceSurvivesReopeningTheOlderCopy() async throws {
+        let fixture = try makeGuidedSigningExchanges()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = LeonardoSigningStore(directoryURL: root)
+        let document = try fixture.signed.document()
+        let location = "mobile://fixture/document"
+        let baseline = try fixture.original.reboundSession(onto: nil, documentLocation: location)
+        try await store.saveSession(baseline, replacing: nil)
+
+        let emptyTrust = try LeonardoSigningTrustRegistry(credentials: [])
+        let untrusted = try await MobileGuidedSigningView.restoreSigningProgress(
+            exchange: fixture.signed, document: document, resources: [], localDocumentLocation: location,
+            store: store, trustStore: emptyTrust
+        )
+        XCTAssertEqual(untrusted.baseline, baseline)
+        let beforeTrust = try await store.session(id: baseline.id)
+        XCTAssertEqual(beforeTrust, baseline)
+
+        let trusted = try LeonardoSigningTrustRegistry(credentials: fixture.signed.trustedCredentials)
+        let accepted = try await MobileGuidedSigningView.restoreSigningProgress(
+            exchange: fixture.signed, document: document, resources: [], localDocumentLocation: location,
+            store: store, trustStore: trusted
+        )
+        XCTAssertTrue(accepted.session.isComplete)
+        XCTAssertEqual(accepted.baseline, accepted.session)
+        let reopened = try await MobileGuidedSigningView.restoreSigningProgress(
+            exchange: fixture.original, document: document, resources: [], localDocumentLocation: location,
+            store: LeonardoSigningStore(directoryURL: root), trustStore: trusted
+        )
+        XCTAssertEqual(reopened.session, accepted.session)
+        do {
+            try await store.saveSession(baseline, replacing: baseline)
+            XCTFail("An older view may not overwrite the verified advance")
+        } catch LeonardoSigningError.staleStorage {}
+    }
+
     private func makeSignedGuidedSigningExchange() throws -> LeonardoSigningExchange {
+        try makeGuidedSigningExchanges().signed
+    }
+
+    private func makeGuidedSigningExchanges() throws
+        -> (original: LeonardoSigningExchange, signed: LeonardoSigningExchange) {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "owner", label: "Owner")
         ])
@@ -431,6 +473,7 @@ final class MobileReaderSpacingTests: XCTestCase {
         )
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         var session = try LeonardoGuidedSigningSession(document: document, at: date)
+        let original = try LeonardoSigningExchange(document: document, session: session, trustedCredentials: [], at: date)
         let keyPair = LeonardoSigningKeyPair(credentialID: "fixture-owner")
         let profile = LeonardoSignerProfile(
             displayName: "Ana Example",
@@ -461,10 +504,11 @@ final class MobileReaderSpacingTests: XCTestCase {
             positionID: "owner", keyPair: keyPair, document: document,
             trustStore: trustStore, at: date
         )
-        return try LeonardoSigningExchange(
+        let signed = try LeonardoSigningExchange(
             document: document, session: session,
             trustedCredentials: [keyPair.credential], at: date
         )
+        return (original, signed)
     }
 
     private func assertReadOnlyMobilePreview(library: MobileLibrary, projectID: UUID, file: CorpusFile,

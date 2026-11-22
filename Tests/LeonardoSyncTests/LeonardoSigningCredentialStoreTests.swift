@@ -41,6 +41,60 @@ final class LeonardoSigningCredentialStoreTests: XCTestCase {
         XCTAssertEqual(registry.allCredentials.map(\.publicKey), [original.publicKey])
     }
 
+#if os(macOS)
+    func testCredentialRegistryTransactionCoordinatesWithIndependentProcess() async throws {
+        let service = "test-\(UUID().uuidString)"
+        let lockURL = LeonardoSigningCredentialStore.registryLockURL(for: service)
+        let child = Process()
+        child.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
+        child.arguments = [
+            "-MFcntl=:flock",
+            "-e",
+            "open(my $f, '>>', $ARGV[0]) or die; flock($f, LOCK_EX) or die; print qq(ready\\n); $|=1; sleep 30",
+            lockURL.path
+        ]
+        try FileManager.default.createDirectory(
+            at: lockURL.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
+        let output = Pipe()
+        child.standardOutput = output
+        try child.run()
+        defer {
+            if child.isRunning {
+                child.terminate()
+                child.waitUntilExit()
+            }
+        }
+        XCTAssertFalse(output.fileHandleForReading.availableData.isEmpty)
+
+        let keychain = InMemorySigningKeychain()
+        let store = LeonardoSigningCredentialStore(service: service, prompt: "Test", keychain: keychain)
+        let credential = LeonardoSigningKeyPair(credentialID: "independent-process").credential
+        let completion = CompletionProbe()
+        let operation = Task {
+            do {
+                try await store.trustPublicCredential(credential)
+                await completion.mark()
+                return true
+            } catch {
+                await completion.mark()
+                return false
+            }
+        }
+
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let completedWhileLocked = await completion.isMarked
+        XCTAssertFalse(completedWhileLocked)
+
+        child.terminate()
+        child.waitUntilExit()
+        let succeeded = await operation.value
+        XCTAssertTrue(succeeded)
+        let saved = try await store.trustedPublicCredentials()
+        XCTAssertEqual(saved, [credential])
+    }
+#endif
+
     func testEnrollmentAndImportedTrustCannotReuseAnIdentifier() async throws {
         let keychain = InMemorySigningKeychain()
         let service = "test-\(UUID().uuidString)"
@@ -137,6 +191,18 @@ final class LeonardoSigningCredentialStoreTests: XCTestCase {
         try await store.removeTrustedPublicCredential(id: "remote")
         let trustAfter = try await store.trustStore()
         XCTAssertNil(trustAfter.credential(id: "remote"))
+    }
+}
+
+private actor CompletionProbe {
+    private var marked = false
+
+    func mark() {
+        marked = true
+    }
+
+    var isMarked: Bool {
+        marked
     }
 }
 

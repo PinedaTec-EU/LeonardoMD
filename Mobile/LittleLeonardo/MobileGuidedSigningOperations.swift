@@ -36,32 +36,47 @@ extension MobileGuidedSigningView {
 
     private func restoreProgress(trustStore: LeonardoSigningTrustRegistry) async throws {
         guard let document else { throw LeonardoSigningError.integrityFailure }
-        let stored = try await library.signingStore.session(id: session.id)
-        storedBaseline = stored
-        let location = stored?.documentLocation ?? localDocumentLocation ?? "mobile://exchange/\(session.id)"
-        if var stored {
-            stored.documentLocation = location
-            let localCopy = try LeonardoSigningExchange(
-                document: document, resources: resources, session: stored,
-                trustedCredentials: trustStore.allCredentials, at: Date()
-            )
-            let incoming = try initialExchange.reboundSession(onto: nil, documentLocation: location)
-            if (try? localCopy.reboundSession(onto: incoming, documentLocation: location)) != nil {
-                session = stored
-            } else {
-                let advanced = try initialExchange.reboundSession(onto: stored, documentLocation: location)
-                if trustAccepted {
-                    try initialExchange.validate(against: document, resources: resources, trustStore: trustStore)
-                }
-                session = advanced
-            }
-        } else {
-            session = try initialExchange.reboundSession(onto: nil, documentLocation: location)
-        }
+        let restored = try await Self.restoreSigningProgress(
+            exchange: initialExchange, document: document, resources: resources,
+            localDocumentLocation: localDocumentLocation, store: library.signingStore,
+            trustStore: trustStore
+        )
+        session = restored.session
+        storedBaseline = restored.baseline
         let referencedIDs = Set(session.positions.values.compactMap { $0.assignment?.credentialID })
         trustedCredentials += trustStore.allCredentials.filter { credential in
             referencedIDs.contains(credential.id) && !trustedCredentials.contains { $0.id == credential.id }
         }
+    }
+
+    static func restoreSigningProgress(
+        exchange: LeonardoSigningExchange, document: LeonardoDocument,
+        resources: [LeonardoSigningResource], localDocumentLocation: String?,
+        store: LeonardoSigningStore, trustStore: LeonardoSigningTrustRegistry
+    ) async throws -> (session: LeonardoGuidedSigningSession, baseline: LeonardoGuidedSigningSession?) {
+        let stored = try await store.session(id: exchange.session.id)
+        let location = stored?.documentLocation ?? localDocumentLocation ?? "mobile://exchange/\(exchange.session.id)"
+        if var local = stored {
+            local.documentLocation = location
+            let localCopy = try LeonardoSigningExchange(
+                document: document, resources: resources, session: local,
+                trustedCredentials: trustStore.allCredentials, at: Date()
+            )
+            let incoming = try exchange.reboundSession(onto: nil, documentLocation: location)
+            if (try? localCopy.reboundSession(onto: incoming, documentLocation: location)) != nil {
+                return (local, stored)
+            }
+        }
+
+        let incoming = try exchange.reboundSession(onto: stored, documentLocation: location)
+        let allKeysTrusted = exchange.trustedCredentials.allSatisfy {
+            trustStore.credential(id: $0.id) == $0
+        }
+        guard allKeysTrusted else { return (incoming, stored) }
+        try exchange.validate(against: document, resources: resources, trustStore: trustStore)
+        guard !incoming.isPristine else { return (incoming, stored) }
+        try await store.saveSession(incoming, replacing: stored)
+        return (incoming, incoming)
     }
 
     func updateVerification(trustStore: LeonardoSigningTrustRegistry) {
@@ -103,8 +118,14 @@ extension MobileGuidedSigningView {
         defer { busy = false }
         do {
             try await library.signingCredentialStore.trustPublicCredential(credential)
+            let trustStore = try await library.signingCredentialStore.trustStore()
+            // Once the last key is approved, reconcile and commit the copy
+            // before the UI can continue or display a verified result.
+            if untrustedPackageCredentials.count == 1 {
+                try await restoreProgress(trustStore: trustStore)
+            }
             locallyTrustedCredentialIDs.insert(credential.id)
-            updateVerification(trustStore: try await library.signingCredentialStore.trustStore())
+            updateVerification(trustStore: trustStore)
             trustFingerprintInput = ""
             selectedTrustCredentialID = untrustedPackageCredentials.first?.id
             trustAccepted = untrustedPackageCredentials.isEmpty
