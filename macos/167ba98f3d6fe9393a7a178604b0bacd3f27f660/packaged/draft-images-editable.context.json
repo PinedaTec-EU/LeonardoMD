@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T10:06:03.530251+00:00",
+  "route": "/native/macos/guided-signing/draft/editable",
+  "screen": "Unsigned draft editable",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The unsigned draft includes an unreadable local image and can be unlocked and opened in the native editor."
+}

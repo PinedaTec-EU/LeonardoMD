@@ -1,0 +1,24 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-22T10:03:26.196Z",
+  "data_provenance" : "synthetic",
+  "image_pixels" : {
+    "height" : 1480,
+    "width" : 2520
+  },
+  "native_viewport_points" : {
+    "height" : 740,
+    "width" : 1260
+  },
+  "os" : "Version 27.2.1 (Build 26B131)",
+  "route" : "\/native\/firmas\/mac-al-abrir",
+  "screen" : "mac-al-abrir",
+  "source_sha" : "167ba98f3d6fe9393a7a178604b0bacd3f27f660",
+  "state" : "macOS production component with an isolated synthetic signing form; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 740,
+    "width" : 1260
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T10:07:22.931601+00:00",
+  "route": "/native/macos/guided-signing/integrity",
+  "screen": "Spanish integrity warning",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The exact candidate still blocks signing and withholds the verified ink after a saved document is modified. The warning remains fully translated after a live change to Spanish."
+}

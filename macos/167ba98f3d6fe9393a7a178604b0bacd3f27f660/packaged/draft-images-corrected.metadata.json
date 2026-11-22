@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-22T10:06:35.859756+00:00",
+  "capture": {
+    "captured_at": "2026-11-22T10:06:03.530894+00:00",
+    "route": "/native/macos/guided-signing/draft/corrected",
+    "screen": "Unsigned draft corrected",
+    "browser_name": "Native AppKit and SwiftUI",
+    "browser_version": "macOS 27.2.1",
+    "state": "The same draft stays editable after removing the invalid source reference and saving the correction.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2744,
+    "height_px": 1924,
+    "sha256": "3ae7129f047bc9549dc656950cbcb3ef85ae57d6257acabf1e36cb3cb400846e"
+  },
+  "source": {
+    "revision_at_collection": "167ba98f3d6fe9393a7a178604b0bacd3f27f660",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

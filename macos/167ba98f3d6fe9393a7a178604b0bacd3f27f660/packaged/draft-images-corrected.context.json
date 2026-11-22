@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T10:06:03.530894+00:00",
+  "route": "/native/macos/guided-signing/draft/corrected",
+  "screen": "Unsigned draft corrected",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The same draft stays editable after removing the invalid source reference and saving the correction."
+}

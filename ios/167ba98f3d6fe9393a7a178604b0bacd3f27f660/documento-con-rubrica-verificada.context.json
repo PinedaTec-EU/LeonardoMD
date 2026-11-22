@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T10:05:59.837207+00:00",
+  "route": "/native/ios/signing/documento-con-rubrica-verificada",
+  "screen": "documento-con-rubrica-verificada",
+  "browser_name": "Native SwiftUI and WKWebView",
+  "browser_version": "iOS 26.5 Simulator runtime",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "data_provenance": "synthetic",
+  "state": "Read-only native reader displays the rubric verified with the confirmed credential."
+}
