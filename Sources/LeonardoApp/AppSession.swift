@@ -26,6 +26,7 @@ final class AppSession {
                 guidedSigningReady = false
                 guidedSigningLoading = false
                 guidedSigningRevisionEditing = false
+                guidedSigningRecoveryBlocked = false
                 guidedSigningPreparationToken = UUID()
             }
         }
@@ -105,6 +106,11 @@ final class AppSession {
     var guidedSigningReady = false
     var guidedSigningLoading = false
     var guidedSigningRevisionEditing = false
+    /// True when protected signing history exists but no single trusted
+    /// snapshot can be selected for recovery. The toolbar keeps the review
+    /// visible so the user receives restoration guidance instead of a dead
+    /// correction action.
+    var guidedSigningRecoveryBlocked = false
     var guidedSigningPreparationToken = UUID()
     let guidedSigningStore: LeonardoSigningStore
     let guidedSigningCredentialStore: LeonardoSigningCredentialStore

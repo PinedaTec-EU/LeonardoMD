@@ -350,3 +350,19 @@ Packaged macOS preference and bilingual Help captures are recorded in
 Mac Help CTA resolved an existing personal practice copy, which was preserved;
 Mac text save/reopen remains unverified. Little Leonardo’s offline practice
 save/reopen XCTest passed 1/1.
+
+# 2026-11-22: PR #520 Mac signing integrity follow-up
+
+Issues [#554](https://github.com/PinedaTec-EU/LeonardoMD/issues/554) and
+[#555](https://github.com/PinedaTec-EU/LeonardoMD/issues/555) now have direct
+macOS AppSession coverage. The first guided signing seal flushes pending
+Preview edits and requires a clean authoritative saved document; dirty and
+failed-save buffers cannot advance proof or sidecar state. Cold reopen after a
+removed or changed header recovers only one verified trusted sealed snapshot,
+checks local resources and completed proofs against the local trust registry,
+keeps the original bytes untouched, and requires Save Copy before signing. An
+ambiguous or unverified history remains restoration guidance with no correction
+action. `AppSessionTests` (49 cases), `RubricSessionTests` (10 cases), and
+`LocalizationTests` (8 cases) pass; the PR #520 compilation ledger is 110.
+Packaged Help/GUI smoke acceptance is
+not claimed in this source-only handoff.

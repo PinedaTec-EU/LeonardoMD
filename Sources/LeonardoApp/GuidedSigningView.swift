@@ -611,11 +611,13 @@ struct GuidedSigningView: View {
             if session.guidedSigningContentLocked {
                 Label(L10n.text("The form is locked from the first confirmation."), systemImage: "lock.fill")
                     .font(.caption).foregroundStyle(.secondary)
-                Button(L10n.text("Start a new revision for corrections…")) {
-                    Task { await session.startGuidedSigningRevision() }
+                if session.guidedSigningCanStartRevision {
+                    Button(L10n.text("Start a new revision for corrections…")) {
+                        Task { await session.startGuidedSigningRevision() }
+                    }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
+                    .disabled(session.isProtected)
                 }
-                .buttonStyle(PremiumButtonStyle(compact: true))
-                .disabled(session.isProtected)
                 if session.isProtected {
                     Text(L10n.text("Unlock the document before creating a corrected revision."))
                         .font(.caption2).foregroundStyle(.secondary)
@@ -801,7 +803,7 @@ struct GuidedSigningView: View {
             Label(L10n.text("Signing review blocked"), systemImage: "exclamationmark.shield")
                 .font(.subheadline.weight(.semibold)).foregroundStyle(.orange)
             Text(error).font(.caption).fixedSize(horizontal: false, vertical: true)
-            if session.guidedSigningSession != nil {
+            if session.guidedSigningCanStartRevision {
                 Button(L10n.text("Start a new revision for corrections…")) {
                     Task { await session.startGuidedSigningRevision() }
                 }

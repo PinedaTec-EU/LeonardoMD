@@ -21,6 +21,18 @@ extension AppSession {
         // changed. This fail-closed path lets the user create a fresh revision
         // instead of silently starting a second unsigned workflow.
         return guidedSigningSession?.documentLocation == guidedSigningLocation
+            || guidedSigningRecoveryBlocked
+    }
+
+    /// A correction is available only when the old protected record contains
+    /// a trusted sealed snapshot. Ambiguous or unsealed history must remain a
+    /// restoration-only state; presenting a button that cannot safely act is
+    /// worse than hiding the action.
+    var guidedSigningCanStartRevision: Bool {
+        guard !guidedSigningRecoveryBlocked,
+              let current = guidedSigningSession,
+              current.documentLocation == guidedSigningLocation else { return false }
+        return current.snapshot != nil
     }
 
     /// The toolbar can be rendered before the protected sidecar has finished
@@ -70,6 +82,7 @@ extension AppSession {
         // precomputed replacement. No await occurs while this flag is true;
         // ordinary editor actions cannot observe an open window.
         if guidedSigningRevisionEditing { return false }
+        if guidedSigningRecoveryBlocked { return true }
         if let document = leonardoDocument,
            document.metadata.formatVersion >= LeonardoFormat.signingVersion,
            document.metadata.document.signing != nil,
@@ -104,6 +117,72 @@ extension AppSession {
         return position.label
     }
 
+    private struct GuidedSigningRecoverySource {
+        let session: LeonardoGuidedSigningSession
+        let document: LeonardoDocument
+        let resources: [LeonardoSigningResource]
+    }
+
+    /// Select recovery history only by the strongest identity available in
+    /// the mutable source. An exact ID/revision is required when present;
+    /// otherwise a single record for the coordinated location is the only
+    /// admissible candidate. The sealed snapshot and all referenced resource
+    /// bytes are verified before the candidate is exposed to the UI.
+    private func trustedGuidedSigningRecoverySource(
+        document: LeonardoDocument?,
+        sessions: [LeonardoGuidedSigningSession]
+    ) async -> GuidedSigningRecoverySource? {
+        let documentID = document?.metadata.document.id?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let revision = document?.metadata.document.revision
+        var candidates = sessions
+        if let documentID, !documentID.isEmpty {
+            candidates = candidates.filter { $0.documentID == documentID }
+        }
+        if let revision {
+            candidates = candidates.filter { $0.initialRevision == revision }
+        }
+        guard candidates.count == 1, let candidate = candidates.first,
+              let snapshot = candidate.snapshot else { return nil }
+        guard let trustedDocument = try? LeonardoFormatParser.parse(snapshot.source),
+              trustedDocument.metadata.formatVersion >= LeonardoFormat.signingVersion,
+              trustedDocument.metadata.document.id == candidate.documentID,
+              trustedDocument.metadata.document.revision == candidate.initialRevision,
+              trustedDocument.metadata.document.signing == candidate.declaration,
+              let resources = try? guidedSigningResources(for: snapshot.source),
+              snapshot.matches(document: trustedDocument, resources: resources) else {
+            return nil
+        }
+        if candidate.positions.values.contains(where: { $0.signature != nil }) {
+            guard let trustStore = try? await guidedSigningCredentialStore.trustStore() else {
+                return nil
+            }
+            let verification = candidate.signatureVerification(
+                document: trustedDocument,
+                resources: resources,
+                trustStore: trustStore
+            )
+            guard !verification.isEmpty,
+                  verification.values.allSatisfy({ $0 == .valid }) else { return nil }
+        }
+        return GuidedSigningRecoverySource(
+            session: candidate,
+            document: trustedDocument,
+            resources: resources
+        )
+    }
+
+    private func guidedSigningRecoveryBlockedMessage() -> String {
+        L10n.text(
+            "The trusted signing snapshot could not be recovered safely. Restore the original signing header and resources before continuing."
+        )
+    }
+
+    private func guidedSigningRecoveryAvailableMessage() -> String {
+        L10n.text(
+            "The signing header changed. A trusted sealed snapshot was recovered. Start a new revision, then save a copy before signing."
+        )
+    }
+
     func prepareGuidedSigning() async {
         let expectedLocation = guidedSigningLocation
         guard let expectedLocation else { return }
@@ -119,6 +198,7 @@ extension AppSession {
         }
         guidedSigningLoading = true
         guidedSigningReady = false
+        guidedSigningRecoveryBlocked = false
         guidedSigningError = nil
         guidedSigningActionProblem = nil
         defer {
@@ -142,19 +222,30 @@ extension AppSession {
                   document.metadata.formatVersion >= LeonardoFormat.signingVersion,
                   let declaration = document.metadata.document.signing else {
                 // Without the mutable declaration there is no exact current
-                // revision to select. Keep a single bound record visible only
-                // to explain the block; never choose among historical
-                // records by updatedAt or path alone.
-                if storedForLocation.count == 1, let stored = storedForLocation.first {
-                    expectedSession = stored
-                    guidedSigningSession = stored
-                    guidedSigningError = L10n.text("This file has signing progress, but its signing header changed. Create a new revision before continuing.")
+                // revision to select. Recover only one record whose sealed
+                // snapshot and resources can be verified; never choose among
+                // historical records by updatedAt or path alone.
+                if let recovery = await trustedGuidedSigningRecoverySource(
+                    document: leonardoDocument, sessions: storedForLocation
+                ) {
+                    expectedSession = recovery.session
+                    guidedSigningSession = recovery.session
+                    externalConflict = true
+                    saveStatus = "External conflict · signing review protected"
+                    guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
+                    guard isCurrentPreparation() else { return }
+                    guidedSigningTargets = []
+                    guidedSigningVerification = [:]
+                    guidedSigningError = guidedSigningRecoveryAvailableMessage()
                 } else {
                     expectedSession = nil
                     guidedSigningSession = nil
                     guidedSigningTargets = []
                     if !storedForLocation.isEmpty {
-                        guidedSigningError = L10n.text("This file has signing history, but its current signing identity is unavailable. Restore the exact signing header before continuing.")
+                        guidedSigningRecoveryBlocked = true
+                        guidedSigningVerification = [:]
+                        guidedSigningTrustStore = nil
+                        guidedSigningError = guidedSigningRecoveryBlockedMessage()
                     }
                 }
                 return
@@ -167,7 +258,11 @@ extension AppSession {
                 expectedSession = nil
                 guidedSigningSession = nil
                 guidedSigningTargets = []
-                guidedSigningError = L10n.text("The document has no stable signing identity or revision. Create a new revision before continuing.")
+                guidedSigningRecoveryBlocked = !storedForLocation.isEmpty
+                if !storedForLocation.isEmpty { guidedSigningVerification = [:]; guidedSigningTrustStore = nil }
+                guidedSigningError = storedForLocation.isEmpty
+                    ? L10n.text("The document has no stable signing identity or revision. Create a new revision before continuing.")
+                    : guidedSigningRecoveryBlockedMessage()
                 return
             }
             let exactSessions = storedForLocation.filter {
@@ -177,15 +272,36 @@ extension AppSession {
                 expectedSession = nil
                 guidedSigningSession = nil
                 guidedSigningTargets = []
+                guidedSigningRecoveryBlocked = true
+                guidedSigningVerification = [:]
+                guidedSigningTrustStore = nil
                 guidedSigningError = L10n.text("More than one signing session matches this document revision. Reload it or create a new revision before continuing.")
                 return
             }
 
             if exactSessions.count == 1, let stored = exactSessions.first {
                 guard stored.declaration == declaration else {
-                    expectedSession = stored
-                    guidedSigningSession = stored
-                    guidedSigningError = L10n.text("The document identity or signer assignments changed. Create a new revision before continuing.")
+                    if let recovery = await trustedGuidedSigningRecoverySource(
+                        document: document, sessions: exactSessions
+                    ) {
+                        expectedSession = recovery.session
+                        guidedSigningSession = recovery.session
+                        externalConflict = true
+                        saveStatus = "External conflict · signing review protected"
+                        guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
+                        guard isCurrentPreparation() else { return }
+                        guidedSigningTargets = []
+                        guidedSigningVerification = [:]
+                        guidedSigningError = guidedSigningRecoveryAvailableMessage()
+                    } else {
+                        expectedSession = nil
+                        guidedSigningSession = nil
+                        guidedSigningTargets = []
+                        guidedSigningRecoveryBlocked = true
+                        guidedSigningVerification = [:]
+                        guidedSigningTrustStore = nil
+                        guidedSigningError = guidedSigningRecoveryBlockedMessage()
+                    }
                     return
                 }
                 // The sidecar is authoritative. This also adopts progress
@@ -201,6 +317,9 @@ extension AppSession {
                 expectedSession = nil
                 guidedSigningSession = nil
                 guidedSigningTargets = []
+                guidedSigningRecoveryBlocked = true
+                guidedSigningVerification = [:]
+                guidedSigningTrustStore = nil
                 guidedSigningError = L10n.text("Protected signing progress belongs to another document revision. Reopen that revision or create an explicit new revision before continuing.")
                 return
             } else if guidedSigningSession != nil {
@@ -748,11 +867,29 @@ extension AppSession {
         reuseConfirmed: Bool,
         contextRead: Bool
     ) async {
-        guard var current = guidedSigningSession, let document = leonardoDocument,
+        guard let initialSession = guidedSigningSession,
               let expectedLocation = guidedSigningLocation,
               guidedSigningConflictAllowsProgress() else { return }
+        let initialSeal = initialSession.snapshot == nil
+        if initialSeal {
+            // The renderer owns native form edits while Preview is active.
+            // Flush them before taking the source identity used by the first
+            // proof; otherwise a later discard could reopen older bytes.
+            guard await flushPreviewEdits() else {
+                guidedSigningActionProblem = L10n.text("Could not apply preview edits")
+                return
+            }
+            guard guidedSigningLocation == expectedLocation,
+                  guidedSigningSession == initialSession else {
+                guidedSigningError = L10n.text("The document moved or changed while confirming this location. Reload it before continuing.")
+                return
+            }
+        }
+        guard var current = guidedSigningSession,
+              let document = leonardoDocument else { return }
         let viewBaseline = current
         let expectedContent = content
+        let expectedSnapshot = snapshot
         var baseline: LeonardoGuidedSigningSession?
         var baselineLoaded = false
         guidedSigningActionProblem = nil
@@ -764,6 +901,34 @@ extension AppSession {
             )
             baselineLoaded = true
             guard guidedSigningConflictAllowsProgress() else { return }
+            if initialSeal {
+                switch await guidedSigningSavedSourceCheck(
+                    expectedLocation: expectedLocation,
+                    expectedContent: expectedContent,
+                    expectedSession: viewBaseline,
+                    expectedSnapshot: expectedSnapshot
+                ) {
+                case .ready:
+                    break
+                case .needsSave:
+                    guidedSigningActionProblem = L10n.text(
+                        "Save the document before confirming the first signing location."
+                    )
+                    return
+                case .externalChange:
+                    externalConflict = true
+                    saveStatus = "External conflict · signing review protected"
+                    guidedSigningActionProblem = L10n.text(
+                        "The saved signing document changed outside LeonardoMD. Reload it or save a copy before confirming."
+                    )
+                    return
+                case .stateChanged:
+                    guidedSigningError = L10n.text(
+                        "The document moved or changed while confirming this location. Reload it before continuing."
+                    )
+                    return
+                }
+            }
             let profileRubric = current.positions[target.positionID]?.assignment?.profileRubric
             try current.confirmLocation(
                 positionID: target.positionID,
@@ -991,18 +1156,21 @@ extension AppSession {
         do {
             guard !isProtected, !stopped, !isClosing, !isSyncSuspended, !busy,
                   !saving, fileOperationCount == 0, !isCapturingPreview,
-                  guidedSigningViewStateMatches(
+                  guidedSigningRevisionViewStateMatches(
                       expectedLocation: expectedLocation,
                       expectedContent: expectedContent,
                       expectedSession: previous
-                  ),
-                  let currentRevision = document.metadata.document.revision,
-                  currentRevision >= 1 else {
+                  ) else {
                 guidedSigningError = L10n.text("The new revision could not be opened for editing.")
                 return
             }
+            let source = try await guidedSigningRevisionSource(for: previous, current: document)
+            guard let baseRevision = source.document.metadata.document.revision,
+                  baseRevision >= 1 else {
+                throw LeonardoSigningError.integrityFailure
+            }
             let history = try await guidedSigningStore.sessions()
-            guard guidedSigningViewStateMatches(
+            guard guidedSigningRevisionViewStateMatches(
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,
                 expectedSession: previous
@@ -1015,8 +1183,8 @@ extension AppSession {
                         && $0.documentID == previous.documentID
                 }
                 .compactMap(\.initialRevision)
-                .max() ?? currentRevision
-            let latestRevision = max(currentRevision, historicalMaximum)
+                .max() ?? baseRevision
+            let latestRevision = max(baseRevision, historicalMaximum)
             guard latestRevision < Int.max else { throw LeonardoSigningError.storageFailure }
             var nextRevision = latestRevision + 1
             var committed: (replacement: String, session: LeonardoGuidedSigningSession)?
@@ -1025,12 +1193,12 @@ extension AppSession {
             // monotonic revision; all other failures leave the old source and
             // session untouched.
             for _ in 0..<32 {
-                var revised = document
+                var revised = source.document
                 revised.metadata.document.revision = nextRevision
                 let replacement = try LeonardoFormatParser.serialize(revised)
                 let fresh = try previous.correctedSession(
                     document: revised,
-                    resources: try guidedSigningResources(),
+                    resources: source.resources,
                     at: Date(),
                     documentLocation: expectedLocation
                 )
@@ -1045,7 +1213,7 @@ extension AppSession {
             }
             guard let committed else { throw LeonardoSigningError.staleStorage }
 
-            guard guidedSigningViewStateMatches(
+            guard guidedSigningRevisionViewStateMatches(
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,
                 expectedSession: previous
@@ -1073,12 +1241,36 @@ extension AppSession {
             // sidecar revision is active.
             editHistory = DocumentEditHistory()
             guidedSigningSession = committed.session
+            guidedSigningRecoveryBlocked = false
+            if source.recovered {
+                externalConflict = true
+                saveStatus = "External conflict · signing review protected"
+                guidedSigningReady = true
+            }
             refreshGuidedSigningTargets()
-            guidedSigningStatus = L10n.text("New revision ready. Review and assign every signer again.")
+            guidedSigningStatus = source.recovered
+                ? L10n.text("Trusted revision recovered. Save a copy before signing.")
+                : L10n.text("New revision ready. Review and assign every signer again.")
             guidedSigningError = nil
         } catch {
             guidedSigningRevisionEditing = false
-            guidedSigningError = String(describing: error)
+            let blocksRecovery: Bool
+            if let signingError = error as? LeonardoSigningError {
+                switch signingError {
+                case .integrityFailure, .trustStoreRequired, .invalidResourceReference, .resourceTooLarge:
+                    blocksRecovery = true
+                default:
+                    blocksRecovery = false
+                }
+            } else {
+                blocksRecovery = false
+            }
+            if blocksRecovery {
+                guidedSigningRecoveryBlocked = true
+                guidedSigningError = guidedSigningRecoveryBlockedMessage()
+            } else {
+                guidedSigningError = String(describing: error)
+            }
         }
     }
 
@@ -1133,6 +1325,127 @@ extension AppSession {
         }
     }
 
+    private enum GuidedSigningSavedSourceCheck {
+        case ready
+        case needsSave
+        case externalChange
+        case stateChanged
+    }
+
+    /// Re-checks the source after every suspension point in the first-seal
+    /// path. A clean buffer is not enough: the saved bytes, document identity,
+    /// and package container (when applicable) must still be the same source
+    /// represented by the open session.
+    private func guidedSigningSavedSourceCheck(
+        expectedLocation: String,
+        expectedContent: String,
+        expectedSession: LeonardoGuidedSigningSession,
+        expectedSnapshot: DocumentSnapshot?
+    ) async -> GuidedSigningSavedSourceCheck {
+        guard guidedSigningViewStateMatches(
+            expectedLocation: expectedLocation,
+            expectedContent: expectedContent,
+            expectedSession: expectedSession
+        ) else { return .stateChanged }
+        guard let expectedSnapshot,
+              let currentSnapshot = snapshot,
+              currentSnapshot == expectedSnapshot,
+              !isDirty else { return .needsSave }
+        if packageWorkspace?.hasSourceChanged() == true { return .externalChange }
+        guard let authoritative = try? await documents.read(expectedSnapshot.url) else {
+            return .externalChange
+        }
+        guard guidedSigningViewStateMatches(
+            expectedLocation: expectedLocation,
+            expectedContent: expectedContent,
+            expectedSession: expectedSession
+        ) else { return .stateChanged }
+        guard let savedDocument = try? LeonardoFormatParser.parse(authoritative.content),
+              savedDocument.metadata.formatVersion >= LeonardoFormat.signingVersion,
+              savedDocument.metadata.document.id == expectedSession.documentID,
+              savedDocument.metadata.document.revision == expectedSession.initialRevision,
+              savedDocument.metadata.document.signing == expectedSession.declaration,
+              authoritative.content == expectedContent,
+              authoritative.fingerprint == expectedSnapshot.fingerprint,
+              packageWorkspace?.hasSourceChanged() != true else {
+            return .externalChange
+        }
+        return .ready
+    }
+
+    private struct GuidedSigningRevisionSource {
+        let document: LeonardoDocument
+        let resources: [LeonardoSigningResource]
+        let recovered: Bool
+    }
+
+    /// Builds a correction from the current bytes only when they still match
+    /// the sealed snapshot. A changed/removed header, body, or local resource
+    /// instead uses the verified trusted source and leaves the current path in
+    /// external conflict so Save Copy is required before any new proof.
+    private func guidedSigningRevisionSource(
+        for previous: LeonardoGuidedSigningSession,
+        current: LeonardoDocument
+    ) async throws -> GuidedSigningRevisionSource {
+        guard let snapshot = previous.snapshot else {
+            guard current.metadata.formatVersion >= LeonardoFormat.signingVersion,
+                  current.metadata.document.id == previous.documentID,
+                  current.metadata.document.revision == previous.initialRevision,
+                  current.metadata.document.signing == previous.declaration else {
+                throw LeonardoSigningError.integrityFailure
+            }
+            return GuidedSigningRevisionSource(
+                document: current,
+                resources: try guidedSigningResources(),
+                recovered: false
+            )
+        }
+        if current.metadata.formatVersion >= LeonardoFormat.signingVersion,
+           current.metadata.document.id == previous.documentID,
+           current.metadata.document.revision == previous.initialRevision,
+           current.metadata.document.signing == previous.declaration,
+           let resources = try? guidedSigningResources(),
+           snapshot.matches(document: current, resources: resources) {
+            return GuidedSigningRevisionSource(document: current, resources: resources, recovered: false)
+        }
+        guard let trusted = try? LeonardoFormatParser.parse(snapshot.source),
+              trusted.metadata.formatVersion >= LeonardoFormat.signingVersion,
+              trusted.metadata.document.id == previous.documentID,
+              trusted.metadata.document.revision == previous.initialRevision,
+              trusted.metadata.document.signing == previous.declaration else {
+            throw LeonardoSigningError.integrityFailure
+        }
+        let resources = try guidedSigningResources(for: snapshot.source)
+        guard snapshot.matches(document: trusted, resources: resources) else {
+            throw LeonardoSigningError.integrityFailure
+        }
+        if previous.positions.values.contains(where: { $0.signature != nil }) {
+            guard let trustStore = try? await guidedSigningCredentialStore.trustStore() else {
+                throw LeonardoSigningError.trustStoreRequired
+            }
+            let verification = previous.signatureVerification(
+                document: trusted,
+                resources: resources,
+                trustStore: trustStore
+            )
+            guard !verification.isEmpty,
+                  verification.values.allSatisfy({ $0 == .valid }) else {
+                throw LeonardoSigningError.integrityFailure
+            }
+        }
+        return GuidedSigningRevisionSource(document: trusted, resources: resources, recovered: true)
+    }
+
+    private func guidedSigningRevisionViewStateMatches(
+        expectedLocation: String,
+        expectedContent: String,
+        expectedSession: LeonardoGuidedSigningSession
+    ) -> Bool {
+        guidedSigningLocation == expectedLocation
+            && content == expectedContent
+            && guidedSigningSession == expectedSession
+    }
+
     private func guidedSigningViewStateMatches(
         expectedLocation: String,
         expectedContent: String,
@@ -1150,9 +1463,9 @@ extension AppSession {
         return true
     }
 
-    private func guidedSigningResources() throws -> [LeonardoSigningResource] {
+    private func guidedSigningResources(for source: String? = nil) throws -> [LeonardoSigningResource] {
         guard let documentURL else { return [] }
-        let references = LeonardoLocalImagePolicy.localReferences(in: content)
+        let references = LeonardoLocalImagePolicy.localReferences(in: source ?? content)
         guard !references.isEmpty else { return [] }
         let base = documentURL.deletingLastPathComponent().standardizedFileURL
         var roots = [base]

@@ -95,9 +95,12 @@ final class RubricSessionTests: XCTestCase {
         let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
         defer { session.stop() }
         let url = root.appendingPathComponent("assignment.mdlf")
+        let source = try LeonardoFormatParser.serialize(document)
+        try source.write(to: url, atomically: true, encoding: .utf8)
         session.documentURL = url
         session.documentKind = .leonardoTemplate
-        session.content = try LeonardoFormatParser.serialize(document)
+        session.content = source
+        session.snapshot = try await session.documents.read(url)
         session.guidedSigningReady = true
         session.guidedSigningTrustStore = try LeonardoSigningTrustRegistry(credentials: [])
         session.guidedSigningSession = try LeonardoGuidedSigningSession(document: document, at: Date(), documentLocation: url.path)

@@ -39,9 +39,13 @@ final class GuidedSigningCaptureTests: XCTestCase {
         defer { session.stop() }
         await session.initialize()
         session.globalPreferences.palette = .leonardoClassic
-        session.documentURL = root.appendingPathComponent("Acuerdo de ejemplo.mdlf")
+        let documentURL = root.appendingPathComponent("Acuerdo de ejemplo.mdlf")
+        let source = try LeonardoFormatParser.serialize(document)
+        try source.write(to: documentURL, atomically: true, encoding: .utf8)
+        session.documentURL = documentURL
         session.documentKind = .leonardoTemplate
-        session.content = try LeonardoFormatParser.serialize(document)
+        session.content = source
+        session.snapshot = try await session.documents.read(documentURL)
         session.guidedSigningSession = try LeonardoGuidedSigningSession(document: document, at: Date())
         session.guidedSigningTrustStore = try LeonardoSigningTrustRegistry(credentials: [])
         session.guidedSigningReady = true
