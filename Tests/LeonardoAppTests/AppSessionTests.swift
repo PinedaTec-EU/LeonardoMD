@@ -501,6 +501,47 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(stored, newer)
     }
 
+    func testGuidedReviewClearsWarningAfterRequiredDataIsCorrected() async throws {
+        let credentials = LeonardoSigningCredentialStore(service: "eu.pinedatec.LeonardoMD.tests.signing.required.\(UUID())")
+        let (root, session) = try fixture(signingCredentialStore: credentials)
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("required-guided.mdlf")
+        let declaration = LeonardoSigningDeclaration(positions: [.init(id: "owner", label: "Owner")])
+        var document = LeonardoDocument(
+            body: "Amount: {{field:amount}}. Signature: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: .init(id: "required-guided", title: "Required guided form", kind: .form,
+                                revision: 1, signing: declaration),
+                fields: [
+                    "amount": .init(type: .number, label: "Amount", required: true, minimum: 10),
+                    "signature": .init(type: .rubric, signerPosition: "owner")
+                ],
+                values: ["amount": .number(2)]
+            )
+        )
+        try LeonardoFormatParser.serialize(document).write(to: file, atomically: true, encoding: .utf8)
+        session.authorizePath = { _, _ in }
+        await session.openDocument(file)
+        let profile = LeonardoSignerProfile(displayName: "Ana", identity: .init(
+            fullName: "Ana Example", documentType: .nationalID, documentNumber: "QA-REQUIRED"))
+        let credential = LeonardoSigningKeyPair(credentialID: "required-field-credential").credential
+        await session.assignGuidedSigner(positionID: "owner", profile: profile, credential: credential,
+                                         saveOptions: .init(saveIdentityDetails: false, saveRubric: false))
+
+        await session.beginGuidedPosition("owner")
+        XCTAssertNotNil(session.guidedSigningActionProblem)
+        XCTAssertNil(session.guidedSigningSession?.snapshot)
+        session.isProtected = false
+        document.metadata.values["amount"] = .number(12)
+        let corrected = try LeonardoFormatParser.serialize(document)
+        XCTAssertTrue(session.editDocument(expected: session.content, replacement: corrected))
+
+        await session.beginGuidedPosition("owner")
+        XCTAssertNil(session.guidedSigningActionProblem)
+        XCTAssertEqual(session.guidedSigningSession?.positions["owner"]?.state, .reviewing)
+    }
+
     func testCheckboxAppearancesPreserveFillGuardsAndManualSaving() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

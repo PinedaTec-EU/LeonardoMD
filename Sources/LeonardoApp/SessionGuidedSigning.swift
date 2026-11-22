@@ -702,6 +702,7 @@ extension AppSession {
             guidedSigningTargets = targets
             guidedSigningStatus = L10n.text("Read each exact occurrence, then confirm it.")
             guidedSigningError = nil
+            guidedSigningActionProblem = nil
         } catch {
             if baselineLoaded {
                 await persistInvalidatedGuidedSigningSessionIfNeeded(
@@ -859,6 +860,7 @@ extension AppSession {
             guidedSigningTargets = targets
             guidedSigningStatus = L10n.text("Signing resumed. Continue with the next exact occurrence.")
             guidedSigningError = nil
+            guidedSigningActionProblem = nil
         } catch {
             if baselineLoaded {
                 await persistInvalidatedGuidedSigningSessionIfNeeded(
