@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T13:02:21.605807+00:00",
+  "route": "/native/macos/signing/visible-image-with-unused-style",
+  "screen": "visible-image-with-unused-style",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The signed app successfully exported only the actual relative image despite an unused styling entry."
+}

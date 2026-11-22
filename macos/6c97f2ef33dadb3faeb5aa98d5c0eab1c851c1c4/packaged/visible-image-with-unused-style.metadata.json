@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-22T13:02:49.328480+00:00",
+  "capture": {
+    "captured_at": "2026-11-22T13:02:21.605807+00:00",
+    "route": "/native/macos/signing/visible-image-with-unused-style",
+    "screen": "visible-image-with-unused-style",
+    "browser_name": "Native AppKit and SwiftUI",
+    "browser_version": "macOS 27.2.1",
+    "state": "The signed app successfully exported only the actual relative image despite an unused styling entry.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2744,
+    "height_px": 1924,
+    "sha256": "352bb8c7dd178797f66fad576bf6b84898d54cee1207a3efeb6a17372a922ba3"
+  },
+  "source": {
+    "revision_at_collection": "6c97f2ef33dadb3faeb5aa98d5c0eab1c851c1c4",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

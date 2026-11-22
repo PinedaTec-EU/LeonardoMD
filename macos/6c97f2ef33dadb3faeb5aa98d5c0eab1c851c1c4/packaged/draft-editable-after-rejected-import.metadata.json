@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-22T13:02:48.964156+00:00",
+  "capture": {
+    "captured_at": "2026-11-22T13:00:28.670309+00:00",
+    "route": "/native/macos/signing/draft-editable-after-rejected-import",
+    "screen": "draft-editable-after-rejected-import",
+    "browser_name": "Native AppKit and SwiftUI",
+    "browser_version": "macOS 27.2.1",
+    "state": "The draft remains writable after rejecting a structurally valid signing copy with an unreferenced asset.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2744,
+    "height_px": 1924,
+    "sha256": "83f29ce34aa1695846b8f160b63a1470c666d2076fa6bdf793cd0ada856fb551"
+  },
+  "source": {
+    "revision_at_collection": "6c97f2ef33dadb3faeb5aa98d5c0eab1c851c1c4",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

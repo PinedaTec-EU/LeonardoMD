@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T12:59:19.923884+00:00",
+  "route": "/native/ios/signing/documento-sin-confianza-confirmada",
+  "screen": "documento-sin-confianza-confirmada",
+  "browser_name": "Native SwiftUI and WKWebView",
+  "browser_version": "iOS 26.5 Simulator runtime",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "data_provenance": "synthetic",
+  "state": "The explicit signing copy asks for independent fingerprint confirmation and offers the full reader."
+}
