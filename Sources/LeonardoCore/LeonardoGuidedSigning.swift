@@ -689,7 +689,6 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         document: LeonardoDocument,
         resources: [LeonardoSigningResource]
     ) throws {
-        _ = try LeonardoLocalImagePolicy.signingReferences(in: document)
         let hasConfirmedLocations = positions.values.contains { !$0.locations.isEmpty }
         guard state != .invalidated, (snapshot != nil) == hasConfirmedLocations else {
             throw LeonardoSigningError.integrityFailure
@@ -699,6 +698,8 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
                 throw LeonardoSigningError.integrityFailure
             }
             try validateRequiredSigningData(document)
+        } else {
+            try LeonardoLocalImagePolicy.validateSigningResourceReferences(resources.map(\.reference), in: document)
         }
         for progress in positions.values {
             try validateExchangePosition(progress, document: document)

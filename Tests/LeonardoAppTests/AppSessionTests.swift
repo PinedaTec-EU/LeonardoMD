@@ -819,6 +819,16 @@ final class AppSessionTests: XCTestCase {
         let importedReview = try XCTUnwrap(session.guidedSigningSession)
         let storedReview = try await session.guidedSigningStore.session(id: baseline.id)
         XCTAssertEqual(storedReview, importedReview)
+        var withExtraImage = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: LeonardoSigningExchange.encoded(reviewCopy)
+        ) as? [String: Any])
+        withExtraImage["resources"] = [["reference": "unreferenced.png", "bytes": Data([1]).base64EncodedString()]]
+        try JSONSerialization.data(withJSONObject: withExtraImage).write(to: exchangeURL)
+        await session.readGuidedSigningExchange(from: exchangeURL)
+        XCTAssertEqual(session.guidedSigningActionProblem, L10n.text("Choose a readable, valid signing copy and try again."))
+        let afterExtraImage = try await session.guidedSigningStore.session(id: baseline.id)
+        XCTAssertEqual(afterExtraImage, importedReview)
+        XCTAssertEqual(session.guidedSigningSession, importedReview)
         try await credentials.removeTrustedPublicCredential(id: key.credential.id)
 
         let draft = try XCTUnwrap(document.applyingFormValues(["answer": .string("Updated")]))

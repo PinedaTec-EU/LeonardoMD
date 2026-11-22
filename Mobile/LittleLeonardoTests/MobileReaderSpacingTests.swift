@@ -420,6 +420,14 @@ final class MobileReaderSpacingTests: XCTestCase {
         let baseline = try fixture.original.reboundSession(onto: nil, documentLocation: location)
         try await store.saveSession(baseline, replacing: nil)
 
+        var withExtraResource = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: LeonardoSigningExchange.encoded(fixture.signed)
+        ) as? [String: Any])
+        withExtraResource["resources"] = [["reference": "unreferenced.png", "bytes": Data([1]).base64EncodedString()]]
+        XCTAssertThrowsError(try LeonardoSigningExchange.decoded(JSONSerialization.data(withJSONObject: withExtraResource)))
+        let afterRejection = try await store.session(id: baseline.id)
+        XCTAssertEqual(afterRejection, baseline)
+
         let emptyTrust = try LeonardoSigningTrustRegistry(credentials: [])
         let untrusted = try await MobileGuidedSigningView.restoreSigningProgress(
             exchange: fixture.signed, document: document, resources: [], localDocumentLocation: location,

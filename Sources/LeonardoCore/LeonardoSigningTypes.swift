@@ -258,7 +258,6 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
             throw LeonardoSigningError.signingDeclarationRequired
         }
         let source = try LeonardoFormatParser.serialize(document)
-        let requiredReferences = try LeonardoLocalImagePolicy.signingReferences(in: document)
         let snapshots = try resources
             .map { resource -> LeonardoSigningResourceSnapshot in
                 let reference = Self.canonicalReference(resource.reference)
@@ -275,13 +274,7 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
                 )
             }
             .sorted { $0.reference < $1.reference }
-        let availableReferences = Set(snapshots.map(\.reference))
-        guard availableReferences.count == snapshots.count else {
-            throw LeonardoSigningError.duplicateResourceReference
-        }
-        if let missing = requiredReferences.first(where: { !availableReferences.contains($0) }) {
-            throw LeonardoSigningError.invalidResourceReference(missing)
-        }
+        try LeonardoLocalImagePolicy.validateSigningResourceReferences(snapshots.map(\.reference), in: document)
         guard at.timeIntervalSince1970.isFinite else { throw LeonardoSigningError.invalidTimestamp }
         return LeonardoSigningSnapshot(
             source: source,
@@ -294,7 +287,6 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
     public func matches(document: LeonardoDocument, resources: [LeonardoSigningResource] = []) -> Bool {
         guard let currentSource = try? LeonardoFormatParser.serialize(document),
               currentSource == source,
-              let requiredReferences = try? LeonardoLocalImagePolicy.signingReferences(in: document),
               Data(SHA256.hash(data: Data(currentSource.utf8))) == sourceSHA256 else { return false }
         guard let currentResources = try? resources.map({ resource in
             let reference = Self.canonicalReference(resource.reference)
@@ -304,10 +296,10 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
                                                     sha256: Data(SHA256.hash(data: resource.bytes)),
                                                     byteCount: resource.bytes.count)
         }).sorted(by: { $0.reference < $1.reference }) else { return false }
-        let availableReferences = Set(currentResources.map(\.reference))
-        return availableReferences.count == currentResources.count
-            && Set(requiredReferences).isSubset(of: availableReferences)
-            && currentResources == self.resources
+        guard currentResources == self.resources else { return false }
+        return (try? LeonardoLocalImagePolicy.validateSigningResourceReferences(
+            currentResources.map(\.reference), in: document
+        )) != nil
     }
 
     private static func canonicalReference(_ reference: String) -> String {

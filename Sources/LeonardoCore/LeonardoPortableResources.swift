@@ -49,6 +49,20 @@ public enum LeonardoLocalImagePolicy {
         }
     }
 
+    /// The signing payload covers exactly the resource set the reader uses.
+    static func validateSigningResourceReferences(
+        _ references: [String], in document: LeonardoDocument
+    ) throws {
+        let expected = Set(try signingReferences(in: document))
+        let provided = Set(references)
+        guard provided.count == references.count else {
+            throw LeonardoSigningError.duplicateResourceReference
+        }
+        if let mismatch = expected.subtracting(provided).min() ?? provided.subtracting(expected).min() {
+            throw LeonardoSigningError.invalidResourceReference(mismatch)
+        }
+    }
+
     /// A signing copy travels between installations, so image references use
     /// a relative URL path. Validate its decoded path before any file lookup.
     public static func portableSigningImagePath(_ reference: String) -> String? {

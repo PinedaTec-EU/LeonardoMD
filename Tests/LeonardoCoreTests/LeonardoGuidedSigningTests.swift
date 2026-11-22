@@ -507,13 +507,14 @@ final class LeonardoGuidedSigningTests: XCTestCase {
     }
 
     func testAssignmentsCannotChangeAfterFirstConfirmationAndSnapshotRejectsMutation() throws {
-        let resource = LeonardoSigningResource(reference: "assets/evidence.txt", bytes: Data("one".utf8))
+        let resource = LeonardoSigningResource(reference: "assets/evidence.png", bytes: Data("one".utf8))
         var document = try makeDocument(requiredName: "Form complete")
+        document.body += "\n\n![Evidence](assets/evidence.png)"
         var session = try LeonardoGuidedSigningSession(document: document, at: now)
         let ana = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
         let anaKey = LeonardoSigningKeyPair(credentialID: "ana")
         try assign(ana, key: anaKey, to: "titular", session: &session)
-        _ = try session.begin(positionID: "titular", document: document)
+        _ = try session.begin(positionID: "titular", document: document, resources: [resource])
         try session.confirmLocation(
             positionID: "titular", fieldID: "z", document: document,
             resources: [resource], contextRead: true, rubric: rubric(seed: 1), at: now
@@ -903,8 +904,51 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         ))
     }
 
+    func testSigningExchangeAndSnapshotRejectUnreferencedResources() throws {
+        var document = try makeDocument()
+        document.body += "\n\n![Evidence](assets/evidence.png)"
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let resource = LeonardoSigningResource(reference: "assets/evidence.png", bytes: Data([1]))
+        let extra = LeonardoSigningResource(reference: "assets/extra.png", bytes: Data([2]))
+        let valid = [resource]
+        let extended = [resource, extra]
+
+        let seal = try LeonardoSigningSnapshot.capture(document: document, resources: valid, at: now)
+        let extraSnapshot = LeonardoSigningResourceSnapshot(
+            reference: extra.reference, sha256: Data(SHA256.hash(data: extra.bytes)), byteCount: extra.bytes.count
+        )
+        let oldSeal = LeonardoSigningSnapshot(
+            source: seal.source, sourceSHA256: seal.sourceSHA256,
+            resources: seal.resources + [extraSnapshot], capturedAt: now
+        )
+        XCTAssertFalse(oldSeal.matches(document: document, resources: extended))
+        XCTAssertThrowsError(try LeonardoSigningSnapshot.capture(document: document, resources: extended, at: now)) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .invalidResourceReference(extra.reference))
+        }
+        XCTAssertThrowsError(try LeonardoSigningExchange(
+            document: document, resources: extended, session: session, trustedCredentials: [], at: now
+        )) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .invalidResourceReference(extra.reference))
+        }
+
+        let exchange = try LeonardoSigningExchange(
+            document: document, resources: valid, session: session, trustedCredentials: [], at: now
+        )
+        let encoded = try LeonardoSigningExchange.encoded(exchange)
+        var copy = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var assets = try XCTUnwrap(copy["resources"] as? [[String: Any]])
+        assets.append(["reference": extra.reference, "bytes": extra.bytes.base64EncodedString()])
+        copy["resources"] = assets
+        XCTAssertThrowsError(try LeonardoSigningExchange.decoded(JSONSerialization.data(withJSONObject: copy))) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .invalidResourceReference(extra.reference))
+        }
+    }
+
     func testSigningExchangeRejectsResourcesThatExceedEncodedEnvelopeLimit() throws {
-        let document = try makeDocument()
+        var document = try makeDocument()
+        for index in 0..<4 {
+            document.body += "\n\n![Image \(index)](assets/image-\(index).png)"
+        }
         let session = try LeonardoGuidedSigningSession(document: document, at: now)
         let boundaryBytes = 15 * 1_024 * 1_024 / 2
         let largeResource = Data(repeating: 0x41, count: boundaryBytes)
