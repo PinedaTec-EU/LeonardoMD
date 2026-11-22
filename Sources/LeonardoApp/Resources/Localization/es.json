@@ -797,6 +797,8 @@
   "Signer position": "Puesto de firma",
   "Sign": "Firmar",
   "View signatures": "Ver firmas",
+  "Signed document changed": "El documento firmado ha cambiado",
+  "The document or one of its resources changed after signing began. To sign again, create a new revision.": "El documento o uno de sus recursos cambió después de iniciarse la firma. Para volver a firmar, crea una revisión nueva.",
   "Preparing the protected signing workflow…": "Preparando el flujo de firma protegido…",
   "The first confirmed location seals form data, assignments and referenced resources.": "La primera ubicación confirmada bloquea los datos, las asignaciones y los recursos referenciados.",
   "Optional fields will remain blank: %@": "Estos campos opcionales quedarán vacíos: %@",

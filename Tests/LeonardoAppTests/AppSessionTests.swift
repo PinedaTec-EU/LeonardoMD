@@ -686,6 +686,20 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(session.guidedSigningVerification["owner"], .valid)
         let afterImport = try await session.guidedSigningStore.session(id: baseline.id)
         XCTAssertTrue(afterImport?.isComplete == true)
+
+        var changed = try LeonardoFormatParser.parse(draftSource)
+        changed.body += "\nExternal edit after signing"
+        try LeonardoFormatParser.serialize(changed).write(to: documentURL, atomically: true, encoding: .utf8)
+        let reopened = AppSession(preferencesURL: session.globalPreferencesURL, signingCredentialStore: credentials)
+        defer { reopened.stop() }
+        reopened.authorizePath = { _, _ in }
+        await reopened.openDocument(documentURL)
+
+        XCTAssertTrue(reopened.guidedSigningSnapshotChanged)
+        XCTAssertTrue(reopened.guidedSigningContentLocked)
+        XCTAssertFalse(reopened.guidedSigningWorkflowOperable)
+        XCTAssertTrue(reopened.guidedSigningCanStartRevision)
+        XCTAssertTrue(reopened.guidedSigningVerification.isEmpty)
         try await credentials.removeTrustedPublicCredential(id: key.credential.id)
     }
 
@@ -812,11 +826,13 @@ final class AppSessionTests: XCTestCase {
 
         XCTAssertEqual(session.content, sealedContent)
         XCTAssertTrue(session.externalConflict)
+        XCTAssertTrue(session.guidedSigningSnapshotChanged)
         XCTAssertTrue(session.guidedSigningContentLocked)
         XCTAssertFalse(session.editDocument(expected: sealedContent, replacement: "ordinary edit"))
 
         await session.startGuidedSigningRevision()
         XCTAssertEqual(session.guidedSigningSession?.initialRevision, 2)
+        XCTAssertFalse(session.guidedSigningSnapshotChanged)
         XCTAssertNil(session.guidedSigningError)
         XCTAssertFalse(session.guidedSigningContentLocked)
         XCTAssertEqual(try LeonardoFormatParser.parse(session.content).metadata.document.revision, 2)

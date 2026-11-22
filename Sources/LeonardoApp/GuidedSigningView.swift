@@ -368,7 +368,7 @@ struct GuidedSigningView: View {
                 .padding(.horizontal, 9)
                 .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
             }
-            if session.guidedSigningSession?.state == .complete {
+            if session.guidedSigningSession?.state == .complete && !session.guidedSigningSnapshotChanged {
                 Label(L10n.text("All declared positions are complete."), systemImage: "checkmark.seal")
                     .font(.caption.weight(.semibold)).foregroundStyle(.green)
             }
@@ -851,6 +851,7 @@ struct GuidedSigningView: View {
 
     private func statusIcon(for positionID: String) -> String {
         switch session.guidedSigningSession?.positions[positionID]?.state {
+        case .some(.signed) where session.guidedSigningSnapshotChanged: return "exclamationmark.shield"
         case .some(.signed): return "checkmark.seal.fill"
         case .some(.readyToSign): return "checkmark.circle"
         case .some(.reviewing): return "eye"
@@ -861,6 +862,7 @@ struct GuidedSigningView: View {
 
     private func statusColor(for positionID: String) -> Color {
         switch session.guidedSigningSession?.positions[positionID]?.state {
+        case .some(.signed) where session.guidedSigningSnapshotChanged: return .orange
         case .some(.signed): return .green
         case .some(.readyToSign): return session.accentColor
         case .some(.paused): return .orange

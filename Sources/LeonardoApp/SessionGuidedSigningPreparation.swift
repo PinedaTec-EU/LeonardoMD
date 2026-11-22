@@ -142,6 +142,7 @@ extension AppSession {
         guidedSigningLoading = true
         guidedSigningReady = false
         guidedSigningRecoveryBlocked = false
+        guidedSigningSnapshotChanged = false
         guidedSigningError = nil
         guidedSigningActionProblem = nil
         defer {
@@ -171,6 +172,7 @@ extension AppSession {
                 guidedSigningTargets = []
                 if recovery != nil {
                     externalConflict = true
+                    guidedSigningSnapshotChanged = true
                     saveStatus = "External conflict · signing review protected"
                     let trust = try await guidedSigningCredentialStore.trustStore()
                     guard isCurrentPreparation() else { return }
@@ -198,19 +200,34 @@ extension AppSession {
                 expectedSession = created
                 guidedSigningSession = created
             }
-            let trustStore = try await guidedSigningCredentialStore.trustStore()
+            let resources = Result { try guidedSigningResources() }
+            if let snapshot = guidedSigningSession?.snapshot,
+               (try? resources.get()).map({ snapshot.matches(document: document, resources: $0) }) != true {
+                guidedSigningSnapshotChanged = true
+                guidedSigningVerification = [:]
+                guidedSigningTargets = []
+                guidedSigningError = L10n.text("The document or one of its resources changed after signing began. To sign again, create a new revision.")
+            }
+            let trustStore: LeonardoSigningTrustRegistry
+            do {
+                trustStore = try await guidedSigningCredentialStore.trustStore()
+            } catch {
+                if guidedSigningSnapshotChanged { return }
+                throw error
+            }
             guard isCurrentPreparation() else { return }
+            guidedSigningTrustStore = trustStore
+            guard !guidedSigningSnapshotChanged else { return }
             if let current = guidedSigningSession {
                 try LeonardoGuidedSigningSession.validate(declaration: current.declaration, document: document)
                 guidedSigningVerification = current.signatureVerification(
                     document: document,
-                    resources: try guidedSigningResources(),
+                    resources: try resources.get(),
                     trustStore: trustStore
                 )
             } else {
                 guidedSigningVerification = [:]
             }
-            guidedSigningTrustStore = trustStore
             refreshGuidedSigningTargets()
         } catch {
             guard isCurrentPreparation() else { return }

@@ -239,8 +239,10 @@ ubicación o intercambiar una copia de firma. La primera confirmación sella las
 asignaciones, la revisión del documento y los recursos referenciados. Los
 valores obligatorios inválidos, las ubicaciones que no se muestran y un
 documento cambiado bloquean la confirmación. Little Leonardo también la
-bloquea si no puede mostrar una imagen local referenciada. A partir de ese momento, las
-correcciones requieren **Iniciar una revisión nueva para corregir…**
+bloquea si no puede mostrar una imagen local referenciada. Si el documento
+sellado o uno de sus recursos cambia, la barra muestra **El documento firmado
+ha cambiado**. Pulsa el aviso para ver la opción de corrección disponible.
+Las correcciones requieren **Iniciar una revisión nueva para corregir…**
 y hay que asignar y revisar de nuevo todos los puestos. Las firmas y los
 registros públicos de confianza permanecen fuera del documento editable, en un
 almacenamiento local protegido; cambiar o quitar la cabecera no permite saltar

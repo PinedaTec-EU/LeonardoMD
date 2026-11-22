@@ -66,6 +66,10 @@ extension AppSession {
     func rejectGuidedSigningContentChange(_ replacement: String) -> Bool {
         guard replacement != content, guidedSigningContentLocked else { return false }
         externalConflict = true
+        if guidedSigningSession?.snapshot != nil {
+            guidedSigningSnapshotChanged = true
+            guidedSigningVerification = [:]
+        }
         saveStatus = "External conflict · signing review protected"
         guidedSigningError = L10n.text(
             "The signed document changed outside this review. Create a new revision before continuing."

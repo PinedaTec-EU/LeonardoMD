@@ -797,6 +797,8 @@
   "Signer position": "Signer position",
   "Sign": "Sign",
   "View signatures": "View signatures",
+  "Signed document changed": "Signed document changed",
+  "The document or one of its resources changed after signing began. To sign again, create a new revision.": "The document or one of its resources changed after signing began. To sign again, create a new revision.",
   "Preparing the protected signing workflow…": "Preparing the protected signing workflow…",
   "The first confirmed location seals form data, assignments and referenced resources.": "The first confirmed location seals form data, assignments and referenced resources.",
   "Optional fields will remain blank: %@": "Optional fields will remain blank: %@",

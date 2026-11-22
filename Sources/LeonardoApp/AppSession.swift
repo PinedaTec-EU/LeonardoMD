@@ -20,6 +20,7 @@ final class AppSession {
                 guidedSigningCredentialIDs = []
                 guidedSigningTrustStore = nil
                 guidedSigningVerification = [:]
+                guidedSigningSnapshotChanged = false
                 guidedSigningTargets = []
                 guidedSigningStatus = nil
                 guidedSigningError = nil
@@ -99,6 +100,7 @@ final class AppSession {
     var guidedSigningCredentialIDs: [String] = []
     var guidedSigningTrustStore: LeonardoSigningTrustRegistry?
     var guidedSigningVerification: [String: LeonardoSignatureVerification] = [:]
+    var guidedSigningSnapshotChanged = false
     var guidedSigningTargets: [LeonardoSigningLocationTarget] = []
     var guidedSigningStatus: String?
     var guidedSigningError: String?

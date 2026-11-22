@@ -234,7 +234,9 @@ first confirmation seals the saved answers, assignments, document revision
 and referenced resources. Invalid required answers, unavailable locations or
 a changed document block confirmation. Little Leonardo also blocks confirmation
 when a referenced local image cannot be displayed.
-After that point, corrections require **Start a new revision for corrections…**
+If the sealed document or a resource changes, the toolbar shows
+**Signed document changed**. Open it to see the available correction action.
+Corrections require **Start a new revision for corrections…**
 and every position must be assigned and reviewed again. Signatures and the
 public trust records stay outside the editable document in protected local
 sidecar storage, so changing or removing the header cannot bypass an existing

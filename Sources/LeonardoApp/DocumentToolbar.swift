@@ -57,7 +57,13 @@ struct DocumentToolbar: View {
                             session.showInspector = true
                         }
                     } label: {
-                        Label(L10n.text(session.guidedSigningWorkflowOperable ? "Sign" : "View signatures"), systemImage: "signature")
+                        if session.guidedSigningSnapshotChanged {
+                            Label(L10n.text("Signed document changed"), systemImage: "exclamationmark.shield")
+                                .foregroundStyle(.orange)
+                        } else {
+                            Label(L10n.text(session.guidedSigningWorkflowOperable ? "Sign" : "View signatures"),
+                                  systemImage: "signature")
+                        }
                     }
                     .accessibilityIdentifier("guided-signing")
                     .disabled(session.busy || session.isSyncSuspended || session.guidedSigningLoading)

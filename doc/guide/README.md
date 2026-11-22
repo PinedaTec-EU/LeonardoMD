@@ -6,9 +6,10 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v116 explains explicit identity entry when reusing an ink-only profile.
-Guide v116 EN SHA-256: `28b4af05810adc440a8503e200eda06436e78403e0ae2eb8447a4915b467842a`
-Guide v116 ES SHA-256: `5ca70abe4ca62f4441c5fac1dd43d40c478bc86bdbda550d55b3a13acb366f02`
+Guide v116 explains explicit identity entry when reusing an ink-only profile
+and the toolbar warning when the sealed document or its resources change.
+Guide v116 EN SHA-256: `47603c8005308ec326158803f08322ba07595f0de3f14ab24159c7eb663c75e2`
+Guide v116 ES SHA-256: `3af19056b6b7b7b1ecc0a08e996de76ccb903db7c30cb6c019cc39e0367da7a2`
 
 Guide v115 explains the fixed local image requirement and verified-only ink for
 guided signing positions. Packaged Help validation remains pending.

@@ -102,6 +102,8 @@ extension AppSession {
             editHistory = DocumentEditHistory()
             guidedSigningSession = committed.session
             guidedSigningRecoveryBlocked = false
+            guidedSigningSnapshotChanged = false
+            guidedSigningVerification = [:]
             if source.recovered {
                 externalConflict = true
                 saveStatus = "External conflict · signing review protected"
