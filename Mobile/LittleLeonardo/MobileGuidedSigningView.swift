@@ -53,6 +53,7 @@ struct MobileGuidedSigningView: View {
     @State private var profileRubricDraft = LeonardoRubric()
     @State private var busy = false
     @State private var errorMessage: String?
+    @State private var localLoadFailed = false
 
     init(
         library: MobileLibrary,
@@ -135,7 +136,7 @@ struct MobileGuidedSigningView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadLocalSigningData()
-            if initiallyShowingDocumentReader && ready {
+            if initiallyShowingDocumentReader && document != nil {
                 showingDocumentReader = true
             }
         }
@@ -265,6 +266,16 @@ struct MobileGuidedSigningView: View {
                 )
                 .font(.footnote)
                 .foregroundStyle(MobileClassic.secondary)
+                if localLoadFailed {
+                    Label(
+                        spanish
+                            ? "No se pudo comprobar el estado local de firma. Puedes leer la copia y volver a abrirla para intentarlo de nuevo."
+                            : "Local signing status could not be checked. You can read the copy and reopen it to try again.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                }
                 if ready && (hasInvalidSeal || verification.values.contains(where: {
                     $0 == .invalidSignature || $0 == .modifiedSnapshot
                 })) {
@@ -617,6 +628,8 @@ struct MobileGuidedSigningView: View {
     }
 
     private func loadLocalSigningData() async {
+        ready = false
+        localLoadFailed = false
         do {
             profiles = try await library.signingStore.profiles()
             credentialIDs = try await library.signingCredentialStore.credentialIDs()
@@ -634,7 +647,7 @@ struct MobileGuidedSigningView: View {
             updateVerification(trustStore: localTrust)
             ready = true
         } catch {
-            errorMessage = String(describing: error)
+            localLoadFailed = true
         }
         if selectedPositionID == nil {
             selectedPositionID = session.pendingPositionIDs.first ?? session.declaration.positions.first?.id
