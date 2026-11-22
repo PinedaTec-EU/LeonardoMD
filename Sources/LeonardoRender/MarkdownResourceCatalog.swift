@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoCore
 import WebKit
 
 enum MarkdownResource: String, CaseIterable {
@@ -70,7 +71,8 @@ enum MarkdownResourceCatalog {
     }
 
     static func url(for resource: MarkdownResource) -> URL? {
-        Bundle.module.url(forResource: resource.rawValue, withExtension: nil)
+        if resource == .marked { return LeonardoMarkdownParserResource.scriptURL }
+        return Bundle.module.url(forResource: resource.rawValue, withExtension: nil)
     }
 
     static func data(for resource: MarkdownResource) -> Data? {
@@ -79,6 +81,8 @@ enum MarkdownResourceCatalog {
     }
 
     static func url(forFile path: String) -> URL? {
+        if path == MarkdownResource.marked.rawValue { return LeonardoMarkdownParserResource.scriptURL }
+        if path == "marked-15.0.7.txt" { return LeonardoMarkdownParserResource.licenseURL }
         guard let resourceURL = Bundle.module.resourceURL else { return nil }
         let url = resourceURL.appendingPathComponent(path)
         return FileManager.default.fileExists(atPath: url.path) ? url : nil

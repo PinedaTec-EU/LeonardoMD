@@ -41,6 +41,50 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertEqual(targets.map { "\($0.fieldID)#\($0.occurrence)" }, ["z#0", "a#0"])
     }
 
+    func testNestedAndContinuedRubricsMustBothBeReviewedBeforeSigning() throws {
+        var document = try makeDocument()
+        document.body = """
+        - Checklist
+            - Nested signature {{field:a}}
+
+        Continuation
+            Continued signature {{field:a}}
+
+            Literal code {{field:a}}
+
+        > `Quoted literal {{field:a}}`
+
+        Last signature {{field:z}}
+        """
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        try assign(signer, key: key, to: "titular", session: &session)
+        let targets = try session.begin(positionID: "titular", document: document)
+        XCTAssertEqual(targets.map { "\($0.fieldID)#\($0.occurrence)" }, ["a#0", "a#1", "z#0"])
+        for (target, precedingText) in zip(targets, ["Nested signature ", "Continued signature ", "Last signature "]) {
+            let source = try XCTUnwrap(document.body.range(of: precedingText))
+            XCTAssertEqual(target.sourceOffset, document.body.distance(from: document.body.startIndex, to: source.upperBound))
+        }
+
+        let trust = try LeonardoSigningTrustRegistry(credentials: [key.credential])
+        for (index, target) in targets.enumerated() {
+            if index > 0 {
+                XCTAssertThrowsError(try session.sign(
+                    positionID: "titular", keyPair: key, document: document, trustStore: trust, at: now
+                ))
+            }
+            try session.confirmLocation(
+                positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+                document: document, contextRead: true, rubric: rubric(seed: index + 1), at: now
+            )
+        }
+        let completed = try session.sign(
+            positionID: "titular", keyPair: key, document: document, trustStore: trust, at: now
+        )
+        XCTAssertEqual(completed.proof.locationDigests.count, 3)
+    }
+
     func testTargetsRejectWhenEveryAssignedOccurrenceIsMarkdownLiteral() throws {
         var document = try makeDocument()
         document.body = """

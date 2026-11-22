@@ -176,7 +176,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         let fieldIDs = Set(document.metadata.fields.compactMap { fieldID, field in
             field.type == .rubric && field.signerPosition == positionID ? fieldID : nil
         })
-        let locations = Self.locationTargets(in: document.body, fieldIDs: fieldIDs, positionID: positionID)
+        let locations = try Self.locationTargets(in: document.body, fieldIDs: fieldIDs, positionID: positionID)
         for fieldID in fieldIDs where !locations.contains(where: { $0.fieldID == fieldID }) {
             throw LeonardoSigningError.fieldNotAssigned(fieldID)
         }
@@ -796,18 +796,22 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         in body: String,
         fieldIDs: Set<String>,
         positionID: String
-    ) -> [LeonardoSigningLocationTarget] {
+    ) throws -> [LeonardoSigningLocationTarget] {
         guard !fieldIDs.isEmpty,
               let expression = try? NSRegularExpression(
                 pattern: #"\{\{\s*field:([A-Za-z][A-Za-z0-9_.-]{0,63})\s*\}\}"#
               ) else { return [] }
-        // The renderer deliberately leaves fenced and inline code literal.
-        // Mask those spans before scanning so every core target has a matching
-        // DOM occurrence and cannot be confirmed in an unrendered example.
+        // Keep the source ranges from Swift and let the same Markdown engine
+        // used by the preview distinguish visible nested text from code.
         let searchableBody = Self.maskLiteralFieldSpans(body)
         let range = NSRange(searchableBody.startIndex..<searchableBody.endIndex, in: searchableBody)
+        let matches = expression.matches(in: searchableBody, range: range)
+        let codeOrdinals = try LeonardoMarkdownLiteralFields.shared.ordinals(
+            in: body, fieldRanges: matches.map { $0.range(at: 1) }
+        )
         var occurrences: [String: Int] = [:]
-        return expression.matches(in: searchableBody, range: range).compactMap { match in
+        return matches.enumerated().compactMap { ordinal, match in
+            guard !codeOrdinals.contains(ordinal) else { return nil }
             guard let fieldRange = Range(match.range(at: 1), in: searchableBody) else { return nil }
             let fieldID = String(searchableBody[fieldRange])
             guard fieldIDs.contains(fieldID),
@@ -832,19 +836,10 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         let masked = NSMutableString(string: body)
         let wholeRange = NSRange(location: 0, length: masked.length)
         let patterns = [
-            // Keep this grammar in step with marked's fenced-code rule:
-            // backtick info strings cannot contain a backtick, a fence may
-            // be unclosed, and a closing fence may contain extra markers.
-            #"(?ms)^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})[^\n]*(?:\n|$).*?(?:^ {0,3}\1[~`]* *(?=\n|$)|\z)"#,
-            // Marked also treats four-space / tab-indented blocks as code.
-            #"(?m)^(?: {4}| {0,3}\t)[^\n]*(?:\n(?: {4}| {0,3}\t)[^\n]*)*"#,
             // Raw HTML code/pre/script/style elements and comments are not
             // text nodes that the renderer turns into form controls.
             #"(?is)<!--.*?(?:-->|\z)"#,
-            #"(?is)<(code|pre|script|style)\b[^>]*>.*?(?:</\1\s*>|\z)"#,
-            // Inline code spans may contain newlines and use the same-length
-            // backtick run for their closing delimiter.
-            #"(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)"#
+            #"(?is)<(code|pre|script|style)\b[^>]*>.*?(?:</\1\s*>|\z)"#
         ]
         for pattern in patterns {
             guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }
@@ -870,4 +865,3 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
     }
 }
-

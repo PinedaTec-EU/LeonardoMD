@@ -1,11 +1,57 @@
 #if os(macOS)
 import AppKit
+import LeonardoCore
 import XCTest
 import WebKit
 @testable import LeonardoRender
 
 @MainActor
 final class MarkdownExtrasTests: XCTestCase {
+    func testGuidedSigningLocationsMatchRenderedNestedRubricsInWebKit() async throws {
+        let document = LeonardoDocument(
+            body: """
+            - Checklist
+                - Nested {{field:sig}}
+
+            Ordinary paragraph
+                Continued {{field:sig}}
+
+                Literal code {{field:sig}}
+
+            Last {{field:sig}}
+            """,
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "nested-rubrics", title: "Nested rubrics", kind: .form, revision: 1,
+                    signing: LeonardoSigningDeclaration(positions: [.init(id: "signer", label: "Signer")])
+                ),
+                fields: ["sig": .init(type: .rubric, signerPosition: "signer")]
+            )
+        )
+        let source = try LeonardoFormatParser.serialize(document)
+        let session = try LeonardoGuidedSigningSession(document: document, at: Date())
+        let targets = try session.targets(for: "signer", document: document)
+        var configuration = MarkdownPreviewConfiguration()
+        configuration.allowsLeonardoFormat = true
+        let (host, window) = makeHost(content: source, config: configuration)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+
+        try await waitFor("document.querySelector('[data-leonardo-field-target]') ? '1' : '0'", in: web)
+        let rendered = try await evaluate("""
+            Array.from(document.querySelectorAll('[data-leonardo-field-target]')).map(
+              node => node.dataset.leonardoFieldTarget
+            ).join(',')
+            """, in: web)
+        XCTAssertEqual(rendered, "sig#0,sig#1,sig#2")
+        XCTAssertEqual(rendered, targets.map { "\($0.fieldID)#\($0.occurrence)" }.joined(separator: ","))
+        let inList = try await evaluate("document.querySelector('li li [data-leonardo-field-target]')?.dataset.leonardoFieldTarget", in: web)
+        XCTAssertEqual(inList, "sig#0")
+        let code = try await evaluate("document.querySelector('pre code')?.textContent.trim()", in: web)
+        XCTAssertEqual(code, "Literal code {{field:sig}}")
+    }
+
     func testFootnotesCalloutsAndTablesRenderTogetherInWebKit() async throws {
         let source = """
         # Extra syntax

@@ -143,3 +143,7 @@ seal; bilingual Help is revision v114. Signed-copy exchange enforces the same
 40 MiB serialized envelope limit in both directions. Export rejects oversized
 JSON before the save panel, including when individually valid resources grow
 beyond the limit after Base64 encoding ([#557](https://github.com/PinedaTec-EU/LeonardoMD/issues/557)).
+The preview and signing engine use the same bundled Marked parser to identify
+literal Markdown code. Signing retains the original source offsets while
+reviewing rubrics in nested lists and indented paragraph continuations
+([#559](https://github.com/PinedaTec-EU/LeonardoMD/issues/559)).
