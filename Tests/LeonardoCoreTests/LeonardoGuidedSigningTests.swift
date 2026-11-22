@@ -474,6 +474,34 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testSigningExchangeRejectsResourcesThatExceedEncodedEnvelopeLimit() throws {
+        let document = try makeDocument()
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let boundaryBytes = 15 * 1_024 * 1_024 / 2
+        let largeResource = Data(repeating: 0x41, count: boundaryBytes)
+
+        func exchange(lastBytes: Data) throws -> LeonardoSigningExchange {
+            let resources = (0..<4).map { index in
+                LeonardoSigningResource(
+                    reference: "assets/image-\(index).png",
+                    bytes: index == 3 ? lastBytes : largeResource
+                )
+            }
+            return try LeonardoSigningExchange(
+                document: document, resources: resources, session: session,
+                trustedCredentials: [], at: now
+            )
+        }
+
+        let fits = try exchange(lastBytes: largeResource.dropLast(16 * 1_024))
+        XCTAssertEqual(try LeonardoSigningExchange.decoded(LeonardoSigningExchange.encoded(fits)), fits)
+
+        let oversized = try exchange(lastBytes: largeResource)
+        XCTAssertThrowsError(try LeonardoSigningExchange.encoded(oversized)) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .exchangeTooLarge)
+        }
+    }
+
     func testSigningExchangeCarriesOnlyParticipatingCredentials() throws {
         let document = try makeDocument(requiredName: "Form complete")
         let unrelated = LeonardoSigningKeyPair(credentialID: "unrelated")

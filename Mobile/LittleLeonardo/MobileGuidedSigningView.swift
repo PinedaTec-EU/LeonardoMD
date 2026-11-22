@@ -967,8 +967,12 @@ struct MobileGuidedSigningView: View {
                 document: document, resources: resources, session: session,
                 trustedCredentials: trustedCredentials, at: Date()
             )
-            exportDocument = MobileSigningExchangeDocument(exchange: exchange)
+            exportDocument = try MobileSigningExchangeDocument(exporting: exchange)
             exporting = true
+        } catch LeonardoSigningError.exchangeTooLarge {
+            errorMessage = spanish
+                ? "Esta copia de firma supera el tamaño máximo para el intercambio."
+                : "This signing copy exceeds the exchange size limit."
         } catch {
             errorMessage = String(describing: error)
         }

@@ -788,6 +788,7 @@
   "Compare every fingerprint through a separate trusted channel. The exchange file is not itself a trust anchor.": "Compara cada huella mediante un canal fiable independiente. El archivo de intercambio no es por sí mismo una raíz de confianza.",
   "Trust and import": "Confiar e importar",
   "Enter fingerprint received separately": "Introduce la huella recibida por otra vía",
+  "This signing copy exceeds the exchange size limit.": "Esta copia de firma supera el tamaño máximo para el intercambio.",
   "Signing copy exported": "Copia de firma exportada",
   "Signed copy imported after local integrity and trust checks.": "Copia firmada importada tras comprobar la integridad y la confianza local.",
   "Signer position": "Puesto de firma",

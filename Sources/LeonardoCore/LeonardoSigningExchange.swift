@@ -104,7 +104,9 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
             guard seconds.isFinite else { throw LeonardoSigningError.invalidTimestamp }
             try container.encode(seconds)
         }
-        return try encoder.encode(exchange)
+        let data = try encoder.encode(exchange)
+        guard data.count <= maximumEnvelopeBytes else { throw LeonardoSigningError.exchangeTooLarge }
+        return data
     }
 
     public static func decoded(_ data: Data) throws -> LeonardoSigningExchange {

@@ -376,7 +376,7 @@ struct MobileLibraryView: View {
             let values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
             guard values.isRegularFile == true,
                   let fileSize = values.fileSize,
-                  fileSize <= 40 * 1_024 * 1_024 else {
+                  fileSize <= LeonardoSigningExchange.maximumEnvelopeBytes else {
                 throw LeonardoSigningError.storageFailure
             }
             importedSigningCopy = MobileSigningExchangeDocument(

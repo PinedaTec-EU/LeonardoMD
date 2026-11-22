@@ -440,6 +440,8 @@ extension AppSession {
                     )
                 }
             }
+        } catch LeonardoSigningError.exchangeTooLarge {
+            guidedSigningError = L10n.text("This signing copy exceeds the exchange size limit.")
         } catch {
             guidedSigningError = String(describing: error)
         }
@@ -468,8 +470,7 @@ extension AppSession {
         expectedSession: LeonardoGuidedSigningSession,
         expectedSnapshot: DocumentSnapshot?
     ) async {
-        guard data.count <= LeonardoSigningExchange.maximumEnvelopeBytes,
-              await guidedSigningExchangeSourceIsSaved(
+        guard await guidedSigningExchangeSourceIsSaved(
                   location: expectedLocation, content: expectedContent,
                   session: expectedSession, snapshot: expectedSnapshot
               ) else { return }

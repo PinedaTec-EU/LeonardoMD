@@ -341,6 +341,7 @@ public enum LeonardoSigningError: Error, Equatable, Sendable {
     case invalidProfile
     case invalidCredential
     case staleStorage
+    case exchangeTooLarge
     case storageFailure
 }
 
@@ -381,6 +382,7 @@ extension LeonardoSigningError: LocalizedError {
         case .invalidProfile: return "The signer profile is incomplete or invalid."
         case .invalidCredential: return "The signing credential is invalid."
         case .staleStorage: return "The signing progress changed in another app instance. Reload it before saving again."
+        case .exchangeTooLarge: return "This signing copy exceeds the exchange size limit."
         case .storageFailure: return "The signing progress could not be stored safely."
         }
     }

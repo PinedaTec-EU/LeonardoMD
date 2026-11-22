@@ -8,10 +8,17 @@ import LeonardoCore
 struct MobileSigningExchangeDocument: FileDocument, Identifiable, Hashable {
     static var readableContentTypes: [UTType] { [.json] }
     let exchange: LeonardoSigningExchange
+    private let preparedData: Data?
     var id: UUID { exchange.session.id }
 
     init(exchange: LeonardoSigningExchange) {
         self.exchange = exchange
+        preparedData = nil
+    }
+
+    init(exporting exchange: LeonardoSigningExchange) throws {
+        self.exchange = exchange
+        preparedData = try LeonardoSigningExchange.encoded(exchange)
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -26,14 +33,12 @@ struct MobileSigningExchangeDocument: FileDocument, Identifiable, Hashable {
         guard let data = configuration.file.regularFileContents else {
             throw LeonardoSigningError.storageFailure
         }
-        guard data.count <= 40 * 1_024 * 1_024 else {
-            throw LeonardoSigningError.storageFailure
-        }
         exchange = try LeonardoSigningExchange.decoded(data)
+        preparedData = nil
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        return try FileWrapper(regularFileWithContents: LeonardoSigningExchange.encoded(exchange))
+        return try FileWrapper(regularFileWithContents: preparedData ?? LeonardoSigningExchange.encoded(exchange))
     }
 }
 
