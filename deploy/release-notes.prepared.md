@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2189
+
+- #518 Updated: style Sync diagnostics and support pointer selection ([#519](https://github.com/PinedaTec-EU/LeonardoMD/pull/519))
+
+<p>The Sync diagnostics sheet uses the suite controls and a tinted report where you can select and copy text with the mouse.</p>
+
+Source: `60f1adbbb17e2e3145e485b0fa2b5d71cc0e28ad`. Delta: `{"build": 3}`.
+
 ## 0.3.2186
 
 - #517 Added: guided signing for Leonardo documents ([#520](https://github.com/PinedaTec-EU/LeonardoMD/pull/520))

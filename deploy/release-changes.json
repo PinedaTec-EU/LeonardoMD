@@ -1249,6 +1249,16 @@
       "pr": 520,
       "summary": "Adds guided multi-signer forms with per-location rubric review, resume, tamper detection and exchange of signed copies between LeonardoMD and Little Leonardo.",
       "to_version": "0.3.2186"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.2186",
+      "merge_sha": "60f1adbbb17e2e3145e485b0fa2b5d71cc0e28ad",
+      "pr": 519,
+      "summary": "The Sync diagnostics sheet uses the suite controls and a tinted report where you can select and copy text with the mouse.",
+      "to_version": "0.3.2189"
     }
   ],
   "initial_version": "0.1.56",
@@ -1259,5 +1269,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.2186"
+  "version": "0.3.2189"
 }
