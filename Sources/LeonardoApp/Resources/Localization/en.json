@@ -1,4 +1,8 @@
 {
+  "This file has signing history, but its current signing identity is unavailable. Restore the exact signing header before continuing.": "This file has signing history, but its current signing identity is unavailable. Restore the exact signing header before continuing.",
+  "The document has no stable signing identity or revision. Create a new revision before continuing.": "The document has no stable signing identity or revision. Create a new revision before continuing.",
+  "More than one signing session matches this document revision. Reload it or create a new revision before continuing.": "More than one signing session matches this document revision. Reload it or create a new revision before continuing.",
+  "Protected signing progress belongs to another document revision. Reopen that revision or create an explicit new revision before continuing.": "Protected signing progress belongs to another document revision. Reopen that revision or create an explicit new revision before continuing.",
   "Correct the required fields before signing: %@.": "Correct the required fields before signing: %@.",
   "Choose a different profile for this signer.": "Choose a different profile for this signer.",
   "This identity document is already assigned to another signer.": "This identity document is already assigned to another signer.",
