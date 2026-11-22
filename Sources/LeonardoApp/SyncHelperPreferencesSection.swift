@@ -69,14 +69,17 @@ private struct SyncHelperDiagnosticSheet: View {
     var body: some View {
         let report = controller.diagnostics.report
         VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text("Leonardo Sync diagnostics")).font(.headline)
-            ScrollView {
-                Text(report)
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            HStack {
+                Text(L10n.text("Leonardo Sync diagnostics")).font(.headline)
+                Spacer()
+                Button(L10n.text("Done")) { dismiss() }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
+                    .keyboardShortcut(.defaultAction)
             }
-            .frame(height: 220)
+            DiagnosticReportText(report: report)
+                .frame(height: 174)
+                .background { PremiumControlBackground(selected: true) }
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             HStack {
                 Button {
                     NSPasteboard.general.clearContents()
@@ -96,10 +99,8 @@ private struct SyncHelperDiagnosticSheet: View {
                 } label: {
                     Label(L10n.text("Email diagnostics…"), systemImage: "envelope")
                 }
-                Spacer()
-                Button(L10n.text("Done")) { dismiss() }
-                    .keyboardShortcut(.defaultAction)
             }
+            .buttonStyle(PremiumButtonStyle(compact: true))
             .labelStyle(.titleAndIcon)
             Text(L10n.format(
                 "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.",
@@ -113,8 +114,45 @@ private struct SyncHelperDiagnosticSheet: View {
                 Text(feedback).font(.caption).foregroundStyle(.secondary)
             }
         }
-        .padding(20)
-        .frame(width: 520)
+        .padding(24)
+        .frame(width: 540)
         .onChange(of: report) { feedback = nil }
+    }
+}
+
+/// Use AppKit selection and clipboard actions for the read-only report.
+private struct DiagnosticReportText: NSViewRepresentable {
+    let report: String
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scroll = NSTextView.scrollableTextView()
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
+
+        guard let text = scroll.documentView as? NSTextView else { return scroll }
+        text.isEditable = false
+        text.isSelectable = true
+        text.isRichText = false
+        text.drawsBackground = false
+        text.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        text.textColor = .labelColor
+        text.textContainerInset = NSSize(width: 12, height: 12)
+        text.setAccessibilityLabel(L10n.text("Leonardo Sync diagnostics"))
+
+        let menu = NSMenu()
+        for (title, action) in [("Copy", #selector(NSTextView.copy(_:))),
+                                ("Select all", #selector(NSTextView.selectAll(_:)))] {
+            let item = NSMenuItem(title: L10n.text(title), action: action, keyEquivalent: "")
+            item.target = text
+            menu.addItem(item)
+        }
+        text.menu = menu
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        guard let text = scroll.documentView as? NSTextView, text.string != report else { return }
+        text.string = report
     }
 }

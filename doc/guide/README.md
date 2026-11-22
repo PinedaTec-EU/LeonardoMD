@@ -1,10 +1,13 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v119-en.mdlz` and `Guide-v119-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v120-en.mdlz` and `Guide-v120-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v119/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v120/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v120 retains the guided-signing content from v119 and explains mouse selection
+in the Sync diagnostic report. Package SHA-256: EN `1ffb6a548c4c5687254bfe69edb962a8a7eee836ad43032868814a262cc14e19`, ES `79e27f4d0501574ce0ff8719d652afcf05484084d1fb2278ae9eb88dbc2abeeb`.
 
 Guide v119 explains which review decisions carry over in a signing copy and
 how to reference images with portable paths. The panel illustration shows
