@@ -206,7 +206,8 @@ extension AppSession {
                 guidedSigningSnapshotChanged = true
                 guidedSigningVerification = [:]
                 guidedSigningTargets = []
-                guidedSigningError = L10n.text("The document or one of its resources changed after signing began. To sign again, create a new revision.")
+                // Preserve the translation key so the warning follows live language changes.
+                guidedSigningError = "The document or one of its resources changed after signing began. To sign again, create a new revision."
             }
             let trustStore: LeonardoSigningTrustRegistry
             do {

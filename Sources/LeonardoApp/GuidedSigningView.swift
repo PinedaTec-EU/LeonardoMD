@@ -259,7 +259,7 @@ struct GuidedSigningView: View {
                     ProgressView(L10n.text("Preparing the protected signing workflow…"))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else if let error = session.guidedSigningError {
-                    integrityWarning(error)
+                    integrityWarning(L10n.text(error))
                 } else if let selectedPosition {
                     positionPicker
                     assignmentSection(selectedPosition)
