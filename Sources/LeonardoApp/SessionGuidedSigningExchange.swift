@@ -13,8 +13,11 @@ extension AppSession {
     func exportGuidedSigningExchange(chooseDestination: ((NSSavePanel) async -> URL?)? = nil) async {
         guard let current = guidedSigningSession,
               let expectedLocation = guidedSigningLocation,
+              let documentURL, let identity = leonardoExportIdentity(for: documentURL),
+              !stopped, !busy, !saving, !isClosing, !isSyncSuspended, fileOperationCount == 0,
               await flushPreviewEdits(),
               guidedSigningSession == current, guidedSigningLocation == expectedLocation,
+              leonardoExportIdentityIsCurrent(identity),
               let document = leonardoDocument else { return }
         let expectedContent = content
         let expectedSnapshot = snapshot
@@ -37,8 +40,8 @@ extension AppSession {
             let data = try LeonardoSigningExchange.encoded(exchange)
             let panel = NSSavePanel()
             panel.title = L10n.text("Export signing copy")
-            panel.nameFieldStringValue = documentURL?.deletingPathExtension().lastPathComponent
-                .appending("-signing-copy.json") ?? "Leonardo-signing-copy.json"
+            let name = (identity.sourceURL ?? identity.documentURL).deletingPathExtension().lastPathComponent
+            panel.nameFieldStringValue = name + "-signing-copy.json"
             panel.allowedContentTypes = [.json]
             let destination: URL?
             if let chooseDestination {
@@ -50,6 +53,7 @@ extension AppSession {
             await writeGuidedSigningExchange(
                 data,
                 to: destination,
+                identity: identity,
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,
                 expectedSession: current,
@@ -81,25 +85,46 @@ extension AppSession {
     private func writeGuidedSigningExchange(
         _ data: Data,
         to destination: URL,
+        identity: LeonardoExportIdentity,
         expectedLocation: String,
         expectedContent: String,
         expectedSession: LeonardoGuidedSigningSession,
         expectedSnapshot: DocumentSnapshot?,
         expectedResources: [LeonardoSigningResource]
     ) async {
-        guard await guidedSigningExchangeSourceIsSaved(
-                  location: expectedLocation, content: expectedContent,
-                  session: expectedSession, snapshot: expectedSnapshot
-              ) else { return }
-        guard (try? guidedSigningResources()) == expectedResources else {
-            if expectedSession.snapshot == nil {
-                guidedSigningActionProblem = L10n.text("A referenced image changed. Review the document and export a new signing copy.")
-            } else {
-                markGuidedSigningSnapshotChanged()
-            }
+        guard !stopped, !busy, !saving, !isClosing, !isSyncSuspended,
+              !isCapturingPreview, fileOperationCount == 0,
+              leonardoExportIdentityIsCurrent(identity) else { return }
+        let sources = leonardoExportSources(for: identity)
+        let canonicalDestination = ProcessFileLock.canonicalURL(destination)
+        guard !sources.contains(where: { ProcessFileLock.canonicalURL($0) == canonicalDestination }) else {
+            guidedSigningActionProblem = L10n.text("Choose another file to keep both versions.")
             return
         }
+        fileOperationCount += 1
+        busy = true
+        defer {
+            busy = false
+            fileOperationCount -= 1
+        }
         do {
+            try await authorizeLeonardoExport(sources: sources, destinationURL: destination)
+            guard await guidedSigningExchangeSourceIsSaved(
+                location: expectedLocation, content: expectedContent,
+                session: expectedSession, snapshot: expectedSnapshot
+            ), leonardoExportMayWrite(identity: identity, content: expectedContent,
+                                      snapshotFingerprint: expectedSnapshot?.fingerprint) else { return }
+            guard (try? guidedSigningResources()) == expectedResources else {
+                if expectedSession.snapshot == nil {
+                    guidedSigningActionProblem = L10n.text("A referenced image changed. Review the document and export a new signing copy.")
+                } else {
+                    markGuidedSigningSnapshotChanged()
+                }
+                return
+            }
+            for path in sources + [destination] {
+                try NativeReconciliationLease.shared.check(path, intent: .document)
+            }
             try InstancePathOwnership.shared.claim(destination)
             try Self.writeSigningExchangeAtomically(data, to: destination)
             saveStatus = L10n.text("Signing copy exported")

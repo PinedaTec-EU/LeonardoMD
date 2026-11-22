@@ -662,6 +662,61 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(afterExternalSign, afterSeal)
     }
 
+    func testSigningCopyExportAuthorizesPackageSourceAndDestinationBeforeWriting() async throws {
+        let credentials = LeonardoSigningCredentialStore(
+            service: "eu.pinedatec.LeonardoMD.tests.signing.export-permissions.\(UUID())"
+        )
+        let (root, session) = try fixture(signingCredentialStore: credentials)
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let original = root.appendingPathComponent("form.mdlf")
+        let package = root.appendingPathComponent("form.mdlz")
+        let document = LeonardoDocument(
+            body: "Signature: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: .init(id: "export-permissions", kind: .form, revision: 1,
+                    signing: .init(positions: [.init(id: "owner", label: "Owner")])),
+                fields: ["signature": .init(type: .rubric, signerPosition: "owner")]
+            )
+        )
+        let source = try LeonardoFormatParser.serialize(document)
+        try source.write(to: original, atomically: true, encoding: .utf8)
+        try LeonardoPackageTransport.export(documentURL: original, content: source, to: package)
+        session.authorizePath = { _, _ in }
+        let opened = await session.openLeonardoPackage(package, extractingTo: nil)
+        XCTAssertTrue(opened)
+        await session.prepareGuidedSigningIfNeeded()
+        let workingFile = try XCTUnwrap(session.documentURL).standardizedFileURL
+        let destination = root.appendingPathComponent("existing-signing-copy.json").standardizedFileURL
+        let existing = Data("Unrelated file already at destination".utf8)
+        try existing.write(to: destination)
+        let paths = [workingFile, package.standardizedFileURL, destination]
+
+        for (index, denied) in paths.enumerated() {
+            var authorized: [URL] = []
+            session.authorizePath = { url, intent in
+                guard case .document = intent else {
+                    XCTFail("Signing copy must request document authorization")
+                    throw SyncError.outsideScope
+                }
+                authorized.append(url.standardizedFileURL)
+                if url.standardizedFileURL == denied { throw SyncError.outsideScope }
+            }
+            await session.exportGuidedSigningExchange { _ in destination }
+            XCTAssertEqual(authorized, Array(paths.prefix(index + 1)))
+            XCTAssertEqual(try Data(contentsOf: destination), existing)
+            XCTAssertNotNil(session.guidedSigningActionProblem)
+            XCTAssertFalse(session.guidedSigningContentLocked)
+            XCTAssertEqual(session.fileOperationCount, 0)
+        }
+
+        session.authorizePath = { _, _ in }
+        await session.exportGuidedSigningExchange { _ in destination }
+        let exported = try LeonardoSigningExchange.decoded(Data(contentsOf: destination))
+        XCTAssertEqual(exported.documentID, "export-permissions")
+        XCTAssertNil(session.guidedSigningActionProblem)
+    }
+
     func testSignedCopyImportRequiresSavedSourceAndKeepsDirtyDraftUnsealed() async throws {
         let credentials = LeonardoSigningCredentialStore(
             service: "eu.pinedatec.LeonardoMD.tests.signing.import.\(UUID())"
