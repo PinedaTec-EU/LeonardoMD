@@ -259,13 +259,17 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         try Self.validateCredentialBindings(in: session, trustStore: trustStore)
     }
 
-    /// Rebinds an explicitly imported session to the receiver's local file
-    /// after the caller has verified the source, resources and public trust
-    /// registry. When a local sidecar already exists, the incoming progress
-    /// must be a monotonic extension of it: every local assignment, location,
-    /// signature and chain prefix remains byte-for-byte equal. This prevents
-    /// an older phone export or a forked exchange from erasing progress in a
-    /// second app instance.
+    public func requiresLocalReview(comparedTo local: LeonardoGuidedSigningSession) -> Bool {
+        session.positions.values.contains { received in
+            received.signature == nil
+                && received.locations.count > (local.positions[received.positionID]?.locations.count ?? 0)
+        }
+    }
+
+    /// Rebinds an explicitly imported session to the receiver's local file.
+    /// Only completed positions can transfer review consent. The caller must
+    /// verify the detached proofs with locally approved keys before saving or
+    /// using the result. Unfinished positions keep their local review progress.
     public func reboundSession(
         onto local: LeonardoGuidedSigningSession?,
         documentLocation: String
@@ -287,42 +291,27 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
                   local.declaration == session.declaration,
                   local.identityCommitmentSalt == session.identityCommitmentSalt,
                   local.state != .invalidated,
-                  local.snapshot == nil || local.snapshot == session.snapshot,
-                  session.completionOrder.starts(with: local.completionOrder),
-                  local.consumedAuthorizationIDs.isSubset(of: session.consumedAuthorizationIDs) else {
+                  session.completionOrder.starts(with: local.completionOrder) else {
                 throw LeonardoSigningError.staleStorage
             }
-            for position in local.declaration.positions {
-                guard let localProgress = local.positions[position.id],
-                      let importedProgress = session.positions[position.id],
-                      importedProgress.locations.count >= localProgress.locations.count,
-                      Array(importedProgress.locations.prefix(localProgress.locations.count)) == localProgress.locations else {
+            if let localSeal = local.snapshot, let incomingSeal = session.snapshot {
+                guard localSeal.source == incomingSeal.source,
+                      localSeal.sourceSHA256 == incomingSeal.sourceSHA256,
+                      localSeal.resources == incomingSeal.resources else {
                     throw LeonardoSigningError.staleStorage
                 }
-                if let assignment = localProgress.assignment {
-                    guard importedProgress.assignment == assignment else {
-                        throw LeonardoSigningError.staleStorage
-                    }
+            }
+            for (positionID, localProgress) in local.positions {
+                guard let importedProgress = session.positions[positionID] else {
+                    throw LeonardoSigningError.staleStorage
                 }
-                if let signature = localProgress.signature {
-                    guard importedProgress.signature == signature,
-                          importedProgress.state == .signed else {
-                        throw LeonardoSigningError.staleStorage
-                    }
-                }
-                switch localProgress.state {
-                case .pending:
-                    break
-                case .reviewing, .paused:
-                    guard importedProgress.state != .pending else {
-                        throw LeonardoSigningError.staleStorage
-                    }
-                case .readyToSign:
-                    guard importedProgress.state == .readyToSign || importedProgress.state == .signed else {
-                        throw LeonardoSigningError.staleStorage
-                    }
-                case .signed:
-                    guard importedProgress.state == .signed else {
+                // A signed advance may omit or carry a different draft for an
+                // unfinished position. Keep that position's local decisions.
+                // A copy without a signed advance still must not be older.
+                if importedProgress.signature != nil || session.completionOrder == local.completionOrder {
+                    guard importedProgress.locations.starts(with: localProgress.locations),
+                          localProgress.assignment.map({ $0 == importedProgress.assignment }) ?? true,
+                          localProgress.signature.map({ $0 == importedProgress.signature }) ?? true else {
                         throw LeonardoSigningError.staleStorage
                     }
                 }
@@ -330,6 +319,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         }
         var rebound = session
         rebound.documentLocation = documentLocation
+        rebound.retainLocalUnsignedConsent(from: local)
         guard rebound.isPersistable else { throw LeonardoSigningError.storageFailure }
         return rebound
     }
@@ -358,11 +348,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
             let reference = resource.reference
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .precomposedStringWithCanonicalMapping
-            guard !reference.isEmpty,
-                  !reference.hasPrefix("/"),
-                  !reference.contains("\\"),
-                  !reference.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }),
-                  !reference.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else {
+            guard LeonardoLocalImagePolicy.portableSigningImagePath(reference) != nil else {
                 throw LeonardoSigningError.invalidResourceReference(reference)
             }
             guard seen.insert(reference).inserted else {

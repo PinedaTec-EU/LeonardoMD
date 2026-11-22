@@ -120,7 +120,7 @@ extension AppSession {
         case .invalidResourceReference where guidedSigningSession?.snapshot == nil,
              .resourceTooLarge where guidedSigningSession?.snapshot == nil:
             guidedSigningActionProblem = L10n.text(
-                "Use readable local images within the document or its project and within the signing size limits."
+                "Use readable local images with paths relative to the document and within the signing size limits."
             )
         case .requiredDataMissing(let fieldIDs):
             let names = fieldIDs.map { leonardoDocument?.metadata.fields[$0]?.label ?? $0 }
@@ -364,18 +364,10 @@ extension AppSession {
         if let projectURL { roots.append(projectURL.standardizedFileURL) }
         let rootPaths = roots.map { $0.resolvingSymlinksInPath().path }
         return try references.map { reference in
-            guard let parsed = URLComponents(string: reference), !parsed.path.isEmpty else {
+            guard let path = LeonardoLocalImagePolicy.portableSigningImagePath(reference) else {
                 throw LeonardoSigningError.invalidResourceReference(reference)
             }
-            let candidate: URL
-            if parsed.scheme?.lowercased() == "file" {
-                guard let url = parsed.url else { throw LeonardoSigningError.invalidResourceReference(reference) }
-                candidate = url
-            } else if parsed.path.hasPrefix("/") {
-                candidate = URL(fileURLWithPath: parsed.path)
-            } else {
-                candidate = base.appendingPathComponent(parsed.path)
-            }
+            let candidate = base.appendingPathComponent(path)
             let resolved = candidate.standardizedFileURL.resolvingSymlinksInPath()
             guard rootPaths.contains(where: { resolved.path == $0 || resolved.path.hasPrefix($0 + "/") }),
                   LeonardoLocalImagePolicy.extensions.contains(resolved.pathExtension.lowercased()) else {

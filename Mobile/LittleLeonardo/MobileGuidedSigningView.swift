@@ -276,6 +276,16 @@ struct MobileGuidedSigningView: View {
                 )
                 .font(.footnote)
                 .foregroundStyle(MobileClassic.secondary)
+                if ready && initialExchange.requiresLocalReview(comparedTo: session) {
+                    Label(
+                        spanish
+                            ? "Revisa y confirma las ubicaciones pendientes en este dispositivo antes de firmar."
+                            : "Review and confirm the remaining locations on this device before signing.",
+                        systemImage: "info.circle"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(MobileClassic.secondary)
+                }
                 if localLoadFailed {
                     Label(
                         spanish

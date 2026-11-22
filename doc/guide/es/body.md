@@ -231,7 +231,7 @@ opcionales que están vacíos y seguirán vacíos. Es un aviso informativo, no u
 segunda confirmación; desaparece cuando se sella la primera instantánea de
 ubicación.
 
-Usa archivos locales para las imágenes de los formularios con firma guiada.
+Usa rutas de imagen relativas a la carpeta del documento en los formularios con firma guiada.
 Sustituye las imágenes en línea en el original antes de firmar para que el
 sello cubra su contenido. Si una imagen cambia o falla al abrirse durante la
 revisión, vuelve a leer la vista actualizada antes de confirmar. Puedes editar
@@ -244,7 +244,11 @@ muestra el motivo y la rúbrica permanece oculta.
 
 ![Panel del Mac con una firma verificada, una clave sin confirmar y una verificación fallida](assets/guided-signing-verification.png)
 
-Una copia de firma antigua o con avances distintos conserva el progreso guardado en el Mac. Usa una copia actualizada para reintentar la importación.
+Una copia de firma incorpora las firmas completas que Leonardo puede verificar.
+El Mac conserva la revisión pendiente guardada en esa instalación. Si revisaste
+ubicaciones en otro dispositivo y aún falta la firma final, confirma aquí cada
+ubicación antes de firmar. Usa una copia actualizada si Leonardo rechaza una
+copia anterior o con avances distintos.
 
 Guarda el formulario cumplimentado en el Mac antes de confirmar la primera
 ubicación o intercambiar una copia de firma. La primera confirmación sella las respuestas guardadas, las
@@ -699,6 +703,9 @@ forma independiente pinta la rúbrica en su aparición exacta. La revisión
 parcial sigue visible como pendiente. Antes de confirmar ubicaciones, usa el lector completo si hay rúbricas ordinarias, imágenes incrustadas u objetos de página, como una rúbrica insertada en la página.
 Después de verificar una copia más reciente, Little Leonardo conserva ese progreso
 cuando vuelves a abrir una copia anterior de la misma sesión de firma.
+Confirma las ubicaciones una a una en esta instalación antes de finalizar la
+firma. Una copia separada transfiere firmas verificadas y puedes continuar aquí
+la revisión pendiente que hayas guardado en este dispositivo.
 **Exportar copia firmada** muestra las identidades declaradas y las rúbricas que
 saldrán del dispositivo. No incluye claves privadas, rutas locales ni perfiles no
 asignados. Importa el JSON en el Mac solo después de comprobar la fuente local,

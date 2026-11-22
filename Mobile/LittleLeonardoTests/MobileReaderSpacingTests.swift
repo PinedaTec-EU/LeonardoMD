@@ -447,12 +447,40 @@ final class MobileReaderSpacingTests: XCTestCase {
         } catch LeonardoSigningError.staleStorage {}
     }
 
+    func testReceivedUnsignedLocationsCannotCompleteReview() async throws {
+        let fixture = try makeGuidedSigningExchanges()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = LeonardoSigningStore(directoryURL: root)
+        let document = try fixture.signed.document()
+        let location = "mobile://fixture/document"
+        let trusted = try LeonardoSigningTrustRegistry(credentials: fixture.reviewed.trustedCredentials)
+        let received = try await MobileGuidedSigningView.restoreSigningProgress(
+            exchange: fixture.reviewed, document: document, resources: [], localDocumentLocation: location,
+            store: store, trustStore: trusted
+        )
+        XCTAssertNil(received.session.snapshot)
+        XCTAssertEqual(received.session.positions["owner"]?.state, .pending)
+        XCTAssertNil(received.session.positions["owner"]?.assignment)
+        XCTAssertTrue(try XCTUnwrap(received.session.positions["owner"]).locations.isEmpty)
+
+        var local = fixture.reviewed.session
+        local.documentLocation = location
+        try await store.saveSession(local, replacing: nil)
+        let reopened = try await MobileGuidedSigningView.restoreSigningProgress(
+            exchange: fixture.reviewed, document: document, resources: [], localDocumentLocation: location,
+            store: store, trustStore: trusted
+        )
+        XCTAssertEqual(reopened.session, local)
+        XCTAssertEqual(reopened.session.positions["owner"]?.state, .readyToSign)
+    }
+
     private func makeSignedGuidedSigningExchange() throws -> LeonardoSigningExchange {
         try makeGuidedSigningExchanges().signed
     }
 
     private func makeGuidedSigningExchanges() throws
-        -> (original: LeonardoSigningExchange, signed: LeonardoSigningExchange) {
+        -> (original: LeonardoSigningExchange, reviewed: LeonardoSigningExchange, signed: LeonardoSigningExchange) {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "owner", label: "Owner")
         ])
@@ -499,6 +527,10 @@ final class MobileReaderSpacingTests: XCTestCase {
             positionID: "owner", fieldID: target.fieldID, occurrence: target.occurrence,
             document: document, contextRead: true, rubric: rubric, at: date
         )
+        let reviewed = try LeonardoSigningExchange(
+            document: document, session: session,
+            trustedCredentials: [keyPair.credential], at: date
+        )
         let trustStore = try LeonardoSigningTrustRegistry(credentials: [keyPair.credential])
         _ = try session.sign(
             positionID: "owner", keyPair: keyPair, document: document,
@@ -508,7 +540,7 @@ final class MobileReaderSpacingTests: XCTestCase {
             document: document, session: session,
             trustedCredentials: [keyPair.credential], at: date
         )
-        return (original, signed)
+        return (original, reviewed, signed)
     }
 
     private func assertReadOnlyMobilePreview(library: MobileLibrary, projectID: UUID, file: CorpusFile,

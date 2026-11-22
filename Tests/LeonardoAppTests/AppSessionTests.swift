@@ -798,6 +798,29 @@ final class AppSessionTests: XCTestCase {
         let afterOlderImport = try await session.guidedSigningStore.session(id: baseline.id)
         XCTAssertEqual(afterOlderImport, baseline)
 
+        var foreignReview = baseline
+        _ = try foreignReview.begin(positionID: "owner", document: document)
+        try foreignReview.confirmLocation(positionID: "owner", fieldID: "signature", occurrence: 0,
+            document: document, contextRead: true, rubric: LeonardoRubric(strokes: [
+                .init(color: "#112233", width: 2, style: .solid,
+                      points: [.init(x: 1, y: 1), .init(x: 2, y: 2)])
+            ]), at: Date())
+        XCTAssertEqual(foreignReview.positions["owner"]?.state, .readyToSign)
+        let reviewCopy = try LeonardoSigningExchange(
+            document: document, session: foreignReview, trustedCredentials: [key.credential], at: Date())
+        try LeonardoSigningExchange.encoded(reviewCopy).write(to: exchangeURL)
+        try await credentials.trustPublicCredential(key.credential)
+        await session.readGuidedSigningExchange(from: exchangeURL)
+        XCTAssertNil(session.guidedSigningActionProblem)
+        XCTAssertEqual(session.guidedSigningStatus,
+                       L10n.text("Signing copy imported. Review and confirm the remaining locations on this Mac before signing."))
+        XCTAssertEqual(session.guidedSigningSession?.positions["owner"], baseline.positions["owner"])
+        XCTAssertNil(session.guidedSigningSession?.snapshot)
+        let importedReview = try XCTUnwrap(session.guidedSigningSession)
+        let storedReview = try await session.guidedSigningStore.session(id: baseline.id)
+        XCTAssertEqual(storedReview, importedReview)
+        try await credentials.removeTrustedPublicCredential(id: key.credential.id)
+
         let draft = try XCTUnwrap(document.applyingFormValues(["answer": .string("Updated")]))
         let draftSource = try LeonardoFormatParser.serialize(draft)
         var detached = baseline
@@ -818,14 +841,14 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(session.guidedSigningActionProblem, L10n.text("Save the document before exchanging a signing copy."))
         XCTAssertNil(session.guidedSigningSession?.snapshot)
         let beforeSave = try await session.guidedSigningStore.session(id: baseline.id)
-        XCTAssertEqual(beforeSave, baseline)
+        XCTAssertEqual(beforeSave, importedReview)
         let acceptedBeforeSave = try await credentials.trustedPublicCredentials()
         XCTAssertTrue(acceptedBeforeSave.isEmpty)
 
         session.authorizePath = { _, _ in throw SyncError.outsideScope }
         await session.save()
         await session.readGuidedSigningExchange(from: exchangeURL)
-        XCTAssertEqual(session.guidedSigningSession, baseline)
+        XCTAssertEqual(session.guidedSigningSession, importedReview)
         session.unsavedChangesDecision = { _ in .discard }
         let discarded = await session.resolveUnsavedChanges()
         XCTAssertTrue(discarded)
@@ -838,7 +861,7 @@ final class AppSessionTests: XCTestCase {
         try original.write(to: documentURL, atomically: true, encoding: .utf8)
         await session.readGuidedSigningExchange(from: exchangeURL)
         XCTAssertTrue(session.externalConflict)
-        XCTAssertEqual(session.guidedSigningSession, baseline)
+        XCTAssertEqual(session.guidedSigningSession, importedReview)
         let acceptedAfterExternalChange = try await credentials.trustedPublicCredentials()
         XCTAssertTrue(acceptedAfterExternalChange.isEmpty)
 
@@ -1096,7 +1119,7 @@ final class AppSessionTests: XCTestCase {
         let invalidImages = [
             (image, "Replace online images with local files before signing."),
             ("![Missing](missing.png)",
-             "Use readable local images within the document or its project and within the signing size limits.")
+             "Use readable local images with paths relative to the document and within the signing size limits.")
         ]
         for (index, (reference, warning)) in invalidImages.enumerated() {
             let id = "guided-images-\(index)"

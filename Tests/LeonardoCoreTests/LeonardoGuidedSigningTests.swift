@@ -127,6 +127,48 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testSigningImagesRequirePortablePathsInTheSourceAndExchange() throws {
+        for reference in ["/private/form/image.png", "file:///private/form/image.png",
+                          "%2Fprivate/form/image.png", "assets/%2e%2e/image.png", "assets%5Cimage.png"] {
+            var document = try makeDocument()
+            document.body += "\n\n![Image](\(reference))"
+            let session = try LeonardoGuidedSigningSession(document: document, at: now)
+            let resource = LeonardoSigningResource(reference: reference, bytes: Data([1, 2]))
+            XCTAssertThrowsError(try LeonardoSigningSnapshot.capture(
+                document: document, resources: [resource], at: now
+            )) {
+                XCTAssertEqual($0 as? LeonardoSigningError, .invalidResourceReference(reference))
+            }
+            XCTAssertThrowsError(try LeonardoSigningExchange(
+                document: document, session: session, trustedCredentials: [], at: now
+            ))
+        }
+
+        let reference = "assets/fixed%20image.png"
+        var document = try makeDocument()
+        document.body += "\n\n![Image](\(reference))"
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let resources = [LeonardoSigningResource(reference: reference, bytes: Data([1, 2]))]
+        let seal = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: now)
+        XCTAssertTrue(seal.matches(document: document, resources: resources))
+        let exchange = try LeonardoSigningExchange(
+            document: document, resources: resources, session: session, trustedCredentials: [], at: now
+        )
+        let encoded = try LeonardoSigningExchange.encoded(exchange)
+        XCTAssertEqual(try LeonardoSigningExchange.decoded(encoded).signingResources(), resources)
+
+        var incoming = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var absolute = document
+        absolute.body = document.body.replacingOccurrences(of: reference, with: "file:///private/form/image.png")
+        let absoluteSource = try LeonardoFormatParser.serialize(absolute)
+        incoming["source"] = absoluteSource
+        incoming["sourceSHA256"] = Data(SHA256.hash(data: Data(absoluteSource.utf8))).base64EncodedString()
+        incoming["resources"] = []
+        XCTAssertThrowsError(try LeonardoSigningExchange.decoded(JSONSerialization.data(withJSONObject: incoming))) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .invalidResourceReference("file:///private/form/image.png"))
+        }
+    }
+
     func testSigningImagePathsDecodeHTMLReferencesAndRecognizeEmbeddedImages() throws {
         var document = try makeDocument()
         document.body += "\n\n" + #"<img src="a&amp;b.png" srcset="caf&eacute;.png 1x, a&amp;b.png 2x">"#
@@ -763,8 +805,15 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         )
         let accepted = try LeonardoSigningExchange.decoded(LeonardoSigningExchange.encoded(exchange))
         try accepted.validate(against: document, trustStore: trust)
-        let baseline = try accepted.reboundSession(onto: nil, documentLocation: "/fixture.mdlf")
-        XCTAssertEqual(baseline.positions["titular"]?.state, .paused)
+        let received = try accepted.reboundSession(onto: nil, documentLocation: "/fixture.mdlf")
+        XCTAssertEqual(received.positions["titular"]?.state, .pending)
+        XCTAssertNil(received.positions["titular"]?.assignment)
+        XCTAssertNil(received.rubricByPosition["titular"])
+        XCTAssertNil(received.snapshot)
+        XCTAssertTrue(received.isPristine)
+        session.documentLocation = "/fixture.mdlf"
+        let baseline = try accepted.reboundSession(onto: session, documentLocation: "/fixture.mdlf")
+        XCTAssertEqual(baseline, session)
 
         var withoutSeal = session
         withoutSeal.snapshot = nil
@@ -792,6 +841,66 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         var resumed = baseline
         try resumed.resume(positionID: "titular", at: now)
         XCTAssertEqual(try resumed.begin(positionID: "titular", document: document).first, target)
+    }
+
+    func testImportedProofPreservesLocalPartialReviewAndRejectsForeignUnsignedConsent() throws {
+        let document = try makeDocument()
+        let location = "/fixture.mdlf"
+        var local = try LeonardoGuidedSigningSession(document: document, at: now, documentLocation: location)
+        let ownerKey = LeonardoSigningKeyPair(credentialID: "owner-unsigned")
+        let witnessKey = LeonardoSigningKeyPair(credentialID: "witness-signed")
+        let trust = try LeonardoSigningTrustRegistry(credentials: [ownerKey.credential, witnessKey.credential])
+        let ownerRubric = rubric(seed: 1)
+        let witnessRubric = rubric(seed: 2)
+        try assign(profile(name: "Ana", number: "A-1", rubric: ownerRubric),
+                   key: ownerKey, to: "titular", session: &local)
+        let ownerTargets = try local.begin(positionID: "titular", document: document)
+        let first = try XCTUnwrap(ownerTargets.first)
+        try local.confirmLocation(positionID: first.positionID, fieldID: first.fieldID, occurrence: first.occurrence,
+                                  document: document, contextRead: true, rubric: ownerRubric, at: now)
+        try local.pause(positionID: "titular", at: now)
+
+        var foreign = local
+        _ = try foreign.begin(positionID: "titular", document: document)
+        for target in ownerTargets.dropFirst() {
+            try foreign.confirmLocation(positionID: target.positionID, fieldID: target.fieldID,
+                                        occurrence: target.occurrence, document: document,
+                                        contextRead: true, rubric: ownerRubric, at: now)
+        }
+        XCTAssertEqual(foreign.positions["titular"]?.state, .readyToSign)
+        let unsignedCopy = try LeonardoSigningExchange(
+            document: document, session: foreign, trustedCredentials: trust.allCredentials, at: now
+        )
+        foreign = try unsignedCopy.reboundSession(onto: nil, documentLocation: "/second-device.mdlf")
+        let witnessReviewTime = now.addingTimeInterval(60)
+        try assign(profile(name: "Bea", number: "B-1", rubric: witnessRubric),
+                   key: witnessKey, to: "testigo", session: &foreign)
+        for target in try foreign.begin(positionID: "testigo", document: document) {
+            try foreign.confirmLocation(positionID: target.positionID, fieldID: target.fieldID,
+                                        occurrence: target.occurrence, document: document,
+                                        contextRead: true, rubric: witnessRubric, at: witnessReviewTime)
+        }
+        let witnessSignature = try foreign.sign(positionID: "testigo", keyPair: witnessKey,
+                                                document: document, trustStore: trust, at: witnessReviewTime)
+        let exchange = try LeonardoSigningExchange(
+            document: document, session: foreign, trustedCredentials: trust.allCredentials, at: witnessReviewTime
+        )
+        XCTAssertNotEqual(local.snapshot?.capturedAt, foreign.snapshot?.capturedAt)
+        try exchange.validate(against: document, trustStore: trust)
+
+        let transferred = try exchange.reboundSession(onto: nil, documentLocation: location)
+        XCTAssertEqual(transferred.positions["titular"]?.state, .pending)
+        XCTAssertTrue(try XCTUnwrap(transferred.positions["titular"]).locations.isEmpty)
+        XCTAssertEqual(transferred.positions["testigo"]?.signature, witnessSignature)
+
+        var merged = try exchange.reboundSession(onto: local, documentLocation: location)
+        XCTAssertEqual(merged.positions["titular"], local.positions["titular"])
+        XCTAssertEqual(merged.signatureVerification(document: document, trustStore: trust), ["testigo": .valid])
+        XCTAssertThrowsError(try merged.sign(positionID: "titular", keyPair: ownerKey,
+                                             document: document, trustStore: trust, at: witnessReviewTime))
+        XCTAssertTrue(try merged.begin(positionID: "titular", document: document).contains(
+            try XCTUnwrap(ownerTargets.last)
+        ))
     }
 
     func testSigningExchangeRejectsResourcesThatExceedEncodedEnvelopeLimit() throws {

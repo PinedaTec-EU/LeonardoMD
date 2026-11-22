@@ -221,8 +221,9 @@ are currently blank and will remain blank. This is an informational notice,
 not a second confirmation; it disappears once the first location snapshot is
 sealed.
 
-Use local files for images in guided signing forms. Replace online images
-in the original before signing, so the seal can cover the actual image bytes.
+Use image paths relative to the document folder in guided-signing forms.
+Replace online images in the original before signing, so the seal can cover
+the actual image bytes.
 If an image changes or fails to open during review, check the updated preview
 before confirming again.
 You can edit and save an unsigned draft to replace a missing image or an
@@ -234,7 +235,10 @@ shows the reason and keeps its rubric hidden.
 
 ![Mac signing inspector with a verified signature, an unconfirmed key and a failed verification](guide/en/assets/guided-signing-verification.png)
 
-An older or divergent signing copy leaves the progress already saved on the Mac intact. Use a current copy to retry the import.
+A signing copy brings completed signatures that Leonardo can verify. The Mac
+keeps the unfinished review already saved on that installation. For locations
+reviewed elsewhere without a final signature, confirm each location here before
+signing. Use a current copy if Leonardo rejects an older or divergent copy.
 
 Save the completed form on the Mac before confirming the first location or
 exchanging a signing copy. The
@@ -677,7 +681,9 @@ as needed. The preview never edits the copy; only a detached, independently
 verified final signature paints a rubric at its exact occurrence. Partial review
 remains visibly pending. Use the full reader before confirming locations if the form contains ordinary rubric answers, embedded images or page objects such as a rubric inserted on the page.
 After you verify a newer copy, Little Leonardo keeps the newer progress when
-you reopen an older copy of the same signing session.
+you reopen an older copy of the same signing session. Complete the individual
+location reviews on this installation before final signing. A detached copy
+transfers verified signatures and you can resume unfinished local review here.
 **Export signed copy** shows the declared identities and rubrics that will leave
 the device. It includes no private key, local path or unrelated profile. Import
 the JSON copy on the Mac only after it verifies the local source, frozen snapshot,

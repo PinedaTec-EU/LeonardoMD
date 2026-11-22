@@ -42,9 +42,26 @@ public enum LeonardoLocalImagePolicy {
         return try references.filter { reference in
             // The bytes of a data URL are already in the signed source.
             if reference.isEmpty || reference.lowercased().hasPrefix("data:") { return false }
-            guard isLocalReference(reference) else { throw LeonardoSigningError.invalidResourceReference(reference) }
+            guard isLocalReference(reference), portableSigningImagePath(reference) != nil else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
             return seen.insert(reference).inserted
         }
+    }
+
+    /// A signing copy travels between installations, so image references use
+    /// a relative URL path. Validate its decoded path before any file lookup.
+    public static func portableSigningImagePath(_ reference: String) -> String? {
+        guard let parts = URLComponents(string: reference), parts.scheme == nil, parts.host == nil else {
+            return nil
+        }
+        let path = parts.path
+        guard !path.isEmpty, !path.hasPrefix("/"), !path.contains("\\"),
+              !path.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }),
+              !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else {
+            return nil
+        }
+        return path
     }
 
     public static func hasEmbeddedSigningImages(in document: LeonardoDocument) throws -> Bool {

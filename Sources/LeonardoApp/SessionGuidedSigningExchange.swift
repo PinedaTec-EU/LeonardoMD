@@ -262,7 +262,9 @@ extension AppSession {
         refreshGuidedSigningTargets()
         guidedSigningError = nil
         guidedSigningActionProblem = nil
-        guidedSigningStatus = L10n.text("Signed copy imported after local integrity and trust checks.")
+        guidedSigningStatus = exchange.requiresLocalReview(comparedTo: rebound)
+            ? L10n.text("Signing copy imported. Review and confirm the remaining locations on this Mac before signing.")
+            : L10n.text("Signed copy imported after local integrity and trust checks.")
     }
 
     private func signingExchangeTrust(

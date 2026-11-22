@@ -666,12 +666,30 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         }
     }
 
+    /// Foreign drafts cannot establish consent or bind a local signer to an
+    /// unsigned position. Completed positions retain their detached proofs.
+    mutating func retainLocalUnsignedConsent(from local: Self?) {
+        for positionID in pendingPositionIDs {
+            positions[positionID] = local?.positions[positionID]
+                ?? LeonardoSigningPositionProgress(positionID: positionID, at: createdAt)
+            rubricByPosition[positionID] = local?.rubricByPosition[positionID]
+        }
+        currentPositionID = local?.currentPositionID
+        // Completed proofs include the incoming seal's capture date.
+        // Local unfinished reviews commit to the same source and resources.
+        if completionOrder.isEmpty { snapshot = local?.snapshot }
+        let signedAuthorizations = completionOrder.compactMap { positions[$0]?.assignment?.authorizationID }
+        consumedAuthorizationIDs = (local?.consumedAuthorizationIDs ?? []).union(signedAuthorizations)
+        if let local { updatedAt = max(updatedAt, local.updatedAt) }
+    }
+
     /// An exchange can carry unfinished review. The absence of a detached
     /// proof never exempts that progress from the document's signing rules.
     func validateExchangeProgress(
         document: LeonardoDocument,
         resources: [LeonardoSigningResource]
     ) throws {
+        _ = try LeonardoLocalImagePolicy.signingReferences(in: document)
         let hasConfirmedLocations = positions.values.contains { !$0.locations.isEmpty }
         guard state != .invalidated, (snapshot != nil) == hasConfirmedLocations else {
             throw LeonardoSigningError.integrityFailure

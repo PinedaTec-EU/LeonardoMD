@@ -262,7 +262,7 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
         let snapshots = try resources
             .map { resource -> LeonardoSigningResourceSnapshot in
                 let reference = Self.canonicalReference(resource.reference)
-                guard Self.isSafeReference(reference) else {
+                guard LeonardoLocalImagePolicy.portableSigningImagePath(reference) != nil else {
                     throw LeonardoSigningError.invalidResourceReference(resource.reference)
                 }
                 guard resource.bytes.count <= Self.maximumResourceBytes else {
@@ -298,7 +298,7 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
               Data(SHA256.hash(data: Data(currentSource.utf8))) == sourceSHA256 else { return false }
         guard let currentResources = try? resources.map({ resource in
             let reference = Self.canonicalReference(resource.reference)
-            guard Self.isSafeReference(reference) else { throw LeonardoSigningError.invalidResourceReference(resource.reference) }
+            guard LeonardoLocalImagePolicy.portableSigningImagePath(reference) != nil else { throw LeonardoSigningError.invalidResourceReference(resource.reference) }
             guard resource.bytes.count <= Self.maximumResourceBytes else { throw LeonardoSigningError.resourceTooLarge(reference) }
             return LeonardoSigningResourceSnapshot(reference: reference,
                                                     sha256: Data(SHA256.hash(data: resource.bytes)),
@@ -308,15 +308,6 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
         return availableReferences.count == currentResources.count
             && Set(requiredReferences).isSubset(of: availableReferences)
             && currentResources == self.resources
-    }
-
-    private static func isSafeReference(_ reference: String) -> Bool {
-        let value = reference.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty,
-              !value.hasPrefix("/"),
-              !value.contains("\\"),
-              !value.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }) else { return false }
-        return !value.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
     }
 
     private static func canonicalReference(_ reference: String) -> String {
