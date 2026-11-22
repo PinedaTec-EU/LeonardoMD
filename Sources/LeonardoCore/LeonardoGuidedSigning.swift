@@ -801,23 +801,19 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
               let expression = try? NSRegularExpression(
                 pattern: #"\{\{\s*field:([A-Za-z][A-Za-z0-9_.-]{0,63})\s*\}\}"#
               ) else { return [] }
-        // Keep the source ranges from Swift and let the same Markdown engine
-        // used by the preview distinguish visible nested text from code.
-        let searchableBody = Self.maskLiteralFieldSpans(body)
-        let range = NSRange(searchableBody.startIndex..<searchableBody.endIndex, in: searchableBody)
-        let matches = expression.matches(in: searchableBody, range: range)
-        let codeOrdinals = try LeonardoMarkdownLiteralFields.shared.ordinals(
-            in: body, fieldRanges: matches.map { $0.range(at: 1) }
+        // The bundled parser resolves the visible text. Keep the original
+        // ranges so each reviewed control is bound to its exact source.
+        let range = NSRange(body.startIndex..<body.endIndex, in: body)
+        let matches = expression.matches(in: body, range: range)
+        let visible = try LeonardoSigningMarkdown.shared.visibleOrdinals(
+            in: body, fieldRanges: matches.map { $0.range(at: 1) }, fieldIDs: fieldIDs
         )
         var occurrences: [String: Int] = [:]
         return matches.enumerated().compactMap { ordinal, match in
-            guard !codeOrdinals.contains(ordinal) else { return nil }
-            guard let fieldRange = Range(match.range(at: 1), in: searchableBody) else { return nil }
-            let fieldID = String(searchableBody[fieldRange])
-            guard fieldIDs.contains(fieldID),
-                  let originalTokenRange = Range(match.range, in: body) else {
-                return nil
-            }
+            guard visible.contains(ordinal),
+                  let fieldRange = Range(match.range(at: 1), in: body),
+                  let originalTokenRange = Range(match.range, in: body) else { return nil }
+            let fieldID = String(body[fieldRange])
             let occurrence = occurrences[fieldID, default: 0]
             occurrences[fieldID] = occurrence + 1
             let start = body.index(originalTokenRange.lowerBound, offsetBy: -80, limitedBy: body.startIndex) ?? body.startIndex
@@ -830,35 +826,6 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
                 contextSHA256: Data(SHA256.hash(data: Data(body[start..<end].utf8)))
             )
         }.sorted { $0.sourceOffset < $1.sourceOffset }
-    }
-
-    private static func maskLiteralFieldSpans(_ body: String) -> String {
-        let masked = NSMutableString(string: body)
-        let wholeRange = NSRange(location: 0, length: masked.length)
-        let patterns = [
-            // Raw HTML code/pre/script/style elements and comments are not
-            // text nodes that the renderer turns into form controls.
-            #"(?is)<!--.*?(?:-->|\z)"#,
-            #"(?is)<(code|pre|script|style)\b[^>]*>.*?(?:</\1\s*>|\z)"#
-        ]
-        for pattern in patterns {
-            guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }
-            for match in expression.matches(in: masked as String, range: wholeRange).reversed() {
-                let original = masked.substring(with: match.range)
-                // NSRegularExpression ranges are UTF-16 offsets. Preserve the
-                // exact code-unit length while masking so a non-ASCII literal
-                // cannot shift a later target back into the wrong source span.
-                let replacement = original.utf16.reduce(into: String()) { result, unit in
-                    switch unit {
-                    case 0x0A: result.append("\n")
-                    case 0x0D: result.append("\r")
-                    default: result.append(" ")
-                    }
-                }
-                masked.replaceCharacters(in: match.range, with: replacement)
-            }
-        }
-        return masked as String
     }
 
     private static func makeCommitmentSalt() -> Data {

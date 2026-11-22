@@ -752,6 +752,10 @@ extension AppSession {
             guidedSigningActionProblem = L10n.text("Check the signer’s full name and identity document.")
         case .invalidCredential:
             guidedSigningActionProblem = L10n.text("The credential could not be unlocked. Check the password and try again.")
+        case .unmappedSigningLocation:
+            guidedSigningActionProblem = L10n.text("A rubric in the document does not match an exact location in the source. Check how the rubric field is written.")
+        case .remoteImagesNotSealable:
+            guidedSigningActionProblem = L10n.text("Replace online images with local files before signing.")
         case .requiredDataMissing(let fieldIDs):
             let names = fieldIDs.map { leonardoDocument?.metadata.fields[$0]?.label ?? $0 }
             guidedSigningActionProblem = L10n.format("Complete the required fields before signing: %@.", names.joined(separator: ", "))

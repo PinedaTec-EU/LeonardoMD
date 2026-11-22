@@ -1,10 +1,15 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v114-en.mdlz` and `Guide-v114-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v115-en.mdlz` and `Guide-v115-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v114/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v115/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v115 explains the fixed local image requirement and verified-only ink for
+guided signing positions. Packaged Help validation remains pending.
+Guide v115 EN SHA-256: `ab866a450c5725f35cb905a68fddc9f0199237044accd2cc3cbfb8a6ecd28a34`
+Guide v115 ES SHA-256: `76f2871e1972ea8070789cf78d2d1b32781560e3a89afda427fa4bd3d3e2bd1d`
 
 Guide v114 explains saving the form before the first confirmation or exchange, recovering a
 trusted sealed revision through Save Copy, and blocked confirmation when a local

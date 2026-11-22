@@ -224,6 +224,11 @@ are currently blank and will remain blank. This is an informational notice,
 not a second confirmation; it disappears once the first location snapshot is
 sealed.
 
+Use local files for images in guided signing forms. Replace online images
+in the original before signing, so the seal can cover the actual image bytes.
+Little Leonardo needs a fresh exported copy after you replace them. A guided
+rubric stays blank until Leonardo verifies its signature at that occurrence.
+
 Save the completed form on the Mac before confirming the first location or
 exchanging a signing copy. The
 first confirmation seals the saved answers, assignments, document revision

@@ -378,7 +378,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     /// Returns whether the exact occurrence is present in the current DOM.
     /// Guided signing must not offer a confirmation control for a source
     /// token that the renderer did not materialize as a form target.
-    func hasFieldTarget(_ fieldID: String, occurrence: Int) async -> Bool {
+    func hasFieldTarget(_ fieldID: String, occurrence: Int, expectedCount: Int? = nil) async -> Bool {
         guard occurrence >= 0, let webView,
               let fieldData = try? JSONEncoder().encode(fieldID),
               let fieldJSON = String(data: fieldData, encoding: .utf8) else { return false }
@@ -387,8 +387,9 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             try await flushPendingRender()
             try await waitUntilReady()
             guard self.webView === webView, content == expected else { return false }
+            let countArgument = expectedCount.map { ", \($0)" } ?? ""
             let value = try await webView.evaluateJavaScript(
-                "window.LeonardoForms?.hasFieldTarget(\(fieldJSON), \(occurrence)) === true"
+                "window.LeonardoForms?.hasFieldTarget(\(fieldJSON), \(occurrence)\(countArgument)) === true"
             )
             return value as? Bool == true
         } catch {

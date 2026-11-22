@@ -78,9 +78,12 @@
     input.addEventListener("compositionend", () => commit(fieldID, field, input));
     return input;
   }
+  function isGuidedRubric(fieldID, field) {
+    return field.type === "rubric" && (typeof field.signerPosition === "string"
+      || payload.guidedSigningFieldIDs?.includes(fieldID) === true);
+  }
   function rubricField(wrapper, fieldID, field, value) {
-    const guidedSigning = Array.isArray(payload.guidedSigningFieldIDs)
-      && payload.guidedSigningFieldIDs.includes(fieldID);
+    const guidedSigning = isGuidedRubric(fieldID, field);
     if (guidedSigning) {
       wrapper.classList.add("leonardo-guided-signing-field");
       wrapper.dataset.guidedSigning = "true";
@@ -112,6 +115,7 @@
     return wrapper;
   }
   window.LeonardoForms = {
+    isGuidedRubric,
     begin(nextPayload, nextRoot) {
       payload = nextPayload; root = nextRoot; changes = Object.create(null); controls.clear(); occurrences.clear(); sequence = 0;
     },
@@ -196,7 +200,8 @@
       }
     },
     setExporting(value) { root?.classList.toggle("leonardo-form-export", value); },
-    hasFieldTarget(fieldID, occurrence) {
+    hasFieldTarget(fieldID, occurrence, expectedCount) {
+      if (expectedCount !== undefined && this.occurrenceCount(fieldID) !== expectedCount) return false;
       const target = `${fieldID}#${Number(occurrence)}`;
       return Array.from(root?.querySelectorAll("[data-leonardo-field-target]") || [])
         .some(candidate => candidate.dataset.leonardoFieldTarget === target);

@@ -256,9 +256,11 @@ struct MobileGuidedSigningDocumentReader: View {
 
     private func availableTargetKeys(for targets: [LeonardoSigningLocationTarget]) async -> Set<String> {
         guard controller.isReady, await webPreviewHasReferencedImages() else { return [] }
+        let expectedCounts = Dictionary(grouping: renderedTargets, by: \.fieldID).mapValues(\.count)
         var available = Set<String>()
         for target in targets {
-            if await controller.hasFieldTarget(target.fieldID, occurrence: target.occurrence) {
+            if let count = expectedCounts[target.fieldID],
+               await controller.hasFieldTarget(target.fieldID, occurrence: target.occurrence, expectedCount: count) {
                 available.insert(MobileGuidedSigningTargetKey.make(
                     fieldID: target.fieldID, occurrence: target.occurrence
                 ))

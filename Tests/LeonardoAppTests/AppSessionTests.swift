@@ -897,6 +897,42 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(stored, newer)
     }
 
+    func testMacGuidedReviewDisablesLiveImagesAndExplainsHowToContinue() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        session.authorizePath = { _, _ in }
+        let ordinary = root.appendingPathComponent("ordinary.md")
+        let image = "![Online](https://example.invalid/image.png)"
+        try image.write(to: ordinary, atomically: true, encoding: .utf8)
+        await session.openDocument(ordinary)
+        XCTAssertTrue(session.renderConfiguration.allowsRemoteImages)
+
+        let file = root.appendingPathComponent("online-guided.mdlf")
+        let document = LeonardoDocument(
+            body: image + "\n\n{{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: .init(id: "online-guided", title: "Signing example", kind: .form,
+                                revision: 1, signing: .init(positions: [.init(id: "owner", label: "Owner")])),
+                fields: ["signature": .init(type: .rubric, signerPosition: "owner")]
+            )
+        )
+        try LeonardoFormatParser.serialize(document).write(to: file, atomically: true, encoding: .utf8)
+        await session.openDocument(file)
+        XCTAssertFalse(session.renderConfiguration.allowsRemoteImages)
+        let signer = LeonardoSignerProfile(displayName: "Ana", identity: .init(
+            fullName: "Ana Example", documentType: .nationalID, documentNumber: "QA-ONLINE"
+        ))
+        let credential = LeonardoSigningKeyPair(credentialID: "qa-online").credential
+        await session.assignGuidedSigner(
+            positionID: "owner", profile: signer, credential: credential,
+            saveOptions: .init(saveIdentityDetails: false, saveRubric: false)
+        )
+        await session.beginGuidedPosition("owner")
+        XCTAssertNil(session.guidedSigningSession?.snapshot)
+        XCTAssertEqual(session.guidedSigningActionProblem, L10n.text("Replace online images with local files before signing."))
+    }
+
     func testGuidedReviewClearsWarningAfterRequiredDataIsCorrected() async throws {
         let credentials = LeonardoSigningCredentialStore(service: "eu.pinedatec.LeonardoMD.tests.signing.required.\(UUID())")
         let (root, session) = try fixture(signingCredentialStore: credentials)

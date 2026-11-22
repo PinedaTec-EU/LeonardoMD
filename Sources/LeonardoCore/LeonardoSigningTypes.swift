@@ -245,6 +245,9 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
             throw LeonardoSigningError.signingDeclarationRequired
         }
         let source = try LeonardoFormatParser.serialize(document)
+        guard try !LeonardoLocalImagePolicy.hasRemoteImages(in: document) else {
+            throw LeonardoSigningError.remoteImagesNotSealable
+        }
         let snapshots = try resources
             .map { resource -> LeonardoSigningResourceSnapshot in
                 let reference = Self.canonicalReference(resource.reference)
@@ -276,6 +279,7 @@ public struct LeonardoSigningSnapshot: Codable, Equatable, Sendable {
     public func matches(document: LeonardoDocument, resources: [LeonardoSigningResource] = []) -> Bool {
         guard let currentSource = try? LeonardoFormatParser.serialize(document),
               currentSource == source,
+              (try? LeonardoLocalImagePolicy.hasRemoteImages(in: document)) == false,
               Data(SHA256.hash(data: Data(currentSource.utf8))) == sourceSHA256 else { return false }
         guard let currentResources = try? resources.map({ resource in
             let reference = Self.canonicalReference(resource.reference)
@@ -342,6 +346,8 @@ public enum LeonardoSigningError: Error, Equatable, Sendable {
     case invalidCredential
     case staleStorage
     case exchangeTooLarge
+    case remoteImagesNotSealable
+    case unmappedSigningLocation
     case storageFailure
 }
 
@@ -383,6 +389,8 @@ extension LeonardoSigningError: LocalizedError {
         case .invalidCredential: return "The signing credential is invalid."
         case .staleStorage: return "The signing progress changed in another app instance. Reload it before saving again."
         case .exchangeTooLarge: return "This signing copy exceeds the exchange size limit."
+        case .remoteImagesNotSealable: return "Replace online images with local files before signing."
+        case .unmappedSigningLocation: return "A rubric in the document does not match an exact location in the source. Check how the rubric field is written."
         case .storageFailure: return "The signing progress could not be stored safely."
         }
     }

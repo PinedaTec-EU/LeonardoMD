@@ -76,8 +76,8 @@ public final class MarkdownPreviewController: ObservableObject {
     }
 
     /// Checks that the renderer exposed one exact occurrence as a DOM target.
-    public func hasFieldTarget(_ fieldID: String, occurrence: Int) async -> Bool {
-        await host?.hasFieldTarget(fieldID, occurrence: occurrence) ?? false
+    public func hasFieldTarget(_ fieldID: String, occurrence: Int, expectedCount: Int? = nil) async -> Bool {
+        await host?.hasFieldTarget(fieldID, occurrence: occurrence, expectedCount: expectedCount) ?? false
     }
 
     /// Checks that each local image path in the current preview has decoded pixels.

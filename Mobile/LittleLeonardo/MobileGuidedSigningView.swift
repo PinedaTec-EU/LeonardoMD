@@ -784,6 +784,14 @@ struct MobileGuidedSigningView: View {
 
     private func reportLocationReviewFailure(_ error: Error) {
         switch error as? LeonardoSigningError {
+        case .unmappedSigningLocation:
+            errorMessage = spanish
+                ? "Una rúbrica no coincide con una ubicación exacta en la fuente. Revisa cómo está escrito el campo en el documento original."
+                : "A rubric does not match an exact location in the source. Check how the field is written in the original document."
+        case .remoteImagesNotSealable:
+            errorMessage = spanish
+                ? "Sustituye las imágenes en línea por archivos locales en el documento original y vuelve a exportar la copia."
+                : "Replace online images with local files in the original document, then export the copy again."
         case .requiredDataMissing(let fields), .requiredDataInvalid(let fields):
             let labels = fields.map { document?.metadata.fields[$0]?.label ?? $0 }.joined(separator: ", ")
             errorMessage = spanish

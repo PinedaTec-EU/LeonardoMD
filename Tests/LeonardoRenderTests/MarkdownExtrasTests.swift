@@ -18,6 +18,8 @@ final class MarkdownExtrasTests: XCTestCase {
 
                 Literal code {{field:sig}}
 
+            Use `<code>` for a literal example.
+
             Last {{field:sig}}
             """,
             metadata: LeonardoMetadata(
@@ -48,8 +50,60 @@ final class MarkdownExtrasTests: XCTestCase {
         XCTAssertEqual(rendered, targets.map { "\($0.fieldID)#\($0.occurrence)" }.joined(separator: ","))
         let inList = try await evaluate("document.querySelector('li li [data-leonardo-field-target]')?.dataset.leonardoFieldTarget", in: web)
         XCTAssertEqual(inList, "sig#0")
+        let parity = try await evaluate("""
+            window.LeonardoForms.hasFieldTarget('sig', 0, 3)
+            && !window.LeonardoForms.hasFieldTarget('sig', 0, 2)
+            """, in: web)
+        XCTAssertEqual(parity, "1")
         let code = try await evaluate("document.querySelector('pre code')?.textContent.trim()", in: web)
         XCTAssertEqual(code, "Literal code {{field:sig}}")
+    }
+
+    func testGuidedRubricsDisplayOnlyVerifiedInkAndLeaveStandaloneRubricsAlone() async throws {
+        let ink = LeonardoRubric(strokes: [LeonardoInkStroke(
+            color: "#000000", width: 2, style: .solid,
+            points: [LeonardoInkPoint(x: 1, y: 2), LeonardoInkPoint(x: 4, y: 5)]
+        )])
+        let authored = try JSONDecoder().decode(LeonardoJSONValue.self, from: JSONEncoder().encode(ink))
+        let document = LeonardoDocument(
+            body: "{{field:assigned}} {{field:withDefault}} {{field:standalone}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "guided-ink", title: "Guided ink", kind: .form, revision: 1,
+                    signing: LeonardoSigningDeclaration(positions: [.init(id: "signer", label: "Signer")])
+                ),
+                fields: [
+                    "assigned": .init(type: .rubric, signerPosition: "signer"),
+                    "withDefault": .init(type: .rubric, defaultValue: authored, signerPosition: "signer"),
+                    "standalone": .init(type: .rubric, defaultValue: authored)
+                ],
+                values: ["assigned": authored]
+            )
+        )
+        let source = try LeonardoFormatParser.serialize(document)
+        var config = MarkdownPreviewConfiguration()
+        config.allowsLeonardoFormat = true
+        let output = """
+            Array.from(document.querySelectorAll('[data-leonardo-field-target]')).map(node =>
+              node.querySelector('.leonardo-field-output svg') ? node.dataset.leonardoFieldTarget : ''
+            ).filter(Boolean).join(',')
+            """
+
+        let (pending, pendingWindow) = makeHost(content: source, config: config)
+        defer { pending.teardown(); pendingWindow.close() }
+        let pendingWeb = try XCTUnwrap(webView(of: pending))
+        try await waitFor("document.querySelectorAll('[data-leonardo-field-target]').length === 3 ? '1' : '0'", in: pendingWeb)
+        let pendingInk = try await evaluate(output, in: pendingWeb)
+        XCTAssertEqual(pendingInk, "standalone#0")
+
+        config.guidedSigningRubricOverlays = ["assigned#0": ink]
+        let (verified, verifiedWindow) = makeHost(content: source, config: config)
+        defer { verified.teardown(); verifiedWindow.close() }
+        let verifiedWeb = try XCTUnwrap(webView(of: verified))
+        try await waitFor("document.querySelectorAll('[data-leonardo-field-target]').length === 3 ? '1' : '0'", in: verifiedWeb)
+        let verifiedInk = try await evaluate(output, in: verifiedWeb)
+        XCTAssertEqual(verifiedInk, "assigned#0,standalone#0")
     }
 
     func testFootnotesCalloutsAndTablesRenderTogetherInWebKit() async throws {

@@ -39,10 +39,10 @@
         fragment.append(document.createTextNode(text.slice(cursor, match.index)));
         const occurrence = (window.LeonardoForms.occurrenceCount?.(match[1]) || 0);
         const overlayKey = `${match[1]}#${occurrence}`;
-        const overlay = metadata.fields?.[match[1]]?.type === "rubric"
+        const guided = window.LeonardoForms.isGuidedRubric(match[1], field);
+        const value = guided
           ? payload.guidedSigningRubricOverlays?.[overlayKey]
-          : undefined;
-        const value = overlay || (Object.hasOwn(metadata.values || {}, match[1]) ? metadata.values[match[1]] : field.defaultValue);
+          : (Object.hasOwn(metadata.values || {}, match[1]) ? metadata.values[match[1]] : field.defaultValue);
         fragment.append(window.LeonardoForms.field(match[1], field, value));
         cursor = match.index + match[0].length;
       }

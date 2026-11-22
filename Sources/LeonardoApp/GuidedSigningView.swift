@@ -648,7 +648,7 @@ struct GuidedSigningView: View {
                 }
                 Button {
                     Task { @MainActor in
-                        guard await session.renderer.hasFieldTarget(target.fieldID, occurrence: target.occurrence) else {
+                        guard await targetIsRendered(target) else {
                             guard selectedPositionID == target.positionID else { return }
                             renderedTargetKeys.remove(targetKey(target))
                             targetAvailabilityChecked = true
@@ -717,6 +717,10 @@ struct GuidedSigningView: View {
                 }
                 Button(L10n.text("Confirm exact occurrence")) {
                     Task {
+                        guard await targetIsRendered(target), currentTarget == target else {
+                            checkCurrentTarget()
+                            return
+                        }
                         await session.confirmGuidedLocation(target: target,
                             rubric: rubricForCurrentChoice ?? LeonardoRubric(), reuse: reuse,
                             reuseConfirmed: reuse == .new ? true : reuseConfirmed,
@@ -739,6 +743,11 @@ struct GuidedSigningView: View {
         "\(target.positionID)#\(target.fieldID)#\(target.occurrence)"
     }
 
+    private func targetIsRendered(_ target: LeonardoSigningLocationTarget) async -> Bool {
+        let count = session.guidedSigningTargets.count { $0.fieldID == target.fieldID }
+        return await session.renderer.hasFieldTarget(target.fieldID, occurrence: target.occurrence, expectedCount: count)
+    }
+
     @MainActor
     private func refreshRenderedTargets() async {
         targetAvailabilityChecked = false
@@ -746,7 +755,7 @@ struct GuidedSigningView: View {
         let expectedTargets = session.guidedSigningTargets
         var available = Set<String>()
         for target in expectedTargets {
-            if await session.renderer.hasFieldTarget(target.fieldID, occurrence: target.occurrence) {
+            if await targetIsRendered(target) {
                 available.insert(targetKey(target))
             }
         }
@@ -766,7 +775,7 @@ struct GuidedSigningView: View {
     private func checkCurrentTarget() {
         guard let target = currentTarget else { return }
         Task { @MainActor in
-            let available = await session.renderer.hasFieldTarget(target.fieldID, occurrence: target.occurrence)
+            let available = await targetIsRendered(target)
             guard selectedPositionID == target.positionID, currentTarget == target else { return }
             if available {
                 renderedTargetKeys.insert(targetKey(target))

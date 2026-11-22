@@ -788,6 +788,8 @@
   "Compare every fingerprint through a separate trusted channel. The exchange file is not itself a trust anchor.": "Compara cada huella mediante un canal fiable independiente. El archivo de intercambio no es por sí mismo una raíz de confianza.",
   "Trust and import": "Confiar e importar",
   "Enter fingerprint received separately": "Introduce la huella recibida por otra vía",
+  "A rubric in the document does not match an exact location in the source. Check how the rubric field is written.": "Una rúbrica del documento no coincide con una ubicación exacta en la fuente. Revisa cómo está escrito el campo.",
+  "Replace online images with local files before signing.": "Sustituye las imágenes en línea por archivos locales antes de firmar.",
   "This signing copy exceeds the exchange size limit.": "Esta copia de firma supera el tamaño máximo para el intercambio.",
   "Signing copy exported": "Copia de firma exportada",
   "Signed copy imported after local integrity and trust checks.": "Copia firmada importada tras comprobar la integridad y la confianza local.",

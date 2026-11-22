@@ -54,6 +54,8 @@ final class LeonardoGuidedSigningTests: XCTestCase {
 
         > `Quoted literal {{field:a}}`
 
+        Use `<code>` for a literal example.
+
         Last signature {{field:z}}
         """
         var session = try LeonardoGuidedSigningSession(document: document, at: now)
@@ -83,6 +85,44 @@ final class LeonardoGuidedSigningTests: XCTestCase {
             positionID: "titular", keyPair: key, document: document, trustStore: trust, at: now
         )
         XCTAssertEqual(completed.proof.locationDigests.count, 3)
+    }
+
+    func testGuidedOccurrencesMustCorrespondToLiteralSourceTokens() throws {
+        var document = try makeDocument()
+        document.body = "{{field:z}} {{field:a}} &#123;&#123;field:a}}"
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+        XCTAssertThrowsError(try session.targets(for: "titular", document: document)) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .unmappedSigningLocation)
+        }
+    }
+
+    func testLiveImagesBlockTheSigningSealButLiteralLinksDoNot() throws {
+        let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        for image in [
+            "![Live](https://example.invalid/image.png)",
+            #"<img src="//example.invalid/image.png" alt="Live">"#,
+            #"<img src="local.png" srcset="https://example.invalid/image.png 2x">"#,
+            "![Live][image]\n\n[image]: http://example.invalid/image.png"
+        ] {
+            var document = try makeDocument()
+            document.body += "\n\n" + image
+            var session = try LeonardoGuidedSigningSession(document: document, at: now)
+            try assign(signer, key: key, to: "titular", session: &session)
+            XCTAssertThrowsError(try session.begin(positionID: "titular", document: document)) { error in
+                XCTAssertEqual(error as? LeonardoSigningError, .remoteImagesNotSealable)
+            }
+            XCTAssertNil(session.snapshot)
+            XCTAssertTrue(try XCTUnwrap(session.positions["titular"]).locations.isEmpty)
+        }
+
+        var document = try makeDocument()
+        document.body += "\n\n[Ordinary link](https://example.invalid/image.png) `![Example](https://example.invalid/image.png)`\n\n    ![Literal](https://example.invalid/image.png)"
+        XCTAssertNoThrow(try LeonardoSigningSnapshot.capture(document: document, at: now))
+        document.metadata.layout = LeonardoLayout(background: .init(image: "https://example.invalid/background.png"))
+        XCTAssertThrowsError(try LeonardoSigningSnapshot.capture(document: document, at: now)) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .remoteImagesNotSealable)
+        }
     }
 
     func testTargetsRejectWhenEveryAssignedOccurrenceIsMarkdownLiteral() throws {

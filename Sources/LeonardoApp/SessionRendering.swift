@@ -103,6 +103,9 @@ extension AppSession {
         configuration.selectedGraphicID = selectedGraphic?.id
         configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
         if isGuidedSigningDocument, let document = leonardoDocument {
+            if document.metadata.document.signing != nil || guidedSigningSession != nil {
+                configuration.allowsRemoteImages = false
+            }
             configuration.guidedSigningFieldIDs = document.metadata.fields.compactMap { fieldID, field in
                 field.type == .rubric && field.signerPosition != nil ? fieldID : nil
             }.sorted()

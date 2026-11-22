@@ -788,6 +788,8 @@
   "Compare every fingerprint through a separate trusted channel. The exchange file is not itself a trust anchor.": "Compare every fingerprint through a separate trusted channel. The exchange file is not itself a trust anchor.",
   "Trust and import": "Trust and import",
   "Enter fingerprint received separately": "Enter fingerprint received separately",
+  "A rubric in the document does not match an exact location in the source. Check how the rubric field is written.": "A rubric in the document does not match an exact location in the source. Check how the rubric field is written.",
+  "Replace online images with local files before signing.": "Replace online images with local files before signing.",
   "This signing copy exceeds the exchange size limit.": "This signing copy exceeds the exchange size limit.",
   "Signing copy exported": "Signing copy exported",
   "Signed copy imported after local integrity and trust checks.": "Signed copy imported after local integrity and trust checks.",

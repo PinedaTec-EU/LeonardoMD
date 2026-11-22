@@ -31,6 +31,12 @@ public enum LeonardoLocalImagePolicy {
         return (body + metadata).filter { isLocalReference($0) && seen.insert($0).inserted }
     }
 
+    /// A signing snapshot cannot bind images whose bytes come from a live URL.
+    static func hasRemoteImages(in document: LeonardoDocument) throws -> Bool {
+        if metadataReferences(in: document.metadata).contains(where: { isRemoteImage($0) }) { return true }
+        return try LeonardoSigningMarkdown.shared.hasRemoteImages(in: document.body)
+    }
+
     fileprivate struct BodyReference {
         let range: NSRange
         let value: String
@@ -100,7 +106,7 @@ public enum LeonardoLocalImagePolicy {
 
     private static func isRemoteImage(_ reference: String?) -> Bool {
         let scheme = reference.flatMap { URL(string: $0)?.scheme?.lowercased() }
-        return scheme == "https" || scheme == "http"
+        return scheme == "https" || scheme == "http" || reference?.hasPrefix("//") == true
     }
 
     /// Remove orphan definitions, including duplicates, without breaking ordinary links.
@@ -122,7 +128,7 @@ public enum LeonardoLocalImagePolicy {
     }
 
     fileprivate static func isLocalReference(_ reference: String) -> Bool {
-        guard !reference.isEmpty, !reference.hasPrefix("#") else { return false }
+        guard !reference.isEmpty, !reference.hasPrefix("#"), !isRemoteImage(reference) else { return false }
         let parsed = URL(string: reference)
         if let scheme = parsed?.scheme?.lowercased(), scheme != "file" { return false }
         let path: String

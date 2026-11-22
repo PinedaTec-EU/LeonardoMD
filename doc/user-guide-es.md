@@ -224,6 +224,12 @@ opcionales que están vacíos y seguirán vacíos. Es un aviso informativo, no u
 segunda confirmación; desaparece cuando se sella la primera instantánea de
 ubicación.
 
+Usa archivos locales para las imágenes de los formularios con firma guiada.
+Sustituye las imágenes en línea en el original antes de firmar para que el
+sello cubra su contenido. Vuelve a exportar la copia para Little Leonardo
+después de sustituirlas. Cada rúbrica guiada permanece vacía hasta que
+Leonardo verifica su firma en esa aparición.
+
 Guarda el formulario cumplimentado en el Mac antes de confirmar la primera
 ubicación o intercambiar una copia de firma. La primera confirmación sella las respuestas guardadas, las
 asignaciones, la revisión del documento y los recursos referenciados. Los
