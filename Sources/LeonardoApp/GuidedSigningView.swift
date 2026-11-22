@@ -585,6 +585,7 @@ struct GuidedSigningView: View {
                     Task {
                         await session.beginGuidedPosition(position.id)
                         await refreshRenderedTargets()
+                        advanceToNextTarget(for: position.id)
                     }
                 }
                 .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
@@ -593,6 +594,7 @@ struct GuidedSigningView: View {
                     Task {
                         await session.resumeGuidedPosition(positionID: position.id)
                         await refreshRenderedTargets()
+                        advanceToNextTarget(for: position.id)
                     }
                 }
                 .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
@@ -799,6 +801,10 @@ struct GuidedSigningView: View {
         selectedTargetIndex = next
         contextRead = false
         reuseConfirmed = false
+        let target = session.guidedSigningTargets[next]
+        if renderedTargetKeys.contains(targetKey(target)) {
+            session.renderer.scroll(toField: target.fieldID, occurrence: target.occurrence)
+        }
     }
 
     private func integrityWarning(_ error: String) -> some View {
