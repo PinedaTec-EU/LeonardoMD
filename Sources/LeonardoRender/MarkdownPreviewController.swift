@@ -80,7 +80,7 @@ public final class MarkdownPreviewController: ObservableObject {
         await host?.hasFieldTarget(fieldID, occurrence: occurrence, expectedCount: expectedCount) ?? false
     }
 
-    /// Checks that each local image path in the current preview has decoded pixels.
+    /// Checks decoded images against the fixed set of available local candidates.
     public func hasRenderedLocalImages(_ paths: [String]) async -> Bool {
         await host?.hasRenderedLocalImages(paths) ?? false
     }

@@ -57,21 +57,40 @@ function leonardoVisibleRubrics(markdown, probe, fieldIDs, prefix) {
   return ordinals;
 }
 
-function leonardoHasRemoteSigningImages(markdown) {
-  "use strict";
-  const html = marked.parse(markdown, { gfm: true, breaks: false });
-  const remote = /^(?:https?:|\/\/)/i;
-  const attribute = /[\t\n\f\r ]+([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
-  for (const [raw, closing, tag] of html.matchAll(leonardoSigningHTMLTokens)) {
-    if (closing || tag?.toLowerCase() !== "img") continue;
-    for (const [, name, doubleQuoted, singleQuoted, unquoted] of raw.matchAll(attribute)) {
-      const kind = name.toLowerCase();
-      if (kind !== "src" && kind !== "srcset") continue;
-      const value = decodeLeonardoHTMLText(doubleQuoted ?? singleQuoted ?? unquoted ?? "").trim();
-      if (kind === "src" && remote.test(value)) return true;
-      if (kind === "srcset" &&
-          value.split(",").some(candidate => remote.test(candidate.trim()))) return true;
+function leonardoSrcsetURLs(value) {
+  const urls = [];
+  let remaining = value;
+  while ((remaining = remaining.replace(/^[,\t\n\f\r ]+/, ""))) {
+    const [url] = /^[^\t\n\f\r ]+/.exec(remaining);
+    remaining = remaining.slice(url.length);
+    urls.push(url.replace(/,+$/, ""));
+    // A comma attached to a URL ends a descriptorless candidate. Otherwise
+    // skip the width or density descriptor, leaving commas inside URLs intact.
+    if (!url.endsWith(",")) {
+      const separator = remaining.indexOf(",");
+      remaining = separator < 0 ? "" : remaining.slice(separator + 1);
     }
   }
-  return false;
+  return urls;
+}
+
+function leonardoSigningImageReferences(markdown) {
+  "use strict";
+  const html = marked.parse(markdown, { gfm: true, breaks: false });
+  const attribute = /[\t\n\f\r ]+([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+  const references = [];
+  for (const [raw, closing, tag] of html.matchAll(leonardoSigningHTMLTokens)) {
+    if (closing) continue;
+    const element = tag?.toLowerCase();
+    if (element !== "img" && element !== "source") continue;
+    for (const [, name, doubleQuoted, singleQuoted, unquoted] of raw.matchAll(attribute)) {
+      const kind = name.toLowerCase();
+      if (kind !== "srcset" && (kind !== "src" || element !== "img")) continue;
+      const value = decodeLeonardoHTMLText(doubleQuoted ?? singleQuoted ?? unquoted ?? "").trim();
+      if (!value) continue;
+      if (kind === "src") references.push(value);
+      else references.push(...leonardoSrcsetURLs(value));
+    }
+  }
+  return references;
 }

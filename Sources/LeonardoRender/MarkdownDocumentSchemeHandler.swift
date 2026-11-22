@@ -13,12 +13,14 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     private let baseDirectory: URL?
     private let assetRoot: URL?
     private let memoryAssets: MarkdownMemoryAssets?
+    private let allowedLocalImageFiles: Set<URL>?
 
     init(baseURL: URL?, assetRootURL: URL? = nil, memoryAssets: MarkdownMemoryAssets? = nil,
-         policy: MarkdownImagePolicy = .standard) {
+         allowedLocalImageFiles: Set<URL>? = nil, policy: MarkdownImagePolicy = .standard) {
         self.policy = policy
         imageLoader = MarkdownImageLoader(policy: policy)
         self.memoryAssets = memoryAssets
+        self.allowedLocalImageFiles = allowedLocalImageFiles
         if let baseURL, baseURL.isFileURL {
             let directory = baseURL.standardizedFileURL
             baseDirectory = directory
@@ -104,7 +106,8 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         if let memoryAssets, let data = memoryAssets.data(for: url) {
             return .memory(data, extensionName: url.pathExtension.lowercased())
         }
-        if memoryAssets == nil, let fileURL = fileURL(for: url), isImage(fileURL) {
+        if memoryAssets == nil, let fileURL = fileURL(for: url),
+           allowedLocalImageFiles?.contains(fileURL) != false, isImage(fileURL) {
             return .file(fileURL)
         }
         return nil

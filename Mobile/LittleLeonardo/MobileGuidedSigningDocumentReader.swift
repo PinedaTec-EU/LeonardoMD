@@ -56,7 +56,9 @@ struct MobileGuidedSigningDocumentReader: View {
     }
 
     private static func makeMemoryAssets(_ resources: [LeonardoSigningResource]) -> MarkdownMemoryAssets {
-        let byPath = Dictionary(grouping: resources) { $0.reference.removingPercentEncoding ?? $0.reference }
+        let byPath = Dictionary(grouping: resources) {
+            URLComponents(string: $0.reference)?.path ?? $0.reference
+        }
         return MarkdownMemoryAssets(files: byPath.compactMapValues { aliases in
             guard let bytes = aliases.first?.bytes,
                   aliases.allSatisfy({ $0.bytes == bytes }) else { return nil }
@@ -75,7 +77,7 @@ struct MobileGuidedSigningDocumentReader: View {
         guard references.isSubset(of: Set(resources.map(\.reference))) else { return false }
         guard !references.isEmpty else { return true }
         return await controller.hasRenderedLocalImages(
-            references.map { $0.removingPercentEncoding ?? $0 }
+            references.map { URLComponents(string: $0)?.path ?? $0 }
         )
     }
 
@@ -322,9 +324,17 @@ enum MobileGuidedSigningNativeContent {
         return result
     }
 
+    static func needsRichRubricPreview(_ document: LeonardoDocument) -> Bool {
+        document.metadata.fields.contains { id, field in
+            guard field.type == .rubric, field.signerPosition == nil,
+                  let value = document.metadata.values[id] ?? field.defaultValue else { return false }
+            if case .object = value { return true }
+            return false
+        }
+    }
+
     static func referencedResourceReferences(from document: LeonardoDocument) -> Set<String> {
-        guard let source = try? LeonardoFormatParser.serialize(document) else { return [] }
-        return Set(LeonardoLocalImagePolicy.localReferences(in: source))
+        Set((try? LeonardoLocalImagePolicy.signingReferences(in: document)) ?? [])
     }
 }
 
@@ -386,6 +396,7 @@ private struct MobileGuidedSigningSourceFallback: View {
 
     private var nativeContentComplete: Bool {
         missingResourceReferences.isEmpty && unrenderedResourceReferences.isEmpty
+            && !MobileGuidedSigningNativeContent.needsRichRubricPreview(document)
     }
 
     var body: some View {

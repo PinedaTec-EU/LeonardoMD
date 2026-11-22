@@ -31,10 +31,23 @@ public enum LeonardoLocalImagePolicy {
         return (body + metadata).filter { isLocalReference($0) && seen.insert($0).inserted }
     }
 
-    /// A signing snapshot cannot bind images whose bytes come from a live URL.
-    static func hasRemoteImages(in document: LeonardoDocument) throws -> Bool {
-        if metadataReferences(in: document.metadata).contains(where: { isRemoteImage($0) }) { return true }
-        return try LeonardoSigningMarkdown.shared.hasRemoteImages(in: document.body)
+    /// Returns all fixed local image candidates the signing renderer can
+    /// display, including the sources behind responsive images.
+    public static func signingReferences(in document: LeonardoDocument) throws -> [String] {
+        let body = try LeonardoSigningMarkdown.shared.imageReferences(in: document.body)
+        let references = (body + metadataReferences(in: document.metadata)).map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
+        }
+        guard !references.contains(where: { isRemoteImage($0) }) else {
+            throw LeonardoSigningError.remoteImagesNotSealable
+        }
+        var seen = Set<String>()
+        return try references.filter { reference in
+            // The bytes of a data URL are already in the signed source.
+            if reference.isEmpty || reference.lowercased().hasPrefix("data:") { return false }
+            guard isLocalReference(reference) else { throw LeonardoSigningError.invalidResourceReference(reference) }
+            return seen.insert(reference).inserted
+        }
     }
 
     fileprivate struct BodyReference {

@@ -441,7 +441,9 @@ extension AppSession {
                 }
             }
         } catch LeonardoSigningError.exchangeTooLarge {
-            guidedSigningError = L10n.text("This signing copy exceeds the exchange size limit.")
+            guidedSigningActionProblem = L10n.text("This signing copy exceeds the exchange size limit.")
+        } catch LeonardoSigningError.remoteImagesNotSealable {
+            guidedSigningActionProblem = L10n.text("Replace online images with local files before signing.")
         } catch {
             guidedSigningError = String(describing: error)
         }
@@ -1514,9 +1516,9 @@ extension AppSession {
         return true
     }
 
-    private func guidedSigningResources(for source: String? = nil) throws -> [LeonardoSigningResource] {
+    func guidedSigningResourceURLs(in document: LeonardoDocument) throws -> [(reference: String, url: URL)] {
         guard let documentURL else { return [] }
-        let references = LeonardoLocalImagePolicy.localReferences(in: source ?? content)
+        let references = try LeonardoLocalImagePolicy.signingReferences(in: document)
         guard !references.isEmpty else { return [] }
         let base = documentURL.deletingLastPathComponent().standardizedFileURL
         var roots = [base]
@@ -1524,21 +1526,30 @@ extension AppSession {
         if let projectURL { roots.append(projectURL.standardizedFileURL) }
         let rootPaths = roots.map { $0.resolvingSymlinksInPath().path }
         return try references.map { reference in
-            let decoded = reference.removingPercentEncoding ?? reference
-            let rawURL = URL(string: reference)
+            guard let parsed = URLComponents(string: reference), !parsed.path.isEmpty else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
             let candidate: URL
-            if rawURL?.scheme?.lowercased() == "file", let rawURL {
-                candidate = rawURL
-            } else if decoded.hasPrefix("/") {
-                candidate = URL(fileURLWithPath: decoded)
+            if parsed.scheme?.lowercased() == "file" {
+                guard let url = parsed.url else { throw LeonardoSigningError.invalidResourceReference(reference) }
+                candidate = url
+            } else if parsed.path.hasPrefix("/") {
+                candidate = URL(fileURLWithPath: parsed.path)
             } else {
-                candidate = base.appendingPathComponent(decoded)
+                candidate = base.appendingPathComponent(parsed.path)
             }
             let resolved = candidate.standardizedFileURL.resolvingSymlinksInPath()
             guard rootPaths.contains(where: { resolved.path == $0 || resolved.path.hasPrefix($0 + "/") }),
                   LeonardoLocalImagePolicy.extensions.contains(resolved.pathExtension.lowercased()) else {
                 throw LeonardoSigningError.invalidResourceReference(reference)
             }
+            return (reference, resolved)
+        }
+    }
+
+    private func guidedSigningResources(for source: String? = nil) throws -> [LeonardoSigningResource] {
+        let document = try LeonardoFormatParser.parse(source ?? content)
+        return try guidedSigningResourceURLs(in: document).map { reference, resolved in
             let values = try resolved.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
             guard values.isRegularFile == true,
                   let size = values.fileSize,

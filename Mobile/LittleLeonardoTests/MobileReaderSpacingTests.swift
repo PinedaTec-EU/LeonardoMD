@@ -267,6 +267,25 @@ final class MobileReaderSpacingTests: XCTestCase {
         XCTFail("The signed-guided reader was not presented outside the form list")
     }
 
+    func testNativeSigningFallbackRequiresFullReaderForOrdinaryInk() throws {
+        let exchange = try makeSignedGuidedSigningExchange()
+        var document = try exchange.document()
+        XCTAssertFalse(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+        let ink = try XCTUnwrap(exchange.session.positions.values.first?.locations.first?.rubric)
+        let authored = try JSONDecoder().decode(LeonardoJSONValue.self, from: JSONEncoder().encode(ink))
+
+        document.body += "\n\n{{field:ordinary}}"
+        document.metadata.fields["ordinary"] = .init(type: .rubric, required: true, defaultValue: authored)
+        XCTAssertTrue(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+
+        document.metadata.values["ordinary"] = .null
+        XCTAssertFalse(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+
+        document.metadata.values["ordinary"] = authored
+        XCTAssertTrue(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+        XCTAssertTrue(document.body.contains("{{field:signature}}"))
+    }
+
     func testNativeSigningContentSubstitutesValuesAndKeepsSealedResourceReferences() throws {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "owner", label: "Owner")

@@ -34,6 +34,9 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     public var localAssetRoot: URL?
     public var memoryAssets: MarkdownMemoryAssets?
     public var allowsRemoteImages: Bool
+    /// An explicit file boundary for previews of content that will be signed.
+    /// Nil retains the normal document and project root policy.
+    public var allowedLocalImageFiles: Set<URL>? = nil
 
     public init(
         allowsMermaid: Bool = false,

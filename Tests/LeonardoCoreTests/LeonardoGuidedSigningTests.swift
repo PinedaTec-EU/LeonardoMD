@@ -125,6 +125,37 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testResponsiveImageMutationInvalidatesTheSealAndMissingCandidatesBlockIt() throws {
+        var document = try makeDocument()
+        let image = #"<picture><source srcset="better.png 2x, middle.png 1x"><img src="fallback.png"></picture>"#
+        document.body += "\n\n" + image
+        XCTAssertEqual(Set(try LeonardoLocalImagePolicy.signingReferences(in: document)), [
+            "better.png", "middle.png", "fallback.png"
+        ])
+        let fallback = LeonardoSigningResource(reference: "fallback.png", bytes: Data([1]))
+        let middle = LeonardoSigningResource(reference: "middle.png", bytes: Data([2]))
+        let better = LeonardoSigningResource(reference: "better.png", bytes: Data([3]))
+        XCTAssertThrowsError(try LeonardoSigningSnapshot.capture(
+            document: document, resources: [fallback, middle], at: now
+        )) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .invalidResourceReference("better.png"))
+        }
+
+        let snapshot = try LeonardoSigningSnapshot.capture(
+            document: document, resources: [fallback, middle, better], at: now
+        )
+        XCTAssertTrue(snapshot.matches(document: document, resources: [fallback, middle, better]))
+        let edited = LeonardoSigningResource(reference: "better.png", bytes: Data([4]))
+        XCTAssertFalse(snapshot.matches(document: document, resources: [fallback, middle, edited]))
+
+        document.body = document.body.replacingOccurrences(of: "better.png", with: "https://example.invalid/better.png")
+        XCTAssertThrowsError(try LeonardoSigningSnapshot.capture(
+            document: document, resources: [fallback, middle, better], at: now
+        )) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .remoteImagesNotSealable)
+        }
+    }
+
     func testTargetsRejectWhenEveryAssignedOccurrenceIsMarkdownLiteral() throws {
         var document = try makeDocument()
         document.body = """

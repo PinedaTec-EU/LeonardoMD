@@ -662,7 +662,7 @@ read-only preview, use **View location** to jump to each exact occurrence in
 source order, draw or explicitly confirm reuse of a rubric, and pause or resume
 as needed. The preview never edits the copy; only a detached, independently
 verified final signature paints a rubric at its exact occurrence. Partial review
-remains visibly pending.
+remains visibly pending. If the form has ordinary rubric answers, use the full reader to review their ink before confirming locations.
 **Export signed copy** shows the declared identities and rubrics that will leave
 the device. It includes no private key, local path or unrelated profile. Import
 the JSON copy on the Mac only after it verifies the local source, frozen snapshot,

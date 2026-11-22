@@ -93,6 +93,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         let assetRootChanged = previousConfiguration.localAssetRoot != configuration.localAssetRoot
             || previousConfiguration.memoryAssets != configuration.memoryAssets
             || previousConfiguration.allowsRemoteImages != configuration.allowsRemoteImages
+            || previousConfiguration.allowedLocalImageFiles != configuration.allowedLocalImageFiles
         let contentChanged = !hasState || self.content != content
         let baseURLChanged = !hasState || documentURL != baseURL
         let renderOptionsChanged = !hasState
@@ -397,7 +398,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
-    /// Verifies decoded pixels for each referenced local image in the current preview.
+    /// Checks the selected local image for every responsive slot in the preview.
     func hasRenderedLocalImages(_ paths: [String]) async -> Bool {
         guard !paths.isEmpty else { return true }
         guard let webView else { return false }
@@ -410,19 +411,20 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                   configuration.memoryAssets == expectedAssets else { return false }
             let result = try await webView.callAsyncJavaScript(
                 """
-                const imagesByPath = new Map();
+                const allowed = new Set(paths);
+                const selected = [];
                 for (const image of document.images) {
-                    try {
-                        const url = new URL(image.currentSrc || image.src);
-                        if (url.protocol !== "leonardo-document:" || url.hostname !== "local") continue;
-                        const path = decodeURIComponent(url.pathname).replace(/^\\/+/, "");
-                        if (!imagesByPath.has(path)) imagesByPath.set(path, []);
-                        imagesByPath.get(path).push(image);
-                    } catch {}
+                    let url;
+                    try { url = new URL(image.currentSrc || image.src); } catch { return false; }
+                    if (url.protocol === "data:") continue;
+                    if (url.protocol !== "leonardo-document:" || url.hostname !== "local") return false;
+                    let path = decodeURIComponent(url.pathname);
+                    while (path.startsWith("/")) path = path.slice(1);
+                    if (!allowed.has(path)) return false;
+                    selected.push(image);
                 }
-                const matches = paths.map(path => imagesByPath.get(path) || []);
-                if (matches.some(images => images.length === 0)) return false;
-                const decoded = Promise.all(matches.flat().map(async image => {
+                if (selected.length === 0) return false;
+                const decoded = Promise.all(selected.map(async image => {
                     try { await image.decode(); } catch { return false; }
                     return image.naturalWidth > 0 && image.naturalHeight > 0;
                 }));
@@ -483,7 +485,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         documentHandler = MarkdownDocumentSchemeHandler(
             baseURL: documentURL,
             assetRootURL: configuration.localAssetRoot ?? documentURL?.deletingLastPathComponent(),
-            memoryAssets: configuration.memoryAssets
+            memoryAssets: configuration.memoryAssets,
+            allowedLocalImageFiles: configuration.allowedLocalImageFiles
         )
 
         let webConfiguration = WKWebViewConfiguration()

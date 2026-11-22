@@ -59,6 +59,46 @@ final class MarkdownExtrasTests: XCTestCase {
         XCTAssertEqual(code, "Literal code {{field:sig}}")
     }
 
+    func testSigningSnapshotIncludesTheResponsiveAssetSelectedByWebKit() async throws {
+        let document = LeonardoDocument(
+            body: #"<picture><source srcset="selected.png" type="image/png"><img src="fallback.png"></picture>"#,
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: .init(id: "picture-signing", title: "Picture signing", kind: .form,
+                                revision: 1, signing: .init(positions: [.init(id: "signer", label: "Signer")])),
+                fields: ["sig": .init(type: .rubric, signerPosition: "signer")]
+            )
+        )
+        var withTarget = document
+        withTarget.body += "\n\n{{field:sig}}"
+        let source = try LeonardoFormatParser.serialize(withTarget)
+        let image = try XCTUnwrap(Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN/QAAAAASUVORK5CYII="
+        ))
+        let selected = LeonardoSigningResource(reference: "selected.png", bytes: image)
+        let fallback = LeonardoSigningResource(reference: "fallback.png", bytes: image)
+        let snapshot = try LeonardoSigningSnapshot.capture(document: withTarget, resources: [selected, fallback], at: Date())
+        let virtualRoot = URL(fileURLWithPath: "/signed-image-fixture", isDirectory: true)
+        var config = MarkdownPreviewConfiguration(localAssetRoot: virtualRoot, memoryAssets: MarkdownMemoryAssets(files: [
+            selected.reference: image, fallback.reference: image
+        ]), allowsRemoteImages: false)
+        config.allowsLeonardoFormat = true
+        let (host, window) = makeHost(content: source, config: config, baseURL: virtualRoot)
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('picture img') ? '1' : '0'", in: web)
+        _ = try await evaluate("document.querySelector('picture img').loading = 'eager'", in: web)
+        try await waitFor("document.querySelector('picture img')?.naturalWidth > 0 ? '1' : '0'", in: web)
+        let selectedPath = try await evaluate("new URL(document.querySelector('picture img').currentSrc).pathname", in: web)
+        XCTAssertEqual(selectedPath, "/selected.png")
+        XCTAssertTrue(snapshot.resources.contains { $0.reference == String(selectedPath.dropFirst()) })
+        let decoded = await host.hasRenderedLocalImages(["selected.png", "fallback.png"])
+        XCTAssertTrue(decoded)
+        let outsideSeal = await host.hasRenderedLocalImages(["fallback.png"])
+        XCTAssertFalse(outsideSeal)
+    }
+
     func testGuidedRubricsDisplayOnlyVerifiedInkAndLeaveStandaloneRubricsAlone() async throws {
         let ink = LeonardoRubric(strokes: [LeonardoInkStroke(
             color: "#000000", width: 2, style: .solid,
@@ -255,14 +295,15 @@ final class MarkdownExtrasTests: XCTestCase {
 
     private func makeHost(
         content: String,
-        config: MarkdownPreviewConfiguration = .default
+        config: MarkdownPreviewConfiguration = .default,
+        baseURL: URL? = nil
     ) -> (MarkdownPreviewHost, NSWindow) {
         _ = NSApplication.shared
         let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 1000, height: 800))
         let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        host.apply(content: content, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        host.apply(content: content, baseURL: baseURL, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         return (host, window)
     }
 

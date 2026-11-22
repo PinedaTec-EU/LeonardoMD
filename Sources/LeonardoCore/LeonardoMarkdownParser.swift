@@ -53,11 +53,13 @@ final class LeonardoSigningMarkdown: @unchecked Sendable {
         }
     }
 
-    func hasRemoteImages(in body: String) throws -> Bool {
-        guard body.contains("!") || body.contains("<") else { return false }
-        return try evaluate("leonardoHasRemoteSigningImages", arguments: [body]) { result in
-            guard result.isBoolean else { throw LeonardoSigningError.storageFailure }
-            return result.toBool()
+    func imageReferences(in body: String) throws -> [String] {
+        guard body.contains("!") || body.contains("<") else { return [] }
+        return try evaluate("leonardoSigningImageReferences", arguments: [body]) { result in
+            guard let references = result.toArray() as? [String] else {
+                throw LeonardoSigningError.storageFailure
+            }
+            return references
         }
     }
 

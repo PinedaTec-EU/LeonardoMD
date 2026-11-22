@@ -754,6 +754,11 @@ struct MobileDocumentView: View {
                 at: Date()
             )
             signingCopy = MobileSigningExchangeDocument(exchange: exchange)
+        } catch LeonardoSigningError.remoteImagesNotSealable {
+            library.presentError(LeonardoSigningError.remoteImagesNotSealable, operation: .export,
+                                 message: spanishErrors
+                                 ? "Sustituye las imágenes en línea por archivos locales en el documento original."
+                                 : "Replace online images with local files in the original document.")
         } catch {
             library.presentError(error, operation: .export,
                                  message: spanishErrors
@@ -766,7 +771,8 @@ struct MobileDocumentView: View {
         source: String, documentPath: String, scope: CorpusScope, files: [CorpusFile]
     ) throws -> [LeonardoSigningResource] {
         let base = URL(fileURLWithPath: "/" + documentPath).deletingLastPathComponent()
-        return try LeonardoLocalImagePolicy.localReferences(in: source).map { reference in
+        let document = try LeonardoFormatParser.parse(source)
+        return try LeonardoLocalImagePolicy.signingReferences(in: document).map { reference in
             guard let parsed = URLComponents(string: reference),
                   parsed.scheme == nil, parsed.host == nil,
                   !parsed.path.hasPrefix("/"), !parsed.path.contains("\\"),

@@ -105,6 +105,9 @@ extension AppSession {
         if isGuidedSigningDocument, let document = leonardoDocument {
             if document.metadata.document.signing != nil || guidedSigningSession != nil {
                 configuration.allowsRemoteImages = false
+                configuration.allowedLocalImageFiles = Set(
+                    ((try? guidedSigningResourceURLs(in: document)) ?? []).map { $0.url }
+                )
             }
             configuration.guidedSigningFieldIDs = document.metadata.fields.compactMap { fieldID, field in
                 field.type == .rubric && field.signerPosition != nil ? fieldID : nil

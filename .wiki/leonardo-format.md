@@ -151,3 +151,7 @@ Signing snapshots reject live image references and signing previews disable remo
 images while preserving their use in ordinary documents. Guided fields draw ink
 only from verified signature overlays ([#560](https://github.com/PinedaTec-EU/LeonardoMD/issues/560),
 [#561](https://github.com/PinedaTec-EU/LeonardoMD/issues/561)).
+The signing resource list comes from displayed image candidates, including local
+responsive variants. The Mac preview restricts local loading to these files.
+Little Leonardo requires its full reader when ordinary filled rubrics cannot
+appear in the native text view ([#562](https://github.com/PinedaTec-EU/LeonardoMD/issues/562)).
