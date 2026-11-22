@@ -285,7 +285,9 @@ extension AppSession {
     /// inspector-only side effect. The inspector can therefore be closed while
     /// the tab still remains fail-closed after a reopen or external reload.
     func prepareGuidedSigningIfNeeded() async {
-        guard guidedSigningLocation != nil else { return }
+        // Plain Markdown cannot have signing history. Keep the recovery
+        // probe for Leonardo files even when their signing header is missing.
+        guard documentKind.isLeonardo, guidedSigningLocation != nil else { return }
         if !isGuidedSigningDocument {
             let expectedLocation = guidedSigningLocation
             let expectedContent = content

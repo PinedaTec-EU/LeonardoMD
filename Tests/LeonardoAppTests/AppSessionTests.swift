@@ -662,6 +662,44 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(afterExternalSign, afterSeal)
     }
 
+    func testCorruptSigningShardProtectsLeonardoRecoveryWithoutLockingMarkdown() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        session.authorizePath = { _, _ in }
+        let unsigned = try leonardoFormFixture(in: root, name: "missing-signing-header")
+        let document = LeonardoDocument(
+            body: "{{field:signature}}",
+            metadata: .init(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: .init(id: "recovery", kind: .form, revision: 1,
+                    signing: .init(positions: [.init(id: "owner", label: "Owner")])),
+                fields: ["signature": .init(type: .rubric, signerPosition: "owner")]
+            )
+        )
+        let history = try LeonardoGuidedSigningSession(
+            document: document, at: Date(), documentLocation: unsigned.template.resolvingSymlinksInPath().path
+        )
+        try await session.guidedSigningStore.saveSession(history)
+        let shard = root.appendingPathComponent("Signing/signing-progress/\(history.id.uuidString).json")
+        try Data("truncated".utf8).write(to: shard)
+
+        await session.openDocument(unsigned.template)
+        session.isProtected = false
+        XCTAssertNotNil(session.guidedSigningError)
+        XCTAssertTrue(session.guidedSigningContentLocked)
+        XCTAssertFalse(session.editDocument(expected: session.content, replacement: "Edited form"))
+
+        let markdown = root.appendingPathComponent("note.md")
+        try Data("# Note".utf8).write(to: markdown)
+        await session.openDocument(markdown)
+        session.isProtected = false
+        XCTAssertNil(session.guidedSigningError)
+        XCTAssertFalse(session.guidedSigningContentLocked)
+        XCTAssertTrue(session.editDocument(expected: "# Note", replacement: "# Edited note"))
+        await session.save()
+        XCTAssertEqual(try String(contentsOf: markdown, encoding: .utf8), "# Edited note")
+    }
+
     func testSigningCopyExportAuthorizesPackageSourceAndDestinationBeforeWriting() async throws {
         let credentials = LeonardoSigningCredentialStore(
             service: "eu.pinedatec.LeonardoMD.tests.signing.export-permissions.\(UUID())"
