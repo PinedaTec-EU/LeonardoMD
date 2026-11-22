@@ -53,6 +53,23 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertTrue(liveTargets.isEmpty)
     }
 
+    func testNewRubricDraftIsBoundToOneSessionAndOccurrence() {
+        let sessionID = UUID()
+        let first = LeonardoSigningLocationTarget(
+            positionID: "signer", fieldID: "signature", occurrence: 0,
+            sourceOffset: 24, contextSHA256: Data(repeating: 1, count: 32)
+        )
+        let next = LeonardoSigningLocationTarget(
+            positionID: "signer", fieldID: "signature", occurrence: 1,
+            sourceOffset: 88, contextSHA256: Data(repeating: 2, count: 32)
+        )
+        let rubric = LeonardoRubric()
+        let draft = GuidedSigningLocationRubricDraft(sessionID: sessionID, target: first, rubric: rubric)
+        XCTAssertEqual(draft.ink(sessionID: sessionID, target: first), rubric)
+        XCTAssertNil(draft.ink(sessionID: sessionID, target: next))
+        XCTAssertNil(draft.ink(sessionID: UUID(), target: first))
+    }
+
     func testInkOnlyProfileKeepsItsIDWhenDeclaringIdentityForAssignment() throws {
         let savedID = UUID()
         let saved = LeonardoSignerProfile(

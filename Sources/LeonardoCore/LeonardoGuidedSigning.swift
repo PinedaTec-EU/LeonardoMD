@@ -701,6 +701,11 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         resources: [LeonardoSigningResource]
     ) throws {
         try validateRequiredSigningData(document)
+        for position in declaration.positions {
+            guard try !targets(for: position.id, document: document).isEmpty else {
+                throw LeonardoSigningError.incompletePosition(position.id)
+            }
+        }
         // Validate resources before mutating the signing session.
         _ = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: Date())
     }

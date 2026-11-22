@@ -552,7 +552,9 @@ final class AppSessionTests: XCTestCase {
             positionID: "owner", profile: profile, credential: key.credential,
             saveOptions: .init(saveIdentityDetails: false, saveRubric: false)
         )
-        let draftSource = originalSource + "\nDraft answer"
+        await session.beginGuidedPosition("owner")
+        let staleTarget = try XCTUnwrap(session.guidedSigningTargets.first)
+        let draftSource = originalSource.replacingOccurrences(of: "Signature:", with: "Updated signature:")
         session.content = draftSource
         session.contentChanged()
         await session.beginGuidedPosition("owner")
@@ -592,6 +594,18 @@ final class AppSessionTests: XCTestCase {
         XCTAssertNil(session.guidedSigningSession?.snapshot)
         await session.save()
         XCTAssertFalse(session.isDirty)
+        XCTAssertNotEqual(staleTarget, target)
+        await session.confirmGuidedLocation(
+            target: staleTarget, rubric: rubric, reuse: .new,
+            reuseConfirmed: false, contextRead: true
+        )
+        XCTAssertNil(session.guidedSigningSession?.snapshot)
+        let afterStaleConfirm = try await session.guidedSigningStore.session(id: sessionID)
+        XCTAssertEqual(afterStaleConfirm, before)
+        XCTAssertNil(session.guidedSigningError)
+        XCTAssertEqual(session.guidedSigningActionProblem, L10n.text(
+            "The field context changed. Review this occurrence again before confirming."
+        ))
         await session.confirmGuidedLocation(
             target: target, rubric: rubric, reuse: .new,
             reuseConfirmed: false, contextRead: true

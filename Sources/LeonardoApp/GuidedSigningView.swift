@@ -20,21 +20,55 @@ struct GuidedSigningView: View {
     @State private var saveIdentityDetails = false
     @State private var saveRubric = false
     @State private var draftProfileRubric: LeonardoRubric? = nil
-    @State private var locationRubric: LeonardoRubric? = nil
+    @State private var locationRubricDraft: GuidedSigningLocationRubricDraft?
     @State private var reuse = LeonardoRubricReuse.new
-    @State private var reuseConfirmed = false
-    @State private var contextRead = false
+    @State private var confirmedReuse: ReviewedReuse?
+    @State private var reviewedOccurrence: ReviewedOccurrence?
     @State private var showAssignmentConfirmation = false
     @State private var showCredentialEnrollment = false
     @State private var showPassword = false
     @State private var showRubricEditor = false
-    @State private var rubricEditorPurpose: RubricEditorPurpose = .location
+    @State private var rubricEditorPurpose: RubricEditorPurpose = .profile
     @State private var selectedCredentialID = ""
     @State private var selectedPassword = ""
     @State private var renderedTargetKeys = Set<String>()
     @State private var targetAvailabilityChecked = false
 
-    private enum RubricEditorPurpose { case profile, location }
+    private enum RubricEditorPurpose {
+        case profile
+        case location(sessionID: UUID, target: LeonardoSigningLocationTarget)
+    }
+
+    private struct ReviewedOccurrence: Equatable {
+        let sessionID: UUID
+        let target: LeonardoSigningLocationTarget
+    }
+
+    private var currentOccurrence: ReviewedOccurrence? {
+        guard let sessionID = session.guidedSigningSession?.id, let target = currentTarget else { return nil }
+        return ReviewedOccurrence(sessionID: sessionID, target: target)
+    }
+
+    private var contextRead: Bool {
+        currentOccurrence != nil && reviewedOccurrence == currentOccurrence
+    }
+
+    private struct ReviewedReuse: Equatable {
+        let occurrence: ReviewedOccurrence
+        let source: LeonardoRubricReuse
+        let rubric: LeonardoRubric
+    }
+
+    private var currentReuse: ReviewedReuse? {
+        guard reuse != .new, let occurrence = currentOccurrence, let rubric = rubricForCurrentChoice else {
+            return nil
+        }
+        return ReviewedReuse(occurrence: occurrence, source: reuse, rubric: rubric)
+    }
+
+    private var reuseConfirmed: Bool {
+        currentReuse != nil && confirmedReuse == currentReuse
+    }
 
     private var positions: [LeonardoSignerPosition] {
         session.guidedSigningSession?.declaration.positions ?? []
@@ -124,6 +158,10 @@ struct GuidedSigningView: View {
         }
     }
 
+    private var locationRubric: LeonardoRubric? {
+        locationRubricDraft?.ink(sessionID: session.guidedSigningSession?.id, target: currentTarget)
+    }
+
     private var rubricForCurrentChoice: LeonardoRubric? {
         guard let positionID = selectedPosition?.id else { return nil }
         switch reuse {
@@ -150,7 +188,8 @@ struct GuidedSigningView: View {
         .onChange(of: session.guidedSigningProfiles) { _, _ in profileOptionsChanged() }
         .onChange(of: selectedProfileID) { _, _ in selectedProfileChanged() }
         .onChange(of: selectedPositionID) { _, _ in selectedPositionChanged() }
-        .onChange(of: selectedTargetIndex) { _, _ in selectedTargetChanged() }
+        .onChange(of: currentOccurrence) { _, _ in selectedTargetChanged() }
+        .onChange(of: currentReuse) { _, _ in confirmedReuse = nil }
         .onChange(of: session.guidedSigningTargets) { _, _ in refreshTargetsSoon() }
         .onChange(of: session.renderer.isReady) { _, ready in rendererReadyChanged(ready) }
         .confirmationDialog(
@@ -187,15 +226,20 @@ struct GuidedSigningView: View {
             }
         }
         .sheet(isPresented: $showRubricEditor) {
-            GuidedSigningRubricCapture(
-                title: rubricEditorPurpose == .profile
-                    ? L10n.text("Profile rubric")
-                    : L10n.text("Location rubric"),
-                initialRubric: rubricEditorPurpose == .profile ? draftProfileRubric : locationRubric
-            ) { rubric in
-                switch rubricEditorPurpose {
-                case .profile: draftProfileRubric = rubric
-                case .location: locationRubric = rubric
+            switch rubricEditorPurpose {
+            case .profile:
+                GuidedSigningRubricCapture(
+                    title: L10n.text("Profile rubric"), initialRubric: draftProfileRubric
+                ) { draftProfileRubric = $0 }
+            case let .location(sessionID, target):
+                GuidedSigningRubricCapture(
+                    title: L10n.text("Location rubric"),
+                    initialRubric: locationRubricDraft?.ink(sessionID: sessionID, target: target)
+                ) { rubric in
+                    guard session.guidedSigningSession?.id == sessionID, currentTarget == target else { return }
+                    locationRubricDraft = GuidedSigningLocationRubricDraft(
+                        sessionID: sessionID, target: target, rubric: rubric
+                    )
                 }
             }
         }
@@ -292,9 +336,9 @@ struct GuidedSigningView: View {
             draftProfileRubric = nil
         }
         selectedTargetIndex = 0
-        contextRead = false
-        reuseConfirmed = false
-        locationRubric = nil
+        reviewedOccurrence = nil
+        confirmedReuse = nil
+        locationRubricDraft = nil
         renderedTargetKeys = []
         targetAvailabilityChecked = false
         session.guidedSigningTargets = []
@@ -305,8 +349,9 @@ struct GuidedSigningView: View {
     }
 
     private func selectedTargetChanged() {
-        contextRead = false
-        reuseConfirmed = false
+        if locationRubric == nil { locationRubricDraft = nil }
+        reviewedOccurrence = nil
+        confirmedReuse = nil
         checkCurrentTarget()
     }
 
@@ -681,8 +726,11 @@ struct GuidedSigningView: View {
                     .font(.caption).monospaced()
                     .padding(8).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
-                Toggle(L10n.text("I have read this exact field context"), isOn: $contextRead)
-                    .font(.caption)
+                Toggle(L10n.text("I have read this exact field context"), isOn: Binding(
+                    get: { contextRead },
+                    set: { reviewedOccurrence = $0 ? currentOccurrence : nil }
+                ))
+                .font(.caption)
                 Picker(L10n.text("Rubric for this occurrence"), selection: $reuse) {
                     Text(L10n.text("New rubric")).tag(LeonardoRubricReuse.new)
                     if session.guidedSigningSession?.rubricByPosition[target.positionID] != nil {
@@ -698,13 +746,17 @@ struct GuidedSigningView: View {
                 }
                 if reuse == .new {
                     Button(L10n.text(locationRubric == nil ? "Draw rubric…" : "Replace rubric…")) {
-                        rubricEditorPurpose = .location
+                        guard let sessionID = session.guidedSigningSession?.id, currentTarget == target else { return }
+                        rubricEditorPurpose = .location(sessionID: sessionID, target: target)
                         showRubricEditor = true
                     }
                     .buttonStyle(PremiumButtonStyle(compact: true))
                 } else {
-                    Toggle(L10n.text("I explicitly confirm reusing this rubric"), isOn: $reuseConfirmed)
-                        .font(.caption)
+                    Toggle(L10n.text("I explicitly confirm reusing this rubric"), isOn: Binding(
+                        get: { reuseConfirmed },
+                        set: { confirmedReuse = $0 ? currentReuse : nil }
+                    ))
+                    .font(.caption)
                 }
                 Button(L10n.text("Confirm exact occurrence")) {
                     Task {
@@ -716,7 +768,7 @@ struct GuidedSigningView: View {
                             rubric: rubricForCurrentChoice ?? LeonardoRubric(), reuse: reuse,
                             reuseConfirmed: reuse == .new ? true : reuseConfirmed,
                             contextRead: contextRead)
-                        if currentTarget == target { contextRead = false }
+                        if currentTarget == target { reviewedOccurrence = nil }
                         advanceToNextTarget(for: target.positionID)
                     }
                 }
@@ -791,8 +843,8 @@ struct GuidedSigningView: View {
                   }
               }) else { return }
         selectedTargetIndex = next
-        contextRead = false
-        reuseConfirmed = false
+        reviewedOccurrence = nil
+        confirmedReuse = nil
         let target = session.guidedSigningTargets[next]
         if renderedTargetKeys.contains(targetKey(target)) {
             session.renderer.scroll(toField: target.fieldID, occurrence: target.occurrence)
@@ -884,6 +936,17 @@ struct GuidedSigningView: View {
 
 /// Adds a declared identity for this assignment. Keeping the saved profile ID
 /// lets the session reject reuse. Only explicit save consent persists identity.
+struct GuidedSigningLocationRubricDraft {
+    let sessionID: UUID
+    let target: LeonardoSigningLocationTarget
+    let rubric: LeonardoRubric
+
+    func ink(sessionID: UUID?, target: LeonardoSigningLocationTarget?) -> LeonardoRubric? {
+        guard sessionID == self.sessionID, target == self.target else { return nil }
+        return rubric
+    }
+}
+
 /// A value snapshot for one rendered location. SwiftUI may retain a row while
 /// the session changes (for example when Pause clears the active targets), so
 /// row actions must never subscript the session's mutable target array.

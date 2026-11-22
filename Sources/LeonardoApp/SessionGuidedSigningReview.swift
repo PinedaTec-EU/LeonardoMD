@@ -195,6 +195,13 @@ extension AppSession {
             let imageFiles = try guidedSigningResourceURLs(in: document)
             let resources = try readGuidedSigningResources(imageFiles)
             if current.snapshot?.matches(document: document, resources: resources) != false {
+                guard try current.targets(for: target.positionID, document: document).contains(target) else {
+                    guidedSigningActionProblem = L10n.text(
+                        "The field context changed. Review this occurrence again before confirming."
+                    )
+                    refreshGuidedSigningTargets(for: target.positionID)
+                    return
+                }
                 let imagesMatch = try await reviewedSigningImagesMatch(
                     document: document, files: imageFiles, resources: resources
                 )

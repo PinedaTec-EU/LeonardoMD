@@ -57,6 +57,8 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         Use `<code>` for a literal example.
 
         Last signature {{field:z}}
+
+        Witness {{field:witness}}
         """
         var session = try LeonardoGuidedSigningSession(document: document, at: now)
         let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
@@ -603,6 +605,36 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertThrowsError(try decoded.validate(against: changed, trustStore: trust)) { error in
             XCTAssertEqual(error as? LeonardoSigningError, .integrityFailure)
         }
+    }
+
+    func testFirstSealRequiresVisibleRubricTargetsForEverySigner() throws {
+        let document = try makeDocument()
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "complete-plan")
+        let ink = rubric(seed: 1)
+        try assign(profile(name: "Ana", number: "A-1", rubric: ink),
+                   key: key, to: "titular", session: &session)
+        var missingWitness = document
+        missingWitness.body = document.body.replacingOccurrences(
+            of: "{{field:witness}}", with: "`{{field:witness}}`"
+        )
+
+        XCTAssertThrowsError(try session.begin(positionID: "titular", document: missingWitness))
+        let target = try XCTUnwrap(session.begin(positionID: "titular", document: document).first)
+        let baseline = session
+        XCTAssertThrowsError(try session.confirmLocation(
+            positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+            document: missingWitness, contextRead: true, rubric: ink, at: now
+        )) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .fieldNotAssigned("witness"))
+        }
+        XCTAssertEqual(session, baseline)
+        XCTAssertNil(session.snapshot)
+        try session.confirmLocation(
+            positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+            document: document, contextRead: true, rubric: ink, at: now
+        )
+        XCTAssertNotNil(session.snapshot)
     }
 
     func testFirstSealAndExchangeRequireTheBoundDocumentIdentityAndRevision() throws {

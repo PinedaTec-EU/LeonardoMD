@@ -845,6 +845,7 @@
   "Unlock the document before creating a corrected revision.": "Desbloquea el documento antes de crear una revisión corregida.",
   "Read each exact occurrence, then confirm it.": "Lee cada aparición exacta y después confírmala.",
   "%@ · occurrence %d": "%@ · aparición %d",
+  "The field context changed. Review this occurrence again before confirming.": "El contexto del campo ha cambiado. Revisa esta aparición antes de volver a confirmar.",
   "I have read this exact field context": "He leído el contexto exacto de este campo",
   "Rubric for this occurrence": "Rúbrica para esta aparición",
   "New rubric": "Rúbrica nueva",
