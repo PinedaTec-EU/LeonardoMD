@@ -126,11 +126,16 @@ final class NativeReconciliationLease {
                     if FileManager.default.fileExists(atPath: url.path) {
                         let loaded = try await session.documents.read(url)
                         guard session.documentURL == url, session.content == content else { continue }
+                        guard !session.rejectGuidedSigningContentChange(loaded.content) else { continue }
                         session.syncUpdatingBuffer = true
                         session.snapshot = loaded; session.content = loaded.content
                         session.syncUpdatingBuffer = false
                         session.externalConflict = false; session.saveStatus = "Saved · local file"
                     } else {
+                        guard !session.guidedSigningContentLocked else {
+                            _ = session.rejectGuidedSigningContentChange("")
+                            continue
+                        }
                         session.syncUpdatingBuffer = true
                         session.snapshot = nil; session.documentURL = nil; session.content = ""
                         session.syncUpdatingBuffer = false
@@ -139,6 +144,7 @@ final class NativeReconciliationLease {
                         session.renderer.update(content: "", baseURL: nil)
                     }
                     session.updateTitle()
+                    await session.prepareGuidedSigningIfNeeded()
                 } catch {
                     // The accepted filesystem result is already durable; preserve unreadable drafts.
                     session.externalConflict = true

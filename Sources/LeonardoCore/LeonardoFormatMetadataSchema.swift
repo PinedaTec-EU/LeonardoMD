@@ -5,8 +5,9 @@ import Foundation
 /// plugin and external agents all consume the same vocabulary and bounds.
 enum LeonardoFormatMetadataSchema {
     static func validate(_ value: Any) throws {
+        let version = (value as? [String: Any])?["formatVersion"] as? Int
         do {
-            try LeonardoJSONSchemaEvaluator.validate(value: value, schemaData: bundledSchemaData())
+            try LeonardoJSONSchemaEvaluator.validate(value: value, schemaData: bundledSchemaData(for: version))
         } catch let error as LeonardoJSONSchemaFailure {
             switch error {
             case let .violation(path, kind):
@@ -47,7 +48,16 @@ enum LeonardoFormatMetadataSchema {
     /// Internal test hook used to compare the Core resource with the
     /// repository and plugin copies byte-for-byte.
     static func bundledSchemaData() throws -> Data {
-        guard let url = Bundle.module.url(forResource: "mdlf-v1.schema", withExtension: "json") else {
+        try bundledSchemaData(for: LeonardoFormat.legacyVersion)
+    }
+
+    /// Returns the schema for a concrete wire-format version. Keeping the
+    /// version in the resource name prevents a v2 signing document from being
+    /// accidentally validated with the legacy v1 vocabulary.
+    static func bundledSchemaData(for version: Int?) throws -> Data {
+        guard let version,
+              LeonardoFormat.supportedVersions.contains(version),
+              let url = Bundle.module.url(forResource: "mdlf-v\(version).schema", withExtension: "json") else {
             throw LeonardoFormatError.invalidMetadataJSON
         }
         do {

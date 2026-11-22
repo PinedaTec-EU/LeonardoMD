@@ -1,5 +1,15 @@
 # Changes
 
+- 2026-11-22: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) judge-blocker follow-up: macOS guided-signing actions now bind to the selected signer position, guard asynchronous target publication against selection races, advance through repeated occurrences, and give rubric-only profiles a transient declared-identity profile ID. Core treats unassigned rubric fields as ordinary required/optional data, compares complete rendered locations for readiness, and restores `readyToSign` after `resume` plus `begin` when the last location was already confirmed. Focused recorder validation passes 15 Core + 9 App tests; PR #520 build delta is 76. Packaged macOS/iOS QA remains owned by the parent task.
+
+- 2026-11-21: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) correction/import follow-up: signed-sidecar history may retain multiple semantic revisions at one local path, while the exact document identity and revision remain single-writer. Import selects only that exact revision and preserves older audit sessions; the protected store compares the target session inside its file-lock transaction so progress from another open document is retained. A focused persistence regression covers historical revisions and same-revision forks.
+
+- 2026-11-21: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) follow-up: Little Leonardo signing copies now include a read-only full Markdown preview with exact occurrence-keyed navigation and fail-closed action gating; signed rubric overlays are shown only after independent proof verification. macOS and iOS panels disclose optional fields that remain blank before sealing. Public Keychain trust reads cannot open authentication UI (including legacy macOS login-keychain interaction), and the state is restored immediately after each read. Bilingual Help advances to v110 (EN `abfbf8b822de4f0c1af2fbdb8e2fb456b37b08751599ac4833c1b2b3f9ae7ed4`; ES `a7fe6c65fdb1aafc5010fe61991f58eda720321cadce120e62dc31afc480fad5`). Focused Swift tests pass 32/32; recorded macOS/iOS build deltas are 34/35.
+
+- 2026-11-21: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) adds the MDLF v2 guided-signing contract and protected sidecar foundation. The native and plugin validators select matching v1/v2 schemas; the session tracks exact source-order occurrences, per-position rubric reuse, late first assignment only for still-pending positions, salted identity commitments, external trust and chained detached proofs. Persistence uses locked CAS transactions, size/type checks before reads and 0600 atomic publication. Focused Swift verification is pending a source PR/ledger entry; plugin tests pass 39/39.
+
+- 2026-11-21: Follow-up for [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517), [#522](https://github.com/PinedaTec-EU/LeonardoMD/issues/522) and [#523](https://github.com/PinedaTec-EU/LeonardoMD/issues/523): macOS guided signing captures use a signing-only rubric canvas and assigned fields reject the generic insertion path. Verified completed positions render occurrence-keyed rubric overlays without mutating the source snapshot. Little Leonardo keeps credential enrollment as a separate, explicitly labeled control outside the credential picker hit target; bilingual Guide v109 documents the consent boundary and explicit exchange.
+
 - 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
 
 - 2026-11-20: [#502](https://github.com/PinedaTec-EU/LeonardoMD/issues/502) splits `.github/workflows/ci.yml` into concurrent macOS test, Little Leonardo simulator, and package jobs. The existing `test` check requires success in all three. Little Leonardo installs the test build and seeds recovery before running the selected unit and UI cases in one XCTest invocation.
@@ -340,3 +350,19 @@ Packaged macOS preference and bilingual Help captures are recorded in
 Mac Help CTA resolved an existing personal practice copy, which was preserved;
 Mac text save/reopen remains unverified. Little Leonardo’s offline practice
 save/reopen XCTest passed 1/1.
+
+# 2026-11-22: PR #520 Mac signing integrity follow-up
+
+Issues [#554](https://github.com/PinedaTec-EU/LeonardoMD/issues/554) and
+[#555](https://github.com/PinedaTec-EU/LeonardoMD/issues/555) now have direct
+macOS AppSession coverage. The first guided signing seal flushes pending
+Preview edits and requires a clean authoritative saved document; dirty and
+failed-save buffers cannot advance proof or sidecar state. Cold reopen after a
+removed or changed header recovers only one verified trusted sealed snapshot,
+checks local resources and completed proofs against the local trust registry,
+keeps the original bytes untouched, and requires Save Copy before signing. An
+ambiguous or unverified history remains restoration guidance with no correction
+action. `AppSessionTests` (49 cases), `RubricSessionTests` (10 cases), and
+`LocalizationTests` (8 cases) pass; the PR #520 compilation ledger is 110.
+Packaged Help/GUI smoke acceptance is
+not claimed in this source-only handoff.

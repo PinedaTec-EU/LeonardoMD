@@ -32,7 +32,9 @@ extension AppSession {
 
     func requestRubric(fieldID: String? = nil) {
         if let fieldID {
-            guard canFillLeonardoForm, let field = leonardoFieldDefinition(fieldID), field.type == .rubric, !field.readOnly else { return }
+            guard canFillLeonardoForm, let field = leonardoFieldDefinition(fieldID), field.type == .rubric,
+                  !field.readOnly,
+                  !(isGuidedSigningDocument && field.signerPosition != nil) else { return }
         } else if !canEditGraphics { return }
         rubricRequest = RubricRequest(documentURL: documentURL, source: content, fieldID: fieldID)
     }
@@ -46,7 +48,8 @@ extension AppSession {
         guard documentURL == request.documentURL, content == request.source, rubric.isValid else { return false }
         if let field = request.fieldID {
             guard canFillLeonardoForm, let value = rubric.jsonValue,
-                  let definition = leonardoFieldDefinition(field), !definition.readOnly, definition.type == .rubric else { return false }
+                  let definition = leonardoFieldDefinition(field), !definition.readOnly, definition.type == .rubric,
+                  !(isGuidedSigningDocument && definition.signerPosition != nil) else { return false }
             do {
                 if saveToLibrary { try rubricLibrary.add(label: label, rubric: rubric, sourceRequestID: sourceRequestID) }
                 return updateLeonardoFields(expected: request.source, changes: [field: value]) != nil
@@ -82,7 +85,13 @@ extension AppSession {
 
     func handleGraphicAction(expected: String, object: LeonardoGraphic?, remove: String?, fieldID: String?) -> Bool {
         guard content == expected else { return false }
-        if let fieldID { requestRubric(fieldID: fieldID); return rubricRequest != nil }
+        if let fieldID {
+            guard let definition = leonardoFieldDefinition(fieldID), definition.type == .rubric,
+                  !definition.readOnly,
+                  !(isGuidedSigningDocument && definition.signerPosition != nil) else { return false }
+            requestRubric(fieldID: fieldID)
+            return rubricRequest?.fieldID == fieldID && rubricRequest?.source == expected
+        }
         let appliesCloseSnapshot = canApplyCloseGraphicSnapshot
         guard canEditGraphics || appliesCloseSnapshot, var document = leonardoDocument,
               var layout = document.metadata.layout else { return false }

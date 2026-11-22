@@ -62,10 +62,11 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertNotIn("import jsonschema", helper.read_text(encoding="utf-8"))
 
     def test_bundled_schema_matches_canonical_contract(self) -> None:
-        canonical = PLUGIN_ROOT.parents[1] / "doc/format/mdlf-v1.schema.json"
-        bundled = PLUGIN_ROOT / "skills/leonardo-format/references/mdlf-v1.schema.json"
-        self.assertTrue(canonical.is_file())
-        self.assertEqual(bundled.read_bytes(), canonical.read_bytes())
+        for version in (1, 2):
+            canonical = PLUGIN_ROOT.parents[1] / f"doc/format/mdlf-v{version}.schema.json"
+            bundled = PLUGIN_ROOT / f"skills/leonardo-format/references/mdlf-v{version}.schema.json"
+            self.assertTrue(canonical.is_file())
+            self.assertEqual(bundled.read_bytes(), canonical.read_bytes())
 
 
 if __name__ == "__main__":

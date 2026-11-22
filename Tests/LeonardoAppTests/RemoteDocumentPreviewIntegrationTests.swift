@@ -3,6 +3,7 @@ import SwiftUI
 import Vision
 import WebKit
 import XCTest
+import LeonardoCore
 import LeonardoSync
 import LeonardoSyncUI
 
@@ -72,7 +73,17 @@ import LeonardoSyncUI
 
         Name: {{field:name}}
         """.utf8))
-        let files = [note, response]
+        let guided = CorpusFile(path: "guided.mdlf", content: Data("""
+        ---
+        {"format":"mdlf","formatVersion":2,"document":{"id":"guided-preview","kind":"form","title":"Guided signing example","revision":1,"signing":{"positions":[{"id":"titular","label":"Titular"}]}},"fields":{"name":{"type":"text","label":"Name"},"titularRubric":{"type":"rubric","signerPosition":"titular","label":"Titular signature"}},"values":{"name":"Ada Lovelace"}}
+        ---
+        # Guided signing example
+
+        Name: {{field:name}}
+
+        Titular: {{field:titularRubric}}
+        """.utf8))
+        let files = [note, response, guided]
         let filesByPath = Dictionary(uniqueKeysWithValues: files.map { ($0.path, $0) })
         try await library.update(id: descriptor.id, descriptor: descriptor,
             catalogue: RemoteProjectCatalogue(files: files.map(RemoteFileEntry.init)))
@@ -81,17 +92,29 @@ import LeonardoSyncUI
             return file
         }
 
-        for (file, expectedHeading, expectedValue) in [
-            (note, "Portable note", nil as String?),
-            (response, "Filled response", "Ada Lovelace")
+        for (file, expectedHeading, expectedValue, expectsGuidedSigningBanner) in [
+            (note, "Portable note", nil as String?, false),
+            (response, "Filled response", "Ada Lovelace", false),
+            (guided, "Guided signing example", "Ada Lovelace", true)
         ] {
             try await assertReadOnlyRemotePreview(library: library, projectID: descriptor.id, file: file,
-                                                  expectedHeading: expectedHeading, expectedValue: expectedValue)
+                                                  expectedHeading: expectedHeading, expectedValue: expectedValue,
+                                                  expectsGuidedSigningBanner: expectsGuidedSigningBanner)
         }
     }
 
     private func assertReadOnlyRemotePreview(library: DownloadLibrary, projectID: UUID, file: CorpusFile,
-                                             expectedHeading: String, expectedValue: String?) async throws {
+                                             expectedHeading: String, expectedValue: String?,
+                                             expectsGuidedSigningBanner: Bool = false) async throws {
+        if let source = String(data: file.content, encoding: .utf8),
+           let parsed = try? LeonardoFormatParser.parse(source) {
+            XCTAssertEqual(parsed.metadata.formatVersion >= LeonardoFormat.signingVersion
+                           && parsed.metadata.document.signing != nil,
+                           expectsGuidedSigningBanner,
+                           "The v2 declaration must be detected before showing the read-only banner")
+        } else {
+            XCTAssertFalse(expectsGuidedSigningBanner)
+        }
         let size = NSSize(width: 900, height: 600)
         let host = NSHostingView(rootView: RemoteDocumentPreview(library: library, projectID: projectID,
             entry: RemoteFileEntry(file: file)).frame(width: size.width, height: size.height))

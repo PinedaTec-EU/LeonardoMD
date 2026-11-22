@@ -31,6 +31,95 @@ public enum LeonardoLocalImagePolicy {
         return (body + metadata).filter { isLocalReference($0) && seen.insert($0).inserted }
     }
 
+    /// Returns all fixed local image candidates the signing renderer can
+    /// display, including the sources behind responsive images.
+    public static func signingReferences(in document: LeonardoDocument) throws -> [String] {
+        try validatedSigningReferences(signingImageCandidates(in: document))
+    }
+
+    /// Validates the references from actual image elements in the signing
+    /// preview against the same restrictions as the source document.
+    public static func signingReferences(inRenderedHTML html: String) throws -> [String] {
+        let references = try LeonardoSigningMarkdown.shared.renderedImageReferences(in: html)
+        return try validatedSigningReferences(references.map(canonicalSigningImageReference))
+    }
+
+    private static func validatedSigningReferences(_ references: [String]) throws -> [String] {
+        guard !references.contains(where: { isRemoteImage($0) }) else {
+            throw LeonardoSigningError.remoteImagesNotSealable
+        }
+        var seen = Set<String>()
+        return try references.filter { reference in
+            // The bytes of a data URL are already in the signed source.
+            if reference.isEmpty || reference.lowercased().hasPrefix("data:") { return false }
+            guard isLocalReference(reference), portableSigningImagePath(reference) != nil else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            return seen.insert(reference).inserted
+        }
+    }
+
+    /// The seal covers exactly the declared image references. References
+    /// resolving to one local path must all supply the same file bytes.
+    static func validateSigningResources(
+        _ resources: [LeonardoSigningResource], in document: LeonardoDocument
+    ) throws {
+        let expected = Set(try signingReferences(in: document))
+        var provided = Set<String>()
+        var bytesByPath: [String: Data] = [:]
+        for resource in resources {
+            let reference = canonicalSigningImageReference(resource.reference)
+            guard let path = portableSigningImagePath(reference) else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            guard provided.insert(reference).inserted else {
+                throw LeonardoSigningError.duplicateResourceReference
+            }
+            let localPath = path.precomposedStringWithCanonicalMapping
+            if let bytes = bytesByPath[localPath], bytes != resource.bytes {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            bytesByPath[localPath] = resource.bytes
+        }
+        if let mismatch = expected.subtracting(provided).min() ?? provided.subtracting(expected).min() {
+            throw LeonardoSigningError.invalidResourceReference(mismatch)
+        }
+    }
+
+    static func canonicalSigningImageReference(_ reference: String) -> String {
+        reference.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
+    }
+
+    /// A signing copy travels between installations, so image references use
+    /// a relative URL path. Validate its decoded path before any file lookup.
+    public static func portableSigningImagePath(_ reference: String) -> String? {
+        guard let parts = URLComponents(string: reference), parts.scheme == nil, parts.host == nil else {
+            return nil
+        }
+        let path = parts.path
+        guard !path.isEmpty, !path.hasPrefix("/"), !path.contains("\\"),
+              !path.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }),
+              !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else {
+            return nil
+        }
+        return path
+    }
+
+    public static func hasEmbeddedSigningImages(in document: LeonardoDocument) throws -> Bool {
+        try signingImageCandidates(in: document).contains { $0.lowercased().hasPrefix("data:") }
+    }
+
+    private static func signingImageCandidates(in document: LeonardoDocument) throws -> [String] {
+        var references = try LeonardoSigningMarkdown.shared.imageReferences(in: document.body)
+        // layout.images positions existing body images. Only the background
+        // and independent page objects introduce additional image resources.
+        if let layout = document.metadata.layout {
+            references += layout.objects.compactMap(\.source)
+            if let image = layout.background?.image { references.append(image) }
+        }
+        return references.map(canonicalSigningImageReference)
+    }
+
     fileprivate struct BodyReference {
         let range: NSRange
         let value: String
@@ -100,7 +189,7 @@ public enum LeonardoLocalImagePolicy {
 
     private static func isRemoteImage(_ reference: String?) -> Bool {
         let scheme = reference.flatMap { URL(string: $0)?.scheme?.lowercased() }
-        return scheme == "https" || scheme == "http"
+        return scheme == "https" || scheme == "http" || reference?.hasPrefix("//") == true
     }
 
     /// Remove orphan definitions, including duplicates, without breaking ordinary links.
@@ -122,7 +211,7 @@ public enum LeonardoLocalImagePolicy {
     }
 
     fileprivate static func isLocalReference(_ reference: String) -> Bool {
-        guard !reference.isEmpty, !reference.hasPrefix("#") else { return false }
+        guard !reference.isEmpty, !reference.hasPrefix("#"), !isRemoteImage(reference) else { return false }
         let parsed = URL(string: reference)
         if let scheme = parsed?.scheme?.lowercased(), scheme != "file" { return false }
         let path: String
