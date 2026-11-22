@@ -7,6 +7,7 @@ import LeonardoCore
 struct MobileGuidedSigningView: View {
     let library: MobileLibrary
     private let localDocumentLocation: String?
+    private let initiallyShowingDocumentReader: Bool
     private let initialExchange: LeonardoSigningExchange
     @Environment(\.dismiss) private var dismiss
     @State private var document: LeonardoDocument?
@@ -62,12 +63,12 @@ struct MobileGuidedSigningView: View {
         self.library = library
         self.initialExchange = exchange
         self.localDocumentLocation = localDocumentLocation
+        self.initiallyShowingDocumentReader = initiallyShowingDocumentReader
         _document = State(initialValue: try? exchange.document())
         _session = State(initialValue: exchange.session)
         _resources = State(initialValue: (try? exchange.signingResources()) ?? [])
         _trustedCredentials = State(initialValue: exchange.trustedCredentials)
         _trustAccepted = State(initialValue: exchange.trustedCredentials.isEmpty)
-        _showingDocumentReader = State(initialValue: initiallyShowingDocumentReader)
     }
 
     private var spanish: Bool {
@@ -132,7 +133,12 @@ struct MobileGuidedSigningView: View {
         }
         .navigationTitle(spanish ? "Firma de copia" : "Sign copy")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await loadLocalSigningData() }
+        .task {
+            await loadLocalSigningData()
+            if initiallyShowingDocumentReader && ready {
+                showingDocumentReader = true
+            }
+        }
         .onChange(of: selectedPositionID) { _, _ in
             guard selectedProgress?.assignment == nil else { return }
             creatingProfile = true
