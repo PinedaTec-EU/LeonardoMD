@@ -506,6 +506,16 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertThrowsError(try LeonardoSigningExchange.encoded(oversized)) { error in
             XCTAssertEqual(error as? LeonardoSigningError, .exchangeTooLarge)
         }
+
+        let rawLimitExceeded = (0..<5).map { index in
+            LeonardoSigningResource(reference: "assets/large-\(index).png", bytes: largeResource)
+        }
+        XCTAssertThrowsError(try LeonardoSigningExchange(
+            document: document, resources: rawLimitExceeded, session: session,
+            trustedCredentials: [], at: now
+        )) { error in
+            XCTAssertEqual(error as? LeonardoSigningError, .exchangeTooLarge)
+        }
     }
 
     func testSigningExchangeCarriesOnlyParticipatingCredentials() throws {

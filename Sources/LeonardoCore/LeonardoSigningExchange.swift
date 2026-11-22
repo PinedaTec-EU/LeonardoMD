@@ -330,7 +330,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         _ resources: [LeonardoSigningResource]
     ) throws -> [LeonardoSigningExchangeResource] {
         guard resources.count <= maximumResourceCount else {
-            throw LeonardoSigningError.storageFailure
+            throw LeonardoSigningError.exchangeTooLarge
         }
         var total = 0
         var seen = Set<String>()
@@ -342,12 +342,15 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
                   !reference.hasPrefix("/"),
                   !reference.contains("\\"),
                   !reference.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }),
-                  !reference.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }),
-                  seen.insert(reference).inserted,
-                  resource.bytes.count <= LeonardoSigningSnapshot.maximumResourceBytes,
+                  !reference.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else {
+                throw LeonardoSigningError.invalidResourceReference(reference)
+            }
+            guard seen.insert(reference).inserted else {
+                throw LeonardoSigningError.duplicateResourceReference
+            }
+            guard resource.bytes.count <= LeonardoSigningSnapshot.maximumResourceBytes,
                   total <= maximumTotalResourceBytes - resource.bytes.count else {
-                if seen.contains(reference) { throw LeonardoSigningError.duplicateResourceReference }
-                throw LeonardoSigningError.resourceTooLarge(reference)
+                throw LeonardoSigningError.exchangeTooLarge
             }
             total += resource.bytes.count
             return LeonardoSigningExchangeResource(reference: reference, bytes: resource.bytes)
