@@ -1229,9 +1229,19 @@
       "pr": 515,
       "summary": "Sync diagnostics explains how to copy the report and email it manually when the default mail app does not show a draft.",
       "to_version": "0.3.1968"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.1968",
+      "merge_sha": "9f795c042debf9876d7c40dde869c800c010532c",
+      "pr": 547,
+      "summary": "Run the iOS read-only document rendering check independently in CI and allow time for a cold WebKit start.",
+      "to_version": "0.3.1969"
     }
   ],
-  "current_version": "0.3.1968",
+  "current_version": "0.3.1969",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
