@@ -147,6 +147,15 @@ private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend
 public actor LeonardoSigningCredentialStore {
     public static let defaultService = "eu.pinedatec.LeonardoMD.signing"
 
+    /// Disposable macOS QA bundles have distinct code-signing identities.
+    /// Keep their records separate from the installed app and from each other.
+    public static func applicationService(bundleIdentifier: String?) -> String {
+        guard let bundleIdentifier, bundleIdentifier.hasPrefix("eu.pinedatec.LeonardoMD.qa.") else {
+            return defaultService
+        }
+        return bundleIdentifier + ".signing"
+    }
+
     private let service: String
     private let prompt: String
     private let keychain: any LeonardoSigningCredentialKeychainBackend

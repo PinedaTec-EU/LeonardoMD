@@ -5,6 +5,25 @@ import LeonardoCore
 @testable import LeonardoSync
 
 final class LeonardoSigningCredentialStoreTests: XCTestCase {
+    func testDisposableQABundlesUseSeparateSigningServices() {
+        XCTAssertEqual(
+            LeonardoSigningCredentialStore.applicationService(bundleIdentifier: "eu.pinedatec.LeonardoMD"),
+            LeonardoSigningCredentialStore.defaultService
+        )
+        XCTAssertEqual(
+            LeonardoSigningCredentialStore.applicationService(bundleIdentifier: nil),
+            LeonardoSigningCredentialStore.defaultService
+        )
+        XCTAssertEqual(
+            LeonardoSigningCredentialStore.applicationService(bundleIdentifier: "eu.pinedatec.LeonardoMD.qa.first"),
+            "eu.pinedatec.LeonardoMD.qa.first.signing"
+        )
+        XCTAssertEqual(
+            LeonardoSigningCredentialStore.applicationService(bundleIdentifier: "eu.pinedatec.LeonardoMD.qa.second"),
+            "eu.pinedatec.LeonardoMD.qa.second.signing"
+        )
+    }
+
     func testDuplicateEnrollmentDoesNotDeleteExistingTrustRecord() async throws {
         let keychain = InMemorySigningKeychain()
         let store = LeonardoSigningCredentialStore(
