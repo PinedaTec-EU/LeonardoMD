@@ -1,0 +1,16 @@
+{
+  "reviewed_sha": "354153dd4258888c056e68956919082015e33919",
+  "capture_checkout": "354153dd4258888c056e68956919082015e33919",
+  "platform": "iOS 26.5 Simulator, production SwiftUI/WKWebView",
+  "udid": "271B5505-A755-41BB-AC90-236C58AB9CA5",
+  "pixel_width": 1206,
+  "pixel_height": 2622,
+  "capture_mode": "simctl native viewport during XCTest",
+  "state": "Untrusted signing copy presenting the full-document sheet. The guided rubric stays empty.",
+  "original": "testSignedGuidedSigningViewPresentsReaderOutsideList-5.png",
+  "captured_at": "2026-11-22T09:55:59.815552+01:00",
+  "sha256": "53903e94ab7513c96bd465e62dda6c6f2404484c1048c924151c571aeaa7fb0e",
+  "executable_sha256": "e76d98e0b30869874413d520fdc1ef70e9104ad93fb2f84097f71f3f18994209",
+  "test_result": "Test-LittleLeonardo-2026.11.22_09-55-48-+0100.xcresult",
+  "build_provenance": "Byte-identical iOS binary built from parent a5f967ca27c5f0ebfbd3f4d96c15b87be91b3700. This candidate only changes a macOS view and the version ledger. Captured from the exact clean checkout."
+}

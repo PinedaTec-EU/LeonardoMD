@@ -1,0 +1,25 @@
+{
+  "browser_name" : "Native WKWebView; User-Agent reports engine compatibility versions",
+  "browser_version" : "Mozilla\/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit\/605.1.15 (KHTML, like Gecko)",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-22T08:55:45.075Z",
+  "data_provenance" : "synthetic",
+  "device_pixel_ratio" : 2,
+  "image_pixels" : {
+    "height" : 1324,
+    "width" : 1778
+  },
+  "native_viewport_points" : {
+    "height" : 662,
+    "width" : 889
+  },
+  "os" : "Version 27.2.1 (Build 26B131)",
+  "route" : "\/native\/firmas\/mac-formulario-renderizado",
+  "screen" : "mac-formulario-renderizado",
+  "source_sha" : "354153dd4258888c056e68956919082015e33919",
+  "state" : "Rendered guided signing form in the native Mac document viewport; language es",
+  "viewport_css" : {
+    "height" : 662,
+    "width" : 889
+  }
+}
