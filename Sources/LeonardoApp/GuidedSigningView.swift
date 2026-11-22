@@ -604,7 +604,7 @@ struct GuidedSigningView: View {
                         Spacer()
                         Button(L10n.text("Sign")) { showPassword = true }
                             .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
-                            .disabled(progress.state != .readyToSign)
+                            .disabled(progress.state != .readyToSign || !session.guidedSigningWorkflowOperable)
                     }
                 }
             }
