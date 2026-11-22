@@ -793,6 +793,7 @@
   "Use readable local images within the document or its project and within the signing size limits.": "Usa imágenes locales legibles, dentro de la carpeta del documento o de su proyecto, que cumplan los límites de tamaño de firma.",
   "Replace online images with local files before signing.": "Sustituye las imágenes en línea por archivos locales antes de firmar.",
   "A referenced image changed. Review the document and export a new signing copy.": "Una imagen referenciada cambió. Revisa el documento y exporta una nueva copia de firma.",
+  "This signing copy does not match the progress saved on this Mac. Use a current copy.": "Esta copia de firma no coincide con el progreso guardado en este Mac. Usa una copia actualizada.",
   "Choose a readable, valid signing copy and try again.": "Elige una copia de firma válida y legible e inténtalo de nuevo.",
   "This signing copy exceeds the exchange size limit.": "Esta copia de firma supera el tamaño máximo para el intercambio.",
   "Signing copy exported": "Copia de firma exportada",

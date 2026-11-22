@@ -232,6 +232,10 @@ its signature at that occurrence. The signing panel marks each verified position
 in green. If the key is unknown or the proof cannot be verified, the position
 shows the reason and keeps its rubric hidden.
 
+![Mac signing inspector with a verified signature, an unconfirmed key and a failed verification](guide/en/assets/guided-signing-verification.png)
+
+An older or divergent signing copy leaves the progress already saved on the Mac intact. Use a current copy to retry the import.
+
 Save the completed form on the Mac before confirming the first location or
 exchanging a signing copy. The
 first confirmation seals the saved answers, assignments, document revision

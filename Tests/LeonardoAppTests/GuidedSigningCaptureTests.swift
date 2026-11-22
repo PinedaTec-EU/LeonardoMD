@@ -18,21 +18,27 @@ final class GuidedSigningCaptureTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let previousLanguage = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previousLanguage }
-        LanguageSettings.shared.language = .spanish
+        let language = ProcessInfo.processInfo.environment["LEONARDO_NATIVE_CAPTURE_LANGUAGE"]
+            .flatMap(AppLanguage.init(rawValue:)) ?? .spanish
+        LanguageSettings.shared.language = language
+        let spanish = language == .spanish
+        let title = spanish ? "Acuerdo de ejemplo" : "Sample agreement"
+        let holder = spanish ? "Titular" : "Holder"
+        let witness = spanish ? "Testigo" : "Witness"
 
         let document = LeonardoDocument(
-            body: "# Acuerdo de ejemplo\n\n## Titular\n{{field:holder}}\n\n## Testigo\n{{field:witness}}",
+            body: "# \(title)\n\n## \(holder)\n{{field:holder}}\n\n## \(witness)\n{{field:witness}}",
             metadata: LeonardoMetadata(
                 formatVersion: LeonardoFormat.signingVersion,
                 document: LeonardoDocumentDescriptor(
-                    id: "mac-guided-signing-capture", title: "Acuerdo de ejemplo", kind: .form,
+                    id: "mac-guided-signing-capture", title: title, kind: .form,
                     revision: 1, signing: LeonardoSigningDeclaration(positions: [
-                        .init(id: "holder", label: "Titular"), .init(id: "witness", label: "Testigo")
+                        .init(id: "holder", label: holder), .init(id: "witness", label: witness)
                     ])
                 ),
                 fields: [
-                    "holder": .init(type: .rubric, label: "Rúbrica del titular", signerPosition: "holder"),
-                    "witness": .init(type: .rubric, label: "Rúbrica del testigo", signerPosition: "witness")
+                    "holder": .init(type: .rubric, label: spanish ? "Rúbrica del titular" : "Holder rubric", signerPosition: "holder"),
+                    "witness": .init(type: .rubric, label: spanish ? "Rúbrica del testigo" : "Witness rubric", signerPosition: "witness")
                 ]
             )
         )
@@ -40,7 +46,7 @@ final class GuidedSigningCaptureTests: XCTestCase {
         defer { session.stop() }
         await session.initialize()
         session.globalPreferences.palette = .leonardoClassic
-        let documentURL = root.appendingPathComponent("Acuerdo de ejemplo.mdlf")
+        let documentURL = root.appendingPathComponent(title + ".mdlf")
         let source = try LeonardoFormatParser.serialize(document)
         try source.write(to: documentURL, atomically: true, encoding: .utf8)
         session.documentURL = documentURL
@@ -58,17 +64,17 @@ final class GuidedSigningCaptureTests: XCTestCase {
 
         try await capture(WorkspaceView(session: session), name: "mac-documento-con-firmas",
                           size: NSSize(width: 1260, height: 740), session: session, folder: folder)
-        try await captureRenderedDocument(session: session, folder: folder)
+        try await captureRenderedDocument(title: title, session: session, folder: folder)
 
         try await capture(DocumentToolbar(session: session), name: "mac-barra-documento",
                           size: NSSize(width: 1260, height: 72), session: session, folder: folder)
         try await capture(GuidedSigningView(session: session), name: "mac-firma-pendiente",
                           size: NSSize(width: 390, height: 660), session: session, folder: folder)
-        try await capture(GuidedSigningRubricCapture(title: "Rúbrica del titular", initialRubric: nil) { _ in },
+        try await capture(GuidedSigningRubricCapture(title: spanish ? "Rúbrica del titular" : "Holder rubric", initialRubric: nil) { _ in },
                           name: "mac-lienzo-rubrica", size: NSSize(width: 660, height: 445),
                           session: session, folder: folder)
-        try await capture(GuidedSigningLinkedRubricPanel(title: "Rúbrica del titular", drawLocally: {}, close: {}) {
-            GuidedSigningRubricWaitingView(deviceName: "Little Leonardo de prueba", cancel: {})
+        try await capture(GuidedSigningLinkedRubricPanel(title: spanish ? "Rúbrica del titular" : "Holder rubric", drawLocally: {}, close: {}) {
+            GuidedSigningRubricWaitingView(deviceName: spanish ? "Little Leonardo de prueba" : "Test Little Leonardo", cancel: {})
         }, name: "mac-espera-rubrica-enlazada", size: NSSize(width: 460, height: 380),
            session: session, folder: folder)
         try await captureMixedVerification(document: document, session: session, folder: folder)
@@ -76,14 +82,15 @@ final class GuidedSigningCaptureTests: XCTestCase {
 
     private func captureMixedVerification(document: LeonardoDocument, session: AppSession, folder: URL) async throws {
         var document = document
-        document.body += "\n\n## Revisor\n{{field:reviewer}}"
-        let positions: [LeonardoSignerPosition] = [
-            .init(id: "holder", label: "Titular"),
-            .init(id: "witness", label: "Testigo"),
-            .init(id: "reviewer", label: "Revisor")
-        ]
+        let spanish = LanguageSettings.shared.language == .spanish
+        let reviewer = spanish ? "Revisor" : "Reviewer"
+        document.body += "\n\n## \(reviewer)\n{{field:reviewer}}"
+        var positions = try XCTUnwrap(document.metadata.document.signing?.positions)
+        positions.append(.init(id: "reviewer", label: reviewer))
         document.metadata.document.signing = .init(positions: positions)
-        document.metadata.fields["reviewer"] = .init(type: .rubric, label: "Rúbrica del revisor", signerPosition: "reviewer")
+        document.metadata.fields["reviewer"] = .init(
+            type: .rubric, label: spanish ? "Rúbrica del revisor" : "Reviewer rubric", signerPosition: "reviewer"
+        )
         let keys = positions.map { LeonardoSigningKeyPair(credentialID: "capture-" + $0.id) }
         let initialTrust = try LeonardoSigningTrustRegistry(credentials: keys.map(\.credential))
         var signed = try LeonardoGuidedSigningSession(document: document, at: Date())
@@ -116,9 +123,11 @@ final class GuidedSigningCaptureTests: XCTestCase {
         ])
         try await capture(GuidedSigningView(session: session), name: "mac-verificacion-por-firmante",
                           size: NSSize(width: 460, height: 690), session: session, folder: folder)
+        try await capture(GuidedSigningView(session: session), name: "mac-guia-verificacion",
+                          size: NSSize(width: 370, height: 275), session: session, folder: folder, pixelScale: 1)
     }
 
-    private func captureRenderedDocument(session: AppSession, folder: URL) async throws {
+    private func captureRenderedDocument(title: String, session: AppSession, folder: URL) async throws {
         let hosting = NSHostingView(rootView: WorkspaceView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 740),
                               styleMask: [.titled], backing: .buffered, defer: false)
@@ -135,12 +144,12 @@ final class GuidedSigningCaptureTests: XCTestCase {
         repeat {
             if let web = findWebView(hosting), session.renderer.isReady,
                (try? await web.evaluateJavaScript("""
-                   document.querySelector('h1')?.textContent === 'Acuerdo de ejemplo' &&
+                   document.querySelector('h1')?.textContent === '\(title)' &&
                    window.LeonardoForms?.hasFieldTarget('holder', 0) === true
                    """)) as? Bool == true {
                 try await GuideCaptureSupport.capture(
                     web, to: folder.appendingPathComponent("mac-formulario-renderizado.png"),
-                    language: "es", state: "Rendered guided signing form in the native Mac document viewport",
+                    language: LanguageSettings.shared.language.rawValue, state: "Rendered guided signing form in the native Mac document viewport",
                     route: "/native/firmas/mac-formulario-renderizado", screen: "mac-formulario-renderizado"
                 )
                 return
@@ -151,15 +160,15 @@ final class GuidedSigningCaptureTests: XCTestCase {
     }
 
     private func capture<Content: View>(_ content: Content, name: String, size: NSSize,
-                                        session: AppSession, folder: URL) async throws {
+                                        session: AppSession, folder: URL, pixelScale: CGFloat? = nil) async throws {
         let host = NSHostingView(rootView: content
             .modifier(SessionAppearance(session: session))
             .frame(width: size.width, height: size.height, alignment: .topLeading)
             .background(Color(nsColor: .windowBackgroundColor)))
         let imageURL = folder.appendingPathComponent(name + ".png")
         try await GuideCaptureSupport.captureNative(host, size: size,
-            to: imageURL, language: "es",
-            state: "macOS production component with an isolated synthetic signing form",
+            to: imageURL, language: LanguageSettings.shared.language.rawValue,
+            state: "macOS production component with an isolated synthetic signing form", pixelScale: pixelScale,
             route: "/native/firmas/" + name, screen: name)
         let contextURL = imageURL.deletingPathExtension().appendingPathExtension("context.json")
         let image = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: imageURL)))

@@ -173,6 +173,33 @@ extension AppSession {
 
         guard await savedSourceMatches() else { return }
         let localResources = try guidedSigningResources()
+        // Check the persisted local revision on its own before comparing the
+        // incoming history. A rejected copy does not invalidate a sound draft.
+        let currentRevisionSessions = try await guidedSigningStore.sessions().filter {
+            $0.documentLocation == expectedLocation
+                && $0.documentID == expectedSession.documentID
+                && $0.initialRevision == expectedSession.initialRevision
+        }
+        guard isCurrent(), currentRevisionSessions == [expectedSession] else {
+            throw LeonardoSigningError.staleStorage
+        }
+        let matchesSession = expectedSession.id == exchange.session.id
+        guard matchesSession || expectedSession.isPristine else {
+            reportOutdatedSigningCopy()
+            return
+        }
+        let rebound: LeonardoGuidedSigningSession
+        do {
+            rebound = try exchange.reboundSession(onto: matchesSession ? expectedSession : nil,
+                                                  documentLocation: expectedLocation)
+        } catch LeonardoSigningError.staleStorage {
+            reportOutdatedSigningCopy()
+            return
+        } catch {
+            reportGuidedSigningActionFailure(error, blocksReview: false)
+            return
+        }
+
         guard let trust = try await signingExchangeTrust(exchange, isCurrent: isCurrent) else { return }
         do {
             try exchange.validate(against: document, resources: localResources, trustStore: trust.effective)
@@ -180,14 +207,6 @@ extension AppSession {
             reportGuidedSigningActionFailure(error, blocksReview: false)
             return
         }
-        let localSessions = try await guidedSigningStore.sessions()
-            .filter { $0.documentLocation == expectedLocation }
-        guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
-        let (local, pristineReplacement) = try signingExchangeBaseline(exchange, localSessions: localSessions)
-        guard expectedSession == (local ?? pristineReplacement) else {
-            throw LeonardoSigningError.integrityFailure
-        }
-        let rebound = try exchange.reboundSession(onto: local, documentLocation: expectedLocation)
         guard await savedSourceMatches() else { return }
         for credential in trust.unknown {
             guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
@@ -195,12 +214,12 @@ extension AppSession {
         }
         guard await savedSourceMatches() else { return }
         guard localResources == (try guidedSigningResources()) else { throw LeonardoSigningError.integrityFailure }
-        if let pristineReplacement {
-            try await guidedSigningStore.replacePristineSession(
-                id: pristineReplacement.id, baseline: pristineReplacement, with: rebound
-            )
+        if matchesSession {
+            try await guidedSigningStore.saveSession(rebound, replacing: expectedSession)
         } else {
-            try await guidedSigningStore.saveSession(rebound, replacing: local)
+            try await guidedSigningStore.replacePristineSession(
+                id: expectedSession.id, baseline: expectedSession, with: rebound
+            )
         }
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
         guidedSigningSession = rebound
@@ -229,46 +248,20 @@ extension AppSession {
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
         let unknown = exchange.trustedCredentials.filter { local.credential(id: $0.id) != $0 }
         guard !unknown.isEmpty else { return (local, []) }
+        let effective: LeonardoSigningTrustRegistry
+        do {
+            effective = try LeonardoSigningTrustRegistry(credentials: local.allCredentials + unknown)
+        } catch {
+            reportGuidedSigningActionFailure(error, blocksReview: false)
+            return nil
+        }
         guard confirmImportedPublicKeys(unknown) else { return nil }
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
-        return (try LeonardoSigningTrustRegistry(credentials: local.allCredentials + unknown), unknown)
+        return (effective, unknown)
     }
 
-    @MainActor
-    private func signingExchangeBaseline(
-        _ exchange: LeonardoSigningExchange,
-        localSessions: [LeonardoGuidedSigningSession]
-    ) throws -> (local: LeonardoGuidedSigningSession?, pristineReplacement: LeonardoGuidedSigningSession?) {
-        // A deliberate correction preserves the old sidecar session at this
-        // path. Only sessions for this exact document identity and semantic
-        // revision can participate in the import CAS; older revisions remain
-        // audit history and must not block a valid current copy.
-        let currentRevisionSessions = localSessions.filter {
-            $0.documentID == exchange.documentID
-                && $0.initialRevision == exchange.documentRevision
-        }
-        guard currentRevisionSessions.count <= 1 else {
-            // Multiple sessions for one exact revision are a fork, even if
-            // one happens to be pristine. Never choose between them.
-            throw LeonardoSigningError.staleStorage
-        }
-        let local = currentRevisionSessions.first { $0.id == exchange.session.id }
-        let pristineReplacement = local == nil && currentRevisionSessions.count == 1
-            ? currentRevisionSessions.first(where: { $0.isPristine })
-            : nil
-        guard local != nil || currentRevisionSessions.isEmpty || pristineReplacement != nil else {
-            // A different local session means this file already has progress
-            // from another signing copy for this revision. Never overwrite or
-            // merge that fork, while historical revisions remain untouched.
-            throw LeonardoSigningError.staleStorage
-        }
-        guard localSessions.isEmpty || !currentRevisionSessions.isEmpty else {
-            // There is local signing history, but no sidecar for this exact
-            // source revision. Do not make import the back door around the
-            // same exact path/ID/revision binding used by preparation.
-            throw LeonardoSigningError.staleStorage
-        }
-        return (local, pristineReplacement)
+    private func reportOutdatedSigningCopy() {
+        guidedSigningActionProblem = L10n.text("This signing copy does not match the progress saved on this Mac. Use a current copy.")
     }
 
     private func confirmImportedPublicKeys(_ credentials: [LeonardoSigningCredential]) -> Bool {

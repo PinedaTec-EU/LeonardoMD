@@ -618,16 +618,48 @@ final class AppSessionTests: XCTestCase {
         )
         XCTAssertNil(session.guidedSigningSession?.snapshot)
         XCTAssertNil(session.guidedSigningError)
+
+        let changedOnDisk = draftSource.replacingOccurrences(of: "Updated signature:", with: "External edit:")
+        await session.confirmGuidedLocation(
+            target: target, rubric: rubric, reuse: .new, reuseConfirmed: false, contextRead: true,
+            renderedPlanMatches: { _, _ in
+                do {
+                    try changedOnDisk.write(to: documentURL, atomically: true, encoding: .utf8)
+                    return true
+                } catch {
+                    XCTFail("Could not update the saved source during review: \(error)")
+                    return false
+                }
+            }
+        )
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertNil(session.guidedSigningSession?.snapshot)
+        let afterExternalConfirmation = try await session.guidedSigningStore.session(id: sessionID)
+        XCTAssertEqual(afterExternalConfirmation, before)
+
+        try draftSource.write(to: documentURL, atomically: true, encoding: .utf8)
+        await session.reloadFromDisk()
+        XCTAssertFalse(session.externalConflict)
         await session.confirmGuidedLocation(
             target: target, rubric: rubric, reuse: .new,
             reuseConfirmed: false, contextRead: true, renderedPlanMatches: { _, _ in true }
         )
         XCTAssertNotNil(session.guidedSigningSession?.snapshot)
-        XCTAssertEqual(
-            try String(contentsOf: documentURL, encoding: .utf8), draftSource
-        )
+        XCTAssertEqual(try String(contentsOf: documentURL, encoding: .utf8), draftSource)
         let afterSeal = try await session.guidedSigningStore.session(id: sessionID)
         XCTAssertNotNil(afterSeal?.snapshot)
+
+        try await credentials.trustPublicCredential(key.credential)
+        await session.signGuidedPosition(positionID: "owner", password: "test-only") { id, _ in
+            XCTAssertEqual(id, key.credential.id)
+            try changedOnDisk.write(to: documentURL, atomically: true, encoding: .utf8)
+            return key
+        }
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertTrue(session.guidedSigningSnapshotChanged)
+        XCTAssertTrue(session.guidedSigningVerification.isEmpty)
+        let afterExternalSign = try await session.guidedSigningStore.session(id: sessionID)
+        XCTAssertEqual(afterExternalSign, afterSeal)
     }
 
     func testSignedCopyImportRequiresSavedSourceAndKeepsDirtyDraftUnsealed() async throws {
@@ -654,12 +686,25 @@ final class AppSessionTests: XCTestCase {
         session.authorizePath = { _, _ in }
         await session.openDocument(documentURL)
 
+        let initialSession = try XCTUnwrap(session.guidedSigningSession)
+        let olderCopy = try LeonardoSigningExchange(document: document, session: initialSession,
+                                                    trustedCredentials: [], at: Date())
+        try LeonardoSigningExchange.encoded(olderCopy).write(to: exchangeURL)
+
         let key = LeonardoSigningKeyPair(credentialID: "exchange-owner")
         let profile = LeonardoSignerProfile(displayName: "Owner", identity: .init(
             fullName: "Owner", documentType: .nationalID, documentNumber: "QA-517"))
         await session.assignGuidedSigner(positionID: "owner", profile: profile, credential: key.credential,
                                         saveOptions: .init(saveIdentityDetails: false, saveRubric: false))
         let baseline = try XCTUnwrap(session.guidedSigningSession)
+        await session.readGuidedSigningExchange(from: exchangeURL)
+        XCTAssertEqual(session.guidedSigningActionProblem,
+                       L10n.text("This signing copy does not match the progress saved on this Mac. Use a current copy."))
+        XCTAssertFalse(session.guidedSigningContentLocked)
+        XCTAssertEqual(session.guidedSigningSession, baseline)
+        let afterOlderImport = try await session.guidedSigningStore.session(id: baseline.id)
+        XCTAssertEqual(afterOlderImport, baseline)
+
         let draft = try XCTUnwrap(document.applyingFormValues(["answer": .string("Updated")]))
         let draftSource = try LeonardoFormatParser.serialize(draft)
         var detached = baseline

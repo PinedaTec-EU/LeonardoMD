@@ -166,32 +166,8 @@ extension AppSession {
             baselineLoaded = true
             guard guidedSigningConflictAllowsProgress() else { return }
             if initialSeal {
-                switch await guidedSigningSavedSourceCheck(
-                    expectedLocation: expectedLocation,
-                    expectedContent: expectedContent,
-                    expectedSession: viewBaseline,
-                    expectedSnapshot: expectedSnapshot
-                ) {
-                case .ready:
-                    break
-                case .needsSave:
-                    guidedSigningActionProblem = L10n.text(
-                        "Save the document before confirming the first signing location."
-                    )
-                    return
-                case .externalChange:
-                    externalConflict = true
-                    saveStatus = "External conflict · signing review protected"
-                    guidedSigningActionProblem = L10n.text(
-                        "The saved signing document changed outside LeonardoMD. Reload it or save a copy before confirming."
-                    )
-                    return
-                case .stateChanged:
-                    guidedSigningError = L10n.text(
-                        "The document moved or changed while confirming this location. Reload it before continuing."
-                    )
-                    return
-                }
+                guard await guidedSigningSourceCanCommit(location: expectedLocation, content: expectedContent,
+                                                          session: viewBaseline, snapshot: expectedSnapshot) else { return }
             }
             let imageFiles = try guidedSigningResourceURLs(in: document)
             let resources = try Self.readGuidedSigningResources(imageFiles)
@@ -235,6 +211,19 @@ extension AppSession {
                     return
                 }
             }
+            guard await guidedSigningSourceCanCommit(location: expectedLocation, content: expectedContent,
+                                                      session: viewBaseline, snapshot: expectedSnapshot) else { return }
+            guard (try? guidedSigningResources()) == resources else {
+                if viewBaseline.snapshot != nil {
+                    markGuidedSigningSnapshotChanged()
+                } else {
+                    guidedSigningActionProblem = L10n.text(
+                        "An image changed or could not be displayed. Review the updated preview before confirming."
+                    )
+                    renderer.reloadSigningImagePreview()
+                }
+                return
+            }
             let profileRubric = current.positions[target.positionID]?.assignment?.profileRubric
             try current.confirmLocation(
                 positionID: target.positionID,
@@ -267,6 +256,8 @@ extension AppSession {
                 return
             }
             guidedSigningSession = current
+            guard await guidedSigningSourceCanCommit(location: expectedLocation, content: expectedContent,
+                                                      session: current, snapshot: expectedSnapshot) else { return }
             refreshGuidedSigningTargets()
             guidedSigningStatus = L10n.text("Location confirmed. Continue in source order.")
             guidedSigningError = nil
@@ -278,6 +269,42 @@ extension AppSession {
             }
             reportGuidedSigningActionFailure(error)
         }
+    }
+
+    private func guidedSigningSourceCanCommit(
+        location: String,
+        content: String,
+        session: LeonardoGuidedSigningSession,
+        snapshot: DocumentSnapshot?
+    ) async -> Bool {
+        guard guidedSigningConflictAllowsProgress() else { return false }
+        let result = await guidedSigningSavedSourceCheck(
+            expectedLocation: location,
+            expectedContent: content,
+            expectedSession: session,
+            expectedSnapshot: snapshot
+        )
+        guard guidedSigningViewStateMatches(expectedLocation: location, expectedContent: content,
+                                            expectedSession: session) else { return false }
+        switch result {
+        case .ready:
+            return guidedSigningConflictAllowsProgress()
+        case .needsSave:
+            guidedSigningActionProblem = L10n.text("Save the document before confirming the first signing location.")
+        case .externalChange:
+            externalConflict = true
+            saveStatus = "External conflict · signing review protected"
+            if session.snapshot == nil {
+                guidedSigningActionProblem = L10n.text(
+                    "The saved signing document changed outside LeonardoMD. Reload it or save a copy before confirming."
+                )
+            } else {
+                markGuidedSigningSnapshotChanged()
+            }
+        case .stateChanged:
+            break
+        }
+        return false
     }
 
     func pauseGuidedPosition(positionID: String) async {
@@ -379,7 +406,11 @@ extension AppSession {
         }
     }
 
-    func signGuidedPosition(positionID: String, password: String) async {
+    func signGuidedPosition(
+        positionID: String,
+        password: String,
+        unlockKey: ((String, String) async throws -> LeonardoSigningKeyPair)? = nil
+    ) async {
         guard var current = guidedSigningSession,
               let assignment = current.positions[positionID]?.assignment,
               let document = leonardoDocument,
@@ -387,6 +418,7 @@ extension AppSession {
               guidedSigningConflictAllowsProgress() else { return }
         let viewBaseline = current
         let expectedContent = content
+        let expectedSnapshot = snapshot
         guidedSigningActionProblem = nil
         var baseline: LeonardoGuidedSigningSession?
         var baselineLoaded = false
@@ -398,8 +430,13 @@ extension AppSession {
             )
             baselineLoaded = true
             guard guidedSigningConflictAllowsProgress() else { return }
-            let keyPair = try await guidedSigningCredentialStore.keyPair(
-                credentialID: assignment.credentialID, password: password)
+            let keyPair: LeonardoSigningKeyPair
+            if let unlockKey {
+                keyPair = try await unlockKey(assignment.credentialID, password)
+            } else {
+                keyPair = try await guidedSigningCredentialStore.keyPair(
+                    credentialID: assignment.credentialID, password: password)
+            }
             guard guidedSigningConflictAllowsProgress() else { return }
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
@@ -407,15 +444,11 @@ extension AppSession {
                 expectedSession: viewBaseline
             ) else { throw LeonardoSigningError.integrityFailure }
             let trustStore = try await guidedSigningCredentialStore.trustStore()
-            guard guidedSigningConflictAllowsProgress() else { return }
-            guard guidedSigningViewStateMatches(
-                expectedLocation: expectedLocation,
-                expectedContent: expectedContent,
-                expectedSession: viewBaseline
-            ) else { throw LeonardoSigningError.integrityFailure }
-            guard guidedSigningConflictAllowsProgress() else { return }
+            guard await guidedSigningSourceCanCommit(location: expectedLocation, content: expectedContent,
+                                                      session: viewBaseline, snapshot: expectedSnapshot) else { return }
+            let resources = try guidedSigningResources()
             _ = try current.sign(positionID: positionID, keyPair: keyPair, document: document,
-                                  resources: try guidedSigningResources(), trustStore: trustStore, at: Date())
+                                  resources: resources, trustStore: trustStore, at: Date())
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,
@@ -434,6 +467,8 @@ extension AppSession {
                 return
             }
             guidedSigningSession = current
+            guard await guidedSigningSourceCanCommit(location: expectedLocation, content: expectedContent,
+                                                      session: current, snapshot: expectedSnapshot) else { return }
             guidedSigningTrustStore = trustStore
             guidedSigningVerification = current.signatureVerification(document: document,
                                                                        resources: try guidedSigningResources(),

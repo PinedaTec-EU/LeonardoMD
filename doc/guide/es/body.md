@@ -242,6 +242,10 @@ su firma en esa aparición. El panel muestra en verde cada puesto verificado.
 Si falta confirmar la clave o falla la verificación de la prueba, el puesto
 muestra el motivo y la rúbrica permanece oculta.
 
+![Panel del Mac con una firma verificada, una clave sin confirmar y una verificación fallida](assets/guided-signing-verification.png)
+
+Una copia de firma antigua o con avances distintos conserva el progreso guardado en el Mac. Usa una copia actualizada para reintentar la importación.
+
 Guarda el formulario cumplimentado en el Mac antes de confirmar la primera
 ubicación o intercambiar una copia de firma. La primera confirmación sella las respuestas guardadas, las
 asignaciones, la revisión del documento y los recursos referenciados. Los

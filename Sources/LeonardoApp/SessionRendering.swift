@@ -122,7 +122,8 @@ extension AppSession {
     /// sidecar rubrics. Partial review stays visibly pending and the editable
     /// document remains byte-for-byte unchanged.
     private func guidedSigningRubricOverlays() -> [String: LeonardoRubric] {
-        guard guidedSigningReady, !guidedSigningLoading, guidedSigningError == nil,
+        guard guidedSigningReady, !guidedSigningLoading, !externalConflict,
+              !guidedSigningSnapshotChanged, guidedSigningError == nil,
               let document = leonardoDocument,
               let current = guidedSigningSession,
               current.documentID == document.metadata.document.id,

@@ -921,7 +921,7 @@ struct GuidedSigningView: View {
 
     private func positionIsVerified(_ positionID: String) -> Bool {
         !session.guidedSigningLoading && !session.guidedSigningSnapshotChanged
-            && session.guidedSigningError == nil
+            && !session.externalConflict && session.guidedSigningError == nil
             && session.guidedSigningVerification[positionID] == .valid
     }
 

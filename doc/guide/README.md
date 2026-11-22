@@ -1,10 +1,15 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v117-en.mdlz` and `Guide-v117-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v118-en.mdlz` and `Guide-v118-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v117/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v118/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v118 illustrates the Mac per-signer verification panel in both
+languages and explains how to retry an outdated signing copy.
+Guide v118 EN SHA-256: `3ba9306482296b66ffb4f0b70dd82c045da5c236292cfe02dd8d034955293ddd`
+Guide v118 ES SHA-256: `331ca2ee7032922004c1e14e53b87bb875645ff640d92422eb8febd46290d00f`
 
 Guide v117 explains how to correct missing images in an unsigned draft and read
 per-signer verification indicators.
