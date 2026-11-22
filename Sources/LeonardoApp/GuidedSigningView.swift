@@ -105,7 +105,7 @@ struct GuidedSigningView: View {
     }
 
     private var allPositionsComplete: Bool {
-        !positions.isEmpty && completedPositionCount == positions.count
+        !session.guidedSigningSnapshotChanged && !positions.isEmpty && completedPositionCount == positions.count
     }
 
     private var currentTarget: LeonardoSigningLocationTarget? {
