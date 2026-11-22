@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T10:51:18.798082+00:00",
+  "route": "/native/macos/guided-signing/draft-editable-after-rejected-import",
+  "screen": "draft-editable-after-rejected-import",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The Mac editor remains writable after rejecting an unreadable signing copy."
+}

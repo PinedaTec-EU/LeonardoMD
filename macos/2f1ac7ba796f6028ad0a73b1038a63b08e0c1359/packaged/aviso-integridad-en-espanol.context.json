@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-22T10:51:18.803385+00:00",
+  "route": "/native/macos/guided-signing/aviso-integridad-en-espanol",
+  "screen": "aviso-integridad-en-espanol",
+  "browser_name": "Native AppKit and SwiftUI",
+  "browser_version": "macOS 27.2.1",
+  "capture_mode": "viewport",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "data_provenance": "synthetic",
+  "state": "The affected signed document remains blocked for signature review and shows the fully localized Spanish integrity warning."
+}
