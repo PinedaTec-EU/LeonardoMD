@@ -295,6 +295,18 @@ final class MobileReaderSpacingTests: XCTestCase {
         XCTAssertTrue(try LeonardoLocalImagePolicy.signingReferences(in: document).isEmpty)
     }
 
+    func testNativeSigningFallbackRequiresFullReaderForPageRubric() throws {
+        let copy = try makeSignedGuidedSigningExchange()
+        var document = try copy.document()
+        XCTAssertFalse(MobileGuidedSigningNativeContent.requiresFullReader(document))
+        let ink = try XCTUnwrap(copy.session.positions.values.first?.locations.first?.rubric)
+        document.metadata.layout = LeonardoLayout(objects: [
+            LeonardoGraphic(label: "Ordinary page rubric", rubric: ink)
+        ])
+        XCTAssertTrue(document.metadata.layout?.objects.first?.isValid == true)
+        XCTAssertTrue(MobileGuidedSigningNativeContent.requiresFullReader(document))
+    }
+
     func testNativeSigningContentSubstitutesValuesAndKeepsSealedResourceReferences() throws {
         let declaration = LeonardoSigningDeclaration(positions: [
             LeonardoSignerPosition(id: "owner", label: "Owner")

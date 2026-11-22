@@ -683,7 +683,7 @@ saltar a cada aparición exacta en el orden de la fuente, dibuja una rúbrica o
 confirma expresamente su reutilización, y pausa o reanuda cuando sea necesario.
 El lector nunca edita la copia; solo una firma final separada y verificada de
 forma independiente pinta la rúbrica en su aparición exacta. La revisión
-parcial sigue visible como pendiente. Si el formulario contiene rúbricas ordinarias o imágenes incrustadas, revísalas en el lector completo antes de confirmar ubicaciones.
+parcial sigue visible como pendiente. Antes de confirmar ubicaciones, usa el lector completo si hay rúbricas ordinarias, imágenes incrustadas u objetos de página, como una rúbrica insertada en la página.
 **Exportar copia firmada** muestra las identidades declaradas y las rúbricas que
 saldrán del dispositivo. No incluye claves privadas, rutas locales ni perfiles no
 asignados. Importa el JSON en el Mac solo después de comprobar la fuente local,

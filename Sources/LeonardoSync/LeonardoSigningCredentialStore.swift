@@ -24,7 +24,23 @@ protocol LeonardoSigningCredentialKeychainBackend {
                 item: LeonardoSigningCredentialKeychainItem) -> OSStatus
 }
 
-private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend {
+struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend {
+#if os(macOS)
+    private static let interactionLock = NSLock()
+
+    static func withInteractionPolicy<T>(prompt: String?, _ operation: () -> T) -> T {
+        interactionLock.withLock {
+            guard prompt == nil else { return operation() }
+            var priorInteractionAllowed = DarwinBoolean(true)
+            guard SecKeychainGetUserInteractionAllowed(&priorInteractionAllowed) == errSecSuccess else {
+                return operation()
+            }
+            _ = SecKeychainSetUserInteractionAllowed(false)
+            defer { _ = SecKeychainSetUserInteractionAllowed(priorInteractionAllowed.boolValue) }
+            return operation()
+        }
+    }
+#endif
     func add(service: String, account: String, data: Data,
              item: LeonardoSigningCredentialKeychainItem) -> OSStatus {
         var attributes: [String: Any] = [
@@ -87,26 +103,21 @@ private struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend
             context.interactionNotAllowed = true
             request[kSecUseAuthenticationContext as String] = context
         }
+        let query = { () -> (status: OSStatus, data: Data?) in
+            var result: CFTypeRef?
+            let status = SecItemCopyMatching(request as CFDictionary, &result)
+            return (status, result as? Data)
+        }
 #if os(macOS)
         // Legacy login-keychain records can still open their own unlock UI on
         // macOS even when an LAContext refuses interaction.  Suppress that
         // process-local legacy path for verification reads; `keyPair` passes a
         // non-nil prompt and therefore retains its explicit authorization
         // path.  Restore the caller's setting immediately after the query.
-        var priorInteractionAllowed = DarwinBoolean(true)
-        let interactionStatus = SecKeychainGetUserInteractionAllowed(&priorInteractionAllowed)
-        if interactionStatus == errSecSuccess {
-            _ = SecKeychainSetUserInteractionAllowed(false)
-        }
-        defer {
-            if interactionStatus == errSecSuccess {
-                _ = SecKeychainSetUserInteractionAllowed(priorInteractionAllowed.boolValue)
-            }
-        }
+        return Self.withInteractionPolicy(prompt: prompt, query)
+#else
+        return query()
 #endif
-        var result: CFTypeRef?
-        let status = SecItemCopyMatching(request as CFDictionary, &result)
-        return (status, result as? Data)
     }
 
     func accounts(service: String,
@@ -182,6 +193,9 @@ public actor LeonardoSigningCredentialStore {
     private static let passwordIterations: UInt32 = 120_000
     private static let maximumPasswordIterations: UInt32 = 1_000_000
     private static let maximumRecordBytes = 1 * 1_024 * 1_024
+    // Store actors can share a Keychain service. Check and update the public
+    // namespace together even when an import and enrollment use separate actors.
+    private static let mutationLock = NSLock()
 
     public init(service: String = LeonardoSigningCredentialStore.defaultService,
                 prompt: String = "Authorize this personal signing credential") {
@@ -221,7 +235,14 @@ public actor LeonardoSigningCredentialStore {
         let privateRecord = PrivateRecord(version: 1, credentialID: credentialID,
                                           sealedPrivateKey: sealedBytes)
         let publicRecord = PublicRecord(credential: pair.credential, salt: salt, iterations: iterations)
-        try add(publicRecord: publicRecord, privateRecord: privateRecord)
+        try Self.mutationLock.withLock {
+            let registry = try loadTrustStore()
+            guard registry.credential(id: credentialID) == nil else {
+                throw LeonardoSigningError.invalidCredential
+            }
+            _ = try LeonardoSigningTrustRegistry(credentials: registry.allCredentials + [pair.credential])
+            try add(publicRecord: publicRecord, privateRecord: privateRecord)
+        }
         return pair.credential
     }
 
@@ -257,6 +278,12 @@ public actor LeonardoSigningCredentialStore {
     /// Reads only public records, with no password or biometric prompt. This
     /// is the trust anchor used to verify every detached signature.
     public func trustStore(credentialIDs: [String]? = nil) throws -> LeonardoSigningTrustRegistry {
+        try Self.mutationLock.withLock {
+            try loadTrustStore(credentialIDs: credentialIDs)
+        }
+    }
+
+    private func loadTrustStore(credentialIDs: [String]? = nil) throws -> LeonardoSigningTrustRegistry {
         let IDs: [String]
         if let credentialIDs {
             IDs = credentialIDs
@@ -282,25 +309,24 @@ public actor LeonardoSigningCredentialStore {
     /// exchange disclosure). This operation cannot create a signing-capable
     /// credential because no private record is written.
     public func trustPublicCredential(_ credential: LeonardoSigningCredential) throws {
-        guard credential.isValid else { throw LeonardoSigningError.invalidCredential }
-        if let existing = try trustedPublicCredential(id: credential.id) {
-            guard existing == credential else { throw LeonardoSigningError.invalidCredential }
-            return
-        }
-        if let existing = try publicRecord(credentialID: credential.id)?.credential {
-            guard existing == credential else { throw LeonardoSigningError.invalidCredential }
-            return
-        }
-        let data = try JSONEncoder().encode(credential)
-        let status = keychain.add(service: service + Self.trustedPublicSuffix,
-                                  account: credential.id, data: data,
-                                  item: .publicRecord)
-        guard status == errSecSuccess || status == errSecDuplicateItem else {
-            throw CredentialStorageError(status: status)
-        }
-        if status == errSecDuplicateItem,
-           try trustedPublicCredential(id: credential.id) != credential {
-            throw LeonardoSigningError.invalidCredential
+        try Self.mutationLock.withLock {
+            let registry = try loadTrustStore()
+            if let existing = registry.credential(id: credential.id) {
+                guard existing == credential else { throw LeonardoSigningError.invalidCredential }
+                return
+            }
+            _ = try LeonardoSigningTrustRegistry(credentials: registry.allCredentials + [credential])
+            let data = try JSONEncoder().encode(credential)
+            let status = keychain.add(service: service + Self.trustedPublicSuffix,
+                                      account: credential.id, data: data,
+                                      item: .publicRecord)
+            guard status == errSecSuccess || status == errSecDuplicateItem else {
+                throw CredentialStorageError(status: status)
+            }
+            if status == errSecDuplicateItem,
+               try trustedPublicCredential(id: credential.id) != credential {
+                throw LeonardoSigningError.invalidCredential
+            }
         }
     }
 
@@ -309,10 +335,12 @@ public actor LeonardoSigningCredentialStore {
     }
 
     public func removeTrustedPublicCredential(id: String) throws {
-        let status = keychain.delete(service: service + Self.trustedPublicSuffix,
-                                     account: id, item: .publicRecord)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw CredentialStorageError(status: status)
+        try Self.mutationLock.withLock {
+            let status = keychain.delete(service: service + Self.trustedPublicSuffix,
+                                         account: id, item: .publicRecord)
+            guard status == errSecSuccess || status == errSecItemNotFound else {
+                throw CredentialStorageError(status: status)
+            }
         }
     }
 
@@ -339,13 +367,15 @@ public actor LeonardoSigningCredentialStore {
     }
 
     public func remove(credentialID: String) throws {
-        let privateStatus = keychain.delete(service: service + Self.privateSuffix,
-                                            account: credentialID, item: .privateRecord)
-        let publicStatus = keychain.delete(service: service + Self.publicSuffix,
-                                           account: credentialID, item: .publicRecord)
-        let valid: Set<OSStatus> = [errSecSuccess, errSecItemNotFound]
-        guard valid.contains(privateStatus), valid.contains(publicStatus) else {
-            throw CredentialStorageError(status: privateStatus == errSecSuccess ? publicStatus : privateStatus)
+        try Self.mutationLock.withLock {
+            let privateStatus = keychain.delete(service: service + Self.privateSuffix,
+                                                account: credentialID, item: .privateRecord)
+            let publicStatus = keychain.delete(service: service + Self.publicSuffix,
+                                               account: credentialID, item: .publicRecord)
+            let valid: Set<OSStatus> = [errSecSuccess, errSecItemNotFound]
+            guard valid.contains(privateStatus), valid.contains(publicStatus) else {
+                throw CredentialStorageError(status: privateStatus == errSecSuccess ? publicStatus : privateStatus)
+            }
         }
     }
 

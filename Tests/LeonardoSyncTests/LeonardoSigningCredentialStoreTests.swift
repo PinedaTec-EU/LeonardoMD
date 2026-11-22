@@ -5,6 +5,57 @@ import LeonardoCore
 @testable import LeonardoSync
 
 final class LeonardoSigningCredentialStoreTests: XCTestCase {
+#if os(macOS)
+    func testLegacyKeychainReadPreservesExplicitInteractionPolicy() {
+        func interactionAllowed() -> Bool {
+            var allowed = DarwinBoolean(false)
+            XCTAssertEqual(SecKeychainGetUserInteractionAllowed(&allowed), errSecSuccess)
+            return allowed.boolValue
+        }
+
+        let initial = interactionAllowed()
+        XCTAssertFalse(SecurityKeychainBackend.withInteractionPolicy(prompt: nil, interactionAllowed))
+        XCTAssertEqual(
+            SecurityKeychainBackend.withInteractionPolicy(prompt: "Authorize signing", interactionAllowed),
+            initial
+        )
+        XCTAssertEqual(interactionAllowed(), initial)
+    }
+#endif
+
+    func testConcurrentTrustImportsRejectAnAliasWithoutPoisoningTheRegistry() async throws {
+        let keychain = InMemorySigningKeychain()
+        let service = "test-\(UUID().uuidString)"
+        let first = LeonardoSigningCredentialStore(service: service, prompt: "Test", keychain: keychain)
+        let second = LeonardoSigningCredentialStore(service: service, prompt: "Test", keychain: keychain)
+        let original = LeonardoSigningKeyPair(credentialID: "original").credential
+        let alias = LeonardoSigningCredential(id: "alias", publicKey: original.publicKey)
+
+        let accepted = await withTaskGroup(of: Bool.self, returning: Int.self) { group in
+            group.addTask { (try? await first.trustPublicCredential(original)) != nil }
+            group.addTask { (try? await second.trustPublicCredential(alias)) != nil }
+            return await group.reduce(0) { $0 + ($1 ? 1 : 0) }
+        }
+        XCTAssertEqual(accepted, 1)
+        let registry = try await first.trustStore()
+        XCTAssertEqual(registry.allCredentials.map(\.publicKey), [original.publicKey])
+    }
+
+    func testEnrollmentAndImportedTrustCannotReuseAnIdentifier() async throws {
+        let keychain = InMemorySigningKeychain()
+        let service = "test-\(UUID().uuidString)"
+        let first = LeonardoSigningCredentialStore(service: service, prompt: "Test", keychain: keychain)
+        let second = LeonardoSigningCredentialStore(service: service, prompt: "Test", keychain: keychain)
+        let trusted = LeonardoSigningKeyPair(credentialID: "shared-id").credential
+        try await first.trustPublicCredential(trusted)
+        do {
+            _ = try await second.enroll(password: "test-password-123", credentialID: trusted.id)
+            XCTFail("The imported identifier must remain assigned to its original key")
+        } catch LeonardoSigningError.invalidCredential {}
+        let registry = try await second.trustStore()
+        XCTAssertEqual(registry.allCredentials, [trusted])
+    }
+
     func testDisposableQABundlesUseSeparateSigningServices() {
         XCTAssertEqual(
             LeonardoSigningCredentialStore.applicationService(bundleIdentifier: "eu.pinedatec.LeonardoMD"),
@@ -89,13 +140,14 @@ final class LeonardoSigningCredentialStoreTests: XCTestCase {
     }
 }
 
-private final class InMemorySigningKeychain: LeonardoSigningCredentialKeychainBackend {
+private final class InMemorySigningKeychain: LeonardoSigningCredentialKeychainBackend, @unchecked Sendable {
     private struct Key: Hashable {
         let service: String
         let account: String
         let item: LeonardoSigningCredentialKeychainItem
     }
 
+    private let lock = NSLock()
     private var records: [Key: Data] = [:]
     private var privateAddsToFail: Int
 
@@ -105,37 +157,45 @@ private final class InMemorySigningKeychain: LeonardoSigningCredentialKeychainBa
 
     func add(service: String, account: String, data: Data,
              item: LeonardoSigningCredentialKeychainItem) -> OSStatus {
-        if item == .privateRecord, privateAddsToFail > 0 {
-            privateAddsToFail -= 1
-            return errSecMissingEntitlement
+        lock.withLock {
+            if item == .privateRecord, privateAddsToFail > 0 {
+                privateAddsToFail -= 1
+                return errSecMissingEntitlement
+            }
+            let key = Key(service: service, account: account, item: item)
+            guard records[key] == nil else { return errSecDuplicateItem }
+            records[key] = data
+            return errSecSuccess
         }
-        let key = Key(service: service, account: account, item: item)
-        guard records[key] == nil else { return errSecDuplicateItem }
-        records[key] = data
-        return errSecSuccess
     }
 
     func read(service: String, account: String,
               item: LeonardoSigningCredentialKeychainItem,
               prompt: String?) -> (status: OSStatus, data: Data?) {
-        let key = Key(service: service, account: account, item: item)
-        guard let data = records[key] else { return (errSecItemNotFound, nil) }
-        return (errSecSuccess, data)
+        lock.withLock {
+            let key = Key(service: service, account: account, item: item)
+            guard let data = records[key] else { return (errSecItemNotFound, nil) }
+            return (errSecSuccess, data)
+        }
     }
 
     func accounts(service: String,
                   item: LeonardoSigningCredentialKeychainItem) -> (status: OSStatus, accounts: [String]) {
-        let accounts = records.keys
-            .filter { $0.service == service && $0.item == item }
-            .map(\.account)
-            .sorted()
-        return accounts.isEmpty ? (errSecItemNotFound, []) : (errSecSuccess, accounts)
+        lock.withLock {
+            let accounts = records.keys
+                .filter { $0.service == service && $0.item == item }
+                .map(\.account)
+                .sorted()
+            return accounts.isEmpty ? (errSecItemNotFound, []) : (errSecSuccess, accounts)
+        }
     }
 
     func delete(service: String, account: String,
                 item: LeonardoSigningCredentialKeychainItem) -> OSStatus {
-        let key = Key(service: service, account: account, item: item)
-        guard records.removeValue(forKey: key) != nil else { return errSecItemNotFound }
-        return errSecSuccess
+        lock.withLock {
+            let key = Key(service: service, account: account, item: item)
+            guard records.removeValue(forKey: key) != nil else { return errSecItemNotFound }
+            return errSecSuccess
+        }
     }
 }

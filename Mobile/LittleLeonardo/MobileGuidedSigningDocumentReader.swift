@@ -329,7 +329,8 @@ enum MobileGuidedSigningNativeContent {
     }
 
     static func requiresFullReader(_ document: LeonardoDocument) -> Bool {
-        guard (try? LeonardoLocalImagePolicy.hasEmbeddedSigningImages(in: document)) == false else { return true }
+        guard document.metadata.layout?.objects.isEmpty != false,
+              (try? LeonardoLocalImagePolicy.hasEmbeddedSigningImages(in: document)) == false else { return true }
         return document.metadata.fields.contains { id, field in
             guard field.type == .rubric, field.signerPosition == nil,
                   let value = document.metadata.values[id] ?? field.defaultValue else { return false }
