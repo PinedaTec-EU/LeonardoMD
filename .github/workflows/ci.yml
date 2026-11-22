@@ -167,7 +167,7 @@ jobs:
           LEONARDO_GUIDED_SIGNING_CAPTURE: ${{ runner.temp }}/guided-signing-evidence
         run: |
           swift test --skip-build --filter GuidedSigningCaptureTests/testCaptureMacSigningComponents
-          for screen in mac-al-abrir mac-documento-con-firmas mac-lienzo-rubrica mac-espera-rubrica-enlazada; do
+          for screen in mac-al-abrir mac-documento-con-firmas mac-formulario-renderizado mac-lienzo-rubrica mac-espera-rubrica-enlazada; do
             test -s "$LEONARDO_GUIDED_SIGNING_CAPTURE/$screen.png"
             test -s "$LEONARDO_GUIDED_SIGNING_CAPTURE/$screen.context.json"
           done

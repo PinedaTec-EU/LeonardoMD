@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import WebKit
 import XCTest
 import LeonardoCore
 @testable import LeonardoApp
@@ -57,6 +58,7 @@ final class GuidedSigningCaptureTests: XCTestCase {
 
         try await capture(WorkspaceView(session: session), name: "mac-documento-con-firmas",
                           size: NSSize(width: 1260, height: 740), session: session, folder: folder)
+        try await captureRenderedDocument(session: session, folder: folder)
 
         try await capture(DocumentToolbar(session: session), name: "mac-barra-documento",
                           size: NSSize(width: 1260, height: 72), session: session, folder: folder)
@@ -69,6 +71,38 @@ final class GuidedSigningCaptureTests: XCTestCase {
             GuidedSigningRubricWaitingView(deviceName: "Little Leonardo de prueba", cancel: {})
         }, name: "mac-espera-rubrica-enlazada", size: NSSize(width: 460, height: 380),
            session: session, folder: folder)
+    }
+
+    private func captureRenderedDocument(session: AppSession, folder: URL) async throws {
+        let hosting = NSHostingView(rootView: WorkspaceView(session: session))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 740),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.close() }
+
+        func findWebView(_ node: NSView) -> WKWebView? {
+            if let web = node as? WKWebView { return web }
+            return node.subviews.lazy.compactMap(findWebView).first
+        }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(12))
+        repeat {
+            if let web = findWebView(hosting), session.renderer.isReady,
+               (try? await web.evaluateJavaScript("""
+                   document.querySelector('h1')?.textContent === 'Acuerdo de ejemplo' &&
+                   window.LeonardoForms?.hasFieldTarget('holder', 0) === true
+                   """)) as? Bool == true {
+                try await GuideCaptureSupport.capture(
+                    web, to: folder.appendingPathComponent("mac-formulario-renderizado.png"),
+                    language: "es", state: "Rendered guided signing form in the native Mac document viewport",
+                    route: "/native/firmas/mac-formulario-renderizado", screen: "mac-formulario-renderizado"
+                )
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        } while ContinuousClock.now < deadline
+        XCTFail("Native guided signing preview did not display the form and first signature occurrence")
     }
 
     private func capture<Content: View>(_ content: Content, name: String, size: NSSize,
