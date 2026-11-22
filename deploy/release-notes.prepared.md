@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2186
+
+- #517 Added: guided signing for Leonardo documents ([#520](https://github.com/PinedaTec-EU/LeonardoMD/pull/520))
+
+<p>Adds guided multi-signer forms with per-location rubric review, resume, tamper detection and exchange of signed copies between LeonardoMD and Little Leonardo.</p>
+
+Source: `9f5b3a14e0ca011fabb17aebed7ebb6d62698ee8`. Delta: `{"build": 217}`.
+
 ## 0.3.1969
 
 - #507 Fixed: isolate hosted iOS reader validation ([#547](https://github.com/PinedaTec-EU/LeonardoMD/pull/547))

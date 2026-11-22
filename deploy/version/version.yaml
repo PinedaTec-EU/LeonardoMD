@@ -1239,9 +1239,19 @@
       "pr": 547,
       "summary": "Run the iOS read-only document rendering check independently in CI and allow time for a cold WebKit start.",
       "to_version": "0.3.1969"
+    },
+    {
+      "delta": {
+        "build": 217
+      },
+      "from_version": "0.3.1969",
+      "merge_sha": "9f5b3a14e0ca011fabb17aebed7ebb6d62698ee8",
+      "pr": 520,
+      "summary": "Adds guided multi-signer forms with per-location rubric review, resume, tamper detection and exchange of signed copies between LeonardoMD and Little Leonardo.",
+      "to_version": "0.3.2186"
     }
   ],
-  "current_version": "0.3.1969",
+  "current_version": "0.3.2186",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
