@@ -232,7 +232,12 @@ struct GuidedSigningView: View {
                 } else {
                     Text(L10n.text("No signer positions are available.")).foregroundStyle(.secondary)
                 }
-                if let status = session.guidedSigningStatus {
+                if let problem = session.guidedSigningActionProblem {
+                    Label(problem, systemImage: "exclamationmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if let status = session.guidedSigningStatus {
                     Label(status, systemImage: "checkmark.circle")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -289,6 +294,7 @@ struct GuidedSigningView: View {
     }
 
     private func selectedPositionChanged() {
+        session.guidedSigningActionProblem = nil
         if selectedProgress?.assignment == nil {
             creatingProfile = true
             selectedProfileID = nil

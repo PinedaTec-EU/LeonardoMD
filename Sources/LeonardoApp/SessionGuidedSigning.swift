@@ -90,6 +90,7 @@ extension AppSession {
         guidedSigningLoading = true
         guidedSigningReady = false
         guidedSigningError = nil
+        guidedSigningActionProblem = nil
         defer {
             if isCurrentPreparation() {
                 guidedSigningLoading = false
@@ -471,6 +472,26 @@ extension AppSession {
         return body[start..<end].trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private func reportGuidedSigningActionFailure(_ error: Error) {
+        switch error as? LeonardoSigningError {
+        case .profileReused:
+            guidedSigningActionProblem = L10n.text("Choose a different profile for this signer.")
+        case .identityDocumentReused:
+            guidedSigningActionProblem = L10n.text("This identity document is already assigned to another signer.")
+        case .credentialReused:
+            guidedSigningActionProblem = L10n.text("Choose a different personal credential for this signer.")
+        case .invalidIdentity, .invalidProfile:
+            guidedSigningActionProblem = L10n.text("Check the signer’s full name and identity document.")
+        case .invalidCredential:
+            guidedSigningActionProblem = L10n.text("The credential could not be unlocked. Check the password and try again.")
+        case .requiredDataMissing(let fieldIDs):
+            let names = fieldIDs.map { leonardoDocument?.metadata.fields[$0]?.label ?? $0 }
+            guidedSigningActionProblem = L10n.format("Complete the required fields before signing: %@.", names.joined(separator: ", "))
+        default:
+            guidedSigningError = error.localizedDescription
+        }
+    }
+
     func assignGuidedSigner(
         positionID: String,
         profile: LeonardoSignerProfile,
@@ -478,11 +499,8 @@ extension AppSession {
         saveOptions: LeonardoProfileSaveOptions
     ) async {
         guard let current = guidedSigningSession, let expectedLocation = guidedSigningLocation else { return }
+        guidedSigningActionProblem = nil
         do {
-            if saveOptions.saveIdentityDetails || saveOptions.saveRubric {
-                try await guidedSigningStore.saveProfile(profile, options: saveOptions)
-                guidedSigningProfiles = try await guidedSigningStore.profiles()
-            }
             guard guidedSigningStateMatches(current, expectedLocation: expectedLocation) else {
                 throw LeonardoSigningError.integrityFailure
             }
@@ -496,6 +514,10 @@ extension AppSession {
             var updated = current
             try updated.assign(positionID: positionID, profile: profile, credential: credential,
                                authorization: authorization, at: Date())
+            if saveOptions.saveIdentityDetails || saveOptions.saveRubric {
+                try await guidedSigningStore.saveProfile(profile, options: saveOptions)
+                guidedSigningProfiles = try await guidedSigningStore.profiles()
+            }
             guard guidedSigningStateMatches(current, expectedLocation: expectedLocation) else {
                 throw LeonardoSigningError.integrityFailure
             }
@@ -508,7 +530,7 @@ extension AppSession {
             guidedSigningStatus = L10n.text("Signer assigned. Review the exact field occurrences before confirming.")
             guidedSigningError = nil
         } catch {
-            guidedSigningError = String(describing: error)
+            reportGuidedSigningActionFailure(error)
         }
     }
 
@@ -547,6 +569,7 @@ extension AppSession {
         guard var current = guidedSigningSession, let document = leonardoDocument,
               let expectedLocation = guidedSigningLocation else { return }
         let expectedContent = content
+        guidedSigningActionProblem = nil
         do {
             let profileRubric = current.positions[target.positionID]?.assignment?.profileRubric
             try current.confirmLocation(
@@ -576,7 +599,7 @@ extension AppSession {
             guidedSigningError = nil
         } catch {
             await persistInvalidatedGuidedSessionIfNeeded(current)
-            guidedSigningError = String(describing: error)
+            reportGuidedSigningActionFailure(error)
         }
     }
 
@@ -636,6 +659,7 @@ extension AppSession {
               let document = leonardoDocument,
               let expectedLocation = guidedSigningLocation else { return }
         let expectedContent = content
+        guidedSigningActionProblem = nil
         do {
             let keyPair = try await guidedSigningCredentialStore.keyPair(
                 credentialID: assignment.credentialID, password: password)
@@ -665,7 +689,7 @@ extension AppSession {
             guidedSigningError = nil
         } catch {
             await persistInvalidatedGuidedSessionIfNeeded(current)
-            guidedSigningError = String(describing: error)
+            reportGuidedSigningActionFailure(error)
         }
     }
 

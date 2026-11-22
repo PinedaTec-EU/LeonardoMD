@@ -1,4 +1,10 @@
 {
+  "Choose a different profile for this signer.": "Choose a different profile for this signer.",
+  "This identity document is already assigned to another signer.": "This identity document is already assigned to another signer.",
+  "Choose a different personal credential for this signer.": "Choose a different personal credential for this signer.",
+  "Check the signer’s full name and identity document.": "Check the signer’s full name and identity document.",
+  "The credential could not be unlocked. Check the password and try again.": "The credential could not be unlocked. Check the password and try again.",
+  "Complete the required fields before signing: %@.": "Complete the required fields before signing: %@.",
   "Email diagnostics…": "Email diagnostics…",
   "Could not open a mail draft.": "Could not open a mail draft.",
   "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.": "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.",

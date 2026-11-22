@@ -101,6 +101,7 @@ final class AppSession {
     var guidedSigningTargets: [LeonardoSigningLocationTarget] = []
     var guidedSigningStatus: String?
     var guidedSigningError: String?
+    var guidedSigningActionProblem: String?
     var guidedSigningReady = false
     var guidedSigningLoading = false
     var guidedSigningRevisionEditing = false

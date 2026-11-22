@@ -1,4 +1,10 @@
 {
+  "Choose a different profile for this signer.": "Elige otro perfil para este firmante.",
+  "This identity document is already assigned to another signer.": "Este documento de identidad ya está asignado a otro firmante.",
+  "Choose a different personal credential for this signer.": "Elige otra credencial personal para este firmante.",
+  "Check the signer’s full name and identity document.": "Comprueba el nombre completo y el documento de identidad del firmante.",
+  "The credential could not be unlocked. Check the password and try again.": "No se pudo desbloquear la credencial. Comprueba la contraseña y vuelve a intentarlo.",
+  "Complete the required fields before signing: %@.": "Completa los campos obligatorios antes de firmar: %@.",
   "Email diagnostics…": "Enviar diagnóstico por correo…",
   "Could not open a mail draft.": "No se pudo abrir un borrador de correo.",
   "If no draft opens, choose Copy diagnostics and paste the report into an email to %@.": "Si no se abre un borrador, pulsa Copiar diagnóstico y pega el informe en un correo a %@.",

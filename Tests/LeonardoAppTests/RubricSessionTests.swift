@@ -78,6 +78,53 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertNil(saved.identity)
     }
 
+    func testGuidedSigningDuplicateIdentityLeavesAssignmentOpenForCorrection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let document = LeonardoDocument(
+            body: "{{field:first}} {{field:second}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(id: "assignment", title: "Assignment", kind: .form, revision: 1,
+                    signing: .init(positions: [.init(id: "first", label: "First"), .init(id: "second", label: "Second")])),
+                fields: [
+                    "first": .init(type: .rubric, signerPosition: "first"),
+                    "second": .init(type: .rubric, signerPosition: "second")
+                ]
+            )
+        )
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        let url = root.appendingPathComponent("assignment.mdlf")
+        session.documentURL = url
+        session.documentKind = .leonardoTemplate
+        session.content = try LeonardoFormatParser.serialize(document)
+        session.guidedSigningReady = true
+        session.guidedSigningTrustStore = try LeonardoSigningTrustRegistry(credentials: [])
+        session.guidedSigningSession = try LeonardoGuidedSigningSession(document: document, at: Date(), documentLocation: url.path)
+        let firstCredential = LeonardoSigningKeyPair(credentialID: "first").credential
+        let secondCredential = LeonardoSigningKeyPair(credentialID: "second").credential
+        let first = LeonardoSignerProfile(displayName: "First", identity: .init(
+            fullName: "First Signer", documentType: .nationalID, documentNumber: "A-1"))
+        let duplicate = LeonardoSignerProfile(displayName: "Second", identity: .init(
+            fullName: "Second Signer", documentType: .nationalID, documentNumber: "A-1"))
+        let corrected = LeonardoSignerProfile(displayName: "Second", identity: .init(
+            fullName: "Second Signer", documentType: .nationalID, documentNumber: "B-2"))
+        let options = LeonardoProfileSaveOptions(saveIdentityDetails: false, saveRubric: false)
+
+        await session.assignGuidedSigner(positionID: "first", profile: first, credential: firstCredential, saveOptions: options)
+        await session.assignGuidedSigner(positionID: "second", profile: duplicate, credential: secondCredential, saveOptions: options)
+        XCTAssertTrue(session.guidedSigningWorkflowOperable)
+        XCTAssertNil(session.guidedSigningError)
+        XCTAssertNotNil(session.guidedSigningActionProblem)
+        XCTAssertNil(session.guidedSigningSession?.positions["second"]?.assignment)
+
+        await session.assignGuidedSigner(positionID: "second", profile: corrected, credential: secondCredential, saveOptions: options)
+        XCTAssertNil(session.guidedSigningActionProblem)
+        XCTAssertNotNil(session.guidedSigningSession?.positions["second"]?.assignment)
+    }
+
     func testIndependentLibrariesMergeWritesAndFailClosedOnCorruption() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
