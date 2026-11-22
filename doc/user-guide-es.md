@@ -224,17 +224,22 @@ opcionales que están vacíos y seguirán vacíos. Es un aviso informativo, no u
 segunda confirmación; desaparece cuando se sella la primera instantánea de
 ubicación.
 
-La primera aparición confirmada sella los datos obligatorios del formulario,
-las asignaciones, la revisión del documento y los recursos referenciados. Un
-valor obligatorio ausente, una aparición que no exista en el documento
-renderizado o un documento cambiado bloquean la confirmación. A partir de ese
-momento, las correcciones requieren **Iniciar una revisión nueva para corregir…**
+Guarda el formulario cumplimentado en el Mac antes de confirmar la primera
+ubicación. La primera confirmación sella las respuestas guardadas, las
+asignaciones, la revisión del documento y los recursos referenciados. Los
+valores obligatorios inválidos, las ubicaciones que no se muestran y un
+documento cambiado bloquean la confirmación. Little Leonardo también la
+bloquea si no puede mostrar una imagen local referenciada. A partir de ese momento, las
+correcciones requieren **Iniciar una revisión nueva para corregir…**
 y hay que asignar y revisar de nuevo todos los puestos. Las firmas y los
 registros públicos de confianza permanecen fuera del documento editable, en un
 almacenamiento local protegido; cambiar o quitar la cabecera no permite saltar
-una revisión existente. Si el flujo aparece obsoleto o no verificado, recárgalo
-e inicia una revisión nueva en vez de aceptar una clave suministrada por el
-documento.
+una revisión existente. Si Leonardo puede recuperar la revisión sellada tras
+un cambio externo, inicia la revisión nueva y elige **Guardar copia…** antes
+de volver a firmar. Así se conserva el archivo externo. Si Leonardo no puede
+determinar el origen sellado, restaura el documento y los recursos originales
+desde una copia de confianza. Comprueba las huellas de las claves desconocidas
+por un canal de confianza independiente.
 
 ## 5. Exportar y compartir
 

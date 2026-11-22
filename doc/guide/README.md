@@ -1,10 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v113-en.mdlz` and `Guide-v113-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v114-en.mdlz` and `Guide-v114-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v113/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v114/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v114 explains saving the form before the first confirmation, recovering a
+trusted sealed revision through Save Copy, and blocked confirmation when a local
+image cannot be displayed on Little Leonardo. Packaged Help validation remains pending.
+Guide v114 EN SHA-256: `ba0cd3ada2412ba7c1477d6ca47b029c558cfbd1ed7cb4d8801f1482a940c2b8`
+Guide v114 ES SHA-256: `93036991d8162335992f7a3c99cc0f35b4863aa9b03e84c199e0acfa0ef668d1`
 
 Guide v113 describes the redesigned linked-device rubric panel and its
 three actions in the guided signing chapter. Both guides passed packaged Help

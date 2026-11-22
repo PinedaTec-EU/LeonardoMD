@@ -220,15 +220,20 @@ are currently blank and will remain blank. This is an informational notice,
 not a second confirmation; it disappears once the first location snapshot is
 sealed.
 
-The first confirmed location seals the required form data, assignments,
-document revision and referenced resources. A missing required value, an
-unavailable rendered occurrence or a changed document blocks confirmation.
+Save the completed form on the Mac before confirming the first location. The
+first confirmation seals the saved answers, assignments, document revision
+and referenced resources. Invalid required answers, unavailable locations or
+a changed document block confirmation. Little Leonardo also blocks confirmation
+when a referenced local image cannot be displayed.
 After that point, corrections require **Start a new revision for corrections…**
 and every position must be assigned and reviewed again. Signatures and the
 public trust records stay outside the editable document in protected local
 sidecar storage, so changing or removing the header cannot bypass an existing
-review. If a signing review is reported as stale or unverified, reload it and
-start a new revision rather than accepting a key supplied by the document.
+review. If Leonardo can recover the sealed revision after an external edit,
+start the new revision and choose **Save copy…** before signing again. This
+preserves the external file. If Leonardo cannot determine the sealed source,
+restore the original document and resources from a trusted copy. Verify an
+unknown signing key against its fingerprint through a separate trusted channel.
 
 ## 5. Export and share
 
