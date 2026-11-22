@@ -628,10 +628,68 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         }
     }
 
+    /// An exchange can carry unfinished review. The absence of a detached
+    /// proof never exempts that progress from the document's signing rules.
+    func validateExchangeProgress(
+        document: LeonardoDocument,
+        resources: [LeonardoSigningResource]
+    ) throws {
+        if let snapshot {
+            guard snapshot.matches(document: document, resources: resources) else {
+                throw LeonardoSigningError.integrityFailure
+            }
+            try validateRequiredSigningData(document)
+        }
+        for progress in positions.values {
+            try validateExchangePosition(progress, document: document)
+        }
+    }
+
+    private func validateExchangePosition(
+        _ progress: LeonardoSigningPositionProgress,
+        document: LeonardoDocument
+    ) throws {
+        let locations = progress.locations
+        guard (progress.state == .pending || progress.assignment != nil),
+              (progress.state != .pending || locations.isEmpty),
+              (locations.isEmpty || snapshot != nil) else {
+            throw LeonardoSigningError.integrityFailure
+        }
+        let targets = try targets(for: progress.positionID, document: document)
+        guard Self.locationsMatch(locations, expectedTargets: Array(targets.prefix(locations.count))),
+              (progress.state != .readyToSign && progress.state != .signed
+                || (!targets.isEmpty && locations.count == targets.count)) else {
+            throw LeonardoSigningError.integrityFailure
+        }
+        var lastRubric: LeonardoRubric?
+        for location in locations {
+            switch location.reuse {
+            case .new:
+                break
+            case .session:
+                guard location.rubric == lastRubric else { throw LeonardoSigningError.integrityFailure }
+            case .profile:
+                guard location.rubric == progress.assignment?.profileRubric else {
+                    throw LeonardoSigningError.integrityFailure
+                }
+            }
+            lastRubric = location.rubric
+        }
+        guard rubricByPosition[progress.positionID] == lastRubric else {
+            throw LeonardoSigningError.integrityFailure
+        }
+    }
+
     private func validateFirstConfirmationPrerequisites(
         document: LeonardoDocument,
         resources: [LeonardoSigningResource]
     ) throws {
+        try validateRequiredSigningData(document)
+        // Validate resources before mutating the signing session.
+        _ = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: Date())
+    }
+
+    private func validateRequiredSigningData(_ document: LeonardoDocument) throws {
         // Assigned rubrics are signing locations. All other required fields
         // use the same value rules as the rest of the form.
         let requiredFields = document.metadata.fields.filter { $0.value.required && $0.value.signerPosition == nil }
@@ -647,9 +705,6 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         guard missing.isEmpty else { throw LeonardoSigningError.requiredDataMissing(missing.sorted()) }
         let invalid = Set(diagnostics.filter { $0.severity == .error }.compactMap(\.fieldID))
         guard invalid.isEmpty else { throw LeonardoSigningError.requiredDataInvalid(invalid.sorted()) }
-        // Capture and discard a validation snapshot here so resource size,
-        // reference and duplicate checks happen before any session mutation.
-        _ = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: Date())
     }
 
     private func validateRubricReuse(

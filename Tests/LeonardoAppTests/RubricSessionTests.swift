@@ -53,7 +53,7 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertTrue(liveTargets.isEmpty)
     }
 
-    func testInkOnlyProfileKeepsItsIDWhenDeclaringIdentityForAssignment() {
+    func testInkOnlyProfileKeepsItsIDWhenDeclaringIdentityForAssignment() throws {
         let savedID = UUID()
         let saved = LeonardoSignerProfile(
             id: savedID,
@@ -66,9 +66,11 @@ final class RubricSessionTests: XCTestCase {
             documentType: .nationalID,
             documentNumber: "A-1"
         )
-        let assignmentProfile = GuidedSigningTransientProfile.make(
-            savedProfile: saved, identity: identity
-        )
+        XCTAssertEqual(saved.declaredNameForAssignment, "")
+        XCTAssertNil(saved.withDeclaredSigningIdentity(.init(
+            fullName: "  ", documentType: .nationalID, documentNumber: "A-1"
+        )))
+        let assignmentProfile = try XCTUnwrap(saved.withDeclaredSigningIdentity(identity))
 
         XCTAssertEqual(assignmentProfile.id, savedID)
         XCTAssertEqual(assignmentProfile.identity, identity)
@@ -108,10 +110,10 @@ final class RubricSessionTests: XCTestCase {
         let secondCredential = LeonardoSigningKeyPair(credentialID: "second").credential
         let savedInk = LeonardoSignerProfile(displayName: "Saved rubric", rubric: ink)
         try await session.guidedSigningStore.saveProfile(savedInk, options: .init(saveIdentityDetails: false, saveRubric: true))
-        let first = GuidedSigningTransientProfile.make(savedProfile: savedInk, identity: .init(
-            fullName: "First Signer", documentType: .nationalID, documentNumber: "A-1"))
-        let reusedProfile = GuidedSigningTransientProfile.make(savedProfile: savedInk, identity: .init(
-            fullName: "Second Signer", documentType: .nationalID, documentNumber: "B-2"))
+        let first = try XCTUnwrap(savedInk.withDeclaredSigningIdentity(.init(
+            fullName: "First Signer", documentType: .nationalID, documentNumber: "A-1")))
+        let reusedProfile = try XCTUnwrap(savedInk.withDeclaredSigningIdentity(.init(
+            fullName: "Second Signer", documentType: .nationalID, documentNumber: "B-2")))
         let duplicate = LeonardoSignerProfile(displayName: "Second", identity: .init(
             fullName: "Second Signer", documentType: .nationalID, documentNumber: "A-1"))
         let corrected = LeonardoSignerProfile(displayName: "Second", identity: .init(

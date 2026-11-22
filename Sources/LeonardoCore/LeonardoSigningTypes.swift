@@ -100,6 +100,19 @@ public struct LeonardoSignerProfile: Codable, Equatable, Sendable, Identifiable 
         self.rubric = rubric
     }
 
+    public var declaredNameForAssignment: String { identity?.fullName ?? "" }
+
+    /// A saved display label identifies a local profile in the picker. It
+    /// must never become part of a signing declaration on its own.
+    public func withDeclaredSigningIdentity(_ enteredIdentity: LeonardoDeclaredIdentity) -> Self? {
+        let declaredIdentity = identity ?? enteredIdentity
+        guard declaredIdentity.isValid else { return nil }
+        return Self(
+            id: id, displayName: declaredIdentity.fullName, identity: declaredIdentity,
+            verificationStatus: verificationStatus, rubric: rubric
+        )
+    }
+
     public var isValid: Bool {
         id.uuidString != "00000000-0000-0000-0000-000000000000"
             && !displayName.isEmpty && displayName.count <= 120

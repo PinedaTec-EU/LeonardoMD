@@ -142,8 +142,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         try Self.validateSource(source)
         let exchangeResources = try Self.normalize(resources)
         guard session.documentID == documentID,
-              session.declaration == document.metadata.document.signing,
-              session.snapshot.map({ $0.matches(document: document, resources: resources) }) ?? true else {
+              session.declaration == document.metadata.document.signing else {
             throw LeonardoSigningError.integrityFailure
         }
         var exchangeSession = session
@@ -151,6 +150,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         // explicit exchange boundary. The importer rebinds after CAS checks.
         exchangeSession.documentLocation = nil
         guard exchangeSession.hasOnlyDeclaredIdentities, exchangeSession.isPersistable else { throw LeonardoSigningError.storageFailure }
+        try exchangeSession.validateExchangeProgress(document: document, resources: resources)
         let participatingIDs = Self.participatingCredentialIDs(in: session)
         let relevantCredentials = trustedCredentials.filter { participatingIDs.contains($0.id) }
         let registry = try LeonardoSigningTrustRegistry(credentials: relevantCredentials)
@@ -192,6 +192,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
               session.isPersistable else {
             throw LeonardoSigningError.integrityFailure
         }
+        try session.validateExchangeProgress(document: document, resources: signingResources())
         return document
     }
 
@@ -227,9 +228,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         let exchangeResources = try signingResources()
         let normalizedResources = try Self.normalize(resources).map(\.signingResource)
         guard exchangeResources == normalizedResources else { throw LeonardoSigningError.integrityFailure }
-        guard session.snapshot.map({ $0.matches(document: document, resources: normalizedResources) }) ?? true else {
-            throw LeonardoSigningError.integrityFailure
-        }
+        try session.validateExchangeProgress(document: document, resources: normalizedResources)
         let verification = session.signatureVerification(
             document: document,
             resources: normalizedResources,

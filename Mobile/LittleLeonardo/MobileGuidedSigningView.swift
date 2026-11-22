@@ -6,23 +6,23 @@ import LeonardoCore
 /// read; the result leaves the phone as a user-exported exchange file.
 struct MobileGuidedSigningView: View {
     let library: MobileLibrary
-    private let localDocumentLocation: String?
+    let localDocumentLocation: String?
     private let initiallyShowingDocumentReader: Bool
-    private let initialExchange: LeonardoSigningExchange
+    let initialExchange: LeonardoSigningExchange
     @Environment(\.dismiss) private var dismiss
-    @State private var document: LeonardoDocument?
-    @State private var session: LeonardoGuidedSigningSession
-    @State private var resources: [LeonardoSigningResource]
-    @State private var trustedCredentials: [LeonardoSigningCredential]
-    @State private var trustAccepted: Bool
-    @State private var locallyTrustedCredentialIDs: Set<String> = []
-    @State private var selectedTrustCredentialID: String?
-    @State private var trustFingerprintInput = ""
-    @State private var profiles: [LeonardoSignerProfile] = []
-    @State private var credentialIDs: [String] = []
-    @State private var selectedPositionID: String?
+    @State var document: LeonardoDocument?
+    @State var session: LeonardoGuidedSigningSession
+    @State var resources: [LeonardoSigningResource]
+    @State var trustedCredentials: [LeonardoSigningCredential]
+    @State var trustAccepted: Bool
+    @State var locallyTrustedCredentialIDs: Set<String> = []
+    @State var selectedTrustCredentialID: String?
+    @State var trustFingerprintInput = ""
+    @State var profiles: [LeonardoSignerProfile] = []
+    @State var credentialIDs: [String] = []
+    @State var selectedPositionID: String?
     @State private var selectedProfileID: UUID?
-    @State private var selectedCredentialID = ""
+    @State var selectedCredentialID = ""
     @State private var creatingProfile = true
     @State private var fullName = ""
     @State private var documentType = LeonardoIdentityDocumentType.nationalID
@@ -43,17 +43,17 @@ struct MobileGuidedSigningView: View {
     @State private var showingEnrollment = false
     @State private var showingPassword = false
     @State private var showingExportDisclosure = false
-    @State private var exporting = false
-    @State private var exportDocument: MobileSigningExchangeDocument?
-    @State private var ready = false
-    @State private var hasInvalidSeal = false
-    @State private var storedBaseline: LeonardoGuidedSigningSession?
-    @State private var verification: [String: LeonardoSignatureVerification] = [:]
+    @State var exporting = false
+    @State var exportDocument: MobileSigningExchangeDocument?
+    @State var ready = false
+    @State var hasInvalidSeal = false
+    @State var storedBaseline: LeonardoGuidedSigningSession?
+    @State var verification: [String: LeonardoSignatureVerification] = [:]
     @State private var showingProfileRubric = false
     @State private var profileRubricDraft = LeonardoRubric()
-    @State private var busy = false
-    @State private var errorMessage: String?
-    @State private var localLoadFailed = false
+    @State var busy = false
+    @State var errorMessage: String?
+    @State var localLoadFailed = false
 
     init(
         library: MobileLibrary,
@@ -72,7 +72,7 @@ struct MobileGuidedSigningView: View {
         _trustAccepted = State(initialValue: exchange.trustedCredentials.isEmpty)
     }
 
-    private var spanish: Bool {
+    var spanish: Bool {
         MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
     }
 
@@ -91,7 +91,7 @@ struct MobileGuidedSigningView: View {
         return (try? session.targets(for: selectedPositionID, document: document)) ?? []
     }
 
-    private var untrustedPackageCredentials: [LeonardoSigningCredential] {
+    var untrustedPackageCredentials: [LeonardoSigningCredential] {
         trustedCredentials.filter { !locallyTrustedCredentialIDs.contains($0.id) }
     }
 
@@ -105,7 +105,7 @@ struct MobileGuidedSigningView: View {
         availableIDs.contains(credential.id) ? credential.id : nil
     }
 
-    private var workflowAllowed: Bool {
+    var workflowAllowed: Bool {
         ready && trustAccepted && !hasInvalidSeal && verification.values.allSatisfy { $0 == .valid }
     }
 
@@ -637,75 +637,6 @@ struct MobileGuidedSigningView: View {
         }
     }
 
-    private func loadLocalSigningData() async {
-        ready = false
-        localLoadFailed = false
-        do {
-            profiles = try await library.signingStore.profiles()
-            credentialIDs = try await library.signingCredentialStore.credentialIDs()
-            let localTrust = try await library.signingCredentialStore.trustStore()
-            locallyTrustedCredentialIDs = Set(trustedCredentials.compactMap { packageCredential in
-                localTrust.credential(id: packageCredential.id) == packageCredential ? packageCredential.id : nil
-            })
-            selectedTrustCredentialID = untrustedPackageCredentials.first?.id
-            trustAccepted = untrustedPackageCredentials.isEmpty
-            try await restoreProgress(trustStore: localTrust)
-            locallyTrustedCredentialIDs = Set(trustedCredentials.compactMap { credential in
-                localTrust.credential(id: credential.id) == credential ? credential.id : nil
-            })
-            trustAccepted = untrustedPackageCredentials.isEmpty
-            updateVerification(trustStore: localTrust)
-            ready = true
-        } catch {
-            localLoadFailed = true
-        }
-        if selectedPositionID == nil {
-            selectedPositionID = session.pendingPositionIDs.first ?? session.declaration.positions.first?.id
-        }
-    }
-
-    private func saveProgress(_ updated: LeonardoGuidedSigningSession) async throws {
-        try await library.signingStore.saveSession(updated, replacing: storedBaseline)
-        storedBaseline = updated
-    }
-
-    private func restoreProgress(trustStore: LeonardoSigningTrustRegistry) async throws {
-        guard let document else { throw LeonardoSigningError.integrityFailure }
-        let stored = try await library.signingStore.session(id: session.id)
-        storedBaseline = stored
-        let location = stored?.documentLocation ?? localDocumentLocation ?? "mobile://exchange/\(session.id)"
-        if var stored {
-            stored.documentLocation = location
-            let localCopy = try LeonardoSigningExchange(
-                document: document, resources: resources, session: stored,
-                trustedCredentials: trustStore.allCredentials, at: Date()
-            )
-            let incoming = try initialExchange.reboundSession(onto: nil, documentLocation: location)
-            if (try? localCopy.reboundSession(onto: incoming, documentLocation: location)) != nil {
-                session = stored
-            } else {
-                let advanced = try initialExchange.reboundSession(onto: stored, documentLocation: location)
-                if trustAccepted {
-                    try initialExchange.validate(against: document, resources: resources, trustStore: trustStore)
-                }
-                session = advanced
-            }
-        } else {
-            session = try initialExchange.reboundSession(onto: nil, documentLocation: location)
-        }
-        let referencedIDs = Set(session.positions.values.compactMap { $0.assignment?.credentialID })
-        trustedCredentials += trustStore.allCredentials.filter { credential in
-            referencedIDs.contains(credential.id) && !trustedCredentials.contains { $0.id == credential.id }
-        }
-    }
-
-    private func updateVerification(trustStore: LeonardoSigningTrustRegistry) {
-        guard let document else { return }
-        hasInvalidSeal = session.state == .invalidated
-            || (session.snapshot.map { !$0.matches(document: document, resources: resources) } ?? false)
-        verification = session.signatureVerification(document: document, resources: resources, trustStore: trustStore)
-    }
-
     private func verificationLabel(_ result: LeonardoSignatureVerification?) -> String {
         switch result {
         case .valid: return spanish ? "Firma verificada" : "Signature verified"
@@ -718,7 +649,7 @@ struct MobileGuidedSigningView: View {
 
     private func loadProfile(_ id: UUID?) {
         guard let id, let profile = profiles.first(where: { $0.id == id }) else { return }
-        fullName = profile.identity?.fullName ?? profile.displayName
+        fullName = profile.declaredNameForAssignment
         documentType = profile.identity?.documentType ?? .nationalID
         documentNumber = profile.identity?.documentNumber ?? ""
         profileRubric = profile.rubric
@@ -749,13 +680,10 @@ struct MobileGuidedSigningView: View {
                       let existing = profiles.first(where: { $0.id == selectedProfileID }) else {
                     throw LeonardoSigningError.invalidProfile
                 }
-                profile = LeonardoSignerProfile(
-                    id: existing.id, displayName: existing.displayName,
-                    identity: existing.identity ?? LeonardoDeclaredIdentity(
-                        fullName: fullName, documentType: documentType, documentNumber: documentNumber
-                    ),
-                    rubric: existing.rubric
-                )
+                guard let declared = existing.withDeclaredSigningIdentity(.init(
+                    fullName: fullName, documentType: documentType, documentNumber: documentNumber
+                )) else { throw LeonardoSigningError.invalidProfile }
+                profile = declared
             }
             let localTrust = try await library.signingCredentialStore.trustStore(
                 credentialIDs: [selectedCredentialID]
@@ -926,66 +854,6 @@ struct MobileGuidedSigningView: View {
         return assignment
     }
 
-    private func enrollCredential(password: String) async {
-        do {
-            let enrolled = try await library.signingCredentialStore.enroll(password: password)
-            credentialIDs = try await library.signingCredentialStore.credentialIDs()
-            // Keychain ordering is not enrollment ordering. Keep the exact
-            // credential returned by the enrollment operation selected even
-            // when another credential sorts after it.
-            selectedCredentialID = Self.selectedCredentialID(
-                afterEnrollment: enrolled,
-                availableIDs: credentialIDs
-            ) ?? ""
-        } catch {
-            errorMessage = String(describing: error)
-        }
-    }
-
-    private func acceptSelectedPublicKey() async {
-        guard let credentialID = selectedTrustCredentialID,
-              let credential = trustedCredentials.first(where: { $0.id == credentialID }) else { return }
-        let normalizedInput = trustFingerprintInput
-            .filter { $0.isHexDigit }
-            .lowercased()
-        guard normalizedInput == publicFingerprint(credential).filter({ $0.isHexDigit }).lowercased() else {
-            errorMessage = spanish
-                ? "La huella no coincide. Compruébala por la vía independiente indicada."
-                : "The fingerprint does not match. Check it through the separate channel."
-            return
-        }
-        busy = true
-        defer { busy = false }
-        do {
-            try await library.signingCredentialStore.trustPublicCredential(credential)
-            locallyTrustedCredentialIDs.insert(credential.id)
-            updateVerification(trustStore: try await library.signingCredentialStore.trustStore())
-            trustFingerprintInput = ""
-            selectedTrustCredentialID = untrustedPackageCredentials.first?.id
-            trustAccepted = untrustedPackageCredentials.isEmpty
-        } catch {
-            errorMessage = String(describing: error)
-        }
-    }
-
-    private func exportSigningCopy(document: LeonardoDocument) {
-        guard workflowAllowed else { return }
-        do {
-            let exchange = try LeonardoSigningExchange(
-                document: document, resources: resources, session: session,
-                trustedCredentials: trustedCredentials, at: Date()
-            )
-            exportDocument = try MobileSigningExchangeDocument(exporting: exchange)
-            exporting = true
-        } catch LeonardoSigningError.exchangeTooLarge {
-            errorMessage = spanish
-                ? "Esta copia de firma supera el tamaño máximo para el intercambio."
-                : "This signing copy exceeds the exchange size limit."
-        } catch {
-            errorMessage = String(describing: error)
-        }
-    }
-
     private var exportDisclosureMessage: String {
         let assignments: [String] = session.declaration.positions.compactMap { position in
             guard let assignment = session.positions[position.id]?.assignment else { return nil }
@@ -1002,7 +870,7 @@ struct MobileGuidedSigningView: View {
         return "Only this source, its resources, progress and assigned positions will be exported (including declared name, document type and number, and present rubrics):\n\(details)\n\nPrivate keys, local paths and unassigned profiles are not included. Identity remains declared."
     }
 
-    private func publicFingerprint(_ credential: LeonardoSigningCredential) -> String {
+    func publicFingerprint(_ credential: LeonardoSigningCredential) -> String {
         SHA256.hash(data: credential.publicKey).map { String(format: "%02x", $0) }
             .joined(separator: ":")
     }
@@ -1034,99 +902,6 @@ struct MobileGuidedSigningView: View {
         case .passport: return spanish ? "Pasaporte" : "Passport"
         case .driverLicense: return spanish ? "Permiso de conducir" : "Driver license"
         case .other: return spanish ? "Otro documento" : "Other document"
-        }
-    }
-}
-
-private struct MobileGuidedRubricSheet: View {
-    @Binding var rubric: LeonardoRubric
-    let spanish: Bool
-    var profileCapture = false
-    let confirm: () -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var color = "#111111"
-    @State private var width = 4.0
-    @State private var style = LeonardoInkStyle.solid
-    @State private var limitReached = false
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 14) {
-                Text(profileCapture
-                     ? (spanish ? "Dibuja una rúbrica para reutilizar con este perfil." : "Draw a rubric to reuse with this profile.")
-                     : (spanish ? "Lee el contexto y dibuja una rúbrica nueva." : "Read the context and draw a new rubric."))
-                    .font(.footnote).foregroundStyle(MobileClassic.secondary)
-                MobileRubricInkTools(color: $color, width: $width, style: $style, enabled: true, spanish: spanish)
-                MobileRubricCanvas(rubric: $rubric, color: color, width: width, style: style,
-                                   isInteractive: true, limitReached: $limitReached)
-                    .aspectRatio(3, contentMode: .fit)
-                    .background(MobileClassic.canvas)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                if limitReached {
-                    Text(spanish ? "La rúbrica supera el límite portable." : "Rubric exceeds the portable limit.")
-                        .font(.caption).foregroundStyle(.orange)
-                }
-                Button(profileCapture ? (spanish ? "Usar rúbrica" : "Use rubric")
-                       : (spanish ? "Confirmar aparición" : "Confirm occurrence"), action: confirm)
-                    .buttonStyle(.borderedProminent)
-                    .foregroundStyle(MobileClassic.paper)
-                    .disabled(!rubric.isValid || limitReached)
-            }
-            .padding()
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .classicSurface()
-            .navigationTitle(spanish ? "Rúbrica" : "Rubric")
-            .toolbar { Button(spanish ? "Cancelar" : "Cancel") { dismiss() } }
-        }
-    }
-}
-
-private struct MobileSigningCredentialEnrollment: View {
-    let spanish: Bool
-    let onEnroll: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var password = ""
-    @State private var confirmation = ""
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Text(spanish
-                         ? "La contraseña personal cifra la clave privada antes de guardarla en el llavero."
-                         : "The personal password encrypts the private key before it is stored in the keychain.")
-                        .font(.footnote)
-                    SecureField(spanish ? "Contraseña" : "Password", text: $password)
-                    SecureField(spanish ? "Confirmar" : "Confirm", text: $confirmation)
-                }
-                Button(spanish ? "Inscribir" : "Enroll") { onEnroll(password) }
-                    .buttonStyle(.borderedProminent)
-                    .foregroundStyle(MobileClassic.paper)
-                    .disabled(password.count < 8 || password != confirmation)
-            }
-            .navigationTitle(spanish ? "Credencial" : "Credential")
-            .toolbar { Button(spanish ? "Cerrar" : "Close") { dismiss() } }
-        }
-    }
-}
-
-private struct MobileSigningPassword: View {
-    let spanish: Bool
-    let onSubmit: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var password = ""
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                SecureField(spanish ? "Contraseña personal" : "Personal password", text: $password)
-                Button(spanish ? "Firmar" : "Sign") { onSubmit(password) }
-                    .buttonStyle(.borderedProminent)
-                    .foregroundStyle(MobileClassic.paper)
-                    .disabled(password.isEmpty)
-            }
-            .navigationTitle(spanish ? "Autorizar firma" : "Authorize signature")
-            .toolbar { Button(spanish ? "Cancelar" : "Cancel") { dismiss() } }
         }
     }
 }

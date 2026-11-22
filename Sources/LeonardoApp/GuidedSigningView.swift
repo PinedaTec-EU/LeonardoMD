@@ -74,18 +74,9 @@ struct GuidedSigningView: View {
     private var profileForAssignment: LeonardoSignerProfile? {
         if let selectedProfile {
             if selectedProfile.identity == nil {
-                let displayName = fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    ? selectedProfile.displayName : fullName
-                let declaredIdentity = LeonardoDeclaredIdentity(
-                    fullName: displayName,
-                    documentType: documentType,
-                    documentNumber: documentNumber
-                )
-                guard declaredIdentity.isValid else { return nil }
-                return GuidedSigningTransientProfile.make(
-                    savedProfile: selectedProfile,
-                    identity: declaredIdentity
-                )
+                return selectedProfile.withDeclaredSigningIdentity(.init(
+                    fullName: fullName, documentType: documentType, documentNumber: documentNumber
+                ))
             }
             return selectedProfile
         }
@@ -280,7 +271,7 @@ struct GuidedSigningView: View {
         }
         transientProfileID = nil
         if profile.identity == nil {
-            fullName = profile.displayName
+            fullName = profile.declaredNameForAssignment
             documentType = .nationalID
             documentNumber = ""
             saveIdentityDetails = false
@@ -891,21 +882,6 @@ struct GuidedSigningView: View {
 
 /// Adds a declared identity for this assignment. Keeping the saved profile ID
 /// lets the session reject reuse. Only explicit save consent persists identity.
-struct GuidedSigningTransientProfile {
-    static func make(
-        savedProfile: LeonardoSignerProfile,
-        identity: LeonardoDeclaredIdentity
-    ) -> LeonardoSignerProfile {
-        LeonardoSignerProfile(
-            id: savedProfile.id,
-            displayName: identity.fullName,
-            identity: identity,
-            verificationStatus: savedProfile.verificationStatus,
-            rubric: savedProfile.rubric
-        )
-    }
-}
-
 /// A value snapshot for one rendered location. SwiftUI may retain a row while
 /// the session changes (for example when Pause clears the active targets), so
 /// row actions must never subscript the session's mutable target array.

@@ -605,6 +605,55 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testExchangeValidatesPartialProgressAgainstTheSealedDocument() throws {
+        let document = try makeDocument()
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "partial")
+        try assign(profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1)),
+                   key: key, to: "titular", session: &session)
+        let target = try XCTUnwrap(session.begin(positionID: "titular", document: document).first)
+        try session.confirmLocation(
+            positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+            document: document, contextRead: true, rubric: rubric(seed: 1), at: now
+        )
+        try session.pause(positionID: "titular", at: now)
+        let trust = try LeonardoSigningTrustRegistry(credentials: [key.credential])
+        let exchange = try LeonardoSigningExchange(
+            document: document, session: session, trustedCredentials: [key.credential], at: now
+        )
+        let accepted = try LeonardoSigningExchange.decoded(LeonardoSigningExchange.encoded(exchange))
+        try accepted.validate(against: document, trustStore: trust)
+        let baseline = try accepted.reboundSession(onto: nil, documentLocation: "/fixture.mdlf")
+        XCTAssertEqual(baseline.positions["titular"]?.state, .paused)
+
+        var withoutSeal = session
+        withoutSeal.snapshot = nil
+        XCTAssertThrowsError(try withoutSeal.validateExchangeProgress(document: document, resources: []))
+
+        var wrongLocation = session
+        let confirmed = try XCTUnwrap(wrongLocation.positions["titular"]?.locations.first)
+        wrongLocation.positions["titular"]?.locations = [.init(
+            positionID: confirmed.positionID, fieldID: confirmed.fieldID, occurrence: confirmed.occurrence,
+            sourceOffset: confirmed.sourceOffset + 1, contextSHA256: confirmed.contextSHA256,
+            rubric: confirmed.rubric, reuse: confirmed.reuse, confirmedAt: confirmed.confirmedAt
+        )]
+        XCTAssertThrowsError(try wrongLocation.validateExchangeProgress(document: document, resources: []))
+
+        var withoutAssignment = session
+        withoutAssignment.positions["titular"]?.assignment = nil
+        XCTAssertThrowsError(try withoutAssignment.validateExchangeProgress(document: document, resources: []))
+
+        let incomplete = try makeDocument(requiredName: nil)
+        var incompleteSeal = session
+        incompleteSeal.snapshot = try LeonardoSigningSnapshot.capture(document: incomplete, resources: [], at: now)
+        XCTAssertThrowsError(try incompleteSeal.validateExchangeProgress(document: incomplete, resources: [])) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .requiredDataMissing(["requiredName"]))
+        }
+        var resumed = baseline
+        try resumed.resume(positionID: "titular", at: now)
+        XCTAssertEqual(try resumed.begin(positionID: "titular", document: document).first, target)
+    }
+
     func testSigningExchangeRejectsResourcesThatExceedEncodedEnvelopeLimit() throws {
         let document = try makeDocument()
         let session = try LeonardoGuidedSigningSession(document: document, at: now)
