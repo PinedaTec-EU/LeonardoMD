@@ -1,0 +1,16 @@
+{
+  "reviewed_sha": "2ac485340d1f3ea20d4e246e71a5309a5922b331",
+  "capture_checkout": "2ac485340d1f3ea20d4e246e71a5309a5922b331",
+  "platform": "iOS 26.5 Simulator, production SwiftUI/WKWebView",
+  "udid": "271B5505-A755-41BB-AC90-236C58AB9CA5",
+  "pixel_width": 1206,
+  "pixel_height": 2622,
+  "capture_mode": "simctl native viewport during XCTest",
+  "state": "Visible sealed resource in the native reader.",
+  "original": "testGuidedSigningCopyRendersNestedProjectResourcesUsingSourceReferences-1.png",
+  "captured_at": "2026-11-22T09:20:50.422942+01:00",
+  "sha256": "7b458b3bf1423d6d413cd3c7639cc3e79ddca668074f050dd06d7088a52ca040",
+  "executable_sha256": "e76d98e0b30869874413d520fdc1ef70e9104ad93fb2f84097f71f3f18994209",
+  "test_result": "Test-LittleLeonardo-2026.11.22_09-20-42-+0100.xcresult",
+  "build_provenance": "Built from the production code recorded in this candidate. The captures came from the exact clean checkout."
+}
