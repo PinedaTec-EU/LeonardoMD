@@ -642,7 +642,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
                 missing.append(fieldID)
                 continue
             }
-            LeonardoFormatParser.validateValue(value, definition: field, fieldID: fieldID, into: &diagnostics)
+            LeonardoFormatValidator.validateValue(value, definition: field, fieldID: fieldID, into: &diagnostics)
         }
         guard missing.isEmpty else { throw LeonardoSigningError.requiredDataMissing(missing.sorted()) }
         let invalid = Set(diagnostics.filter { $0.severity == .error }.compactMap(\.fieldID))
