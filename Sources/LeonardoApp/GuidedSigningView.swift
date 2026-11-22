@@ -27,8 +27,7 @@ struct GuidedSigningView: View {
     @State private var showAssignmentConfirmation = false
     @State private var showCredentialEnrollment = false
     @State private var showPassword = false
-    @State private var showRubricEditor = false
-    @State private var rubricEditorPurpose: RubricEditorPurpose = .profile
+    @State private var rubricEditor: RubricEditorRequest?
     @State private var selectedCredentialID = ""
     @State private var selectedPassword = ""
     @State private var renderedTargetKeys = Set<String>()
@@ -37,6 +36,11 @@ struct GuidedSigningView: View {
     private enum RubricEditorPurpose {
         case profile
         case location(sessionID: UUID, target: LeonardoSigningLocationTarget)
+    }
+
+    private struct RubricEditorRequest: Identifiable {
+        let id = UUID()
+        let purpose: RubricEditorPurpose
     }
 
     private struct ReviewedOccurrence: Equatable {
@@ -225,8 +229,8 @@ struct GuidedSigningView: View {
                 Task { await session.signGuidedPosition(positionID: positionID, password: password) }
             }
         }
-        .sheet(isPresented: $showRubricEditor) {
-            switch rubricEditorPurpose {
+        .sheet(item: $rubricEditor) { request in
+            switch request.purpose {
             case .profile:
                 GuidedSigningRubricCapture(
                     title: L10n.text("Profile rubric"), initialRubric: draftProfileRubric
@@ -536,8 +540,7 @@ struct GuidedSigningView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button(L10n.text("Draw profile rubric…")) {
-                    rubricEditorPurpose = .profile
-                    showRubricEditor = true
+                    rubricEditor = RubricEditorRequest(purpose: .profile)
                 }
                 .buttonStyle(PremiumButtonStyle(compact: true))
             }
@@ -747,8 +750,7 @@ struct GuidedSigningView: View {
                 if reuse == .new {
                     Button(L10n.text(locationRubric == nil ? "Draw rubric…" : "Replace rubric…")) {
                         guard let sessionID = session.guidedSigningSession?.id, currentTarget == target else { return }
-                        rubricEditorPurpose = .location(sessionID: sessionID, target: target)
-                        showRubricEditor = true
+                        rubricEditor = RubricEditorRequest(purpose: .location(sessionID: sessionID, target: target))
                     }
                     .buttonStyle(PremiumButtonStyle(compact: true))
                 } else {
