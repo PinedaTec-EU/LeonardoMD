@@ -605,6 +605,30 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testInvalidatedProgressStaysLocalAndDoesNotDisplaceAReview() throws {
+        let document = try makeDocument()
+        var current = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "local-review")
+        try assign(profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1)),
+                   key: key, to: "titular", session: &current)
+        let targets = try current.begin(positionID: "titular", document: document)
+        var invalidated = current
+        invalidated.state = .invalidated
+        XCTAssertTrue(invalidated.isPersistable)
+        XCTAssertThrowsError(try invalidated.validateExchangeProgress(document: document, resources: [])) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .integrityFailure)
+        }
+        XCTAssertThrowsError(try LeonardoSigningExchange(
+            document: document, session: invalidated, trustedCredentials: [key.credential], at: now
+        ))
+        let location = try XCTUnwrap(targets.first)
+        try current.confirmLocation(
+            positionID: "titular", fieldID: location.fieldID, occurrence: location.occurrence,
+            document: document, contextRead: true, rubric: rubric(seed: 1), at: now
+        )
+        XCTAssertEqual(current.positions["titular"]?.locations.count, 1)
+    }
+
     func testRejectedFirstRubricReuseLeavesReviewUnsealedAndResumable() throws {
         let document = try makeDocument()
         var session = try LeonardoGuidedSigningSession(document: document, at: now)

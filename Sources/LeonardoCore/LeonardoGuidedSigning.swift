@@ -638,7 +638,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         resources: [LeonardoSigningResource]
     ) throws {
         let hasConfirmedLocations = positions.values.contains { !$0.locations.isEmpty }
-        guard (snapshot != nil) == hasConfirmedLocations else {
+        guard state != .invalidated, (snapshot != nil) == hasConfirmedLocations else {
             throw LeonardoSigningError.integrityFailure
         }
         if let snapshot {

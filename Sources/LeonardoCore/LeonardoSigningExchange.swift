@@ -270,6 +270,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         documentLocation: String
     ) throws -> LeonardoGuidedSigningSession {
         guard Self.validDocumentLocation(documentLocation),
+              session.state != .invalidated,
               session.documentLocation == nil,
               session.initialRevision == documentRevision,
               session.hasOnlyDeclaredIdentities,
