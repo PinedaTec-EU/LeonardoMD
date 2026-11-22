@@ -5,10 +5,15 @@ import LeonardoSync
 
 @MainActor
 final class AppSessionTests: XCTestCase {
-    private func fixture() throws -> (URL, AppSession) {
+    private func fixture(
+        signingCredentialStore: LeonardoSigningCredentialStore = LeonardoSigningCredentialStore()
+    ) throws -> (URL, AppSession) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        let session = AppSession(
+            preferencesURL: root.appendingPathComponent("preferences.json"),
+            signingCredentialStore: signingCredentialStore
+        )
         session.unsavedChangesDecision = { _ in .save }
         return (root, session)
     }
@@ -336,7 +341,8 @@ final class AppSessionTests: XCTestCase {
     }
 
     func testReopenWithoutInspectorKeepsBoundSigningProgressFailClosedAfterHeaderRemoval() async throws {
-        let (root, first) = try fixture()
+        let credentials = LeonardoSigningCredentialStore(service: "eu.pinedatec.LeonardoMD.tests.signing.\(UUID())")
+        let (root, first) = try fixture(signingCredentialStore: credentials)
         defer { first.stop(); try? FileManager.default.removeItem(at: root) }
         let documentURL = root.appendingPathComponent("guided.mdlf")
         let declaration = LeonardoSigningDeclaration(positions: [
@@ -355,7 +361,7 @@ final class AppSessionTests: XCTestCase {
         try LeonardoFormatParser.serialize(v2).write(to: documentURL, atomically: true, encoding: .utf8)
         first.authorizePath = { _, _ in }
         await first.openDocument(documentURL)
-        XCTAssertTrue(first.guidedSigningReady)
+        XCTAssertTrue(first.guidedSigningReady, first.guidedSigningError ?? "")
         XCTAssertNotNil(first.guidedSigningSession)
         XCTAssertFalse(first.showInspector)
 
@@ -368,7 +374,10 @@ final class AppSessionTests: XCTestCase {
         )
         try LeonardoFormatParser.serialize(legacy).write(to: documentURL, atomically: true, encoding: .utf8)
 
-        let reopened = AppSession(preferencesURL: first.globalPreferencesURL)
+        let reopened = AppSession(
+            preferencesURL: first.globalPreferencesURL,
+            signingCredentialStore: credentials
+        )
         defer { reopened.stop() }
         reopened.authorizePath = { _, _ in }
         await reopened.openDocument(documentURL)

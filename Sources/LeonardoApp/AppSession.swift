@@ -202,6 +202,7 @@ final class AppSession {
         preferencesURL: URL = AppSession.preferencesURL,
         files: LocalProjectRepository = LocalProjectRepository(),
         extensionWarningPreferences: ExtensionWarningPreferences = .shared,
+        signingCredentialStore: LeonardoSigningCredentialStore = LeonardoSigningCredentialStore(),
         openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
     ) {
         self.extensionRecommendations = ExtensionRecommendations(preferences: extensionWarningPreferences)
@@ -210,7 +211,7 @@ final class AppSession {
         let signingDirectory = preferencesURL.deletingLastPathComponent()
             .appendingPathComponent("Signing", isDirectory: true)
         guidedSigningStore = LeonardoSigningStore(directoryURL: signingDirectory)
-        guidedSigningCredentialStore = LeonardoSigningCredentialStore()
+        guidedSigningCredentialStore = signingCredentialStore
         self.openSystemURL = openSystemURL
         let existingAuthorization = authorizePath
         authorizePath = { url, intent in
