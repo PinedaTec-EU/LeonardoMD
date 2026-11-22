@@ -95,6 +95,16 @@ struct MobileGuidedSigningView: View {
         trustedCredentials.filter { !locallyTrustedCredentialIDs.contains($0.id) }
     }
 
+    /// Enrollment returns the authoritative credential identity. The list is
+    /// only a refreshed presentation snapshot and may contain another key
+    /// after it in lexical order.
+    static func selectedCredentialID(
+        afterEnrollment credential: LeonardoSigningCredential,
+        availableIDs: [String]
+    ) -> String? {
+        availableIDs.contains(credential.id) ? credential.id : nil
+    }
+
     private var workflowAllowed: Bool {
         ready && trustAccepted && !hasInvalidSeal && verification.values.allSatisfy { $0 == .valid }
     }
@@ -905,9 +915,15 @@ struct MobileGuidedSigningView: View {
 
     private func enrollCredential(password: String) async {
         do {
-            _ = try await library.signingCredentialStore.enroll(password: password)
+            let enrolled = try await library.signingCredentialStore.enroll(password: password)
             credentialIDs = try await library.signingCredentialStore.credentialIDs()
-            selectedCredentialID = credentialIDs.last ?? ""
+            // Keychain ordering is not enrollment ordering. Keep the exact
+            // credential returned by the enrollment operation selected even
+            // when another credential sorts after it.
+            selectedCredentialID = Self.selectedCredentialID(
+                afterEnrollment: enrolled,
+                availableIDs: credentialIDs
+            ) ?? ""
         } catch {
             errorMessage = String(describing: error)
         }

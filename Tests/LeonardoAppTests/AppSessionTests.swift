@@ -446,6 +446,110 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(reopened.guidedSigningSession?.initialRevision, 1)
         XCTAssertNil(reopened.guidedSigningError)
         XCTAssertTrue(reopened.guidedSigningReady)
+
+        // A discarded revision remains an audit sidecar. Retrying the
+        // correction must skip its retained revision rather than colliding
+        // with it or mutating the old session.
+        reopened.isProtected = false
+        reopened.mode = .fill
+        await reopened.startGuidedSigningRevision()
+        XCTAssertEqual(reopened.guidedSigningSession?.initialRevision, 3)
+        XCTAssertEqual(try LeonardoFormatParser.parse(reopened.content).metadata.document.revision, 3)
+        let retriedHistory = try await reopened.guidedSigningStore.sessions()
+        XCTAssertEqual(retriedHistory.compactMap(\.initialRevision).sorted(), [1, 2, 3])
+        XCTAssertTrue(retriedHistory.contains { $0.id == originalSession.id && $0.initialRevision == 1 })
+    }
+
+    func testSealedExternalChangeKeepsOrdinaryEditsLockedButAllowsExplicitCorrection() async throws {
+        let credentials = LeonardoSigningCredentialStore(
+            service: "eu.pinedatec.LeonardoMD.tests.signing.external-correction.\(UUID())"
+        )
+        let (root, session) = try fixture(signingCredentialStore: credentials)
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let documentURL = root.appendingPathComponent("external-correction.mdlf")
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "Signature: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "external-correction", title: "External correction", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: [
+                    "signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner")
+                ]
+            )
+        )
+        try LeonardoFormatParser.serialize(document).write(to: documentURL, atomically: true, encoding: .utf8)
+        session.authorizePath = { _, _ in }
+        await session.openDocument(documentURL)
+        session.isProtected = false
+
+        let key = LeonardoSigningKeyPair(credentialID: "external-owner")
+        let profile = LeonardoSignerProfile(
+            displayName: "Owner",
+            identity: LeonardoDeclaredIdentity(
+                fullName: "Owner", documentType: .nationalID, documentNumber: "EXT-1"
+            )
+        )
+        await session.assignGuidedSigner(
+            positionID: "owner", profile: profile, credential: key.credential,
+            saveOptions: LeonardoProfileSaveOptions(saveIdentityDetails: false, saveRubric: false)
+        )
+        await session.beginGuidedPosition("owner")
+        let target = try XCTUnwrap(session.guidedSigningTargets.first)
+        let rubric = LeonardoRubric(strokes: [LeonardoInkStroke(
+            color: "#111111", width: 2, style: .solid,
+            points: [LeonardoInkPoint(x: 1, y: 1), LeonardoInkPoint(x: 2, y: 2)]
+        )])
+        await session.confirmGuidedLocation(
+            target: target, rubric: rubric, reuse: .new, reuseConfirmed: false, contextRead: true
+        )
+        XCTAssertNotNil(session.guidedSigningSession?.snapshot)
+        let sealedContent = session.content
+
+        var externallyChanged = document
+        externallyChanged.body += "\nExternal edit"
+        try LeonardoFormatParser.serialize(externallyChanged).write(
+            to: documentURL, atomically: true, encoding: .utf8
+        )
+        await session.reloadFromDisk()
+
+        XCTAssertEqual(session.content, sealedContent)
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertTrue(session.guidedSigningContentLocked)
+        XCTAssertFalse(session.editDocument(expected: sealedContent, replacement: "ordinary edit"))
+
+        await session.startGuidedSigningRevision()
+        XCTAssertEqual(session.guidedSigningSession?.initialRevision, 2)
+        XCTAssertNil(session.guidedSigningError)
+        XCTAssertFalse(session.guidedSigningContentLocked)
+        XCTAssertEqual(try LeonardoFormatParser.parse(session.content).metadata.document.revision, 2)
+        XCTAssertFalse(session.canUndoDocument)
+
+        // The corrected buffer is still a conflict draft. It can be edited,
+        // but no review/signing transition may commit progress to its old
+        // path until Save Copy adopts a coordinated destination.
+        let correctedSession = try XCTUnwrap(session.guidedSigningSession)
+        await session.beginGuidedPosition("owner")
+        XCTAssertEqual(session.guidedSigningSession, correctedSession)
+        XCTAssertNotNil(session.guidedSigningActionProblem)
+
+        let copyURL = root.appendingPathComponent("external-correction-copy.mdlf")
+        await session.saveCopyAndOpen(to: copyURL, sourceURL: documentURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copyURL.path))
+        XCTAssertFalse(session.externalConflict)
+        session.isProtected = false
+        await session.prepareGuidedSigningIfNeeded()
+        await session.assignGuidedSigner(
+            positionID: "owner", profile: profile, credential: key.credential,
+            saveOptions: LeonardoProfileSaveOptions(saveIdentityDetails: false, saveRubric: false)
+        )
+        await session.beginGuidedPosition("owner")
+        XCTAssertEqual(session.guidedSigningSession?.positions["owner"]?.state, .reviewing)
     }
 
     func testGuidedAssignmentRejectsStoreChangeAfterPreparationBaseline() async throws {

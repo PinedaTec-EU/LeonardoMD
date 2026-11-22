@@ -474,6 +474,56 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testSigningExchangeCarriesOnlyParticipatingCredentials() throws {
+        let document = try makeDocument(requiredName: "Form complete")
+        let unrelated = LeonardoSigningKeyPair(credentialID: "unrelated")
+        let emptySession = try LeonardoGuidedSigningSession(document: document, at: now)
+
+        let pristine = try LeonardoSigningExchange(
+            document: document,
+            session: emptySession,
+            trustedCredentials: [unrelated.credential],
+            at: now
+        )
+        XCTAssertTrue(pristine.trustedCredentials.isEmpty)
+
+        let incomingPristine = try injectCredential(unrelated.credential, into: pristine)
+        XCTAssertTrue(try LeonardoSigningExchange.decoded(incomingPristine).trustedCredentials.isEmpty)
+
+        var assignedSession = emptySession
+        let participating = LeonardoSigningKeyPair(credentialID: "participating")
+        let signer = try profile(name: "Ana", number: "A-1", rubric: rubric(seed: 1))
+        try assign(signer, key: participating, to: "titular", session: &assignedSession)
+        let assigned = try LeonardoSigningExchange(
+            document: document,
+            session: assignedSession,
+            trustedCredentials: [participating.credential, unrelated.credential],
+            at: now
+        )
+        XCTAssertEqual(assigned.trustedCredentials.map(\.id), [participating.credential.id])
+
+        let incomingAssigned = try injectCredential(unrelated.credential, into: assigned)
+        let decoded = try LeonardoSigningExchange.decoded(incomingAssigned)
+        XCTAssertEqual(decoded.trustedCredentials.map(\.id), [participating.credential.id])
+    }
+
+    private func injectCredential(
+        _ credential: LeonardoSigningCredential,
+        into exchange: LeonardoSigningExchange
+    ) throws -> Data {
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: LeonardoSigningExchange.encoded(exchange))
+                as? [String: Any]
+        )
+        var credentials = try XCTUnwrap(object["trustedCredentials"] as? [[String: Any]])
+        credentials.append([
+            "id": credential.id,
+            "publicKey": credential.publicKey.base64EncodedString()
+        ])
+        object["trustedCredentials"] = credentials
+        return try JSONSerialization.data(withJSONObject: object)
+    }
+
     func testProfileIdentityDocumentAndCredentialCannotBeReused() throws {
         let document = try makeDocument(requiredName: "Form complete")
         var session = try LeonardoGuidedSigningSession(document: document, at: now)

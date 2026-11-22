@@ -42,14 +42,34 @@ extension AppSession {
             && guidedSigningReady
             && !guidedSigningLoading
             && guidedSigningError == nil
+            && !externalConflict
             && guidedSigningTrustStore != nil
             && guidedSigningSession?.state == .active
+    }
+
+    /// A corrected buffer may remain open for review and ordinary edits while
+    /// its original path is in an external conflict. Signing progress must
+    /// not be enabled until the user resolves that conflict with Reload or
+    /// Save Copy, otherwise the new proof would be stranded on an unsavable
+    /// draft.
+    private func guidedSigningConflictAllowsProgress() -> Bool {
+        guard !externalConflict else {
+            guidedSigningActionProblem = L10n.text(
+                "The file changed outside LeonardoMD. Reload it or save your edits as a copy?"
+            )
+            return false
+        }
+        return true
     }
 
     /// The first confirmed location seals data, assignments, header and
     /// resources. A correction is an explicit new revision, never an inline
     /// edit that silently keeps old signatures.
     var guidedSigningContentLocked: Bool {
+        // The correction path briefly opens the editor for one exact,
+        // precomputed replacement. No await occurs while this flag is true;
+        // ordinary editor actions cannot observe an open window.
+        if guidedSigningRevisionEditing { return false }
         if let document = leonardoDocument,
            document.metadata.formatVersion >= LeonardoFormat.signingVersion,
            document.metadata.document.signing != nil,
@@ -68,6 +88,7 @@ extension AppSession {
               let current = guidedSigningSession else { return false }
         guard let document = leonardoDocument,
               document.metadata.document.id == current.documentID,
+              document.metadata.document.revision == current.initialRevision,
               document.metadata.document.signing == current.declaration,
               document.metadata.formatVersion >= LeonardoFormat.signingVersion else {
             return true
@@ -269,7 +290,11 @@ extension AppSession {
                 document: document,
                 resources: try guidedSigningResources(),
                 session: current,
-                trustedCredentials: guidedSigningTrustStore?.allCredentials ?? [],
+                trustedCredentials: guidedSigningTrustStore?.allCredentials.filter { credential in
+                    current.positions.values.contains { progress in
+                        progress.assignment?.credentialID == credential.id
+                    }
+                } ?? [],
                 at: Date()
             )
             let data = try LeonardoSigningExchange.encoded(exchange)
@@ -668,7 +693,8 @@ extension AppSession {
 
     func beginGuidedPosition(_ positionID: String) async {
         guard var current = guidedSigningSession, let document = leonardoDocument,
-              let expectedLocation = guidedSigningLocation else { return }
+              let expectedLocation = guidedSigningLocation,
+              guidedSigningConflictAllowsProgress() else { return }
         let viewBaseline = current
         let expectedContent = content
         var baseline: LeonardoGuidedSigningSession?
@@ -680,6 +706,7 @@ extension AppSession {
                 expectedContent: expectedContent
             )
             baselineLoaded = true
+            guard guidedSigningConflictAllowsProgress() else { return }
             let targets = try current.begin(positionID: positionID, document: document,
                                             resources: try guidedSigningResources())
             guard guidedSigningViewStateMatches(
@@ -689,6 +716,7 @@ extension AppSession {
             ) else {
                 throw LeonardoSigningError.integrityFailure
             }
+            guard guidedSigningConflictAllowsProgress() else { return }
             try await guidedSigningStore.saveSession(current, replacing: baseline)
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
@@ -721,7 +749,8 @@ extension AppSession {
         contextRead: Bool
     ) async {
         guard var current = guidedSigningSession, let document = leonardoDocument,
-              let expectedLocation = guidedSigningLocation else { return }
+              let expectedLocation = guidedSigningLocation,
+              guidedSigningConflictAllowsProgress() else { return }
         let viewBaseline = current
         let expectedContent = content
         var baseline: LeonardoGuidedSigningSession?
@@ -734,6 +763,7 @@ extension AppSession {
                 expectedContent: expectedContent
             )
             baselineLoaded = true
+            guard guidedSigningConflictAllowsProgress() else { return }
             let profileRubric = current.positions[target.positionID]?.assignment?.profileRubric
             try current.confirmLocation(
                 positionID: target.positionID,
@@ -755,6 +785,7 @@ extension AppSession {
             ) else {
                 throw LeonardoSigningError.integrityFailure
             }
+            guard guidedSigningConflictAllowsProgress() else { return }
             try await guidedSigningStore.saveSession(current, replacing: baseline)
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
@@ -780,7 +811,8 @@ extension AppSession {
 
     func pauseGuidedPosition(positionID: String) async {
         guard var current = guidedSigningSession,
-              let expectedLocation = guidedSigningLocation else { return }
+              let expectedLocation = guidedSigningLocation,
+              guidedSigningConflictAllowsProgress() else { return }
         let viewBaseline = current
         let expectedContent = content
         var baseline: LeonardoGuidedSigningSession?
@@ -792,6 +824,7 @@ extension AppSession {
                 expectedContent: expectedContent
             )
             baselineLoaded = true
+            guard guidedSigningConflictAllowsProgress() else { return }
             try current.pause(positionID: positionID, at: Date())
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
@@ -800,6 +833,7 @@ extension AppSession {
             ) else {
                 throw LeonardoSigningError.integrityFailure
             }
+            guard guidedSigningConflictAllowsProgress() else { return }
             try await guidedSigningStore.saveSession(current, replacing: baseline)
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
@@ -825,7 +859,8 @@ extension AppSession {
 
     func resumeGuidedPosition(positionID: String) async {
         guard var current = guidedSigningSession,
-              let expectedLocation = guidedSigningLocation else { return }
+              let expectedLocation = guidedSigningLocation,
+              guidedSigningConflictAllowsProgress() else { return }
         let viewBaseline = current
         let expectedContent = content
         var baseline: LeonardoGuidedSigningSession?
@@ -837,6 +872,7 @@ extension AppSession {
                 expectedContent: expectedContent
             )
             baselineLoaded = true
+            guard guidedSigningConflictAllowsProgress() else { return }
             try current.resume(positionID: positionID, at: Date())
             let targets = try current.begin(positionID: positionID, document: try currentDocument(),
                                             resources: try guidedSigningResources())
@@ -847,6 +883,7 @@ extension AppSession {
             ) else {
                 throw LeonardoSigningError.integrityFailure
             }
+            guard guidedSigningConflictAllowsProgress() else { return }
             try await guidedSigningStore.saveSession(current, replacing: baseline)
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
@@ -875,7 +912,8 @@ extension AppSession {
         guard var current = guidedSigningSession,
               let assignment = current.positions[positionID]?.assignment,
               let document = leonardoDocument,
-              let expectedLocation = guidedSigningLocation else { return }
+              let expectedLocation = guidedSigningLocation,
+              guidedSigningConflictAllowsProgress() else { return }
         let viewBaseline = current
         let expectedContent = content
         guidedSigningActionProblem = nil
@@ -888,19 +926,23 @@ extension AppSession {
                 expectedContent: expectedContent
             )
             baselineLoaded = true
+            guard guidedSigningConflictAllowsProgress() else { return }
             let keyPair = try await guidedSigningCredentialStore.keyPair(
                 credentialID: assignment.credentialID, password: password)
+            guard guidedSigningConflictAllowsProgress() else { return }
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,
                 expectedSession: viewBaseline
             ) else { throw LeonardoSigningError.integrityFailure }
             let trustStore = try await guidedSigningCredentialStore.trustStore()
+            guard guidedSigningConflictAllowsProgress() else { return }
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,
                 expectedSession: viewBaseline
             ) else { throw LeonardoSigningError.integrityFailure }
+            guard guidedSigningConflictAllowsProgress() else { return }
             _ = try current.sign(positionID: positionID, keyPair: keyPair, document: document,
                                   resources: try guidedSigningResources(), trustStore: trustStore, at: Date())
             guard guidedSigningViewStateMatches(
@@ -910,6 +952,7 @@ extension AppSession {
             ) else {
                 throw LeonardoSigningError.integrityFailure
             }
+            guard guidedSigningConflictAllowsProgress() else { return }
             try await guidedSigningStore.saveSession(current, replacing: baseline)
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
@@ -945,43 +988,91 @@ extension AppSession {
         guard let previous = guidedSigningSession, let document = leonardoDocument,
               let expectedLocation = guidedSigningLocation else { return }
         let expectedContent = content
-        var revised = document
-        revised.metadata.document.revision = (revised.metadata.document.revision ?? 0) + 1
         do {
-            let replacement = try LeonardoFormatParser.serialize(revised)
+            guard !isProtected, !stopped, !isClosing, !isSyncSuspended, !busy,
+                  !saving, fileOperationCount == 0, !isCapturingPreview,
+                  guidedSigningViewStateMatches(
+                      expectedLocation: expectedLocation,
+                      expectedContent: expectedContent,
+                      expectedSession: previous
+                  ),
+                  let currentRevision = document.metadata.document.revision,
+                  currentRevision >= 1 else {
+                guidedSigningError = L10n.text("The new revision could not be opened for editing.")
+                return
+            }
+            let history = try await guidedSigningStore.sessions()
+            guard guidedSigningViewStateMatches(
+                expectedLocation: expectedLocation,
+                expectedContent: expectedContent,
+                expectedSession: previous
+            ) else {
+                throw LeonardoSigningError.integrityFailure
+            }
+            let historicalMaximum = history
+                .filter {
+                    $0.documentLocation == expectedLocation
+                        && $0.documentID == previous.documentID
+                }
+                .compactMap(\.initialRevision)
+                .max() ?? currentRevision
+            let latestRevision = max(currentRevision, historicalMaximum)
+            guard latestRevision < Int.max else { throw LeonardoSigningError.storageFailure }
+            var nextRevision = latestRevision + 1
+            var committed: (replacement: String, session: LeonardoGuidedSigningSession)?
+            // Save the new sidecar before changing the editor. A racing
+            // session at the same path/ID/revision advances to the next free
+            // monotonic revision; all other failures leave the old source and
+            // session untouched.
+            for _ in 0..<32 {
+                var revised = document
+                revised.metadata.document.revision = nextRevision
+                let replacement = try LeonardoFormatParser.serialize(revised)
+                let fresh = try previous.correctedSession(
+                    document: revised,
+                    resources: try guidedSigningResources(),
+                    at: Date(),
+                    documentLocation: expectedLocation
+                )
+                do {
+                    try await guidedSigningStore.saveSession(fresh, replacing: nil)
+                    committed = (replacement, fresh)
+                    break
+                } catch let error as LeonardoSigningError where error == .staleStorage {
+                    guard nextRevision < Int.max else { throw LeonardoSigningError.storageFailure }
+                    nextRevision += 1
+                }
+            }
+            guard let committed else { throw LeonardoSigningError.staleStorage }
+
+            guard guidedSigningViewStateMatches(
+                expectedLocation: expectedLocation,
+                expectedContent: expectedContent,
+                expectedSession: previous
+            ) else {
+                throw LeonardoSigningError.integrityFailure
+            }
+
+            // `editDocument` is synchronous. The temporary flag opens the
+            // editor only for this exact replacement; no ordinary edit can
+            // interleave while it is set.
             guidedSigningRevisionEditing = true
-            guard editDocument(expected: expectedContent, replacement: replacement) else {
-                guidedSigningRevisionEditing = false
+            let edited = editDocument(expected: expectedContent, replacement: committed.replacement)
+            guidedSigningRevisionEditing = false
+            guard edited else {
                 guidedSigningError = L10n.text("The new revision could not be opened for editing.")
                 return
             }
             guard guidedSigningLocation == expectedLocation,
-                  content == replacement,
-                  guidedSigningSession == previous else {
-                guidedSigningRevisionEditing = false
-                guidedSigningError = L10n.text("The document moved or changed while creating the new revision. Reload it before continuing.")
-                return
-            }
-            let fresh = try previous.correctedSession(document: revised,
-                                                       resources: try guidedSigningResources(), at: Date(),
-                                                       documentLocation: expectedLocation)
-            guidedSigningRevisionEditing = false
-            guard guidedSigningLocation == expectedLocation,
-                  content == replacement,
+                  content == committed.replacement,
                   guidedSigningSession == previous else {
                 guidedSigningError = L10n.text("The document moved or changed while creating the new revision. Reload it before continuing.")
                 return
             }
-            // The correction is a new sidecar revision. Preserve the old
-            // session as audit history and require the new ID to be absent.
-            try await guidedSigningStore.saveSession(fresh, replacing: nil)
-            guard guidedSigningLocation == expectedLocation,
-                  content == replacement,
-                  guidedSigningSession == previous else {
-                guidedSigningError = L10n.text("The document moved while saving the new revision. Reload it before continuing.")
-                return
-            }
-            guidedSigningSession = fresh
+            // Do not let Undo restore the sealed source while this fresh
+            // sidecar revision is active.
+            editHistory = DocumentEditHistory()
+            guidedSigningSession = committed.session
             refreshGuidedSigningTargets()
             guidedSigningStatus = L10n.text("New revision ready. Review and assign every signer again.")
             guidedSigningError = nil

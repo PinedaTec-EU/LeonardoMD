@@ -9,6 +9,19 @@ import LeonardoSyncUI
 
 @MainActor
 final class MobileReaderSpacingTests: XCTestCase {
+    func testEnrollmentSelectionUsesReturnedCredentialWhenAnotherKeySortsAfterIt() {
+        let enrolled = LeonardoSigningCredential(id: "signing-m", publicKey: Data(repeating: 1, count: 32))
+        let available = ["signing-a", enrolled.id, "signing-z"]
+
+        XCTAssertEqual(
+            MobileGuidedSigningView.selectedCredentialID(
+                afterEnrollment: enrolled,
+                availableIDs: available
+            ),
+            enrolled.id
+        )
+    }
+
     func testSynchronizedDocumentViewUsesCompactReaderSpacing() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

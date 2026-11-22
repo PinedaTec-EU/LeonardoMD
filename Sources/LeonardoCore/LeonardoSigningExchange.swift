@@ -41,6 +41,56 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
     public let trustedCredentials: [LeonardoSigningCredential]
     public let exportedAt: Date
 
+    private enum CodingKeys: String, CodingKey {
+        case version
+        case documentID
+        case documentRevision
+        case source
+        case sourceSHA256
+        case resources
+        case session
+        case trustedCredentials
+        case exportedAt
+    }
+
+    /// Only credentials belonging to a declared assignment participate in an
+    /// exchange. A registry may contain unrelated local keys, but disclosing
+    /// or prompting for those keys would make a pristine copy carry trust it
+    /// never uses.
+    private static func participatingCredentialIDs(
+        in session: LeonardoGuidedSigningSession
+    ) -> Set<String> {
+        Set(session.positions.values.compactMap { $0.assignment?.credentialID })
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        documentID = try container.decode(String.self, forKey: .documentID)
+        documentRevision = try container.decode(Int.self, forKey: .documentRevision)
+        source = try container.decode(String.self, forKey: .source)
+        sourceSHA256 = try container.decode(Data.self, forKey: .sourceSHA256)
+        resources = try container.decode([LeonardoSigningExchangeResource].self, forKey: .resources)
+        session = try container.decode(LeonardoGuidedSigningSession.self, forKey: .session)
+        let rawCredentials = try container.decode([LeonardoSigningCredential].self, forKey: .trustedCredentials)
+        let participatingIDs = Self.participatingCredentialIDs(in: session)
+        trustedCredentials = rawCredentials.filter { participatingIDs.contains($0.id) }
+        exportedAt = try container.decode(Date.self, forKey: .exportedAt)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(version, forKey: .version)
+        try container.encode(documentID, forKey: .documentID)
+        try container.encode(documentRevision, forKey: .documentRevision)
+        try container.encode(source, forKey: .source)
+        try container.encode(sourceSHA256, forKey: .sourceSHA256)
+        try container.encode(resources, forKey: .resources)
+        try container.encode(session, forKey: .session)
+        try container.encode(trustedCredentials, forKey: .trustedCredentials)
+        try container.encode(exportedAt, forKey: .exportedAt)
+    }
+
     /// The exchange codec stores dates as finite reference-date seconds.
     /// Encoding from the same Foundation epoch used by `Date` avoids a
     /// precision-changing Unix-epoch conversion and retains sub-second proof
@@ -99,7 +149,9 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         // explicit exchange boundary. The importer rebinds after CAS checks.
         exchangeSession.documentLocation = nil
         guard exchangeSession.hasOnlyDeclaredIdentities, exchangeSession.isPersistable else { throw LeonardoSigningError.storageFailure }
-        let registry = try LeonardoSigningTrustRegistry(credentials: trustedCredentials)
+        let participatingIDs = Self.participatingCredentialIDs(in: session)
+        let relevantCredentials = trustedCredentials.filter { participatingIDs.contains($0.id) }
+        let registry = try LeonardoSigningTrustRegistry(credentials: relevantCredentials)
         let verification = session.signatureVerification(
             document: document,
             resources: resources,
@@ -115,7 +167,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         self.sourceSHA256 = Data(SHA256.hash(data: Data(source.utf8)))
         self.resources = exchangeResources
         self.session = exchangeSession
-        self.trustedCredentials = trustedCredentials
+        self.trustedCredentials = relevantCredentials
         self.exportedAt = at
     }
 
