@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1969
+
+- #507 Fixed: isolate hosted iOS reader validation ([#547](https://github.com/PinedaTec-EU/LeonardoMD/pull/547))
+
+<p>Run the iOS read-only document rendering check independently in CI and allow time for a cold WebKit start.</p>
+
+Source: `9f795c042debf9876d7c40dde869c800c010532c`. Delta: `{"build": 1}`.
+
 ## 0.3.1968
 
 - #513 Fixed: explain how to send Sync diagnostics manually ([#515](https://github.com/PinedaTec-EU/LeonardoMD/pull/515))
