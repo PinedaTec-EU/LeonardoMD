@@ -35,6 +35,31 @@ public struct LeonardoSigningLocationTarget: Codable, Equatable, Sendable {
         self.sourceOffset = sourceOffset
         self.contextSHA256 = contextSHA256
     }
+
+    fileprivate static let fieldExpression = try? NSRegularExpression(
+        pattern: #"\{\{\s*field:([A-Za-z][A-Za-z0-9_.-]{0,63})\s*\}\}"#
+    )
+
+    /// The same excerpt that existing proofs commit to. Presentation uses
+    /// these bytes without broadening the signed context window.
+    public func reviewedContext(in body: String) -> String? {
+        guard sourceOffset >= 0,
+              let index = body.index(body.startIndex, offsetBy: sourceOffset, limitedBy: body.endIndex),
+              let match = Self.fieldExpression?.firstMatch(
+                  in: body, options: .anchored, range: NSRange(index..<body.endIndex, in: body)
+              ),
+              let fieldRange = Range(match.range(at: 1), in: body), body[fieldRange] == fieldID,
+              let tokenRange = Range(match.range, in: body) else { return nil }
+        let context = Self.context(in: body, tokenRange: tokenRange)
+        guard Data(SHA256.hash(data: Data(context.utf8))) == contextSHA256 else { return nil }
+        return context
+    }
+
+    fileprivate static func context(in body: String, tokenRange: Range<String.Index>) -> String {
+        let start = body.index(tokenRange.lowerBound, offsetBy: -80, limitedBy: body.startIndex) ?? body.startIndex
+        let end = body.index(tokenRange.upperBound, offsetBy: 80, limitedBy: body.endIndex) ?? body.endIndex
+        return String(body[start..<end])
+    }
 }
 
 public struct LeonardoSigningLocationConfirmation: Codable, Equatable, Sendable {
@@ -873,10 +898,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         fieldIDs: Set<String>,
         positionID: String
     ) throws -> [LeonardoSigningLocationTarget] {
-        guard !fieldIDs.isEmpty,
-              let expression = try? NSRegularExpression(
-                pattern: #"\{\{\s*field:([A-Za-z][A-Za-z0-9_.-]{0,63})\s*\}\}"#
-              ) else { return [] }
+        guard !fieldIDs.isEmpty, let expression = LeonardoSigningLocationTarget.fieldExpression else { return [] }
         // The bundled parser resolves the visible text. Keep the original
         // ranges so each reviewed control is bound to its exact source.
         let range = NSRange(body.startIndex..<body.endIndex, in: body)
@@ -892,14 +914,13 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
             let fieldID = String(body[fieldRange])
             let occurrence = occurrences[fieldID, default: 0]
             occurrences[fieldID] = occurrence + 1
-            let start = body.index(originalTokenRange.lowerBound, offsetBy: -80, limitedBy: body.startIndex) ?? body.startIndex
-            let end = body.index(originalTokenRange.upperBound, offsetBy: 80, limitedBy: body.endIndex) ?? body.endIndex
+            let context = LeonardoSigningLocationTarget.context(in: body, tokenRange: originalTokenRange)
             return LeonardoSigningLocationTarget(
                 positionID: positionID,
                 fieldID: fieldID,
                 occurrence: occurrence,
                 sourceOffset: body.distance(from: body.startIndex, to: originalTokenRange.lowerBound),
-                contextSHA256: Data(SHA256.hash(data: Data(body[start..<end].utf8)))
+                contextSHA256: Data(SHA256.hash(data: Data(context.utf8)))
             )
         }.sorted { $0.sourceOffset < $1.sourceOffset }
     }

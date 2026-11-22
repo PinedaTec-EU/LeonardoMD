@@ -544,18 +544,6 @@ private struct MobileGuidedSigningSourceFallback: View {
     }
 
     private func context(for target: LeonardoSigningLocationTarget) -> String {
-        guard target.sourceOffset >= 0,
-              let start = document.body.index(
-                document.body.startIndex,
-                offsetBy: target.sourceOffset,
-                limitedBy: document.body.endIndex
-              ) else {
-            return document.body.prefix(160).description
-        }
-        let lower = document.body.index(start, offsetBy: -120, limitedBy: document.body.startIndex)
-            ?? document.body.startIndex
-        let upper = document.body.index(start, offsetBy: 180, limitedBy: document.body.endIndex)
-            ?? document.body.endIndex
-        return String(document.body[lower..<upper]).replacingOccurrences(of: "\n", with: " ↵ ")
+        target.reviewedContext(in: document.body)?.replacingOccurrences(of: "\n", with: " ↵ ") ?? ""
     }
 }

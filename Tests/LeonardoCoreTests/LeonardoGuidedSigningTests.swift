@@ -607,6 +607,22 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testDisplayedContextUsesExactlyTheExistingProofExcerpt() throws {
+        var document = try makeDocument()
+        let outside = "OUTSIDE"
+        document.body = outside + String(repeating: "x", count: 100) + document.body
+        let session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let target = try XCTUnwrap(session.targets(for: "titular", document: document).first)
+        let excerpt = try XCTUnwrap(target.reviewedContext(in: document.body))
+        XCTAssertFalse(excerpt.contains(outside))
+        XCTAssertEqual(target.reviewedContext(
+            in: document.body.replacingOccurrences(of: outside, with: "ALTERED")
+        ), excerpt)
+        XCTAssertNil(target.reviewedContext(
+            in: document.body.replacingOccurrences(of: "{{field:z}}", with: "{{field:a}}")
+        ))
+    }
+
     func testFirstSealRequiresVisibleRubricTargetsForEverySigner() throws {
         let document = try makeDocument()
         var session = try LeonardoGuidedSigningSession(document: document, at: now)

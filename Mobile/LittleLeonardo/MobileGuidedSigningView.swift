@@ -669,13 +669,7 @@ struct MobileGuidedSigningView: View {
     }
 
     private func context(for target: LeonardoSigningLocationTarget, in body: String) -> String {
-        guard target.sourceOffset >= 0,
-              let start = body.index(body.startIndex, offsetBy: target.sourceOffset, limitedBy: body.endIndex) else {
-            return body.prefix(160).description
-        }
-        let lower = body.index(start, offsetBy: -120, limitedBy: body.startIndex) ?? body.startIndex
-        let upper = body.index(start, offsetBy: 180, limitedBy: body.endIndex) ?? body.endIndex
-        return String(body[lower..<upper]).replacingOccurrences(of: "\n", with: " ↵ ")
+        target.reviewedContext(in: body)?.replacingOccurrences(of: "\n", with: " ↵ ") ?? ""
     }
 
     private func positionState(_ state: LeonardoSigningPositionState?) -> String {

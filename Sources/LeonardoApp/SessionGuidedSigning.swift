@@ -98,12 +98,7 @@ extension AppSession {
 
     func guidedSigningContext(for target: LeonardoSigningLocationTarget) -> String {
         guard let document = leonardoDocument else { return "" }
-        let body = document.body
-        guard let index = body.index(body.startIndex, offsetBy: target.sourceOffset,
-                                     limitedBy: body.endIndex) else { return "" }
-        let start = body.index(index, offsetBy: -120, limitedBy: body.startIndex) ?? body.startIndex
-        let end = body.index(index, offsetBy: 160, limitedBy: body.endIndex) ?? body.endIndex
-        return body[start..<end].trimmingCharacters(in: .whitespacesAndNewlines)
+        return target.reviewedContext(in: document.body)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     func reportGuidedSigningActionFailure(_ error: Error) {
