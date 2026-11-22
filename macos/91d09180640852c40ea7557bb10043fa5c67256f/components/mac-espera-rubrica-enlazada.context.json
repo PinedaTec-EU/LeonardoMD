@@ -1,0 +1,24 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-22T11:29:12.240Z",
+  "data_provenance" : "synthetic",
+  "image_pixels" : {
+    "height" : 760,
+    "width" : 920
+  },
+  "native_viewport_points" : {
+    "height" : 380,
+    "width" : 460
+  },
+  "os" : "Version 27.2.1 (Build 26B131)",
+  "route" : "\/native\/firmas\/mac-espera-rubrica-enlazada",
+  "screen" : "mac-espera-rubrica-enlazada",
+  "source_sha" : "local",
+  "state" : "macOS production component with an isolated synthetic signing form; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 380,
+    "width" : 460
+  }
+}
