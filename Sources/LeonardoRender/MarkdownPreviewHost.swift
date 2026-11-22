@@ -396,6 +396,51 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
+    /// Verifies decoded pixels for each referenced local image in the current preview.
+    func hasRenderedLocalImages(_ paths: [String]) async -> Bool {
+        guard !paths.isEmpty else { return true }
+        guard let webView else { return false }
+        let expectedContent = content
+        let expectedAssets = configuration.memoryAssets
+        do {
+            try await flushPendingRender()
+            try await waitUntilReady()
+            guard self.webView === webView, content == expectedContent,
+                  configuration.memoryAssets == expectedAssets else { return false }
+            let result = try await webView.callAsyncJavaScript(
+                """
+                const imagesByPath = new Map();
+                for (const image of document.images) {
+                    try {
+                        const url = new URL(image.currentSrc || image.src);
+                        if (url.protocol !== "leonardo-document:" || url.hostname !== "local") continue;
+                        const path = decodeURIComponent(url.pathname).replace(/^\\/+/, "");
+                        if (!imagesByPath.has(path)) imagesByPath.set(path, []);
+                        imagesByPath.get(path).push(image);
+                    } catch {}
+                }
+                const matches = paths.map(path => imagesByPath.get(path) || []);
+                if (matches.some(images => images.length === 0)) return false;
+                const decoded = Promise.all(matches.flat().map(async image => {
+                    try { await image.decode(); } catch { return false; }
+                    return image.naturalWidth > 0 && image.naturalHeight > 0;
+                }));
+                return await Promise.race([
+                    decoded.then(results => results.every(Boolean)),
+                    new Promise(resolve => setTimeout(() => resolve(false), 2000))
+                ]);
+                """,
+                arguments: ["paths": paths],
+                in: nil,
+                contentWorld: .page
+            )
+            return self.webView === webView && content == expectedContent
+                && configuration.memoryAssets == expectedAssets && (result as? Bool) == true
+        } catch {
+            return false
+        }
+    }
+
     func scroll(toFraction fraction: Double) {
         let bounded = fraction.isFinite ? min(1, max(0, fraction)) : 0
         evaluate("window.LeonardoPreview && window.LeonardoPreview.scrollToFraction(\(bounded));")

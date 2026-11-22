@@ -156,19 +156,22 @@ final class MobileReaderSpacingTests: XCTestCase {
             get: { available },
             set: { available = $0 }
         )
-        window.rootViewController = UIHostingController(rootView: NavigationStack {
-            MobileGuidedSigningDocumentReader(
-                document: document,
-                resources: exchangedResources,
-                session: session,
-                trustedCredentials: [],
-                trustAccepted: true,
-                focusTarget: nil,
-                availableTargetKeys: binding,
-                onFocusConsumed: {}
-            )
-        })
-        window.makeKeyAndVisible()
+        func showReader(resources: [LeonardoSigningResource], targetKeys: Binding<Set<String>>) {
+            window.rootViewController = UIHostingController(rootView: NavigationStack {
+                MobileGuidedSigningDocumentReader(
+                    document: document,
+                    resources: resources,
+                    session: session,
+                    trustedCredentials: [],
+                    trustAccepted: true,
+                    focusTarget: nil,
+                    availableTargetKeys: targetKeys,
+                    onFocusConsumed: {}
+                )
+            })
+            window.makeKeyAndVisible()
+        }
+        showReader(resources: exchangedResources, targetKeys: binding)
 
         let deadline = ContinuousClock.now.advanced(by: .seconds(12))
         var evidence = ""
@@ -182,12 +185,45 @@ final class MobileReaderSpacingTests: XCTestCase {
                     """) as? String {
                 evidence = value
                 if evidence == "[\"Mobile signing practice\",true]", available.contains("signature#0") {
-                    return
+                    break
                 }
             }
             try await Task.sleep(for: .milliseconds(100))
         } while ContinuousClock.now < deadline
-        XCTFail("Guided signing copy did not render its nested image and target (rendered: \(evidence), available: \(available.sorted()))")
+        XCTAssertEqual(evidence, "[\"Mobile signing practice\",true]")
+        XCTAssertTrue(available.contains("signature#0"))
+
+        var availableWithBrokenImage = Set<String>()
+        var everAvailableWithBrokenImage = Set<String>()
+        let brokenTargets = Binding<Set<String>>(
+            get: { availableWithBrokenImage },
+            set: {
+                availableWithBrokenImage = $0
+                everAvailableWithBrokenImage.formUnion($0)
+            }
+        )
+        showReader(resources: [LeonardoSigningResource(reference: "assets/seal.png", bytes: Data([1, 2, 3]))],
+                   targetKeys: brokenTargets)
+        let brokenDeadline = ContinuousClock.now.advanced(by: .seconds(12))
+        var renderedWithBrokenImage = false
+        repeat {
+            if let web = findWebView(window),
+               let rendered = try? await web.evaluateJavaScript("""
+                    (() => {
+                      const seal = document.querySelector('img[alt=Seal]');
+                      return document.querySelector('.leonardo-guided-signing-field') !== null &&
+                        seal !== null && seal.complete && seal.naturalWidth === 0;
+                    })()
+                    """) as? Bool, rendered {
+                renderedWithBrokenImage = true
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        } while ContinuousClock.now < brokenDeadline
+        XCTAssertTrue(renderedWithBrokenImage, "WebKit must reach the exact field while its referenced asset fails to decode")
+        try await Task.sleep(for: .milliseconds(350))
+        XCTAssertTrue(everAvailableWithBrokenImage.isEmpty,
+                      "The WebKit handoff must not enable any signature target with a broken image")
     }
 
     func testSignedGuidedSigningViewPresentsReaderOutsideList() async throws {

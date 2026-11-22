@@ -80,6 +80,11 @@ public final class MarkdownPreviewController: ObservableObject {
         await host?.hasFieldTarget(fieldID, occurrence: occurrence) ?? false
     }
 
+    /// Checks that each local image path in the current preview has decoded pixels.
+    public func hasRenderedLocalImages(_ paths: [String]) async -> Bool {
+        await host?.hasRenderedLocalImages(paths) ?? false
+    }
+
     public func scroll(toFraction fraction: Double) {
         host?.scroll(toFraction: fraction)
     }

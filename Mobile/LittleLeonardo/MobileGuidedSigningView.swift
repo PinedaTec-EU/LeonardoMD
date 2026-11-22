@@ -147,7 +147,7 @@ struct MobileGuidedSigningView: View {
         .task {
             await loadLocalSigningData()
             if initiallyShowingDocumentReader && document != nil {
-                showingDocumentReader = true
+                openDocumentReader()
             }
         }
         .onChange(of: selectedPositionID) { _, _ in
@@ -350,7 +350,7 @@ struct MobileGuidedSigningView: View {
 
             Section(spanish ? "Documento completo" : "Full document") {
                 Button {
-                    showingDocumentReader = true
+                    openDocumentReader()
                 } label: {
                     Label(
                         spanish ? "Abrir copia completa" : "Open full signing copy",
@@ -574,7 +574,7 @@ struct MobileGuidedSigningView: View {
                                     Button(spanish ? "Ver ubicación" : "View location", systemImage: "arrow.down.to.line") {
                                         selectedTargetIndex = index
                                         previewFocusTarget = target
-                                        showingDocumentReader = true
+                                        openDocumentReader()
                                     }
                                     .buttonStyle(.bordered)
                                     .disabled(busy)
@@ -833,6 +833,11 @@ struct MobileGuidedSigningView: View {
         } catch {
             reportLocationReviewFailure(error)
         }
+    }
+
+    private func openDocumentReader() {
+        availableTargetKeys = []
+        showingDocumentReader = true
     }
 
     private func confirmSelectedTarget(
