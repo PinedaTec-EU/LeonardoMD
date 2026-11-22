@@ -605,6 +605,38 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testFirstSealAndExchangeRequireTheBoundDocumentIdentityAndRevision() throws {
+        let document = try makeDocument()
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "bound-review")
+        let ink = rubric(seed: 1)
+        try assign(profile(name: "Ana", number: "A-1", rubric: ink),
+                   key: key, to: "titular", session: &session)
+        let target = try XCTUnwrap(session.begin(positionID: "titular", document: document).first)
+        let original = session
+        var revised = document
+        revised.metadata.document.revision = (document.metadata.document.revision ?? 1) + 1
+        var different = document
+        different.metadata.document.id = "different-signing-document"
+
+        for unexpected in [revised, different] {
+            XCTAssertThrowsError(try session.begin(positionID: "titular", document: unexpected))
+            XCTAssertThrowsError(try session.confirmLocation(
+                positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+                document: unexpected, contextRead: true, rubric: ink, at: now
+            ))
+            XCTAssertThrowsError(try LeonardoSigningExchange(
+                document: unexpected, session: session, trustedCredentials: [key.credential], at: now
+            ))
+            XCTAssertEqual(session, original)
+        }
+        try session.confirmLocation(
+            positionID: "titular", fieldID: target.fieldID, occurrence: target.occurrence,
+            document: document, contextRead: true, rubric: ink, at: now
+        )
+        XCTAssertNotNil(session.snapshot)
+    }
+
     func testInvalidatedProgressStaysLocalAndDoesNotDisplaceAReview() throws {
         let document = try makeDocument()
         var current = try LeonardoGuidedSigningSession(document: document, at: now)

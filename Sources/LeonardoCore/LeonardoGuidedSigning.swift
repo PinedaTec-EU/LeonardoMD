@@ -165,7 +165,15 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         state == .complete && pendingPositionIDs.isEmpty
     }
 
+    private func requireBoundDocument(_ document: LeonardoDocument) throws {
+        guard document.metadata.document.id == documentID,
+              document.metadata.document.revision == initialRevision else {
+            throw LeonardoSigningError.integrityFailure
+        }
+    }
+
     public func targets(for positionID: String, document: LeonardoDocument) throws -> [LeonardoSigningLocationTarget] {
+        try requireBoundDocument(document)
         guard declaration.positions.contains(where: { $0.id == positionID }) else {
             throw LeonardoSigningError.unknownPosition(positionID)
         }
@@ -201,6 +209,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         resources: [LeonardoSigningResource] = []
     ) throws -> [LeonardoSigningLocationTarget] {
         try ensureActive(positionID: positionID)
+        try requireBoundDocument(document)
         guard positions[positionID]?.assignment != nil else {
             throw LeonardoSigningError.assignmentRequired(positionID)
         }
@@ -279,6 +288,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         at: Date
     ) throws {
         try ensureActive(positionID: positionID)
+        try requireBoundDocument(document)
         guard contextRead else { throw LeonardoSigningError.contextConfirmationRequired }
         guard rubric.isValid else { throw LeonardoSigningError.rubricRequired }
         guard at.timeIntervalSince1970.isFinite else { throw LeonardoSigningError.invalidTimestamp }

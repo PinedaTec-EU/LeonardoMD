@@ -157,6 +157,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         try Self.validateSource(source)
         let exchangeResources = try Self.normalize(resources)
         guard session.documentID == documentID,
+              session.initialRevision == revision,
               session.declaration == document.metadata.document.signing else {
             throw LeonardoSigningError.integrityFailure
         }
