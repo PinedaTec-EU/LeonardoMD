@@ -441,6 +441,12 @@ final class LeonardoGuidedSigningTests: XCTestCase {
             trustStore: trust, at: now.addingTimeInterval(10)
         )
 
+        let compacted = try session.compactingProofSnapshotsForStorage()
+        XCTAssertEqual(compacted.snapshot, session.snapshot)
+        XCTAssertTrue(try XCTUnwrap(compacted.positions["titular"]?.signature).proof.snapshot.source.isEmpty)
+        XCTAssertEqual(try compacted.restoringProofSnapshotsFromStorage(), session)
+        XCTAssertThrowsError(try compacted.compactingProofSnapshotsForStorage())
+
         let resource = LeonardoSigningResource(reference: "assets/evidence.txt", bytes: Data("evidence".utf8))
         // The resource is intentionally not in the snapshot, so an exchange
         // must carry exactly the same resource set as its session snapshot.
