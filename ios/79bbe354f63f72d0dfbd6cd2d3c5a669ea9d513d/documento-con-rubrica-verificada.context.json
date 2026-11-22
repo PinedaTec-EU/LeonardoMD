@@ -1,0 +1,16 @@
+{
+  "reviewed_sha": "79bbe354f63f72d0dfbd6cd2d3c5a669ea9d513d",
+  "capture_checkout": "79bbe354f63f72d0dfbd6cd2d3c5a669ea9d513d",
+  "platform": "iOS 26.5 Simulator, production SwiftUI/WKWebView",
+  "udid": "271B5505-A755-41BB-AC90-236C58AB9CA5",
+  "pixel_width": 1206,
+  "pixel_height": 2622,
+  "capture_mode": "simctl native viewport during XCTest",
+  "state": "Native reader displaying a verified rubric from an explicitly trusted synthetic credential.",
+  "original": "testTrustedSignedReaderRendersVerifiedRubricOverlay-7.png",
+  "captured_at": "2026-11-22T08:51:16.379312+01:00",
+  "sha256": "380021446bd4a976b5822c56999cd0e646c95fb8303f0bc543b90ca30930cf2e",
+  "executable_sha256": "e76d98e0b30869874413d520fdc1ef70e9104ad93fb2f84097f71f3f18994209",
+  "test_result": "Test-LittleLeonardo-2026.11.22_08-51-01-+0100.xcresult",
+  "build_provenance": "Reused the identical iOS executable built for 25755406ff170d777c59ff63e72416f7277c2e4a. The candidate changes only a macOS app view and the build ledger. XCTest and these captures ran from the exact clean candidate checkout."
+}

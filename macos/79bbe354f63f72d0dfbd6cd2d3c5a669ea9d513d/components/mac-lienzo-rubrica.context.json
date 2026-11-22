@@ -1,0 +1,24 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-22T07:50:59.884Z",
+  "data_provenance" : "synthetic",
+  "image_pixels" : {
+    "height" : 890,
+    "width" : 1320
+  },
+  "native_viewport_points" : {
+    "height" : 445,
+    "width" : 660
+  },
+  "os" : "Version 27.2.1 (Build 26B131)",
+  "route" : "\/native\/firmas\/mac-lienzo-rubrica",
+  "screen" : "mac-lienzo-rubrica",
+  "source_sha" : "79bbe354f63f72d0dfbd6cd2d3c5a669ea9d513d",
+  "state" : "macOS production component with an isolated synthetic signing form; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 445,
+    "width" : 660
+  }
+}
