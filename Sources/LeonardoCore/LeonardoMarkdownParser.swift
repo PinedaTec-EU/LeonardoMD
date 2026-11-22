@@ -23,6 +23,8 @@ final class LeonardoSigningMarkdown: @unchecked Sendable {
     private init() {
         guard let url = LeonardoMarkdownParserResource.scriptURL,
               let marked = try? String(contentsOf: url, encoding: .utf8),
+              let entitiesURL = Bundle.module.url(forResource: "whatwg-html-entities", withExtension: "json"),
+              let entities = try? String(contentsOf: entitiesURL, encoding: .utf8),
               let locationsURL = Bundle.module.url(forResource: "leonardo-signing-locations", withExtension: "js"),
               let locations = try? String(contentsOf: locationsURL, encoding: .utf8),
               let parser = JSContext() else {
@@ -30,6 +32,7 @@ final class LeonardoSigningMarkdown: @unchecked Sendable {
             return
         }
         parser.evaluateScript(marked)
+        parser.evaluateScript("const leonardoSigningHTMLEntities = Object.freeze(\(entities));")
         parser.evaluateScript(locations)
         context = parser.exception == nil ? parser : nil
     }

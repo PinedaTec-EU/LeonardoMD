@@ -125,6 +125,16 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         }
     }
 
+    func testSigningImagePathsDecodeHTMLReferencesAndRecognizeEmbeddedImages() throws {
+        var document = try makeDocument()
+        document.body += "\n\n" + #"<img src="a&amp;b.png" srcset="caf&eacute;.png 1x, a&amp;b.png 2x">"#
+        XCTAssertEqual(try LeonardoLocalImagePolicy.signingReferences(in: document), ["a&b.png", "café.png"])
+        XCTAssertFalse(try LeonardoLocalImagePolicy.hasEmbeddedSigningImages(in: document))
+        document.body += "\n\n![Embedded](data:image/png;base64,AAAA)"
+        XCTAssertTrue(try LeonardoLocalImagePolicy.hasEmbeddedSigningImages(in: document))
+        XCTAssertEqual(try LeonardoLocalImagePolicy.signingReferences(in: document), ["a&b.png", "café.png"])
+    }
+
     func testResponsiveImageMutationInvalidatesTheSealAndMissingCandidatesBlockIt() throws {
         var document = try makeDocument()
         let image = #"<picture><source srcset="better.png 2x, middle.png 1x"><img src="fallback.png"></picture>"#

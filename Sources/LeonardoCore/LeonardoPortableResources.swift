@@ -34,10 +34,7 @@ public enum LeonardoLocalImagePolicy {
     /// Returns all fixed local image candidates the signing renderer can
     /// display, including the sources behind responsive images.
     public static func signingReferences(in document: LeonardoDocument) throws -> [String] {
-        let body = try LeonardoSigningMarkdown.shared.imageReferences(in: document.body)
-        let references = (body + metadataReferences(in: document.metadata)).map {
-            $0.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
-        }
+        let references = try signingImageCandidates(in: document)
         guard !references.contains(where: { isRemoteImage($0) }) else {
             throw LeonardoSigningError.remoteImagesNotSealable
         }
@@ -47,6 +44,17 @@ public enum LeonardoLocalImagePolicy {
             if reference.isEmpty || reference.lowercased().hasPrefix("data:") { return false }
             guard isLocalReference(reference) else { throw LeonardoSigningError.invalidResourceReference(reference) }
             return seen.insert(reference).inserted
+        }
+    }
+
+    public static func hasEmbeddedSigningImages(in document: LeonardoDocument) throws -> Bool {
+        try signingImageCandidates(in: document).contains { $0.lowercased().hasPrefix("data:") }
+    }
+
+    private static func signingImageCandidates(in document: LeonardoDocument) throws -> [String] {
+        let body = try LeonardoSigningMarkdown.shared.imageReferences(in: document.body)
+        return (body + metadataReferences(in: document.metadata)).map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
         }
     }
 

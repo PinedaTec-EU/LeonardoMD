@@ -226,6 +226,8 @@ sealed.
 
 Use local files for images in guided signing forms. Replace online images
 in the original before signing, so the seal can cover the actual image bytes.
+If an image changes or fails to open during review, check the updated preview
+before confirming again.
 Little Leonardo needs a fresh exported copy after you replace them. A guided
 rubric stays blank until Leonardo verifies its signature at that occurrence.
 
@@ -666,7 +668,7 @@ read-only preview, use **View location** to jump to each exact occurrence in
 source order, draw or explicitly confirm reuse of a rubric, and pause or resume
 as needed. The preview never edits the copy; only a detached, independently
 verified final signature paints a rubric at its exact occurrence. Partial review
-remains visibly pending. If the form has ordinary rubric answers, use the full reader to review their ink before confirming locations.
+remains visibly pending. If the form contains ordinary rubric answers or embedded images, review them in the full reader before confirming locations.
 **Export signed copy** shows the declared identities and rubrics that will leave
 the device. It includes no private key, local path or unrelated profile. Import
 the JSON copy on the Mac only after it verifies the local source, frozen snapshot,

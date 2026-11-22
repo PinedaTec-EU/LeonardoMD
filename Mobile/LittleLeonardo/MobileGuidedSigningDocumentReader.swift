@@ -74,10 +74,14 @@ struct MobileGuidedSigningDocumentReader: View {
 
     private func webPreviewHasReferencedImages() async -> Bool {
         let references = MobileGuidedSigningNativeContent.referencedResourceReferences(from: document)
-        guard references.isSubset(of: Set(resources.map(\.reference))) else { return false }
-        guard !references.isEmpty else { return true }
+        guard references.isSubset(of: Set(resources.map(\.reference))),
+              let embedded = try? LeonardoLocalImagePolicy.hasEmbeddedSigningImages(in: document) else {
+            return false
+        }
+        guard !references.isEmpty || embedded else { return true }
         return await controller.hasRenderedLocalImages(
-            references.map { URLComponents(string: $0)?.path ?? $0 }
+            references.map { URLComponents(string: $0)?.path ?? $0 },
+            includesEmbeddedImages: embedded
         )
     }
 
@@ -324,8 +328,9 @@ enum MobileGuidedSigningNativeContent {
         return result
     }
 
-    static func needsRichRubricPreview(_ document: LeonardoDocument) -> Bool {
-        document.metadata.fields.contains { id, field in
+    static func requiresFullReader(_ document: LeonardoDocument) -> Bool {
+        guard (try? LeonardoLocalImagePolicy.hasEmbeddedSigningImages(in: document)) == false else { return true }
+        return document.metadata.fields.contains { id, field in
             guard field.type == .rubric, field.signerPosition == nil,
                   let value = document.metadata.values[id] ?? field.defaultValue else { return false }
             if case .object = value { return true }
@@ -396,7 +401,7 @@ private struct MobileGuidedSigningSourceFallback: View {
 
     private var nativeContentComplete: Bool {
         missingResourceReferences.isEmpty && unrenderedResourceReferences.isEmpty
-            && !MobileGuidedSigningNativeContent.needsRichRubricPreview(document)
+            && !MobileGuidedSigningNativeContent.requiresFullReader(document)
     }
 
     var body: some View {

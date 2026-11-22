@@ -155,3 +155,7 @@ The signing resource list comes from displayed image candidates, including local
 responsive variants. The Mac preview restricts local loading to these files.
 Little Leonardo requires its full reader when ordinary filled rubrics cannot
 appear in the native text view ([#562](https://github.com/PinedaTec-EU/LeonardoMD/issues/562)).
+Mac confirmation compares each served image digest with the bytes being sealed
+and requires the selected image to decode. Little Leonardo keeps embedded images
+in the full validated reader so the native text fallback cannot skip them.
+The signing parser uses the bundled WHATWG named-entity table and its license.

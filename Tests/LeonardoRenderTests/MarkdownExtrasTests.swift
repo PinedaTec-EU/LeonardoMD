@@ -1,5 +1,6 @@
 #if os(macOS)
 import AppKit
+import CryptoKit
 import LeonardoCore
 import XCTest
 import WebKit
@@ -97,6 +98,64 @@ final class MarkdownExtrasTests: XCTestCase {
         XCTAssertTrue(decoded)
         let outsideSeal = await host.hasRenderedLocalImages(["fallback.png"])
         XCTAssertFalse(outsideSeal)
+    }
+
+    func testMacPreviewRejectsSamePathImageReplacementUntilItDisplaysNewBytes() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("a&b.png").resolvingSymlinksInPath()
+        let original = try signingTestPNG(red: 1, blue: 0)
+        let replacement = try signingTestPNG(red: 0, blue: 1)
+        XCTAssertNotEqual(original, replacement)
+        try original.write(to: file)
+        var config = MarkdownPreviewConfiguration(localAssetRoot: directory, allowsRemoteImages: false)
+        config.allowedLocalImageFiles = [file]
+        let (host, window) = makeHost(content: #"<img src="a&amp;b.png">"#, config: config, baseURL: directory)
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+
+        let originalDigest = [file: Data(SHA256.hash(data: original))]
+        let replacementDigest = [file: Data(SHA256.hash(data: replacement))]
+        let matchedOriginal = await host.hasReviewedSigningImages(originalDigest, includesEmbeddedImages: false)
+        XCTAssertTrue(matchedOriginal)
+        try replacement.write(to: file, options: [.atomic])
+        let acceptedUnseenBytes = await host.hasReviewedSigningImages(replacementDigest, includesEmbeddedImages: false)
+        XCTAssertFalse(acceptedUnseenBytes)
+
+        host.reloadSigningImagePreview()
+        let reviewedNewBytes = await host.hasReviewedSigningImages(replacementDigest, includesEmbeddedImages: false)
+        XCTAssertTrue(reviewedNewBytes)
+
+        try Data("not a PNG".utf8).write(to: file, options: [.atomic])
+        host.reloadSigningImagePreview()
+        let acceptedCorrupt = await host.hasReviewedSigningImages(
+            [file: Data(SHA256.hash(data: Data("not a PNG".utf8)))], includesEmbeddedImages: false
+        )
+        XCTAssertFalse(acceptedCorrupt)
+    }
+
+    func testEmbeddedSigningImagesNeedSuccessfulDecodingEvenWithoutExternalResources() async throws {
+        let valid = try signingTestPNG(red: 0, blue: 1).base64EncodedString()
+        for (data, expected) in [(valid, true), ("AAAA", false)] {
+            let source = "![Inline](data:image/png;base64,\(data))"
+            let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsRemoteImages: false))
+            window.orderFront(nil)
+            defer { host.teardown(); window.close() }
+            let decoded = await host.hasRenderedLocalImages([], includesEmbeddedImages: true)
+            XCTAssertEqual(decoded, expected)
+        }
+    }
+
+    private func signingTestPNG(red: CGFloat, blue: CGFloat) throws -> Data {
+        let context = try XCTUnwrap(CGContext(
+            data: nil, width: 2, height: 2, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.setFillColor(red: red, green: 0, blue: blue, alpha: 1)
+        context.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
+        let image = try XCTUnwrap(context.makeImage())
+        return try XCTUnwrap(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
     }
 
     func testGuidedRubricsDisplayOnlyVerifiedInkAndLeaveStandaloneRubricsAlone() async throws {

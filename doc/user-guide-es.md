@@ -226,7 +226,8 @@ ubicación.
 
 Usa archivos locales para las imágenes de los formularios con firma guiada.
 Sustituye las imágenes en línea en el original antes de firmar para que el
-sello cubra su contenido. Vuelve a exportar la copia para Little Leonardo
+sello cubra su contenido. Si una imagen cambia o falla al abrirse durante la
+revisión, vuelve a leer la vista actualizada antes de confirmar. Vuelve a exportar la copia para Little Leonardo
 después de sustituirlas. Cada rúbrica guiada permanece vacía hasta que
 Leonardo verifica su firma en esa aparición.
 
@@ -678,7 +679,7 @@ saltar a cada aparición exacta en el orden de la fuente, dibuja una rúbrica o
 confirma expresamente su reutilización, y pausa o reanuda cuando sea necesario.
 El lector nunca edita la copia; solo una firma final separada y verificada de
 forma independiente pinta la rúbrica en su aparición exacta. La revisión
-parcial sigue visible como pendiente. Si el formulario contiene rúbricas ordinarias, revisa sus trazos en el lector completo antes de confirmar ubicaciones.
+parcial sigue visible como pendiente. Si el formulario contiene rúbricas ordinarias o imágenes incrustadas, revísalas en el lector completo antes de confirmar ubicaciones.
 **Exportar copia firmada** muestra las identidades declaradas y las rúbricas que
 saldrán del dispositivo. No incluye claves privadas, rutas locales ni perfiles no
 asignados. Importa el JSON en el Mac solo después de comprobar la fuente local,

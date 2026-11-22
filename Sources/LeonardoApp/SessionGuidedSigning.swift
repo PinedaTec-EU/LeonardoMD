@@ -954,13 +954,32 @@ extension AppSession {
                     return
                 }
             }
+            let imageFiles = try guidedSigningResourceURLs(in: document)
+            let resources = try readGuidedSigningResources(imageFiles)
+            if current.snapshot?.matches(document: document, resources: resources) != false {
+                let imagesMatch = try await reviewedSigningImagesMatch(
+                    document: document, files: imageFiles, resources: resources
+                )
+                guard guidedSigningViewStateMatches(
+                    expectedLocation: expectedLocation,
+                    expectedContent: expectedContent,
+                    expectedSession: viewBaseline
+                ) else { return }
+                guard imagesMatch else {
+                    guidedSigningActionProblem = L10n.text(
+                        "An image changed or could not be displayed. Review the updated preview before confirming."
+                    )
+                    renderer.reloadSigningImagePreview()
+                    return
+                }
+            }
             let profileRubric = current.positions[target.positionID]?.assignment?.profileRubric
             try current.confirmLocation(
                 positionID: target.positionID,
                 fieldID: target.fieldID,
                 occurrence: target.occurrence,
                 document: document,
-                resources: try guidedSigningResources(),
+                resources: resources,
                 contextRead: contextRead,
                 rubric: rubric,
                 reuse: reuse,
@@ -1547,9 +1566,32 @@ extension AppSession {
         }
     }
 
+    private func reviewedSigningImagesMatch(
+        document: LeonardoDocument,
+        files: [(reference: String, url: URL)],
+        resources: [LeonardoSigningResource]
+    ) async throws -> Bool {
+        let embedded = try LeonardoLocalImagePolicy.hasEmbeddedSigningImages(in: document)
+        guard !files.isEmpty || embedded else { return true }
+        var expected: [URL: Data] = [:]
+        for (file, resource) in zip(files, resources) {
+            let digest = Data(SHA256.hash(data: resource.bytes))
+            if let previous = expected.updateValue(digest, forKey: file.url), previous != digest {
+                return false
+            }
+        }
+        return await renderer.hasReviewedSigningImages(expected, includesEmbeddedImages: embedded)
+    }
+
     private func guidedSigningResources(for source: String? = nil) throws -> [LeonardoSigningResource] {
         let document = try LeonardoFormatParser.parse(source ?? content)
-        return try guidedSigningResourceURLs(in: document).map { reference, resolved in
+        return try readGuidedSigningResources(guidedSigningResourceURLs(in: document))
+    }
+
+    private func readGuidedSigningResources(
+        _ files: [(reference: String, url: URL)]
+    ) throws -> [LeonardoSigningResource] {
+        try files.map { reference, resolved in
             let values = try resolved.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
             guard values.isRegularFile == true,
                   let size = values.fileSize,

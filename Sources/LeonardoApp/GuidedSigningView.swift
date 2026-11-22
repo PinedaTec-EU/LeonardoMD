@@ -725,6 +725,7 @@ struct GuidedSigningView: View {
                             rubric: rubricForCurrentChoice ?? LeonardoRubric(), reuse: reuse,
                             reuseConfirmed: reuse == .new ? true : reuseConfirmed,
                             contextRead: contextRead)
+                        if currentTarget == target { contextRead = false }
                         advanceToNextTarget(for: target.positionID)
                     }
                 }

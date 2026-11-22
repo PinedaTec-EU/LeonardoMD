@@ -8,8 +8,8 @@ remain unchanged. Existing guide copies and practice answers are never overwritt
 
 Guide v115 explains the fixed local image requirement and verified-only ink for
 guided signing positions. Packaged Help validation remains pending.
-Guide v115 EN SHA-256: `15f3f2653792c6fb0e03e98ff9e14dfb3b99c08b6310eaa33a2970c6e9abdee5`
-Guide v115 ES SHA-256: `db12d05e68a783b60da9226d99e40a3238bacc9ce858a6b6542895b15f875889`
+Guide v115 EN SHA-256: `43f53ae15c38cebb92a460ef9f049f4363c07ae071ddcb132b1f4958cc0a1a92`
+Guide v115 ES SHA-256: `bee3df7566f7360052ff0229b02439e835dd525e262286d9a4c60dbbf808c814`
 
 Guide v114 explains saving the form before the first confirmation or exchange, recovering a
 trusted sealed revision through Save Copy, and blocked confirmation when a local

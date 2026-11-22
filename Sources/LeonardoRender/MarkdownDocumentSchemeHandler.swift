@@ -14,6 +14,8 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     private let assetRoot: URL?
     private let memoryAssets: MarkdownMemoryAssets?
     private let allowedLocalImageFiles: Set<URL>?
+    private var signingImageDigests: [URL: Data] = [:]
+    private var signingImageChangedDuringReview = false
 
     init(baseURL: URL?, assetRootURL: URL? = nil, memoryAssets: MarkdownMemoryAssets? = nil,
          allowedLocalImageFiles: Set<URL>? = nil, policy: MarkdownImagePolicy = .standard) {
@@ -57,6 +59,12 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
             do {
                 let resource = try await loader.load(input, target: target, documentID: generation, identity: url.absoluteString)
                 guard !Task.isCancelled, let self, self.requests.removeValue(forKey: id) != nil else { return }
+                if self.allowedLocalImageFiles != nil, case let .file(file) = input {
+                    if let prior = self.signingImageDigests[file], prior != resource.originalSHA256 {
+                        self.signingImageChangedDuringReview = true
+                    }
+                    self.signingImageDigests[file] = resource.originalSHA256
+                }
                 let milliseconds = Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000
                 self.logger.debug("image_load_completed encoded_bytes=\(resource.data.count, privacy: .public) estimated_bytes=\(resource.estimatedBytes, privacy: .public) duration_ms=\(milliseconds, privacy: .public)")
                 urlSchemeTask.didReceive(URLResponse(url: url, mimeType: resource.mimeType,
@@ -80,6 +88,16 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         // WebKit may reuse an in-flight image during an incremental DOM update.
         // Only its stop callback (or teardown) retires the corresponding task.
         documentID += 1
+    }
+
+    /// The decoded image and this digest originate from the same single file read.
+    func matchesReviewedSigningImages(_ expected: [URL: Data], selected: [URL]) -> Bool {
+        guard allowedLocalImageFiles == Set(expected.keys), !signingImageChangedDuringReview else { return false }
+        guard signingImageDigests.allSatisfy({ file, digest in expected[file] == digest }) else { return false }
+        return selected.allSatisfy { url in
+            guard let file = fileURL(for: url), let digest = signingImageDigests[file] else { return false }
+            return expected[file] == digest
+        }
     }
 
     func cancelAll() {

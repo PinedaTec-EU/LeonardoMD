@@ -1,17 +1,32 @@
 const leonardoSigningHTMLTokens = /<!--[\s\S]*?(?:-->|$)|<![^>]*>|<(\/?)([A-Za-z][\w:-]*)(?:[^<>"']|"[^"]*"|'[^']*')*>|([^<]+)|</g;
 
-const leonardoSigningHTMLEntities = {
-  lbrace: "{", lcub: "{", rbrace: "}", rcub: "}",
-  colon: ":", lowbar: "_", period: ".", nbsp: " ", Tab: "\t", NewLine: "\n"
-};
+// Named references come from https://html.spec.whatwg.org/entities.json. The bundled table
+// keeps the characters for each name, including legacy forms without a semicolon.
+const leonardoEntityNameLimit = Math.max(...Object.keys(leonardoSigningHTMLEntities).map(name => name.length));
+const leonardoLegacyNumericReferences = [
+  0x20ac, 0x81, 0x201a, 0x192, 0x201e, 0x2026, 0x2020, 0x2021,
+  0x2c6, 0x2030, 0x160, 0x2039, 0x152, 0x8d, 0x17d, 0x8f,
+  0x90, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014,
+  0x2dc, 0x2122, 0x161, 0x203a, 0x153, 0x9d, 0x17e, 0x178
+];
 
-function decodeLeonardoHTMLText(text) {
-  return text.replace(/&(#x[\da-f]+|#\d+|[a-z][a-z0-9]+);/gi, (entity, value) => {
-    if (value[0] !== "#") return Object.hasOwn(leonardoSigningHTMLEntities, value)
-      ? leonardoSigningHTMLEntities[value] : entity;
-    const hex = value[1]?.toLowerCase() === "x";
-    const scalar = Number.parseInt(value.slice(hex ? 2 : 1), hex ? 16 : 10);
-    return scalar <= 0x10ffff ? String.fromCodePoint(scalar) : entity;
+function decodeLeonardoHTMLText(text, attribute = false) {
+  return text.replace(/&(#(?:x[\da-f]+|\d+);?|[a-z][a-z0-9]*;?)/gi, (entity, value, offset) => {
+    if (value[0] === "#") {
+      const hex = value[1]?.toLowerCase() === "x";
+      let scalar = Number.parseInt(value.slice(hex ? 2 : 1), hex ? 16 : 10);
+      if (!scalar || scalar > 0x10ffff || (scalar >= 0xd800 && scalar <= 0xdfff)) return "\uFFFD";
+      scalar = leonardoLegacyNumericReferences[scalar - 0x80] ?? scalar;
+      return String.fromCodePoint(scalar);
+    }
+    for (let length = Math.min(value.length, leonardoEntityNameLimit); length > 0; length--) {
+      const name = value.slice(0, length);
+      if (!Object.hasOwn(leonardoSigningHTMLEntities, name)) continue;
+      const next = text[offset + length + 1] || "";
+      if (attribute && !name.endsWith(";") && /[a-z0-9=]/i.test(next)) return entity;
+      return leonardoSigningHTMLEntities[name] + value.slice(length);
+    }
+    return entity;
   });
 }
 
@@ -86,7 +101,7 @@ function leonardoSigningImageReferences(markdown) {
     for (const [, name, doubleQuoted, singleQuoted, unquoted] of raw.matchAll(attribute)) {
       const kind = name.toLowerCase();
       if (kind !== "srcset" && (kind !== "src" || element !== "img")) continue;
-      const value = decodeLeonardoHTMLText(doubleQuoted ?? singleQuoted ?? unquoted ?? "").trim();
+      const value = decodeLeonardoHTMLText(doubleQuoted ?? singleQuoted ?? unquoted ?? "", true).trim();
       if (!value) continue;
       if (kind === "src") references.push(value);
       else references.push(...leonardoSrcsetURLs(value));

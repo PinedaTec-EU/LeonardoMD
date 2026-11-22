@@ -398,49 +398,69 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
-    /// Checks the selected local image for every responsive slot in the preview.
-    func hasRenderedLocalImages(_ paths: [String]) async -> Bool {
-        guard !paths.isEmpty else { return true }
-        guard let webView else { return false }
+    /// Checks the images actually selected by the preview from fixed candidates.
+    func hasRenderedLocalImages(_ paths: [String], includesEmbeddedImages: Bool = false) async -> Bool {
+        guard !paths.isEmpty || includesEmbeddedImages else { return true }
+        return await decodedSigningImageURLs(allowedPaths: paths) != nil
+    }
+
+    func hasReviewedSigningImages(_ digests: [URL: Data], includesEmbeddedImages: Bool) async -> Bool {
+        guard !digests.isEmpty || includesEmbeddedImages else { return true }
+        guard let handler = documentHandler,
+              let selected = await decodedSigningImageURLs(allowedPaths: nil),
+              documentHandler === handler else { return false }
+        return handler.matchesReviewedSigningImages(digests, selected: selected)
+    }
+
+    func reloadSigningImagePreview() {
+        replaceWebView()
+        scheduleLoad(immediately: true)
+    }
+
+    private func decodedSigningImageURLs(allowedPaths: [String]?) async -> [URL]? {
+        guard let webView else { return nil }
         let expectedContent = content
         let expectedAssets = configuration.memoryAssets
         do {
             try await flushPendingRender()
             try await waitUntilReady()
             guard self.webView === webView, content == expectedContent,
-                  configuration.memoryAssets == expectedAssets else { return false }
+                  configuration.memoryAssets == expectedAssets else { return nil }
             let result = try await webView.callAsyncJavaScript(
                 """
-                const allowed = new Set(paths);
-                const selected = [];
-                for (const image of document.images) {
-                    let url;
-                    try { url = new URL(image.currentSrc || image.src); } catch { return false; }
-                    if (url.protocol === "data:") continue;
-                    if (url.protocol !== "leonardo-document:" || url.hostname !== "local") return false;
-                    let path = decodeURIComponent(url.pathname);
-                    while (path.startsWith("/")) path = path.slice(1);
-                    if (!allowed.has(path)) return false;
-                    selected.push(image);
-                }
-                if (selected.length === 0) return false;
-                const decoded = Promise.all(selected.map(async image => {
-                    try { await image.decode(); } catch { return false; }
-                    return image.naturalWidth > 0 && image.naturalHeight > 0;
+                const allowed = checksPaths ? new Set(paths) : null;
+                const images = Array.from(document.querySelectorAll("#leonardo-markdown img"));
+                if (images.length === 0) return null;
+                const decoded = Promise.all(images.map(async image => {
+                    try {
+                        image.loading = "eager";
+                        await image.decode();
+                        if (image.naturalWidth === 0 || image.naturalHeight === 0) return null;
+                        const url = new URL(image.currentSrc || image.src);
+                        if (url.protocol === "data:") return "";
+                        if (url.protocol !== "leonardo-document:" || url.hostname !== "local") return null;
+                        let path = decodeURIComponent(url.pathname);
+                        while (path.startsWith("/")) path = path.slice(1);
+                        return allowed === null || allowed.has(path) ? url.href : null;
+                    } catch {
+                        return null;
+                    }
                 }));
                 return await Promise.race([
-                    decoded.then(results => results.every(Boolean)),
-                    new Promise(resolve => setTimeout(() => resolve(false), 2000))
+                    decoded.then(results => results.includes(null) ? null : results.filter(Boolean)),
+                    new Promise(resolve => setTimeout(() => resolve(null), 2000))
                 ]);
                 """,
-                arguments: ["paths": paths],
+                arguments: ["paths": allowedPaths ?? [], "checksPaths": allowedPaths != nil],
                 in: nil,
                 contentWorld: .page
             )
-            return self.webView === webView && content == expectedContent
-                && configuration.memoryAssets == expectedAssets && (result as? Bool) == true
+            guard let URLs = result as? [String], self.webView === webView,
+                  content == expectedContent, configuration.memoryAssets == expectedAssets else { return nil }
+            let decodedURLs = URLs.compactMap { URL(string: $0) }
+            return decodedURLs.count == URLs.count ? decodedURLs : nil
         } catch {
-            return false
+            return nil
         }
     }
 

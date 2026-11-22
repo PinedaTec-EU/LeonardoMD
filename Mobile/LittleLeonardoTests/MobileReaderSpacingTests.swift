@@ -270,20 +270,29 @@ final class MobileReaderSpacingTests: XCTestCase {
     func testNativeSigningFallbackRequiresFullReaderForOrdinaryInk() throws {
         let exchange = try makeSignedGuidedSigningExchange()
         var document = try exchange.document()
-        XCTAssertFalse(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+        XCTAssertFalse(MobileGuidedSigningNativeContent.requiresFullReader(document))
         let ink = try XCTUnwrap(exchange.session.positions.values.first?.locations.first?.rubric)
         let authored = try JSONDecoder().decode(LeonardoJSONValue.self, from: JSONEncoder().encode(ink))
 
         document.body += "\n\n{{field:ordinary}}"
         document.metadata.fields["ordinary"] = .init(type: .rubric, required: true, defaultValue: authored)
-        XCTAssertTrue(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+        XCTAssertTrue(MobileGuidedSigningNativeContent.requiresFullReader(document))
 
         document.metadata.values["ordinary"] = .null
-        XCTAssertFalse(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+        XCTAssertFalse(MobileGuidedSigningNativeContent.requiresFullReader(document))
 
         document.metadata.values["ordinary"] = authored
-        XCTAssertTrue(MobileGuidedSigningNativeContent.needsRichRubricPreview(document))
+        XCTAssertTrue(MobileGuidedSigningNativeContent.requiresFullReader(document))
         XCTAssertTrue(document.body.contains("{{field:signature}}"))
+    }
+
+    func testNativeSigningFallbackRequiresFullReaderForEmbeddedImage() throws {
+        let exchange = try makeSignedGuidedSigningExchange()
+        var document = try exchange.document()
+        XCTAssertFalse(MobileGuidedSigningNativeContent.requiresFullReader(document))
+        document.body += "\n\n![Embedded](data:image/png;base64,AAAA)"
+        XCTAssertTrue(MobileGuidedSigningNativeContent.requiresFullReader(document))
+        XCTAssertTrue(try LeonardoLocalImagePolicy.signingReferences(in: document).isEmpty)
     }
 
     func testNativeSigningContentSubstitutesValuesAndKeepsSealedResourceReferences() throws {

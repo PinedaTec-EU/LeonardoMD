@@ -81,8 +81,16 @@ public final class MarkdownPreviewController: ObservableObject {
     }
 
     /// Checks decoded images against the fixed set of available local candidates.
-    public func hasRenderedLocalImages(_ paths: [String]) async -> Bool {
-        await host?.hasRenderedLocalImages(paths) ?? false
+    public func hasRenderedLocalImages(_ paths: [String], includesEmbeddedImages: Bool = false) async -> Bool {
+        await host?.hasRenderedLocalImages(paths, includesEmbeddedImages: includesEmbeddedImages) ?? false
+    }
+
+    public func hasReviewedSigningImages(_ digests: [URL: Data], includesEmbeddedImages: Bool) async -> Bool {
+        await host?.hasReviewedSigningImages(digests, includesEmbeddedImages: includesEmbeddedImages) ?? false
+    }
+
+    public func reloadSigningImagePreview() {
+        host?.reloadSigningImagePreview()
     }
 
     public func scroll(toFraction fraction: Double) {
