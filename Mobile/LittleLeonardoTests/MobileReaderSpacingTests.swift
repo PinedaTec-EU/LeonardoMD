@@ -99,7 +99,8 @@ final class MobileReaderSpacingTests: XCTestCase {
         })
         window.makeKeyAndVisible()
 
-        let deadline = ContinuousClock.now.advanced(by: .seconds(12))
+        // A cold hosted simulator also has to start the WebKit content process.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(30))
         var snapshot: [String: Any]?
         repeat {
             if let preview = findWebView(window),
