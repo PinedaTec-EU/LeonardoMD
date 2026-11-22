@@ -7,8 +7,10 @@ normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
 Guide v113 describes the redesigned linked-device rubric panel and its
-three actions in the guided signing chapter. Fresh packaged Help and practice
-acceptance remains pending.
+three actions in the guided signing chapter. Both guides passed packaged Help
+validation, including rendering with extensions enabled, the literal math fallback,
+and filling, saving and reopening each practice form.
+See the [macOS validation record](https://github.com/PinedaTec-EU/LeonardoMD/issues/517#issuecomment-7072628756).
 Guide v113 EN SHA-256: `5a7ef62b1618bba62ced3c14dc0e8fe0864eb5cfe7c09e98e02a692dc7c30670`
 Guide v113 ES SHA-256: `5533118ca68988561d063e20c3d722236d2cc1b9638ac4e5a2ca91a1d1b17f7d`
 
