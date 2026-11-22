@@ -307,6 +307,7 @@ extension AppSession {
             saveStatus = "Saved · local file"
             NSDocumentController.shared.noteNewRecentDocumentURL(destination)
             updateTitle()
+            await prepareGuidedSigningIfNeeded()
             return true
         } catch let error as FileSystemRepositoryError {
             if case .itemAlreadyExists = error {

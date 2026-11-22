@@ -102,7 +102,41 @@ extension AppSession {
         configuration.allowsFormFilling = acceptsCloseSnapshot && canFillLeonardoFormIgnoringClose
         configuration.selectedGraphicID = selectedGraphic?.id
         configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
+        if isGuidedSigningDocument, let document = leonardoDocument {
+            if document.metadata.document.signing != nil || guidedSigningSession != nil {
+                configuration.allowsRemoteImages = false
+                configuration.allowedLocalImageFiles = Set(
+                    ((try? guidedSigningResourceURLs(in: document)) ?? []).map { $0.url }
+                )
+            }
+            configuration.guidedSigningFieldIDs = document.metadata.fields.compactMap { fieldID, field in
+                field.type == .rubric && field.signerPosition != nil ? fieldID : nil
+            }.sorted()
+            configuration.guidedSigningRubricOverlays = guidedSigningRubricOverlays()
+        }
         return configuration
+    }
+
+    /// Only a position whose detached signature currently verifies against the
+    /// loaded document, resources, chain and trust registry may paint its
+    /// sidecar rubrics. Partial review stays visibly pending and the editable
+    /// document remains byte-for-byte unchanged.
+    private func guidedSigningRubricOverlays() -> [String: LeonardoRubric] {
+        guard guidedSigningReady, !guidedSigningLoading, !externalConflict,
+              !guidedSigningSnapshotChanged, guidedSigningError == nil,
+              let document = leonardoDocument,
+              let current = guidedSigningSession,
+              current.documentID == document.metadata.document.id,
+              current.declaration == document.metadata.document.signing else { return [:] }
+        var overlays: [String: LeonardoRubric] = [:]
+        for (positionID, progress) in current.positions
+            where progress.state == .signed && progress.signature != nil
+                && guidedSigningVerification[positionID] == .valid {
+            for location in progress.locations {
+                overlays["\(location.fieldID)#\(location.occurrence)"] = location.rubric
+            }
+        }
+        return overlays
     }
     func followLink(_ url: URL) async {
         guard !stopped else { return }

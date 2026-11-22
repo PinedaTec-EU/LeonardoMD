@@ -4,7 +4,9 @@ import LeonardoCore
 struct DocumentInspector: View {
     @Bindable var session: AppSession
     var body: some View {
-        if session.mode == .fill, session.leonardoDocument?.isForm == true {
+        if session.mode == .fill, session.isGuidedSigningDocument {
+            GuidedSigningView(session: session)
+        } else if session.mode == .fill, session.leonardoDocument?.isForm == true {
             LeonardoFieldHelp(session: session)
         } else {
             VStack(alignment: .leading, spacing: 20) {

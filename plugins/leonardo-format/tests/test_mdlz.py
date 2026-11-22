@@ -486,7 +486,7 @@ class MDLZHelperTests(unittest.TestCase):
 
     def test_archive_commands_reject_invalid_root_before_effects(self) -> None:
         invalid_documents = {
-            "future": DOCUMENT.replace('"formatVersion": 1', '"formatVersion": 2'),
+            "future": DOCUMENT.replace('"formatVersion": 1', '"formatVersion": 99'),
             "malformed": "# no Leonardo front matter\n",
             "duplicate": (
                 "---\n"
@@ -539,6 +539,24 @@ class MDLZHelperTests(unittest.TestCase):
             unsupported.write_text(DOCUMENT.replace('"formatVersion": 1', '"formatVersion": 99'), encoding="utf-8")
             with self.assertRaisesRegex(mdlz.ArchiveError, "unsupported"):
                 mdlz.validate_document(unsupported)
+
+    def test_v2_document_uses_the_matching_bundled_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            document = root / "guided.mdlf"
+            document.write_text(
+                "---\n"
+                '{"format":"mdlf","formatVersion":2,'
+                '"document":{"id":"guided-test","kind":"form","revision":1,"signing":{"positions":['
+                '{"id":"signer","label":"Signer"}]}},'
+                '"fields":{"signature":{"type":"rubric","signerPosition":"signer"}},'
+                '"values":{}}\n'
+                "---\n\n{{field:signature}}\n",
+                encoding="utf-8",
+            )
+            result = mdlz.validate_document(document)
+            self.assertEqual(result["formatVersion"], 2)
+            self.assertTrue(str(result["schema"]).endswith("mdlf-v2.schema.json"))
 
     def test_mdlr_extension_is_only_an_opening_mode_hint(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

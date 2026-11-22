@@ -108,3 +108,54 @@ been removed. The standalone import package reuses the same image as chapter 6.
 Resource versions/copy paths and maintenance references must move together;
 original UI captures and prior user-owned copies remain untouched. Preview image
 limits are unchanged; native checks load every image in both languages.
+
+Guided signing foundation ([#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517)):
+MDLF v2 is an opt-in, closed schema selected by `formatVersion`; its public
+header declares required signer positions and maps rubric fields with
+`signerPosition`; signing documents also require a stable document ID and
+positive semantic revision. Profiles, declared identity data, personal credentials,
+trust, rubrics, resources and detached signatures stay in protected local
+progress. `LeonardoGuidedSigningSession` confirms exact repeated placeholder
+occurrences in source order, freezes the document/resources at the first
+confirmation, supports pause/resume and per-position rubric reuse, and starts a
+fresh session for a higher semantic revision. Historical sidecars at one local
+path remain available for audit, while import and persistence reject a second
+session for the same document identity and semantic revision. A position still
+pending may get
+its first assignment after the seal, but an existing assignment cannot be
+relinked. `LeonardoSigningStore` reads legacy progress and writes bounded
+per-session records. It restores the shared snapshot into compact local proofs
+before returning them, keeping the canonical signed bytes intact. Updates
+compare the exact prior session under the file lock. A replacement that changes
+two session IDs commits through a recovery journal. An unreadable record
+cannot appear as missing progress ([#558](https://github.com/PinedaTec-EU/LeonardoMD/issues/558)).
+Sidecar writes keep the 0600-before-publish policy. Read-time
+verification recomputes the signature chain, assignment/identity commitment,
+snapshot and location/rubric digests against an external trust store; no key in
+the document is trusted. Public trust discovery never authorizes a Keychain
+item; macOS legacy-login reads suppress interaction and restore the process
+setting, while private-key access remains an explicit final-sign authorization.
+Native/UI integration now includes a read-only full-document mobile preview:
+exact `fieldID#occurrence` DOM targets gate navigation/actions and verified
+rubric overlays only appear after independent proof verification. The macOS and
+mobile panels disclose optional fields that will remain blank before the first
+seal; bilingual Help is revision v115. Signed-copy exchange enforces the same
+40 MiB serialized envelope limit in both directions. Export rejects oversized
+JSON before the save panel, including when individually valid resources grow
+beyond the limit after Base64 encoding ([#557](https://github.com/PinedaTec-EU/LeonardoMD/issues/557)).
+The preview and signing engine use the same bundled Marked parser to identify
+literal Markdown code. Signing retains the original source offsets while
+reviewing rubrics in nested lists and indented paragraph continuations
+([#559](https://github.com/PinedaTec-EU/LeonardoMD/issues/559)).
+Signing snapshots reject live image references and signing previews disable remote
+images while preserving their use in ordinary documents. Guided fields draw ink
+only from verified signature overlays ([#560](https://github.com/PinedaTec-EU/LeonardoMD/issues/560),
+[#561](https://github.com/PinedaTec-EU/LeonardoMD/issues/561)).
+The signing resource list comes from displayed image candidates, including local
+responsive variants. The Mac preview restricts local loading to these files.
+Little Leonardo requires its full reader when ordinary filled rubrics cannot
+appear in the native text view ([#562](https://github.com/PinedaTec-EU/LeonardoMD/issues/562)).
+Mac confirmation compares each served image digest with the bytes being sealed
+and requires the selected image to decode. Little Leonardo keeps embedded images
+in the full validated reader so the native text fallback cannot skip them.
+The signing parser uses the bundled WHATWG named-entity table and its license.

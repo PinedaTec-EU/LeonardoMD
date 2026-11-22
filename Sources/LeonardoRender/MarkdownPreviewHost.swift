@@ -93,12 +93,15 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         let assetRootChanged = previousConfiguration.localAssetRoot != configuration.localAssetRoot
             || previousConfiguration.memoryAssets != configuration.memoryAssets
             || previousConfiguration.allowsRemoteImages != configuration.allowsRemoteImages
+            || previousConfiguration.allowedLocalImageFiles != configuration.allowedLocalImageFiles
         let contentChanged = !hasState || self.content != content
         let baseURLChanged = !hasState || documentURL != baseURL
         let renderOptionsChanged = !hasState
             || previousConfiguration.allowsLeonardoFormat != configuration.allowsLeonardoFormat
             || previousConfiguration.allowsFormFilling != configuration.allowsFormFilling
             || previousConfiguration.formLabels != configuration.formLabels
+            || previousConfiguration.guidedSigningFieldIDs != configuration.guidedSigningFieldIDs
+            || previousConfiguration.guidedSigningRubricOverlays != configuration.guidedSigningRubricOverlays
             || previousConfiguration.frontMatter != configuration.frontMatter
             || previousConfiguration.compactFirstHeading != configuration.compactFirstHeading
             || previousConfiguration.renderDebounce != configuration.renderDebounce
@@ -366,6 +369,148 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
+    func scroll(toField fieldID: String, occurrence: Int) {
+        guard occurrence >= 0,
+              let fieldData = try? JSONEncoder().encode(fieldID),
+              let fieldJSON = String(data: fieldData, encoding: .utf8) else { return }
+        evaluate("window.LeonardoForms?.scrollToField(\(fieldJSON), \(occurrence));")
+    }
+
+    /// Returns whether the exact occurrence is present in the current DOM.
+    /// Guided signing must not offer a confirmation control for a source
+    /// token that the renderer did not materialize as a form target.
+    func hasFieldTarget(_ fieldID: String, occurrence: Int, expectedCount: Int? = nil) async -> Bool {
+        guard occurrence >= 0, let webView,
+              let fieldData = try? JSONEncoder().encode(fieldID),
+              let fieldJSON = String(data: fieldData, encoding: .utf8) else { return false }
+        let expected = content
+        do {
+            try await flushPendingRender()
+            try await waitUntilReady()
+            guard self.webView === webView, content == expected else { return false }
+            let countArgument = expectedCount.map { ", \($0)" } ?? ""
+            let value = try await webView.evaluateJavaScript(
+                "window.LeonardoForms?.hasFieldTarget(\(fieldJSON), \(occurrence)\(countArgument)) === true"
+            )
+            return value as? Bool == true
+        } catch {
+            return false
+        }
+    }
+
+    /// Checks every declared signing field against one rendered document.
+    func hasSigningFieldTargets(_ counts: [String: Int], source: String) async -> Bool {
+        guard !counts.isEmpty, content == source, let webView else { return false }
+        let expectedConfiguration = configuration
+        do {
+            try await flushPendingRender()
+            try await waitUntilReady()
+            guard self.webView === webView, content == source,
+                  configuration == expectedConfiguration else { return false }
+            let result = try await webView.callAsyncJavaScript(
+                """
+                return Object.entries(counts).every(([id, count]) =>
+                  count > 0 && Array.from({ length: count }, (_, occurrence) =>
+                    window.LeonardoForms?.hasFieldTarget(id, occurrence, count) === true
+                  ).every(Boolean)
+                );
+                """,
+                arguments: ["counts": counts], contentWorld: .page
+            )
+            return self.webView === webView && content == source && configuration == expectedConfiguration
+                && (result as? Bool == true)
+        } catch {
+            return false
+        }
+    }
+
+    /// Checks the images actually selected by the preview from fixed candidates.
+    func hasRenderedLocalImages(
+        _ paths: [String], references: [String], includesEmbeddedImages: Bool = false
+    ) async -> Bool {
+        guard !paths.isEmpty || includesEmbeddedImages else { return true }
+        return await decodedSigningImageURLs(allowedPaths: paths, references: references) != nil
+    }
+
+    func hasReviewedSigningImages(
+        _ digests: [URL: Data], references: [String], includesEmbeddedImages: Bool
+    ) async -> Bool {
+        guard !digests.isEmpty || includesEmbeddedImages else { return true }
+        guard let handler = documentHandler,
+              let selected = await decodedSigningImageURLs(allowedPaths: nil, references: references),
+              documentHandler === handler else { return false }
+        return handler.matchesReviewedSigningImages(digests, selected: selected)
+    }
+
+    func reloadSigningImagePreview() {
+        replaceWebView()
+        scheduleLoad(immediately: true)
+    }
+
+    private func decodedSigningImageURLs(allowedPaths: [String]?, references: [String]) async -> [URL]? {
+        guard let webView else { return nil }
+        let expectedContent = content
+        let expectedAssets = configuration.memoryAssets
+        do {
+            try await flushPendingRender()
+            try await waitUntilReady()
+            guard self.webView === webView, content == expectedContent,
+                  configuration.memoryAssets == expectedAssets else { return nil }
+            let result = try await webView.callAsyncJavaScript(
+                """
+                const allowed = checksPaths ? new Set(paths) : null;
+                const images = Array.from(document.querySelectorAll("#leonardo-markdown img"));
+                if (images.length === 0) return null;
+                const markup = images.map(image => {
+                    const parent = image.parentElement;
+                    if (parent?.tagName !== "PICTURE") return image.outerHTML;
+                    const sources = [];
+                    let sibling = image.previousElementSibling;
+                    while (sibling && sibling.tagName !== "IMG") {
+                        if (sibling.tagName === "SOURCE") sources.unshift(sibling.outerHTML);
+                        sibling = sibling.previousElementSibling;
+                    }
+                    if (sibling) return image.outerHTML;
+                    return "<picture>" + sources.join("") + image.outerHTML + "</picture>";
+                }).join("");
+                const decoded = Promise.all(images.map(async image => {
+                    try {
+                        image.loading = "eager";
+                        await image.decode();
+                        if (image.naturalWidth === 0 || image.naturalHeight === 0) return null;
+                        const url = new URL(image.currentSrc || image.src);
+                        if (url.protocol === "data:") return "";
+                        if (url.protocol !== "leonardo-document:" || url.hostname !== "local") return null;
+                        let path = decodeURIComponent(url.pathname);
+                        while (path.startsWith("/")) path = path.slice(1);
+                        return allowed === null || allowed.has(path) ? url.href : null;
+                    } catch {
+                        return null;
+                    }
+                }));
+                return await Promise.race([
+                    decoded.then(results => results.includes(null) ? null : { urls: results.filter(Boolean), markup }),
+                    new Promise(resolve => setTimeout(() => resolve(null), 2000))
+                ]);
+                """,
+                arguments: ["paths": allowedPaths ?? [], "checksPaths": allowedPaths != nil],
+                in: nil,
+                contentWorld: .page
+            )
+            guard let result = result as? [String: Any], let URLs = result["urls"] as? [String],
+                  self.webView === webView, content == expectedContent,
+                  configuration.memoryAssets == expectedAssets else { return nil }
+            guard let markup = result["markup"] as? String,
+                  Set(try LeonardoLocalImagePolicy.signingReferences(inRenderedHTML: markup)) == Set(references) else {
+                return nil
+            }
+            let decodedURLs = URLs.compactMap { URL(string: $0) }
+            return decodedURLs.count == URLs.count ? decodedURLs : nil
+        } catch {
+            return nil
+        }
+    }
+
     func scroll(toFraction fraction: Double) {
         let bounded = fraction.isFinite ? min(1, max(0, fraction)) : 0
         evaluate("window.LeonardoPreview && window.LeonardoPreview.scrollToFraction(\(bounded));")
@@ -407,7 +552,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         documentHandler = MarkdownDocumentSchemeHandler(
             baseURL: documentURL,
             assetRootURL: configuration.localAssetRoot ?? documentURL?.deletingLastPathComponent(),
-            memoryAssets: configuration.memoryAssets
+            memoryAssets: configuration.memoryAssets,
+            allowedLocalImageFiles: configuration.allowedLocalImageFiles
         )
 
         let webConfiguration = WKWebViewConfiguration()

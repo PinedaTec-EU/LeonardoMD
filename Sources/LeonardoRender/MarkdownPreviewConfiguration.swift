@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoCore
 
 /// Controls the capabilities and visual treatment of a Markdown preview.
 public struct MarkdownPreviewConfiguration: Equatable, Sendable {
@@ -6,6 +7,15 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     public var allowsFormFilling: Bool = false
     public var selectedGraphicID: String?
     public var formLabels: [String: String] = [:]
+    /// Rubric fields assigned by an MDLF v2 guided-signing header are review
+    /// targets, not ordinary Fill-form insertion controls. The renderer
+    /// keeps these IDs in the payload so it can disable the bypass path while
+    /// leaving unrelated required fields fillable before the first seal.
+    public var guidedSigningFieldIDs: [String] = []
+    /// Verified sidecar rubrics keyed by the exact rendered occurrence
+    /// (`fieldID#occurrence`). These are presentation overlays only; they
+    /// never become Markdown form values or editable document bytes.
+    public var guidedSigningRubricOverlays: [String: LeonardoRubric] = [:]
     /// Explicit opt-in: standard Markdown never activates Leonardo metadata.
     public var allowsLeonardoFormat: Bool = false
     public var allowsMermaid: Bool
@@ -24,6 +34,9 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     public var localAssetRoot: URL?
     public var memoryAssets: MarkdownMemoryAssets?
     public var allowsRemoteImages: Bool
+    /// An explicit file boundary for previews of content that will be signed.
+    /// Nil retains the normal document and project root policy.
+    public var allowedLocalImageFiles: Set<URL>? = nil
 
     public init(
         allowsMermaid: Bool = false,

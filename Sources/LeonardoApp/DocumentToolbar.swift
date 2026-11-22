@@ -50,6 +50,27 @@ struct DocumentToolbar: View {
             Spacer(minLength: 8)
             InstanceSwitcher(session: session)
             if session.documentURL != nil {
+                if session.isGuidedSigningDocument {
+                    Button {
+                        let location = session.guidedSigningLocation
+                        Task {
+                            await session.recheckSealedSigningResources()
+                            guard session.guidedSigningLocation == location else { return }
+                            await session.setDocumentMode(.fill)
+                            session.showInspector = true
+                        }
+                    } label: {
+                        if session.guidedSigningSnapshotChanged {
+                            Label(L10n.text("Signed document changed"), systemImage: "exclamationmark.shield")
+                                .foregroundStyle(.orange)
+                        } else {
+                            Label(L10n.text(session.guidedSigningWorkflowOperable ? "Sign" : "View signatures"),
+                                  systemImage: "signature")
+                        }
+                    }
+                    .accessibilityIdentifier("guided-signing")
+                    .disabled(session.busy || session.isSyncSuspended || session.guidedSigningLoading)
+                }
                 Button { Task { await session.toggleProtection() } } label: {
                     Image(systemName: session.isProtected ? "lock.fill" : "lock.open")
                         .opacity(session.isProtected ? 1 : 0.5)
@@ -115,7 +136,7 @@ struct DocumentToolbar: View {
         case .preview: return L10n.text("Previsualize")
         case .edit: return L10n.text("Edit source")
         case .split: return L10n.text("Split view")
-        case .fill: return L10n.text("Fill")
+        case .fill: return L10n.text("Fill form")
         }
     }
 

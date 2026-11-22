@@ -21,7 +21,7 @@
     const anchor = anchors[value.anchor] || anchors.topLeading;
     element.style.transform = `translate(${anchor[1]}, ${anchor[2]})`;
   }
-  function fillText(root, metadata) {
+  function fillText(root, metadata, payload) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes = [];
     while (walker.nextNode()) {
@@ -37,7 +37,12 @@
         const field = metadata.fields?.[match[1]];
         if (!field) continue;
         fragment.append(document.createTextNode(text.slice(cursor, match.index)));
-        const value = Object.hasOwn(metadata.values || {}, match[1]) ? metadata.values[match[1]] : field.defaultValue;
+        const occurrence = (window.LeonardoForms.occurrenceCount?.(match[1]) || 0);
+        const overlayKey = `${match[1]}#${occurrence}`;
+        const guided = window.LeonardoForms.isGuidedRubric(match[1], field);
+        const value = guided
+          ? payload.guidedSigningRubricOverlays?.[overlayKey]
+          : (Object.hasOwn(metadata.values || {}, match[1]) ? metadata.values[match[1]] : field.defaultValue);
         fragment.append(window.LeonardoForms.field(match[1], field, value));
         cursor = match.index + match[0].length;
       }
@@ -149,7 +154,7 @@
       if (!payload.leonardo) return;
       const metadata = payload.leonardo;
       window.LeonardoForms.begin(payload, root);
-      fillText(root, metadata);
+      fillText(root, metadata, payload);
       window.LeonardoForms.layoutRows(root);
       window.LeonardoForms.showDiagnostics(payload.formDiagnostics || {});
       const layout = metadata.layout || {};

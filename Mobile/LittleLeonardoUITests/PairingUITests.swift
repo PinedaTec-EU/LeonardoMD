@@ -1646,7 +1646,12 @@ final class PairingUITests: XCTestCase {
         add(archiveCapture)
         export.tap()
         let save = app.buttons.matching(NSPredicate(format: "label IN %@", ["Save", "Guardar"])).firstMatch
-        XCTAssertTrue(save.waitForExistence(timeout: 10), "Recovery must open the native file exporter")
+        // A cold Files provider on a hosted simulator can present the Save
+        // control after the application's usual accessibility timeout.
+        guard save.waitForExistence(timeout: 30) else {
+            XCTFail("Recovery must open the native file exporter")
+            return
+        }
         let exporterCapture = XCTAttachment(screenshot: app.screenshot())
         exporterCapture.name = "Native recovery JSON export"
         exporterCapture.lifetime = .keepAlways

@@ -19,6 +19,143 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertTrue(RubricLibrary(url: url).entries.isEmpty)
         XCTAssertEqual(inserted.rubric, ink)
     }
+
+    func testGuidedSigningRubricCaptureOnlyReturnsRubricWithoutWritingLibrary() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let libraryURL = root.appendingPathComponent("library.json")
+        let library = RubricLibrary(url: libraryURL)
+        let capture = GuidedSigningRubricCapture(title: "Guided", initialRubric: nil) { rubric in
+            XCTAssertEqual(rubric, self.ink)
+        }
+
+        // The guided canvas has no RubricRequest/RubricLibrary dependency. Its
+        // completion is the only handoff; the caller decides separately
+        // whether a profile store or signing sidecar receives the rubric.
+        capture.complete(ink)
+        XCTAssertTrue(library.entries.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: libraryURL.path))
+    }
+
+    func testGuidedSigningTargetRowsSnapshotKeepsOccurrenceIdentityWhenTargetsClear() {
+        let targets = [
+            LeonardoSigningLocationTarget(positionID: "owner", fieldID: "signature", occurrence: 0,
+                                          sourceOffset: 12, contextSHA256: Data([0x01])),
+            LeonardoSigningLocationTarget(positionID: "owner", fieldID: "signature", occurrence: 1,
+                                          sourceOffset: 48, contextSHA256: Data([0x02]))
+        ]
+        let rows = GuidedSigningTargetRow.snapshot(targets)
+        var liveTargets = targets
+        liveTargets.removeAll()
+
+        XCTAssertEqual(rows.map(\.id), ["owner#signature#0", "owner#signature#1"])
+        XCTAssertEqual(rows.map { $0.target.occurrence }, [0, 1])
+        XCTAssertTrue(liveTargets.isEmpty)
+    }
+
+    func testNewRubricDraftIsBoundToOneSessionAndOccurrence() {
+        let sessionID = UUID()
+        let first = LeonardoSigningLocationTarget(
+            positionID: "signer", fieldID: "signature", occurrence: 0,
+            sourceOffset: 24, contextSHA256: Data(repeating: 1, count: 32)
+        )
+        let next = LeonardoSigningLocationTarget(
+            positionID: "signer", fieldID: "signature", occurrence: 1,
+            sourceOffset: 88, contextSHA256: Data(repeating: 2, count: 32)
+        )
+        let rubric = LeonardoRubric()
+        let draft = GuidedSigningLocationRubricDraft(sessionID: sessionID, target: first, rubric: rubric)
+        XCTAssertEqual(draft.ink(sessionID: sessionID, target: first), rubric)
+        XCTAssertNil(draft.ink(sessionID: sessionID, target: next))
+        XCTAssertNil(draft.ink(sessionID: UUID(), target: first))
+    }
+
+    func testInkOnlyProfileKeepsItsIDWhenDeclaringIdentityForAssignment() throws {
+        let savedID = UUID()
+        let saved = LeonardoSignerProfile(
+            id: savedID,
+            displayName: "Ana rubric",
+            identity: nil,
+            rubric: ink
+        )
+        let identity = LeonardoDeclaredIdentity(
+            fullName: "Ana Pineda",
+            documentType: .nationalID,
+            documentNumber: "A-1"
+        )
+        XCTAssertEqual(saved.declaredNameForAssignment, "")
+        XCTAssertNil(saved.withDeclaredSigningIdentity(.init(
+            fullName: "  ", documentType: .nationalID, documentNumber: "A-1"
+        )))
+        let assignmentProfile = try XCTUnwrap(saved.withDeclaredSigningIdentity(identity))
+
+        XCTAssertEqual(assignmentProfile.id, savedID)
+        XCTAssertEqual(assignmentProfile.identity, identity)
+        XCTAssertEqual(assignmentProfile.rubric, ink)
+        XCTAssertNil(saved.identity)
+    }
+
+    func testGuidedSigningDuplicateIdentityLeavesAssignmentOpenForCorrection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let document = LeonardoDocument(
+            body: "{{field:first}} {{field:second}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(id: "assignment", title: "Assignment", kind: .form, revision: 1,
+                    signing: .init(positions: [.init(id: "first", label: "First"), .init(id: "second", label: "Second")])),
+                fields: [
+                    "first": .init(type: .rubric, signerPosition: "first"),
+                    "second": .init(type: .rubric, signerPosition: "second")
+                ]
+            )
+        )
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        let url = root.appendingPathComponent("assignment.mdlf")
+        let source = try LeonardoFormatParser.serialize(document)
+        try source.write(to: url, atomically: true, encoding: .utf8)
+        session.documentURL = url
+        session.documentKind = .leonardoTemplate
+        session.content = source
+        session.snapshot = try await session.documents.read(url)
+        session.guidedSigningReady = true
+        session.guidedSigningTrustStore = try LeonardoSigningTrustRegistry(credentials: [])
+        session.guidedSigningSession = try LeonardoGuidedSigningSession(document: document, at: Date(), documentLocation: url.path)
+        let firstCredential = LeonardoSigningKeyPair(credentialID: "first").credential
+        let secondCredential = LeonardoSigningKeyPair(credentialID: "second").credential
+        let savedInk = LeonardoSignerProfile(displayName: "Saved rubric", rubric: ink)
+        try await session.guidedSigningStore.saveProfile(savedInk, options: .init(saveIdentityDetails: false, saveRubric: true))
+        let first = try XCTUnwrap(savedInk.withDeclaredSigningIdentity(.init(
+            fullName: "First Signer", documentType: .nationalID, documentNumber: "A-1")))
+        let reusedProfile = try XCTUnwrap(savedInk.withDeclaredSigningIdentity(.init(
+            fullName: "Second Signer", documentType: .nationalID, documentNumber: "B-2")))
+        let duplicate = LeonardoSignerProfile(displayName: "Second", identity: .init(
+            fullName: "Second Signer", documentType: .nationalID, documentNumber: "A-1"))
+        let corrected = LeonardoSignerProfile(displayName: "Second", identity: .init(
+            fullName: "Second Signer", documentType: .nationalID, documentNumber: "B-2"))
+        let options = LeonardoProfileSaveOptions(saveIdentityDetails: false, saveRubric: false)
+
+        await session.assignGuidedSigner(positionID: "first", profile: first, credential: firstCredential, saveOptions: options)
+        await session.assignGuidedSigner(positionID: "second", profile: reusedProfile, credential: secondCredential, saveOptions: options)
+        XCTAssertNil(session.guidedSigningSession?.positions["second"]?.assignment)
+        XCTAssertNotNil(session.guidedSigningActionProblem)
+        let retained = try await session.guidedSigningStore.profiles().first { $0.id == savedInk.id }
+        XCTAssertNil(retained?.identity)
+        XCTAssertEqual(retained?.rubric, ink)
+
+        await session.assignGuidedSigner(positionID: "second", profile: duplicate, credential: secondCredential, saveOptions: options)
+        XCTAssertTrue(session.guidedSigningWorkflowOperable)
+        XCTAssertNil(session.guidedSigningError)
+        XCTAssertNotNil(session.guidedSigningActionProblem)
+        XCTAssertNil(session.guidedSigningSession?.positions["second"]?.assignment)
+
+        await session.assignGuidedSigner(positionID: "second", profile: corrected, credential: secondCredential, saveOptions: options)
+        XCTAssertNil(session.guidedSigningActionProblem)
+        XCTAssertNotNil(session.guidedSigningSession?.positions["second"]?.assignment)
+    }
+
     func testIndependentLibrariesMergeWritesAndFailClosedOnCorruption() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -129,5 +266,36 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertEqual(session.leonardoDocument?.body, document.body)
         XCTAssertEqual(session.leonardoDocument?.metadata.fields, document.metadata.fields)
         XCTAssertFalse(session.finishRubric(request, label: "Stale", rubric: ink, saveToLibrary: false))
+    }
+
+    func testGuidedAssignedRubricCannotOpenGenericInsertionEditor() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("guided.mdlf")
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "{{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "guided-editor-guard", title: "Guided editor guard", kind: .form,
+                    revision: 1, signing: declaration
+                ),
+                fields: ["signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner")]
+            )
+        )
+        try LeonardoFormatParser.serialize(document).write(to: url, atomically: true, encoding: .utf8)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("prefs.json"))
+        session.authorizePath = { _, _ in }
+        defer { session.stop() }
+        await session.openDocument(url)
+
+        session.requestRubric(fieldID: "signature")
+        XCTAssertNil(session.rubricRequest)
+        XCTAssertFalse(session.handleGraphicAction(expected: session.content, object: nil, remove: nil, fieldID: "signature"))
+        XCTAssertNil(session.rubricRequest)
     }
 }

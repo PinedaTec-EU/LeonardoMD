@@ -42,8 +42,14 @@ MAX_COMPRESSION_RATIO = 500
 MIN_RATIO_CHECK_BYTES = 64 * 1024
 MAX_MEMBER_PATH_COMPONENTS = MAX_PATH_COMPONENTS
 WINDOWS_DRIVE = re.compile(r"^[A-Za-z]:")
-SUPPORTED_FORMAT_VERSIONS = frozenset({1})
-DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[1] / "references" / "mdlf-v1.schema.json"
+SUPPORTED_FORMAT_VERSIONS = frozenset({1, 2})
+SCHEMA_PATHS = {
+    version: Path(__file__).resolve().parents[1] / "references" / f"mdlf-v{version}.schema.json"
+    for version in sorted(SUPPORTED_FORMAT_VERSIONS)
+}
+# Keep the old v1 constant for callers that imported it. Validation selects
+# the matching schema from the document's declared version.
+DEFAULT_SCHEMA_PATH = SCHEMA_PATHS[1]
 
 
 class ArchiveError(ValueError):
@@ -509,7 +515,10 @@ def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | Non
     if values is not None and not isinstance(values, dict):
         raise ArchiveError("document values metadata must be an object")
 
-    bundled_schema = DEFAULT_SCHEMA_PATH
+    version = metadata["formatVersion"]
+    if isinstance(version, bool) or not isinstance(version, int):
+        raise ArchiveError("document front matter must contain an integer formatVersion")
+    bundled_schema = SCHEMA_PATHS[version]
     _validate_metadata_schema(metadata, bundled_schema)
     _validate_metadata_semantics(metadata)
     semantic_validation = "bundled-schema"
@@ -536,6 +545,8 @@ def validate_document(path: Path, *, schema_path: Path | None = None) -> dict[st
     """Check the MDLF envelope and bundled schema, plus an optional schema."""
 
     _assert_regular_file(path, "document")
+    if path.stat().st_size > MAX_MEMBER_BYTES:
+        raise ArchiveError(f"document is too large (limit {MAX_MEMBER_BYTES} bytes): {path}")
     return _validate_document_bytes(path, path.read_bytes(), schema_path=schema_path)
 
 

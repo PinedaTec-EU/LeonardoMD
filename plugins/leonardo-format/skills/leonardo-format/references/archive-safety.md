@@ -23,7 +23,8 @@ archive content:
 - directory records are validated for safe paths but are transport noise: they
   are ignored by `inspect` and `extract`, and `pack` does not emit them;
 - the root document is parsed, version-checked, duplicate-key checked and
-  validated against the bundled v1 schema before `inspect` reports results,
+validated against the bundled schema matching its declared format version before
+`inspect` reports results,
   `extract` creates a directory, or `pack` writes an archive;
 - extraction claims its destination directory atomically and exclusively,
   opens every path component with descriptor-relative `O_NOFOLLOW`, creates

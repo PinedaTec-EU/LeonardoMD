@@ -2,6 +2,22 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2186
+
+- #517 Added: guided signing for Leonardo documents ([#520](https://github.com/PinedaTec-EU/LeonardoMD/pull/520))
+
+<p>Adds guided multi-signer forms with per-location rubric review, resume, tamper detection and exchange of signed copies between LeonardoMD and Little Leonardo.</p>
+
+Source: `9f5b3a14e0ca011fabb17aebed7ebb6d62698ee8`. Delta: `{"build": 217}`.
+
+## 0.3.1969
+
+- #507 Fixed: isolate hosted iOS reader validation ([#547](https://github.com/PinedaTec-EU/LeonardoMD/pull/547))
+
+<p>Run the iOS read-only document rendering check independently in CI and allow time for a cold WebKit start.</p>
+
+Source: `9f795c042debf9876d7c40dde869c800c010532c`. Delta: `{"build": 1}`.
+
 ## 0.3.1968
 
 - #513 Fixed: explain how to send Sync diagnostics manually ([#515](https://github.com/PinedaTec-EU/LeonardoMD/pull/515))

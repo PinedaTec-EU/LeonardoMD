@@ -72,6 +72,7 @@ extension AppSession {
                 let previousWorkspace = packageWorkspace
                 adoptConflictCopy(copy, package: nil, sourceURL: destination)
                 if let previousWorkspace { await disposePackageWorkspace(previousWorkspace) }
+                await prepareGuidedSigningIfNeeded()
             }
         } catch { report(error) }
     }
@@ -106,6 +107,7 @@ extension AppSession {
         if previousMode == .fill, availableDocumentModes.contains(.fill) { mode = .fill }
         replacement = nil
         if let previousWorkspace { await disposePackageWorkspace(previousWorkspace) }
+        await prepareGuidedSigningIfNeeded()
     }
 
     private func adoptConflictCopy(_ copy: DocumentSnapshot, package: LeonardoPackageWorkspace?, sourceURL: URL) {

@@ -1,4 +1,5 @@
 import SwiftUI
+import LeonardoCore
 import LeonardoSync
 import LeonardoRender
 
@@ -81,9 +82,14 @@ public struct RemoteDocumentPreview: View {
                 if source || fileExtension == "txt" {
                     ScrollView { Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled).padding() }
                 } else {
-                    MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
-                        configuration: previewConfiguration,
-                        onLinkActivation: followLink)
+                    VStack(alignment: .leading, spacing: 0) {
+                        if let declaration = guidedSigningDeclaration(in: text) {
+                            LeonardoGuidedSigningReadOnlyBanner(declaration: declaration, spanish: spanish)
+                        }
+                        MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
+                            configuration: previewConfiguration,
+                            onLinkActivation: followLink)
+                    }
                 }
             } else if file != nil { Text(t("File downloaded", "Archivo descargado")) }
             else if failure == nil { ProgressView(t("Downloading…", "Descargando…")) }
@@ -134,10 +140,50 @@ public struct RemoteDocumentPreview: View {
         if let recorded = library.failures[DownloadLibrary.key(id: projectID, path: path)] { return recorded }
         return error.localizedDescription
     }
+
+    private func guidedSigningDeclaration(in text: String) -> LeonardoSigningDeclaration? {
+        guard let document = try? LeonardoFormatParser.parse(text),
+              document.metadata.formatVersion >= LeonardoFormat.signingVersion else { return nil }
+        return document.metadata.document.signing
+    }
+
     private func followLink(_ url: URL) {
         guard let path = RemoteDocumentResources.path(url: url, virtualRoot: virtualRoot),
               let entry = project?.catalogue.files.first(where: { $0.path == path }),
               Self.previewableDocumentExtensions.contains((path as NSString).pathExtension.lowercased()) else { return }
         linked = entry
+    }
+}
+
+/// Shared by remote and offline Little Leonardo readers. It is deliberately a
+/// presentation-only notice: the mobile reader never receives the desktop
+/// signing coordinator or any form-editing capability.
+public struct LeonardoGuidedSigningReadOnlyBanner: View {
+    private let declaration: LeonardoSigningDeclaration
+    private let spanish: Bool
+
+    public init(declaration: LeonardoSigningDeclaration, spanish: Bool) {
+        self.declaration = declaration
+        self.spanish = spanish
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label(spanish ? "Firma guiada · vista de solo lectura" : "Guided signing · read-only preview",
+                  systemImage: "signature")
+                .font(.headline)
+            Text(spanish
+                 ? "Los puestos de firma se revisan y autorizan en el documento de escritorio. Esta vista móvil nunca concede edición ni acceso para firmar."
+                 : "Signing positions are reviewed and authorized on the desktop document. This mobile view never grants form editing or signing access.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(declaration.positions.map(\.label).joined(separator: ", "))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.accentColor.opacity(0.08))
+        .accessibilityIdentifier("guided-signing-read-only-banner")
     }
 }

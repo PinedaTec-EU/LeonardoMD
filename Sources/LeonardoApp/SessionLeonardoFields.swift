@@ -64,6 +64,7 @@ extension AppSession {
     var canFillLeonardoFormIgnoringClose: Bool {
         documentURL != nil && documentKind.isLeonardo && mode == .fill
             && !stopped && !busy && !isSyncSuspended && !isCapturingPreview
+            && !guidedSigningContentLocked
     }
 
     var canFillLeonardoForm: Bool { canFillLeonardoFormIgnoringClose && !isClosing }
