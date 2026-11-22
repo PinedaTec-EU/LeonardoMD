@@ -1,0 +1,16 @@
+{
+  "reviewed_sha": "39e8a0a2ea86708a975af9e7d49158106ea063d8",
+  "capture_checkout": "39e8a0a2ea86708a975af9e7d49158106ea063d8",
+  "platform": "iOS 26.5 Simulator, production SwiftUI/WKWebView",
+  "udid": "271B5505-A755-41BB-AC90-236C58AB9CA5",
+  "pixel_width": 1206,
+  "pixel_height": 2622,
+  "capture_mode": "simctl native viewport during XCTest",
+  "state": "Full WebKit reader before credential acceptance, without verified rubric ink.",
+  "original": "testSignedGuidedSigningViewPresentsReaderOutsideList-6.png",
+  "captured_at": "2026-11-22T07:55:30.425904+01:00",
+  "sha256": "5e535152dbdbab116d40bccbf9ab343c3ffe5791bdcc9547288cf2766c7fcf76",
+  "executable_sha256": "e76d98e0b30869874413d520fdc1ef70e9104ad93fb2f84097f71f3f18994209",
+  "test_result": "Test-LittleLeonardo-2026.11.22_07-55-19-+0100.xcresult",
+  "build_provenance": "Native test run from the exact clean checkout. Its final commit records validation build counts only."
+}

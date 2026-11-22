@@ -1,0 +1,16 @@
+{
+  "reviewed_sha": "39e8a0a2ea86708a975af9e7d49158106ea063d8",
+  "capture_checkout": "39e8a0a2ea86708a975af9e7d49158106ea063d8",
+  "platform": "iOS 26.5 Simulator, production SwiftUI/WKWebView",
+  "udid": "271B5505-A755-41BB-AC90-236C58AB9CA5",
+  "pixel_width": 1206,
+  "pixel_height": 2622,
+  "capture_mode": "simctl native viewport during XCTest",
+  "state": "Native reader displays verified rubric after trust is established for the fixture credential.",
+  "original": "testTrustedSignedReaderRendersVerifiedRubricOverlay-7.png",
+  "captured_at": "2026-11-22T07:55:31.609933+01:00",
+  "sha256": "e7244cbd2b34aed9658411e2a37add46d075c7794a06a7737862b14e1b037751",
+  "executable_sha256": "e76d98e0b30869874413d520fdc1ef70e9104ad93fb2f84097f71f3f18994209",
+  "test_result": "Test-LittleLeonardo-2026.11.22_07-55-19-+0100.xcresult",
+  "build_provenance": "Native test run from the exact clean checkout. Its final commit records validation build counts only."
+}
