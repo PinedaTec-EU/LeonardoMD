@@ -1,0 +1,16 @@
+{
+  "reviewed_sha": "43445f3c8e5b75f7c30fc476b36f1e6f3968bd90",
+  "capture_checkout": "43445f3c8e5b75f7c30fc476b36f1e6f3968bd90",
+  "platform": "iOS 26.5 Simulator, production SwiftUI/WKWebView",
+  "udid": "271B5505-A755-41BB-AC90-236C58AB9CA5",
+  "pixel_width": 1206,
+  "pixel_height": 2622,
+  "capture_mode": "simctl native viewport during XCTest",
+  "state": "Expanded full-document sheet in native reader mode before trust, with unavailable ink.",
+  "original": "testSignedGuidedSigningViewPresentsReaderOutsideList-6.png",
+  "captured_at": "2026-11-22T08:22:19.200343+01:00",
+  "sha256": "7e11d26c9ec7a8911dbcbc00ffbdaf8742bd63595dee0d49838fadf984f1b3a9",
+  "executable_sha256": "e76d98e0b30869874413d520fdc1ef70e9104ad93fb2f84097f71f3f18994209",
+  "test_result": "Test-LittleLeonardo-2026.11.22_08-22-07-+0100.xcresult",
+  "build_provenance": "Production sources match the clean candidate. The build was recorded in the same candidate commit."
+}
