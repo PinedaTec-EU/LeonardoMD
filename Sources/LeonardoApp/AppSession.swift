@@ -202,7 +202,9 @@ final class AppSession {
         preferencesURL: URL = AppSession.preferencesURL,
         files: LocalProjectRepository = LocalProjectRepository(),
         extensionWarningPreferences: ExtensionWarningPreferences = .shared,
-        signingCredentialStore: LeonardoSigningCredentialStore = LeonardoSigningCredentialStore(),
+        signingCredentialStore: LeonardoSigningCredentialStore = LeonardoSigningCredentialStore(
+            service: LeonardoSigningCredentialStore.applicationService(bundleIdentifier: Bundle.main.bundleIdentifier)
+        ),
         openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
     ) {
         self.extensionRecommendations = ExtensionRecommendations(preferences: extensionWarningPreferences)
