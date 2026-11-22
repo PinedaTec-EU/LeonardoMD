@@ -141,43 +141,79 @@ extension AppSession {
             throw LeonardoSigningError.integrityFailure
         }
         let expectedSnapshot = snapshot
-        guard await guidedSigningExchangeSourceIsSaved(
-            location: expectedLocation, content: expectedContent, session: expectedSession, snapshot: expectedSnapshot
-        ) else { return }
-        let localResources = try guidedSigningResources()
-        let localTrust = try await guidedSigningCredentialStore.trustStore()
-        guard guidedSigningViewStateMatches(
-            expectedLocation: expectedLocation,
-            expectedContent: expectedContent,
-            expectedSession: expectedSession
-        ) else { throw LeonardoSigningError.integrityFailure }
-        let unknown = exchange.trustedCredentials.filter { credential in
-            localTrust.credential(id: credential.id) != credential
-        }
-        let effectiveTrust: LeonardoSigningTrustRegistry
-        if unknown.isEmpty {
-            effectiveTrust = localTrust
-        } else {
-            guard confirmImportedPublicKeys(unknown) else {
-                throw LeonardoSigningError.trustStoreRequired
-            }
-            guard guidedSigningViewStateMatches(
-                expectedLocation: expectedLocation,
-                expectedContent: expectedContent,
-                expectedSession: expectedSession
-            ) else { throw LeonardoSigningError.integrityFailure }
-            effectiveTrust = try LeonardoSigningTrustRegistry(
-                credentials: localTrust.allCredentials + unknown
+        func isCurrent() -> Bool {
+            guidedSigningViewStateMatches(
+                expectedLocation: expectedLocation, expectedContent: expectedContent, expectedSession: expectedSession
             )
         }
-        try exchange.validate(against: document, resources: localResources, trustStore: effectiveTrust)
+        func savedSourceMatches() async -> Bool {
+            await guidedSigningExchangeSourceIsSaved(
+                location: expectedLocation, content: expectedContent, session: expectedSession, snapshot: expectedSnapshot
+            )
+        }
+
+        guard await savedSourceMatches() else { return }
+        let localResources = try guidedSigningResources()
+        let trust = try await signingExchangeTrust(exchange, isCurrent: isCurrent)
+        try exchange.validate(against: document, resources: localResources, trustStore: trust.effective)
         let localSessions = try await guidedSigningStore.sessions()
             .filter { $0.documentLocation == expectedLocation }
-        guard guidedSigningViewStateMatches(
-            expectedLocation: expectedLocation,
-            expectedContent: expectedContent,
-            expectedSession: expectedSession
-        ) else { throw LeonardoSigningError.integrityFailure }
+        guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
+        let (local, pristineReplacement) = try signingExchangeBaseline(exchange, localSessions: localSessions)
+        guard expectedSession == (local ?? pristineReplacement) else {
+            throw LeonardoSigningError.integrityFailure
+        }
+        let rebound = try exchange.reboundSession(onto: local, documentLocation: expectedLocation)
+        guard await savedSourceMatches() else { return }
+        for credential in trust.unknown {
+            guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
+            try await guidedSigningCredentialStore.trustPublicCredential(credential)
+        }
+        guard await savedSourceMatches() else { return }
+        guard localResources == (try guidedSigningResources()) else { throw LeonardoSigningError.integrityFailure }
+        if let pristineReplacement {
+            try await guidedSigningStore.replacePristineSession(
+                id: pristineReplacement.id, baseline: pristineReplacement, with: rebound
+            )
+        } else {
+            try await guidedSigningStore.saveSession(rebound, replacing: local)
+        }
+        guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
+        guidedSigningSession = rebound
+        let committedTrust = try await guidedSigningCredentialStore.trustStore()
+        guard guidedSigningLocation == expectedLocation, content == expectedContent,
+              guidedSigningSession == rebound else {
+            throw LeonardoSigningError.integrityFailure
+        }
+        guidedSigningTrustStore = committedTrust
+        guidedSigningVerification = rebound.signatureVerification(
+            document: document,
+            resources: localResources,
+            trustStore: committedTrust
+        )
+        refreshGuidedSigningTargets()
+        guidedSigningError = nil
+        guidedSigningStatus = L10n.text("Signed copy imported after local integrity and trust checks.")
+    }
+
+    private func signingExchangeTrust(
+        _ exchange: LeonardoSigningExchange,
+        isCurrent: () -> Bool
+    ) async throws -> (effective: LeonardoSigningTrustRegistry, unknown: [LeonardoSigningCredential]) {
+        let local = try await guidedSigningCredentialStore.trustStore()
+        guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
+        let unknown = exchange.trustedCredentials.filter { local.credential(id: $0.id) != $0 }
+        guard !unknown.isEmpty else { return (local, []) }
+        guard confirmImportedPublicKeys(unknown) else { throw LeonardoSigningError.trustStoreRequired }
+        guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
+        return (try LeonardoSigningTrustRegistry(credentials: local.allCredentials + unknown), unknown)
+    }
+
+    @MainActor
+    private func signingExchangeBaseline(
+        _ exchange: LeonardoSigningExchange,
+        localSessions: [LeonardoGuidedSigningSession]
+    ) throws -> (local: LeonardoGuidedSigningSession?, pristineReplacement: LeonardoGuidedSigningSession?) {
         // A deliberate correction preserves the old sidecar session at this
         // path. Only sessions for this exact document identity and semantic
         // revision can participate in the import CAS; older revisions remain
@@ -207,63 +243,9 @@ extension AppSession {
             // same exact path/ID/revision binding used by preparation.
             throw LeonardoSigningError.staleStorage
         }
-        let localBaseline = local ?? pristineReplacement
-        guard expectedSession == localBaseline else {
-            throw LeonardoSigningError.integrityFailure
-        }
-        let rebound = try exchange.reboundSession(
-            onto: local,
-            documentLocation: expectedLocation
-        )
-        guard await guidedSigningExchangeSourceIsSaved(
-            location: expectedLocation, content: expectedContent, session: expectedSession, snapshot: expectedSnapshot
-        ) else { return }
-        // Persist accepted public records only after the detached proof has
-        // passed validation. These records never contain private key bytes.
-        for credential in unknown {
-            guard guidedSigningViewStateMatches(
-                expectedLocation: expectedLocation,
-                expectedContent: expectedContent,
-                expectedSession: expectedSession
-            ) else { throw LeonardoSigningError.integrityFailure }
-            try await guidedSigningCredentialStore.trustPublicCredential(credential)
-        }
-        guard await guidedSigningExchangeSourceIsSaved(
-            location: expectedLocation, content: expectedContent, session: expectedSession, snapshot: expectedSnapshot
-        ) else { return }
-        guard localResources == (try guidedSigningResources()) else { throw LeonardoSigningError.integrityFailure }
-        if let pristineReplacement {
-            try await guidedSigningStore.replacePristineSession(
-                id: pristineReplacement.id,
-                baseline: pristineReplacement,
-                with: rebound
-            )
-        } else {
-            try await guidedSigningStore.saveSession(rebound, replacing: local)
-        }
-        guard guidedSigningViewStateMatches(
-            expectedLocation: expectedLocation,
-            expectedContent: expectedContent,
-            expectedSession: expectedSession
-        ) else { throw LeonardoSigningError.integrityFailure }
-        guidedSigningSession = rebound
-        let committedTrust = try await guidedSigningCredentialStore.trustStore()
-        guard guidedSigningLocation == expectedLocation, content == expectedContent,
-              guidedSigningSession == rebound else {
-            throw LeonardoSigningError.integrityFailure
-        }
-        guidedSigningTrustStore = committedTrust
-        guidedSigningVerification = rebound.signatureVerification(
-            document: document,
-            resources: localResources,
-            trustStore: committedTrust
-        )
-        refreshGuidedSigningTargets()
-        guidedSigningError = nil
-        guidedSigningStatus = L10n.text("Signed copy imported after local integrity and trust checks.")
+        return (local, pristineReplacement)
     }
 
-    @MainActor
     private func confirmImportedPublicKeys(_ credentials: [LeonardoSigningCredential]) -> Bool {
         let fields = credentials.map { credential -> (LeonardoSigningCredential, NSTextField) in
             let field = NSTextField(string: "")

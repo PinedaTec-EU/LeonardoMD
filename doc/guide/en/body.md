@@ -196,7 +196,8 @@ Before a position can review a location, choose an existing local profile or
 create one with the signer’s full name, identity-document type and number.
 Then choose that signer’s personal credential and explicitly authorize the
 assignment. Saving identity details and saving a profile rubric are separate
-choices. A declared identity is shown as declared; a rubric or a local
+choices. When reusing a profile that saved only a rubric, enter the signer’s
+full name and document details in the assignment form. A declared identity is shown as declared; a rubric or a local
 biometric prompt does not prove independent identity verification.
 
 The reviewer must select the position, begin the review and follow the exact

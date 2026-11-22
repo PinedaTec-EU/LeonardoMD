@@ -1,10 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v115-en.mdlz` and `Guide-v115-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v116-en.mdlz` and `Guide-v116-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v115/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v116/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v116 explains explicit identity entry when reusing an ink-only profile.
+Guide v116 EN SHA-256: `28b4af05810adc440a8503e200eda06436e78403e0ae2eb8447a4915b467842a`
+Guide v116 ES SHA-256: `5ca70abe4ca62f4441c5fac1dd43d40c478bc86bdbda550d55b3a13acb366f02`
 
 Guide v115 explains the fixed local image requirement and verified-only ink for
 guided signing positions. Packaged Help validation remains pending.

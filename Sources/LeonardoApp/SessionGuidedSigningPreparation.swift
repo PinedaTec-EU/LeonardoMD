@@ -161,119 +161,38 @@ extension AppSession {
                 .filter { $0.documentLocation == expectedLocation }
             guard isCurrentPreparation() else { return }
 
-            guard let document = leonardoDocument,
-                  document.metadata.formatVersion >= LeonardoFormat.signingVersion,
-                  let declaration = document.metadata.document.signing else {
-                // Without the mutable declaration there is no exact current
-                // revision to select. Recover only one record whose sealed
-                // snapshot and resources can be verified; never choose among
-                // historical records by updatedAt or path alone.
-                if let recovery = await trustedGuidedSigningRecoverySource(
-                    document: leonardoDocument, sessions: storedForLocation
-                ) {
-                    expectedSession = recovery.session
-                    guidedSigningSession = recovery.session
+            let document: LeonardoDocument
+            switch selectSigningPreparation(sessions: storedForLocation) {
+            case let .recover(source, candidates):
+                let recovery = await trustedGuidedSigningRecoverySource(document: source, sessions: candidates)
+                guard isCurrentPreparation() else { return }
+                expectedSession = recovery?.session
+                guidedSigningSession = recovery?.session
+                guidedSigningTargets = []
+                if recovery != nil {
                     externalConflict = true
                     saveStatus = "External conflict · signing review protected"
-                    guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
+                    let trust = try await guidedSigningCredentialStore.trustStore()
                     guard isCurrentPreparation() else { return }
-                    guidedSigningTargets = []
+                    guidedSigningTrustStore = trust
                     guidedSigningVerification = [:]
                     guidedSigningError = guidedSigningRecoveryAvailableMessage()
-                } else {
-                    expectedSession = nil
-                    guidedSigningSession = nil
-                    guidedSigningTargets = []
-                    if !storedForLocation.isEmpty {
-                        guidedSigningRecoveryBlocked = true
-                        guidedSigningVerification = [:]
-                        guidedSigningTrustStore = nil
-                        guidedSigningError = guidedSigningRecoveryBlockedMessage()
-                    }
+                } else if !candidates.isEmpty {
+                    blockSigningPreparation(message: guidedSigningRecoveryBlockedMessage(), protectHistory: true)
                 }
                 return
-            }
-
-            guard let documentID = document.metadata.document.id,
-                  let revision = document.metadata.document.revision,
-                  !documentID.isEmpty,
-                  revision >= 1 else {
+            case let .blocked(message, protectHistory):
                 expectedSession = nil
-                guidedSigningSession = nil
-                guidedSigningTargets = []
-                guidedSigningRecoveryBlocked = !storedForLocation.isEmpty
-                if !storedForLocation.isEmpty { guidedSigningVerification = [:]; guidedSigningTrustStore = nil }
-                guidedSigningError = storedForLocation.isEmpty
-                    ? L10n.text("The document has no stable signing identity or revision. Create a new revision before continuing.")
-                    : guidedSigningRecoveryBlockedMessage()
+                blockSigningPreparation(message: message, protectHistory: protectHistory)
                 return
-            }
-            let exactSessions = storedForLocation.filter {
-                $0.documentID == documentID && $0.initialRevision == revision
-            }
-            guard exactSessions.count <= 1 else {
-                expectedSession = nil
-                guidedSigningSession = nil
-                guidedSigningTargets = []
-                guidedSigningRecoveryBlocked = true
-                guidedSigningVerification = [:]
-                guidedSigningTrustStore = nil
-                guidedSigningError = L10n.text("More than one signing session matches this document revision. Reload it or create a new revision before continuing.")
-                return
-            }
-
-            if exactSessions.count == 1, let stored = exactSessions.first {
-                guard stored.declaration == declaration else {
-                    if let recovery = await trustedGuidedSigningRecoverySource(
-                        document: document, sessions: exactSessions
-                    ) {
-                        expectedSession = recovery.session
-                        guidedSigningSession = recovery.session
-                        externalConflict = true
-                        saveStatus = "External conflict · signing review protected"
-                        guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
-                        guard isCurrentPreparation() else { return }
-                        guidedSigningTargets = []
-                        guidedSigningVerification = [:]
-                        guidedSigningError = guidedSigningRecoveryAvailableMessage()
-                    } else {
-                        expectedSession = nil
-                        guidedSigningSession = nil
-                        guidedSigningTargets = []
-                        guidedSigningRecoveryBlocked = true
-                        guidedSigningVerification = [:]
-                        guidedSigningTrustStore = nil
-                        guidedSigningError = guidedSigningRecoveryBlockedMessage()
-                    }
-                    return
-                }
-                // The sidecar is authoritative. This also adopts progress
-                // committed by another app instance instead of retaining a
-                // stale in-memory copy after a reload.
+            case let .existing(source, stored):
+                document = source
                 expectedSession = stored
                 guidedSigningSession = stored
-            } else if !storedForLocation.isEmpty {
-                // A sidecar for another document revision is audit history,
-                // not a candidate for the current mutable source. Do not
-                // create a second workflow that could later be mistaken for
-                // the original one.
-                expectedSession = nil
-                guidedSigningSession = nil
-                guidedSigningTargets = []
-                guidedSigningRecoveryBlocked = true
-                guidedSigningVerification = [:]
-                guidedSigningTrustStore = nil
-                guidedSigningError = L10n.text("Protected signing progress belongs to another document revision. Reopen that revision or create an explicit new revision before continuing.")
-                return
-            } else if guidedSigningSession != nil {
-                expectedSession = nil
-                guidedSigningSession = nil
-                guidedSigningError = L10n.text("Protected signing progress is missing. Reload the document before continuing.")
-                return
-            } else {
+            case let .create(source):
+                document = source
                 let created = try LeonardoGuidedSigningSession(
-                    document: document, at: Date(), documentLocation: expectedLocation)
-                guard isCurrentPreparation() else { return }
+                    document: source, at: Date(), documentLocation: expectedLocation)
                 try await guidedSigningStore.saveSession(created, replacing: nil)
                 guard isCurrentPreparation() else { return }
                 expectedSession = created
@@ -297,6 +216,52 @@ extension AppSession {
             guard isCurrentPreparation() else { return }
             guidedSigningError = String(describing: error)
         }
+    }
+
+    private enum SigningPreparation {
+        case recover(LeonardoDocument?, [LeonardoGuidedSigningSession])
+        case blocked(String, protectHistory: Bool)
+        case existing(LeonardoDocument, LeonardoGuidedSigningSession)
+        case create(LeonardoDocument)
+    }
+
+    private func selectSigningPreparation(sessions: [LeonardoGuidedSigningSession]) -> SigningPreparation {
+        guard let document = leonardoDocument,
+              document.metadata.formatVersion >= LeonardoFormat.signingVersion,
+              let declaration = document.metadata.document.signing else {
+            return .recover(leonardoDocument, sessions)
+        }
+        guard let documentID = document.metadata.document.id, !documentID.isEmpty,
+              let revision = document.metadata.document.revision, revision >= 1 else {
+            return .blocked(sessions.isEmpty
+                ? L10n.text("The document has no stable signing identity or revision. Create a new revision before continuing.")
+                : guidedSigningRecoveryBlockedMessage(), protectHistory: !sessions.isEmpty)
+        }
+        let exact = sessions.filter { $0.documentID == documentID && $0.initialRevision == revision }
+        guard exact.count <= 1 else {
+            return .blocked(L10n.text("More than one signing session matches this document revision. Reload it or create a new revision before continuing."), protectHistory: true)
+        }
+        if let stored = exact.first {
+            return stored.declaration == declaration ? .existing(document, stored) : .recover(document, exact)
+        }
+        if !sessions.isEmpty {
+            return .blocked(L10n.text("Protected signing progress belongs to another document revision. Reopen that revision or create an explicit new revision before continuing."), protectHistory: true)
+        }
+        if guidedSigningSession != nil {
+            return .blocked(L10n.text("Protected signing progress is missing. Reload the document before continuing."), protectHistory: false)
+        }
+        return .create(document)
+    }
+
+    private func blockSigningPreparation(message: String, protectHistory: Bool) {
+        guidedSigningSession = nil
+        guidedSigningTargets = []
+        guidedSigningRecoveryBlocked = protectHistory
+        if protectHistory {
+            guidedSigningVerification = [:]
+            guidedSigningTrustStore = nil
+        }
+        guidedSigningError = message
     }
 
     /// Loading the protected sidecar is part of document lifecycle, not an

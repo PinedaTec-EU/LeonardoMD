@@ -31,6 +31,7 @@
 		A51700000000000000000001 /* MobileSigningExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51700000000000000000011 /* MobileSigningExchange.swift */; };
 		A56400000000000000000001 /* MobileGuidedSigningOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56400000000000000000011 /* MobileGuidedSigningOperations.swift */; };
 		A56400000000000000000002 /* MobileGuidedSigningSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56400000000000000000012 /* MobileGuidedSigningSheets.swift */; };
+		A56400000000000000000003 /* MobileGuidedSigningReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56400000000000000000013 /* MobileGuidedSigningReview.swift */; };
 		A51700000000000000000002 /* MobileGuidedSigningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51700000000000000000012 /* MobileGuidedSigningView.swift */; };
 		A51700000000000000000003 /* MobileGuidedSigningDocumentReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51700000000000000000013 /* MobileGuidedSigningDocumentReader.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */; };
@@ -98,6 +99,7 @@
 		A51700000000000000000011 /* MobileSigningExchange.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileSigningExchange.swift; sourceTree = "<group>"; };
 		A56400000000000000000011 /* MobileGuidedSigningOperations.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileGuidedSigningOperations.swift; sourceTree = "<group>"; };
 		A56400000000000000000012 /* MobileGuidedSigningSheets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileGuidedSigningSheets.swift; sourceTree = "<group>"; };
+		A56400000000000000000013 /* MobileGuidedSigningReview.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileGuidedSigningReview.swift; sourceTree = "<group>"; };
 		A51700000000000000000012 /* MobileGuidedSigningView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileGuidedSigningView.swift; sourceTree = "<group>"; };
 		A51700000000000000000013 /* MobileGuidedSigningDocumentReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileGuidedSigningDocumentReader.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDirectConnectionStore.swift; sourceTree = "<group>"; };
@@ -249,6 +251,7 @@
 				A51700000000000000000011 /* MobileSigningExchange.swift */,
 				A56400000000000000000011 /* MobileGuidedSigningOperations.swift */,
 				A56400000000000000000012 /* MobileGuidedSigningSheets.swift */,
+				A56400000000000000000013 /* MobileGuidedSigningReview.swift */,
 				A51700000000000000000012 /* MobileGuidedSigningView.swift */,
 				A51700000000000000000013 /* MobileGuidedSigningDocumentReader.swift */,
 				C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */,
@@ -415,6 +418,7 @@
 				A51700000000000000000001 /* MobileSigningExchange.swift in Sources */,
 				A56400000000000000000001 /* MobileGuidedSigningOperations.swift in Sources */,
 				A56400000000000000000002 /* MobileGuidedSigningSheets.swift in Sources */,
+				A56400000000000000000003 /* MobileGuidedSigningReview.swift in Sources */,
 				A51700000000000000000002 /* MobileGuidedSigningView.swift in Sources */,
 				A51700000000000000000003 /* MobileGuidedSigningDocumentReader.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */,

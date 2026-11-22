@@ -201,6 +201,9 @@ los datos de identidad y guardar una rúbrica de perfil son decisiones
 independientes. La identidad declarada se muestra como declarada: una rúbrica o
 un aviso biométrico local no demuestra una verificación independiente.
 
+Si reutilizas un perfil que solo guardó la rúbrica,
+introduce el nombre completo y los datos del documento del firmante al asignarlo.
+
 La persona revisora debe seleccionar el puesto, iniciar la revisión y seguir
 las apariciones exactas de los campos en orden de origen. Para cada aparición,
 lee el contexto mostrado, dibuja una rúbrica nueva en el lienzo exclusivo de firma o elige una guardada,
