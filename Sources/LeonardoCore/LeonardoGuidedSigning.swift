@@ -157,6 +157,10 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
     /// Sign remains available while at least one declared position is pending.
     public var canSign: Bool { state == .active && !pendingPositionIDs.isEmpty }
 
+    var hasOnlyDeclaredIdentities: Bool {
+        positions.values.allSatisfy { $0.assignment?.identityStatus != .independentlyVerified }
+    }
+
     public var isComplete: Bool {
         state == .complete && pendingPositionIDs.isEmpty
     }
@@ -488,6 +492,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
                   progress.state == .signed,
                   let assignment = progress.assignment,
                   assignment.positionID == positionID,
+                  assignment.identityStatus == .declared,
                   signature.proof.sessionID == id,
                   signature.proof.positionID == positionID,
                   signature.proof.profileID == assignment.profileID,
@@ -627,15 +632,21 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         document: LeonardoDocument,
         resources: [LeonardoSigningResource]
     ) throws {
-        let missing = document.metadata.fields.compactMap { fieldID, field -> String? in
-            // Rubrics assigned to a declared signer are review targets, not
-            // ordinary form data. Unassigned rubrics are ordinary fields and
-            // therefore participate in the first-confirmation data gate.
-            guard field.required, field.signerPosition == nil else { return nil }
-            let value = document.metadata.values[fieldID] ?? field.defaultValue
-            return value?.isNullOrEmpty == false ? nil : fieldID
-        }.sorted()
-        guard missing.isEmpty else { throw LeonardoSigningError.requiredDataMissing(missing) }
+        // Assigned rubrics are signing locations. All other required fields
+        // use the same value rules as the rest of the form.
+        let requiredFields = document.metadata.fields.filter { $0.value.required && $0.value.signerPosition == nil }
+        var missing: [String] = []
+        var diagnostics: [LeonardoDiagnostic] = []
+        for (fieldID, field) in requiredFields {
+            guard let value = document.metadata.values[fieldID] ?? field.defaultValue, !value.isNullOrEmpty else {
+                missing.append(fieldID)
+                continue
+            }
+            LeonardoFormatParser.validateValue(value, definition: field, fieldID: fieldID, into: &diagnostics)
+        }
+        guard missing.isEmpty else { throw LeonardoSigningError.requiredDataMissing(missing.sorted()) }
+        let invalid = Set(diagnostics.filter { $0.severity == .error }.compactMap(\.fieldID))
+        guard invalid.isEmpty else { throw LeonardoSigningError.requiredDataInvalid(invalid.sorted()) }
         // Capture and discard a validation snapshot here so resource size,
         // reference and duplicate checks happen before any session mutation.
         _ = try LeonardoSigningSnapshot.capture(document: document, resources: resources, at: Date())
@@ -700,6 +711,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
                   progress.state == .signed,
                   let assignment = progress.assignment,
                   assignment.positionID == positionID,
+                  assignment.identityStatus == .declared,
                   signature.proof.sessionID == id,
                   signature.proof.positionID == positionID,
                   signature.proof.profileID == assignment.profileID,

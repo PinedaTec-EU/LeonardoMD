@@ -330,6 +330,7 @@ public enum LeonardoSigningError: Error, Equatable, Sendable {
     case assignmentsLocked
     case assignmentsRequired
     case requiredDataMissing([String])
+    case requiredDataInvalid([String])
     case trustStoreRequired
     case positionAlreadySigned(String)
     case incompletePosition(String)
@@ -370,6 +371,7 @@ extension LeonardoSigningError: LocalizedError {
         case .assignmentsLocked: return "Signer assignments are locked after the first location confirmation."
         case .assignmentsRequired: return "Assign a distinct profile and personal credential to every signer position before confirming a location."
         case let .requiredDataMissing(fieldIDs): return "Complete the required form data before confirming a signing location: \(fieldIDs.joined(separator: ", "))."
+        case let .requiredDataInvalid(fieldIDs): return "Correct the required form data before confirming a signing location: \(fieldIDs.joined(separator: ", "))."
         case .trustStoreRequired: return "A local trust store is required to verify completed signatures before continuing."
         case let .positionAlreadySigned(id): return "This position has already been signed: \(id)."
         case let .incompletePosition(id): return "Review every required location for position \(id) before signing."
@@ -436,7 +438,9 @@ public struct LeonardoSigningAssignment: Codable, Equatable, Sendable {
         self.profileID = profile.id
         self.credentialID = credential.id
         self.identity = identity
-        self.identityStatus = profile.verificationStatus
+        // The workflow accepts a declaration. It has no trusted provider
+        // for independent identity verification.
+        self.identityStatus = .declared
         self.profileRubric = profile.rubric
         self.publicKeyDigest = Data(SHA256.hash(data: credential.publicKey))
         self.authorizationID = authorization.id

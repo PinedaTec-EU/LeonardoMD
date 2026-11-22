@@ -455,13 +455,8 @@ struct GuidedSigningView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Text(L10n.format("Credential %@", assignment.credentialID.suffix(12).description))
                     .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                if assignment.identityStatus == .declared {
-                    Label(L10n.text("Identity declared; independent verification is not claimed."), systemImage: "person.badge.clock")
-                        .font(.caption).foregroundStyle(.orange)
-                } else {
-                    Label(L10n.text("Identity independently verified by an external process."), systemImage: "person.badge.shield.checkmark")
-                        .font(.caption).foregroundStyle(.green)
-                }
+                Label(L10n.text("Identity declared; independent verification is not claimed."), systemImage: "person.badge.clock")
+                    .font(.caption).foregroundStyle(.orange)
             }
             .padding(12)
             .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))

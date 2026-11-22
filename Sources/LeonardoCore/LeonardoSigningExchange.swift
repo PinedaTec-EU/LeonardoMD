@@ -71,6 +71,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         _ = try exchange.signingResources()
         _ = try LeonardoSigningTrustRegistry(credentials: exchange.trustedCredentials)
         guard exchange.session.documentLocation == nil,
+              exchange.session.hasOnlyDeclaredIdentities,
               exchange.session.isPersistable else { throw LeonardoSigningError.storageFailure }
         return exchange
     }
@@ -100,7 +101,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         // Absolute paths belong to the local store and must never cross the
         // explicit exchange boundary. The importer rebinds after CAS checks.
         exchangeSession.documentLocation = nil
-        guard exchangeSession.isPersistable else { throw LeonardoSigningError.storageFailure }
+        guard exchangeSession.hasOnlyDeclaredIdentities, exchangeSession.isPersistable else { throw LeonardoSigningError.storageFailure }
         let registry = try LeonardoSigningTrustRegistry(credentials: trustedCredentials)
         let verification = session.signatureVerification(
             document: document,
@@ -136,6 +137,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
               session.documentID == documentID,
               session.initialRevision == documentRevision,
               session.documentLocation == nil,
+              session.hasOnlyDeclaredIdentities,
               session.isPersistable else {
             throw LeonardoSigningError.integrityFailure
         }
@@ -162,6 +164,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
               session.documentID == documentID,
               session.initialRevision == documentRevision,
               session.documentLocation == nil,
+              session.hasOnlyDeclaredIdentities,
               session.isPersistable else {
             throw LeonardoSigningError.integrityFailure
         }
@@ -200,6 +203,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
         guard Self.validDocumentLocation(documentLocation),
               session.documentLocation == nil,
               session.initialRevision == documentRevision,
+              session.hasOnlyDeclaredIdentities,
               session.isPersistable else {
             throw LeonardoSigningError.integrityFailure
         }

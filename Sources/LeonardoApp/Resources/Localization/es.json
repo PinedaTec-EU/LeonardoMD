@@ -1,4 +1,5 @@
 {
+  "Correct the required fields before signing: %@.": "Corrige los campos obligatorios antes de firmar: %@.",
   "Choose a different profile for this signer.": "Elige otro perfil para este firmante.",
   "This identity document is already assigned to another signer.": "Este documento de identidad ya está asignado a otro firmante.",
   "Choose a different personal credential for this signer.": "Elige otra credencial personal para este firmante.",
@@ -824,7 +825,6 @@
   "The profile and personal credential are distinct records. This approval does not claim independent identity verification.": "El perfil y la credencial personal son registros distintos. Esta aprobación no declara una verificación independiente de identidad.",
   "Signer assigned. Review the exact field occurrences before confirming.": "Firmante asignado. Revisa las apariciones exactas de los campos antes de confirmar.",
   "Identity declared; independent verification is not claimed.": "Identidad declarada; no se afirma una verificación independiente.",
-  "Identity independently verified by an external process.": "Identidad verificada de forma independiente por un proceso externo.",
   "Declared identity · %@ · %@": "Identidad declarada · %@ · %@",
   "Credential %@": "Credencial %@",
   "Review locations": "Revisar ubicaciones",

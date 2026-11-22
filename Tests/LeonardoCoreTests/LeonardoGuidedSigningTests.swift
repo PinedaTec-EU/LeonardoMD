@@ -135,6 +135,39 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         XCTAssertNoThrow(try assignedSession.begin(positionID: "titular", document: document))
     }
 
+    func testInvalidRequiredValuesStayEditableUntilTheyAreCorrected() throws {
+        var document = try makeDocument(requiredName: "Form complete")
+        document.metadata.fields["amount"] = .init(type: .number, required: true, minimum: 10)
+        document.metadata.fields["email"] = .init(type: .email, required: true)
+        document.metadata.values["amount"] = .number(2)
+        document.metadata.values["email"] = .string("invalid")
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        try assign(profile(name: "Ana", number: "A-1", rubric: nil),
+                   key: key, to: "titular", session: &session)
+
+        XCTAssertThrowsError(try session.begin(positionID: "titular", document: document)) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .requiredDataInvalid(["amount", "email"]))
+        }
+        XCTAssertNil(session.snapshot)
+
+        document.metadata.values["amount"] = .number(10)
+        document.metadata.values["email"] = .string("ana@example.com")
+        _ = try session.begin(positionID: "titular", document: document)
+        document.metadata.values["email"] = .string("invalid")
+        XCTAssertThrowsError(try session.confirmLocation(
+            positionID: "titular", fieldID: "z", document: document,
+            contextRead: true, rubric: rubric(seed: 1), at: now
+        )) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .requiredDataInvalid(["email"]))
+        }
+        XCTAssertNil(session.snapshot)
+        document.metadata.values["email"] = .string("ana@example.com")
+        try session.confirmLocation(positionID: "titular", fieldID: "z", document: document,
+                                    contextRead: true, rubric: rubric(seed: 1), at: now)
+        XCTAssertNotNil(session.snapshot)
+    }
+
     func testResumingAfterPausingAtLastLocationRestoresReadyToSign() throws {
         let document = try makeDocument(requiredName: "Form complete")
         var session = try LeonardoGuidedSigningSession(document: document, at: now)
@@ -346,6 +379,33 @@ final class LeonardoGuidedSigningTests: XCTestCase {
         let corrected = try first.correctedSession(document: changed, at: now.addingTimeInterval(1))
         XCTAssertTrue(corrected.completionOrder.isEmpty)
         XCTAssertTrue(corrected.pendingPositionIDs.allSatisfy { corrected.positions[$0]?.signature == nil })
+    }
+
+    func testSigningCopyCannotClaimExternalIdentityVerification() throws {
+        let document = try makeDocument(requiredName: "Complete")
+        var session = try LeonardoGuidedSigningSession(document: document, at: now)
+        let key = LeonardoSigningKeyPair(credentialID: "ana")
+        let declaration = LeonardoDeclaredIdentity(fullName: "Ana Example", documentType: .nationalID, documentNumber: "A-1")
+        let profile = LeonardoSignerProfile(displayName: "Ana", identity: declaration, verificationStatus: .independentlyVerified)
+        try assign(profile, key: key, to: "titular", session: &session)
+        XCTAssertEqual(session.positions["titular"]?.assignment?.identityStatus, .declared)
+
+        let exchange = try LeonardoSigningExchange(document: document, session: session, trustedCredentials: [], at: now)
+        let encoded = try LeonardoSigningExchange.encoded(exchange)
+        var copy = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var encodedSession = try XCTUnwrap(copy["session"] as? [String: Any])
+        var positions = try XCTUnwrap(encodedSession["positions"] as? [String: Any])
+        var position = try XCTUnwrap(positions["titular"] as? [String: Any])
+        var assignment = try XCTUnwrap(position["assignment"] as? [String: Any])
+        assignment["identityStatus"] = "independentlyVerified"
+        position["assignment"] = assignment
+        positions["titular"] = position
+        encodedSession["positions"] = positions
+        copy["session"] = encodedSession
+
+        XCTAssertThrowsError(try LeonardoSigningExchange.decoded(JSONSerialization.data(withJSONObject: copy))) {
+            XCTAssertEqual($0 as? LeonardoSigningError, .storageFailure)
+        }
     }
 
     func testOfflineSigningExchangeRoundTripsAndRejectsChangedAuthoritativeSource() throws {

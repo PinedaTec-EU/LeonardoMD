@@ -1,4 +1,5 @@
 {
+  "Correct the required fields before signing: %@.": "Correct the required fields before signing: %@.",
   "Choose a different profile for this signer.": "Choose a different profile for this signer.",
   "This identity document is already assigned to another signer.": "This identity document is already assigned to another signer.",
   "Choose a different personal credential for this signer.": "Choose a different personal credential for this signer.",
@@ -824,7 +825,6 @@
   "The profile and personal credential are distinct records. This approval does not claim independent identity verification.": "The profile and personal credential are distinct records. This approval does not claim independent identity verification.",
   "Signer assigned. Review the exact field occurrences before confirming.": "Signer assigned. Review the exact field occurrences before confirming.",
   "Identity declared; independent verification is not claimed.": "Identity declared; independent verification is not claimed.",
-  "Identity independently verified by an external process.": "Identity independently verified by an external process.",
   "Declared identity · %@ · %@": "Declared identity · %@ · %@",
   "Credential %@": "Credential %@",
   "Review locations": "Review locations",

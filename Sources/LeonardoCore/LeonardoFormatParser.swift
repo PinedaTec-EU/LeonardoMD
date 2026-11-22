@@ -349,7 +349,7 @@ public enum LeonardoFormatValidator {
         }
     }
 
-    private static func validateValue(
+    static func validateValue(
         _ value: LeonardoJSONValue,
         definition: LeonardoFieldDefinition,
         fieldID: String,
