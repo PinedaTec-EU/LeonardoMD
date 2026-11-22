@@ -1077,11 +1077,13 @@ final class AppSessionTests: XCTestCase {
         try await session.guidedSigningStore.saveSession(sealed, replacing: nil)
         await session.openDocument(file)
         XCTAssertEqual(session.guidedSigningVerification["owner"], .valid)
+        session.guidedSigningStatus = L10n.text("All signer positions are signed and verified locally.")
 
         try Data([1, 2, 4]).write(to: image)
         await session.checkExternalChanges()
         XCTAssertTrue(session.guidedSigningSnapshotChanged)
         XCTAssertTrue(session.guidedSigningVerification.isEmpty)
+        XCTAssertNil(session.guidedSigningStatus)
         XCTAssertTrue(session.guidedSigningContentLocked)
         XCTAssertEqual(session.guidedSigningSession, sealed)
 

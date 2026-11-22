@@ -438,10 +438,18 @@ extension AppSession {
             guidedSigningVerification = current.signatureVerification(document: document,
                                                                        resources: try guidedSigningResources(),
                                                                        trustStore: trustStore)
+            if guidedSigningVerification.values.contains(.modifiedSnapshot) {
+                markGuidedSigningSnapshotChanged()
+                return
+            }
             guidedSigningTargets = []
-            guidedSigningStatus = current.state == .complete
-                ? L10n.text("All signer positions are signed and verified locally.")
-                : L10n.text("Signature stored. The next pending signer may continue.")
+            if current.state == .complete {
+                let verified = guidedSigningVerification.count == current.declaration.positions.count
+                    && guidedSigningVerification.values.allSatisfy { $0 == .valid }
+                guidedSigningStatus = verified ? L10n.text("All signer positions are signed and verified locally.") : nil
+            } else {
+                guidedSigningStatus = L10n.text("Signature stored. The next pending signer may continue.")
+            }
             guidedSigningError = nil
         } catch {
             if baselineLoaded {

@@ -406,6 +406,8 @@ extension AppSession {
         guidedSigningSnapshotChanged = true
         guidedSigningVerification = [:]
         guidedSigningTargets = []
+        guidedSigningStatus = nil
+        guidedSigningActionProblem = nil
         // Keep the translation key for a live interface-language change.
         guidedSigningError = "The document or one of its resources changed after signing began. To sign again, create a new revision."
     }

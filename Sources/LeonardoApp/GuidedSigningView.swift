@@ -278,7 +278,7 @@ struct GuidedSigningView: View {
                         .font(.caption)
                         .foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
-                } else if let status = session.guidedSigningStatus {
+                } else if session.guidedSigningError == nil, let status = session.guidedSigningStatus {
                     Label(status, systemImage: "checkmark.circle")
                         .font(.caption)
                         .foregroundStyle(.secondary)
