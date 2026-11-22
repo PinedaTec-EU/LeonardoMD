@@ -184,24 +184,24 @@ final class LeonardoSigningPersistenceRevisionTests: XCTestCase {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LeonardoSigningStore(directoryURL: directory)
-        let source = String(repeating: "A", count: 3 * 1_024 * 1_024)
+        let body = String(repeating: "A", count: 3 * 1_024 * 1_024)
+            + "\n{{field:signature}}"
 
         for revision in 1...3 {
+            let document = makeDocument(revision: revision, body: body)
             var session = try LeonardoGuidedSigningSession(
-                document: makeDocument(revision: revision), at: now
+                document: document, at: now
             )
-            session.snapshot = LeonardoSigningSnapshot(
-                source: source,
-                sourceSHA256: Data(repeating: UInt8(revision), count: 32),
-                resources: [],
-                capturedAt: now
-            )
+            session.snapshot = try LeonardoSigningSnapshot.capture(document: document, at: now)
             try await store.saveSession(session)
         }
 
         let stored = try await store.sessions()
         XCTAssertEqual(stored.count, 3)
-        XCTAssertEqual(stored.compactMap { $0.snapshot?.source.utf8.count }.min(), source.utf8.count)
+        let sourceSizes = stored.compactMap { $0.snapshot?.source.utf8.count }
+        XCTAssertEqual(sourceSizes.count, 3)
+        XCTAssertGreaterThan(sourceSizes.min() ?? 0, 3 * 1_024 * 1_024)
+        XCTAssertEqual(Set(sourceSizes).count, 1)
     }
 
     func testFiveMegabyteSignedSourceRoundTripsWithCompactedProofSnapshot() async throws {

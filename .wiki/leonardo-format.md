@@ -123,8 +123,13 @@ path remain available for audit, while import and persistence reject a second
 session for the same document identity and semantic revision. A position still
 pending may get
 its first assignment after the seal, but an existing assignment cannot be
-relinked. `LeonardoSigningStore` uses locked read/CAS/write transactions,
-pre-read file limits and 0600-before-publish atomic replacement. Read-time
+relinked. `LeonardoSigningStore` reads legacy progress and writes bounded
+per-session records. It restores the shared snapshot into compact local proofs
+before returning them, keeping the canonical signed bytes intact. Updates
+compare the exact prior session under the file lock. A replacement that changes
+two session IDs commits through a recovery journal. An unreadable record
+cannot appear as missing progress ([#558](https://github.com/PinedaTec-EU/LeonardoMD/issues/558)).
+Sidecar writes keep the 0600-before-publish policy. Read-time
 verification recomputes the signature chain, assignment/identity commitment,
 snapshot and location/rubric digests against an external trust store; no key in
 the document is trusted. Public trust discovery never authorizes a Keychain
