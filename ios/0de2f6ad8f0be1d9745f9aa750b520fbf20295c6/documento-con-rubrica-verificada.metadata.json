@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-22T11:03:25.125250+00:00",
+  "capture": {
+    "captured_at": "2026-11-22T10:59:27.942821+00:00",
+    "route": "/native/ios/signing/documento-con-rubrica-verificada",
+    "screen": "documento-con-rubrica-verificada",
+    "browser_name": "Native SwiftUI and WKWebView",
+    "browser_version": "iOS 26.5 Simulator runtime",
+    "state": "The read-only native reader displays the rubric verified with the confirmed credential.",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "fb9cb9d5a71b9d5a3c36065dc0451e3421aab8133ba44cdca5c8fcb9092c6115"
+  },
+  "source": {
+    "revision_at_collection": "0de2f6ad8f0be1d9745f9aa750b520fbf20295c6",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}
