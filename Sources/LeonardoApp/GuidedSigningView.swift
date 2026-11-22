@@ -767,7 +767,10 @@ struct GuidedSigningView: View {
                         await session.confirmGuidedLocation(target: target,
                             rubric: rubricForCurrentChoice ?? LeonardoRubric(), reuse: reuse,
                             reuseConfirmed: reuse == .new ? true : reuseConfirmed,
-                            contextRead: contextRead)
+                            contextRead: contextRead,
+                            renderedPlanMatches: { counts, source in
+                                await session.renderer.hasSigningFieldTargets(counts, source: source)
+                            })
                         if currentTarget == target { reviewedOccurrence = nil }
                         advanceToNextTarget(for: target.positionID)
                     }

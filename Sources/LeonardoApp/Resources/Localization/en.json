@@ -845,6 +845,7 @@
   "Unlock the document before creating a corrected revision.": "Unlock the document before creating a corrected revision.",
   "Read each exact occurrence, then confirm it.": "Read each exact occurrence, then confirm it.",
   "%@ · occurrence %d": "%@ · occurrence %d",
+  "The rendered document does not show every required signing occurrence. Show the missing fields before confirming.": "The rendered document does not show every required signing occurrence. Show the missing fields before confirming.",
   "The field context changed. Review this occurrence again before confirming.": "The field context changed. Review this occurrence again before confirming.",
   "I have read this exact field context": "I have read this exact field context",
   "Rubric for this occurrence": "Rubric for this occurrence",

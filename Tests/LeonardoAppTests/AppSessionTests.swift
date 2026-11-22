@@ -386,7 +386,7 @@ final class AppSessionTests: XCTestCase {
             )]),
             reuse: .new,
             reuseConfirmed: false,
-            contextRead: true
+            contextRead: true, renderedPlanMatches: { _, _ in true }
         )
         XCTAssertNotNil(first.guidedSigningSession?.snapshot)
 
@@ -520,10 +520,11 @@ final class AppSessionTests: XCTestCase {
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
         let documentURL = root.appendingPathComponent("first-seal.mdlf")
         let declaration = LeonardoSigningDeclaration(positions: [
-            LeonardoSignerPosition(id: "owner", label: "Owner")
+            LeonardoSignerPosition(id: "owner", label: "Owner"),
+            LeonardoSignerPosition(id: "witness", label: "Witness")
         ])
         let document = LeonardoDocument(
-            body: "Signature: {{field:signature}}",
+            body: "Signature: {{field:signature}}\n\nWitness: {{field:witness}}",
             metadata: LeonardoMetadata(
                 formatVersion: LeonardoFormat.signingVersion,
                 document: LeonardoDocumentDescriptor(
@@ -531,7 +532,8 @@ final class AppSessionTests: XCTestCase {
                     revision: 1, signing: declaration
                 ),
                 fields: [
-                    "signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner")
+                    "signature": LeonardoFieldDefinition(type: .rubric, signerPosition: "owner"),
+                    "witness": LeonardoFieldDefinition(type: .rubric, signerPosition: "witness")
                 ]
             )
         )
@@ -569,7 +571,7 @@ final class AppSessionTests: XCTestCase {
 
         await session.confirmGuidedLocation(
             target: target, rubric: rubric, reuse: .new,
-            reuseConfirmed: false, contextRead: true
+            reuseConfirmed: false, contextRead: true, renderedPlanMatches: { _, _ in true }
         )
         XCTAssertTrue(session.isDirty)
         XCTAssertNil(session.guidedSigningSession?.snapshot)
@@ -589,7 +591,7 @@ final class AppSessionTests: XCTestCase {
         session.authorizePath = { _, _ in }
         await session.confirmGuidedLocation(
             target: target, rubric: rubric, reuse: .new,
-            reuseConfirmed: false, contextRead: true
+            reuseConfirmed: false, contextRead: true, renderedPlanMatches: { _, _ in true }
         )
         XCTAssertNil(session.guidedSigningSession?.snapshot)
         await session.save()
@@ -597,7 +599,7 @@ final class AppSessionTests: XCTestCase {
         XCTAssertNotEqual(staleTarget, target)
         await session.confirmGuidedLocation(
             target: staleTarget, rubric: rubric, reuse: .new,
-            reuseConfirmed: false, contextRead: true
+            reuseConfirmed: false, contextRead: true, renderedPlanMatches: { _, _ in true }
         )
         XCTAssertNil(session.guidedSigningSession?.snapshot)
         let afterStaleConfirm = try await session.guidedSigningStore.session(id: sessionID)
@@ -607,8 +609,18 @@ final class AppSessionTests: XCTestCase {
             "The field context changed. Review this occurrence again before confirming."
         ))
         await session.confirmGuidedLocation(
+            target: target, rubric: rubric, reuse: .new, reuseConfirmed: false, contextRead: true,
+            renderedPlanMatches: { counts, source in
+                XCTAssertEqual(counts, ["signature": 1, "witness": 1])
+                XCTAssertEqual(source, draftSource)
+                return false
+            }
+        )
+        XCTAssertNil(session.guidedSigningSession?.snapshot)
+        XCTAssertNil(session.guidedSigningError)
+        await session.confirmGuidedLocation(
             target: target, rubric: rubric, reuse: .new,
-            reuseConfirmed: false, contextRead: true
+            reuseConfirmed: false, contextRead: true, renderedPlanMatches: { _, _ in true }
         )
         XCTAssertNotNil(session.guidedSigningSession?.snapshot)
         XCTAssertEqual(
@@ -826,7 +838,8 @@ final class AppSessionTests: XCTestCase {
             points: [LeonardoInkPoint(x: 1, y: 1), LeonardoInkPoint(x: 2, y: 2)]
         )])
         await session.confirmGuidedLocation(
-            target: target, rubric: rubric, reuse: .new, reuseConfirmed: false, contextRead: true
+            target: target, rubric: rubric, reuse: .new, reuseConfirmed: false,
+            contextRead: true, renderedPlanMatches: { _, _ in true }
         )
         XCTAssertNotNil(session.guidedSigningSession?.snapshot)
         let sealedContent = session.content

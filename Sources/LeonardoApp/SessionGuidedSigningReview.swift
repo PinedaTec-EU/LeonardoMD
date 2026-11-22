@@ -128,7 +128,8 @@ extension AppSession {
         rubric: LeonardoRubric,
         reuse: LeonardoRubricReuse,
         reuseConfirmed: Bool,
-        contextRead: Bool
+        contextRead: Bool,
+        renderedPlanMatches: ([String: Int], String) async -> Bool
     ) async {
         guard let initialSession = guidedSigningSession,
               let expectedLocation = guidedSigningLocation,
@@ -215,6 +216,22 @@ extension AppSession {
                         "An image changed or could not be displayed. Review the updated preview before confirming."
                     )
                     renderer.reloadSigningImagePreview()
+                    return
+                }
+            }
+            if initialSeal {
+                let targets = try current.declaration.positions.flatMap { position in
+                    try current.targets(for: position.id, document: document)
+                }
+                let counts = Dictionary(grouping: targets, by: \.fieldID).mapValues(\.count)
+                let planMatches = await renderedPlanMatches(counts, expectedContent)
+                guard guidedSigningViewStateMatches(
+                    expectedLocation: expectedLocation, expectedContent: expectedContent, expectedSession: viewBaseline
+                ) else { return }
+                guard planMatches else {
+                    guidedSigningActionProblem = L10n.text(
+                        "The rendered document does not show every required signing occurrence. Show the missing fields before confirming."
+                    )
                     return
                 }
             }

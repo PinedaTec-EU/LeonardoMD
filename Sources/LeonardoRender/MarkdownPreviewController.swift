@@ -80,6 +80,10 @@ public final class MarkdownPreviewController: ObservableObject {
         await host?.hasFieldTarget(fieldID, occurrence: occurrence, expectedCount: expectedCount) ?? false
     }
 
+    public func hasSigningFieldTargets(_ counts: [String: Int], source: String) async -> Bool {
+        await host?.hasSigningFieldTargets(counts, source: source) ?? false
+    }
+
     /// Checks decoded images against the fixed set of available local candidates.
     public func hasRenderedLocalImages(_ paths: [String], includesEmbeddedImages: Bool = false) async -> Bool {
         await host?.hasRenderedLocalImages(paths, includesEmbeddedImages: includesEmbeddedImages) ?? false

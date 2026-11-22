@@ -398,6 +398,32 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
+    /// Checks every declared signing field against one rendered document.
+    func hasSigningFieldTargets(_ counts: [String: Int], source: String) async -> Bool {
+        guard !counts.isEmpty, content == source, let webView else { return false }
+        let expectedConfiguration = configuration
+        do {
+            try await flushPendingRender()
+            try await waitUntilReady()
+            guard self.webView === webView, content == source,
+                  configuration == expectedConfiguration else { return false }
+            let result = try await webView.callAsyncJavaScript(
+                """
+                return Object.entries(counts).every(([id, count]) =>
+                  count > 0 && Array.from({ length: count }, (_, occurrence) =>
+                    window.LeonardoForms?.hasFieldTarget(id, occurrence, count) === true
+                  ).every(Boolean)
+                );
+                """,
+                arguments: ["counts": counts], contentWorld: .page
+            )
+            return self.webView === webView && content == source && configuration == expectedConfiguration
+                && (result as? Bool == true)
+        } catch {
+            return false
+        }
+    }
+
     /// Checks the images actually selected by the preview from fixed candidates.
     func hasRenderedLocalImages(_ paths: [String], includesEmbeddedImages: Bool = false) async -> Bool {
         guard !paths.isEmpty || includesEmbeddedImages else { return true }

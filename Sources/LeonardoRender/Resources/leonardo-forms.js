@@ -204,7 +204,10 @@
       if (expectedCount !== undefined && this.occurrenceCount(fieldID) !== expectedCount) return false;
       const target = `${fieldID}#${Number(occurrence)}`;
       return Array.from(root?.querySelectorAll("[data-leonardo-field-target]") || [])
-        .some(candidate => candidate.dataset.leonardoFieldTarget === target);
+        .some(candidate => candidate.dataset.leonardoFieldTarget === target
+          && !candidate.closest("[hidden]")
+          && candidate.getClientRects().length > 0
+          && getComputedStyle(candidate).visibility === "visible");
     },
     scrollToField(fieldID, occurrence) {
       const target = `${fieldID}#${Number(occurrence)}`;

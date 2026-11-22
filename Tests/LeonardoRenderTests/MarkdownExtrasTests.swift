@@ -60,6 +60,43 @@ final class MarkdownExtrasTests: XCTestCase {
         XCTAssertEqual(code, "Literal code {{field:sig}}")
     }
 
+    func testSigningPlanRequiresRenderedVisibleTargetsForBothSigners() async throws {
+        let declaration = LeonardoSigningDeclaration(positions: [
+            .init(id: "owner", label: "Owner"), .init(id: "witness", label: "Witness")
+        ])
+        let document = LeonardoDocument(
+            body: "Owner {{field:sig}}\n\nWitness {{field:second}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: .init(id: "plan-visibility", title: "Plan", kind: .form,
+                                revision: 1, signing: declaration),
+                fields: [
+                    "sig": .init(type: .rubric, signerPosition: "owner"),
+                    "second": .init(type: .rubric, signerPosition: "witness")
+                ]
+            )
+        )
+        let source = try LeonardoFormatParser.serialize(document)
+        var configuration = MarkdownPreviewConfiguration()
+        configuration.allowsLeonardoFormat = true
+        let (host, window) = makeHost(content: source, config: configuration)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.getElementById('leonardo-field-second-0') ? '1' : '0'", in: web)
+        let counts = ["sig": 1, "second": 1]
+        let complete = await host.hasSigningFieldTargets(counts, source: source)
+        XCTAssertTrue(complete)
+        _ = try await evaluate("""
+            document.getElementById('leonardo-field-second-0').parentElement.hidden = true;
+            true
+            """, in: web)
+        let hidden = await host.hasSigningFieldTargets(counts, source: source)
+        XCTAssertFalse(hidden)
+        _ = try await evaluate("document.getElementById('leonardo-field-second-0').remove(); true", in: web)
+        let missing = await host.hasSigningFieldTargets(counts, source: source)
+        XCTAssertFalse(missing)
+    }
+
     func testSigningSnapshotIncludesTheResponsiveAssetSelectedByWebKit() async throws {
         let document = LeonardoDocument(
             body: #"<picture><source srcset="selected.png" type="image/png"><img src="fallback.png"></picture>"#,
