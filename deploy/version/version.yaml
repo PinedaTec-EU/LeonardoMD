@@ -1269,9 +1269,19 @@
       "pr": 576,
       "summary": "Preferences now has illustrated headers, and Synchronization gives linked Macs and their projects more room.",
       "to_version": "0.3.2196"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.3.2196",
+      "merge_sha": "d078a13c1312bd4d82ddc65120ce29ddc135a0f7",
+      "pr": 581,
+      "summary": "Compact Preferences headers and put Share and Remote beside the Leonardo Sync service.",
+      "to_version": "0.3.2205"
     }
   ],
-  "current_version": "0.3.2196",
+  "current_version": "0.3.2205",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
