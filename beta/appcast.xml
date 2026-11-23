@@ -3,6 +3,19 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.2205</title>
+            <pubDate>Mon, 23 Nov 2026 16:54:43 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>2205</sparkle:version>
+            <sparkle:shortVersionString>0.3.2205</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">- Preferences now shows each tab description directly below its title. Synchronization places Share and Remote beside the Leonardo Sync switch, leaving more room for settings and connected Macs.
+- Sync diagnostics uses the same controls as the rest of Preferences, and you can select text directly from the report.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.2205/LeonardoMD-0.3.2205.zip" length="27924062" type="application/octet-stream" sparkle:edSignature="+g2cRPccryE8TJjxGrjTwLiIDgNASP97ooAw8UoZLKDWfuNo52vRy1YHPf7WR5YmSE2VQNnlMvB9XRnqwl0EAA==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.2186</title>
             <pubDate>Sun, 22 Nov 2026 14:17:59 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
