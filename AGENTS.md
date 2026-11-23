@@ -37,8 +37,8 @@ applies to LeonardoMD and Device Hub validation for every issue:
   each instance created by this task using PID, start time and executable/bundle
   path; for Device Hub also record session/device identifier and app identifier.
   A familiar app name or QA bundle identifier alone does not establish ownership.
-- After collecting the required evidence (including both bundled-help smoke
-  tests), gracefully quit every app instance created by this task. Close each
+- After collecting the evidence required for the affected surfaces, gracefully
+  quit every app instance created by this task. Close each
   Device Hub session opened by this task and stop its test app. Shut down a
   simulator only if this task booted it and no other task now uses it; never
   shut down or erase a physical device as cleanup.
@@ -63,19 +63,20 @@ changes and when reviewing their help impact. Include relevant images/examples,
 regenerate the packaged guides, and record validation in the PR. Internal changes
 with no user-visible help impact must explain that conclusion in the PR.
 
-## Mandatory help smoke test in tested instances
+## Scope native visual QA to affected screens
 
-For every change or validation involving an app instance, open the bundled Spanish
-and English user guides in that same instance through the real Help workflow.
-Inspect the representative live examples: Mermaid, inline/display math, charts,
-local images, tables and the separate practice form (open, fill, save, reopen).
-Keep characteristic supported features represented in both guide sources.
-Always inspect one-line and multiline `$$` formulas, Markdown-sensitive TeX
-(underscores/underbraces), and the tagged box-counting equation from recurring
-[bug #272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272).
-With Math enabled, require actual display equations and the equation tag, with
-no KaTeX errors or literal delimiters; also check the disabled-extension fallback
-and code examples staying literal. Record instance identity, build, locale,
-extension state and evidence. XCTest/WKWebView component tests supplement this
-check but do not replace opening help in the tested packaged application.
-If no fresh instance can be tested, report that acceptance as pending.
+Run manual visual QA when a change affects the interface. Cover the affected
+screen and the states and transitions needed to verify the changed behavior.
+Add another screen, theme, locale or viewport only when it verifies a distinct
+acceptance criterion or a plausible regression from the change. For internal
+changes, run the applicable automated or operational checks.
+
+Run packaged Help smoke when the change affects the Help workflow, bundled
+guide content, or the rendering or interaction of a guide example. Open the
+affected guide section through Help in Spanish and English and check the
+changed behavior. Check the practice-form save and reopen flow when that flow
+is affected. For changes affecting Math, verify one-line and multiline display
+equations, underscores and underbraces, the tagged box-counting equation from
+[bug #272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272), the disabled
+fallback and literal code examples. Record the instance, build, scope and
+outcome. Capture only evidence needed for the affected criteria or failures.
