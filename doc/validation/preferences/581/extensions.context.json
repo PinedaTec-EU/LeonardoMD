@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-23T12:41:08.244153+00:00",
+  "route": "/native/preferences/extensions",
+  "screen": "Preferences / extensions",
+  "browser_name": "Native AppKit / SwiftUI",
+  "browser_version": "Not applicable; macOS 27.2.1",
+  "state": "Packaged QA, English, 780 \u00d7 780 pt sheet; header-only capture region. extensions selected.",
+  "viewport_css": {
+    "width": 780,
+    "height": 780
+  },
+  "capture_mode": "element",
+  "data_provenance": "synthetic"
+}
