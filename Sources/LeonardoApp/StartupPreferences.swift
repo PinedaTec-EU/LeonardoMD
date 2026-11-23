@@ -6,10 +6,7 @@ struct StartupPreferences: View {
     var body: some View {
         Toggle(L10n.text("Reopen documents and projects on startup"), isOn: Binding(
             get: { session.globalPreferences.restorePreviousSession },
-            set: {
-                session.globalPreferences.restorePreviousSession = $0
-                session.persistSettings()
-            }
+            set: session.setRestorePreviousSession
         )).accessibilityIdentifier("startup-session")
         Text(L10n.text("Reopens the previous session on this Mac. Opening a file directly takes priority."))
             .font(.caption).foregroundStyle(.secondary)

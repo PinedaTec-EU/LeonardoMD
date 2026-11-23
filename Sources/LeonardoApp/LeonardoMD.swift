@@ -72,7 +72,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     private var processingLaunches = false
     private var launched = false
     private var startupTask: Task<Void, Never>?
-    private let restoration = SessionRestoration()
+    private var restoration = SessionRestoration()
     private var terminationPending = false
     private let updateQuitEndpoint = UpdateQuitEndpoint()
     private static let closeCheckInterval: Duration = .milliseconds(50)
@@ -112,9 +112,12 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         configureMenu()
         if role == .primary { startPrincipalServices() }
         diagnostics.record(.menuConfigured)
-        if windows.isEmpty { newEmptyWindow() }
+        let initialWindow = windows.first ?? showDocumentWindow()
+        let initialTabID = initialWindow.documents.activeID
         startupTask = Task {
-            if role == .primary { await restoreStartupSession() }
+            if role == .primary, let initialTabID {
+                await restoreStartupSession(in: initialWindow, initialTabID: initialTabID)
+            }
             startupTask = nil
             processPendingLaunches()
         }
@@ -280,11 +283,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 }
                 if !canTerminate { reportHelperUpdateCancellation(on: reportingSession) }
             }
+            if role == .primary { finishSessionCapture(approved: canTerminate) }
             if canTerminate {
-                if role == .primary {
-                    captureOpenWindows()
-                    await DesktopSyncController.shared.stop()
-                }
+                if role == .primary { await DesktopSyncController.shared.stop() }
                 for window in windows { await window.documents.finishPreparedClose() }
             }
             else {
@@ -300,33 +301,27 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         return .terminateLater
     }
 
-    private func captureOpenWindows() {
-        guard !windows.isEmpty else { return }
-        captureSession(windows.map { $0.documents.savedWindow })
-    }
-
-    private func captureSession(_ savedWindows: [SavedSession.Window]) {
+    private func finishSessionCapture(approved: Bool) {
         do {
-            try restoration.save(SavedSession(windows: savedWindows))
+            try restoration.finishTermination(approved: approved, openWindows: windows.map { $0.documents.savedWindow })
         } catch {
             logger.error("session_capture_failed: \(String(describing: error), privacy: .private)")
         }
     }
 
-    private func restoreStartupSession() async {
-        guard let session = activeSession else { return }
+    private func restoreStartupSession(in initialWindow: DocumentWindow, initialTabID: UUID) async {
+        guard let session = initialWindow.documents.tabs.first(where: { $0.id == initialTabID })?.session else { return }
         await session.initialize()
-        guard !terminationPending else { return }
         do {
             guard let saved = try restoration.load(
                 restorePreviousSession: session.globalPreferences.restorePreviousSession,
                 explicitURLs: pendingLaunches.flatMap { $0 }
             ) else { return }
             for (index, window) in saved.windows.enumerated() {
-                guard !terminationPending else { return }
-                if index > 0 { newEmptyWindow() }
-                guard let controller = windows.last else { return }
-                await controller.documents.restore(window)
+                let controller = index == 0 ? initialWindow : showDocumentWindow()
+                let tabID = index == 0 ? initialTabID : controller.documents.activeID
+                guard let tabID else { return }
+                await controller.documents.restore(window, initialTabID: tabID)
             }
         } catch { session.report(error) }
     }
@@ -363,23 +358,31 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func newWindow(url: URL?) {
         guard !terminationPending else { return }
+        let controller = showDocumentWindow()
+        if let url { Task { await controller.session.open(url) } }
+    }
+
+    private func showDocumentWindow() -> DocumentWindow {
         let isFirstWindow = !recordedFirstWindow
         recordedFirstWindow = true
         if isFirstWindow { diagnostics.record(.firstWindowCreating) }
         let controller = DocumentWindow()
         if isFirstWindow { diagnostics.record(.firstWindowCreated) }
         windows.append(controller)
+        let canClose = { [weak self] in self?.startupTask == nil }
+        controller.canClose = canClose
+        controller.documents.canCloseTab = canClose
         controller.onClose = { [weak self, weak controller] savedWindow in
             guard let self else { return }
             windows.removeAll { $0 === controller }
-            if windows.isEmpty, role == .primary, !terminationPending, let savedWindow {
-                captureSession([savedWindow])
+            if windows.isEmpty, role == .primary, let savedWindow {
+                restoration.stageLastClosedWindow(savedWindow)
             }
         }
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
         if isFirstWindow { diagnostics.record(.firstWindowShown) }
-        if let url { Task { await controller.session.open(url) } }
+        return controller
     }
 
     @objc private func showAbout() {
@@ -543,6 +546,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     let documents = DocumentTabs()
     var session: AppSession { documents.activeSession }
     var onClose: ((SavedSession.Window?) -> Void)?
+    var canClose: () -> Bool = { true }
     private var preparedSession: SavedSession.Window?
 
     init() {
@@ -566,6 +570,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     required init?(coder: NSCoder) { nil }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if preparedSession != nil { return true }
+        guard canClose() else { return false }
         Task {
             guard await documents.prepareClose() else { return }
             let savedWindow = documents.savedWindow

@@ -15,6 +15,18 @@ struct SavedSession: Codable, Equatable {
 
 struct SessionRestoration {
     let fileURL: URL
+    private var lastClosedWindow: SavedSession.Window?
+
+    mutating func stageLastClosedWindow(_ window: SavedSession.Window) {
+        lastClosedWindow = window
+    }
+
+    func finishTermination(approved: Bool, openWindows: [SavedSession.Window]) throws {
+        guard approved else { return }
+        let windows = openWindows.isEmpty ? lastClosedWindow.map { [$0] } ?? [] : openWindows
+        guard !windows.isEmpty else { return }
+        try save(SavedSession(windows: windows))
+    }
 
     @MainActor
     init(preferencesURL: URL = AppSession.preferencesURL) {
@@ -41,14 +53,13 @@ extension DocumentTabs {
         }, selectedTab: tabs.firstIndex { $0.id == activeID } ?? 0)
     }
 
-    func restore(_ window: SavedSession.Window) async {
-        let initialID = activeID
-        var selectedID = initialID
+    func restore(_ window: SavedSession.Window, initialTabID: UUID) async {
+        var selectedID = initialTabID
         for (index, saved) in window.tabs.enumerated() {
             guard acceptsExternalDrops else { return }
             // Preserve empty tabs and selection, while skipping unavailable locations.
-            if index > 0 { _ = addTab() }
-            let session = activeSession
+            guard let id = index == 0 ? initialTabID : addTab(),
+                  let session = tabs.first(where: { $0.id == id })?.session else { return }
             if let project = saved.project, Self.available(project, directory: true) {
                 await session.openProject(project)
             }
@@ -57,9 +68,9 @@ extension DocumentTabs {
                AppSession.supportedDocumentExtensions.contains(document.pathExtension.lowercased()) {
                 await session.openDocument(document, packagePreference: .package)
             }
-            if index == window.selectedTab { selectedID = activeID }
+            if index == window.selectedTab { selectedID = id }
         }
-        if let selectedID { select(selectedID) }
+        select(selectedID)
     }
 
     private static func available(_ url: URL, directory: Bool) -> Bool {
