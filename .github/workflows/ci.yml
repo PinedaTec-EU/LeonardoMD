@@ -58,8 +58,6 @@ jobs:
         id: isolated-file-list
         continue-on-error: true
         shell: bash
-        env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set +e
           swift test --filter 'FileListTests' 2>&1 | tee "$RUNNER_TEMP/swift-test-isolated.log"
@@ -108,7 +106,6 @@ jobs:
         if: steps.isolated-file-list.outcome == 'success' && steps.isolated-file-list.outputs.executed == 'true' && steps.isolated-truncated-https.outcome == 'success' && steps.isolated-truncated-https.outputs.executed == 'true' && steps.isolated-project-https.outcome == 'success' && steps.isolated-project-https.outputs.executed == 'true'
         env:
           NSUnbufferedIO: "YES"
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -o pipefail
           mkdir -p "$RUNNER_TEMP/swift-test-diagnostics"

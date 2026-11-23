@@ -40,18 +40,4 @@ final class GuidePracticeNavigationTests: XCTestCase {
         XCTAssertEqual(tabs.tabs.count, count)
     }
 
-    private func webView(in root: NSView, satisfying expression: String) async throws -> WKWebView {
-        func views(_ node: NSView) -> [WKWebView] {
-            if let web = node as? WKWebView { return [web] }
-            return node.subviews.flatMap(views)
-        }
-        for _ in 0..<200 {
-            for web in views(root) {
-                if (try? await web.evaluateJavaScript(expression)) as? Bool == true { return web }
-            }
-            try await Task.sleep(for: .milliseconds(30))
-        }
-        XCTFail("Native guide/form did not become ready: \(expression)")
-        throw NSError(domain: "GuidePracticeNavigationTests", code: 1)
-    }
 }

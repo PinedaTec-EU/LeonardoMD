@@ -2624,7 +2624,6 @@ final class SyncHelperControllerTests: XCTestCase {
         await source.initialize()
         XCTAssertEqual(source.settings.projects.count, 1)
         XCTAssertTrue(source.sharingPresentationAvailable)
-        let project = try XCTUnwrap(source.settings.projects.first)
         await control.failStatus(at: 2)
         let refresh = Task { await helper.refresh() }
         for _ in 0..<5000 { if await pause.isWaiting { break }; try await Task.sleep(for: .milliseconds(1)) }

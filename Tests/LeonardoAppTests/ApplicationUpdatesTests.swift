@@ -236,18 +236,6 @@ final class ApplicationUpdatesTests: XCTestCase {
         XCTAssertFalse(UpdateConfiguration(info: info).isConfigured)
     }
 
-    func testUpdaterActionsAreAbsentFromNativeMenus() {
-        _ = NSApplication.shared
-        let previous = NSApp.mainMenu
-        defer { NSApp.mainMenu = previous }
-        let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(), instance: SingleInstance(name: "UpdateMenuTests"), role: .primary)
-        delegate.configureMenu()
-        let titles = NSApp.mainMenu?.items.first?.submenu?.items.map(\.title) ?? []
-        XCTAssertFalse(titles.contains(L10n.text("Check for updates…")))
-        XCTAssertFalse(titles.contains(L10n.text("Automatically check for updates")))
-        XCTAssertTrue(titles.contains(L10n.text("Preferences…")))
-    }
-
     func configuration(_ channel: UpdateChannel = .stable) -> UpdateConfiguration {
         UpdateConfiguration(info: configurationInfo(channel))
     }

@@ -219,3 +219,6 @@ Optional grouped instance presentation ([#440](https://github.com/PinedaTec-EU/L
 Agent QA teardown is required after each issue: track the baseline and exact task-owned app/process and Device Hub session identities, gracefully close them after evidence capture, and verify termination. Preserve existing sessions and report blocked cleanup. See `AGENTS.md`, “Close task-owned QA instances after testing”, and [#438](https://github.com/PinedaTec-EU/LeonardoMD/issues/438). This is an agent workflow rule, not an automatic runtime cleanup mechanism.
 
 The native apps share a bundled bilingual catalog of merged PR descriptions through #207. macOS uses it in release notes and shows the full recorded history on manual access; Little Leonardo exposes the historical catalog in About. The generated release ledger remains the source of version identities. Tracking: [#481](https://github.com/PinedaTec-EU/LeonardoMD/issues/481).
+
+
+[Issue #584](https://github.com/PinedaTec-EU/LeonardoMD/issues/584) moves visual acceptance to the running app on the desktop or device. Attach scoped evidence to the PR. CI runs native functional checks and packaging.

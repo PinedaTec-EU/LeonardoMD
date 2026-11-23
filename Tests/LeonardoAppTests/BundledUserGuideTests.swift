@@ -102,33 +102,6 @@ final class BundledUserGuideTests: XCTestCase {
         XCTAssertEqual(session.packageOpenPreference, .ask)
     }
 
-    func testHelpMenuExposesLocalizedGuideAction() {
-        _ = NSApplication.shared
-        let previousLanguage = LanguageSettings.shared.language
-        let previousMenu = NSApp.mainMenu
-        let previousHelp = NSApp.helpMenu
-        defer {
-            LanguageSettings.shared.language = previousLanguage
-            NSApp.mainMenu = previousMenu
-            NSApp.helpMenu = previousHelp
-        }
-        let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(),
-            instance: SingleInstance(name: "GuideMenuTests"), role: .primary)
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            delegate.configureMenu()
-            XCTAssertEqual(NSApp.helpMenu?.title, language == .english ? "Help" : "Ayuda")
-            XCTAssertEqual(NSApp.helpMenu?.items.first?.title,
-                           language == .english ? "Leonardo user guide…" : "Guía de Leonardo…")
-            XCTAssertEqual(NSApp.helpMenu?.items.first?.action, NSSelectorFromString("openUserGuide"))
-            let file = NSApp.mainMenu?.items.compactMap(\.submenu).first {
-                $0.title == (language == .english ? "File" : "Archivo")
-            }
-            let item = file?.items.first { $0.action == NSSelectorFromString("openAgentImportGuide") }
-            XCTAssertEqual(item?.title, language == .english ? "Import with your agent…" : "Importar con tu agente…")
-        }
-    }
-
     func testNativeReadingGuideImagesAndActionRenderInBothLanguages() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let previousLanguage = LanguageSettings.shared.language

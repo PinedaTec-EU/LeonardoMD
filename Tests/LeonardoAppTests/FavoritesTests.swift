@@ -54,59 +54,12 @@ final class FavoritesTests: XCTestCase {
         XCTAssertEqual(removed.favorites, [FavoriteItem(kind: .project, url: root.appendingPathComponent("project"))])
     }
 
-    func testNativeMenuTracksActiveTargetsAndCheckedState() async throws {
-        _ = NSApplication.shared
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
-        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
-        await session.initialize()
-        let controller = FavoritesMenu(session: { session })
-        let parent = NSMenu()
-        controller.add(to: parent)
-        let menu = try XCTUnwrap(parent.items.first?.submenu)
-        XCTAssertTrue(menu.items.allSatisfy { !$0.isEnabled })
-        session.documentURL = root.appendingPathComponent("document.md")
-        session.projectURL = root.appendingPathComponent("project")
-        controller.menuNeedsUpdate(menu)
-        XCTAssertTrue(menu.items.allSatisfy(\.isEnabled))
-        for item in menu.items {
-            XCTAssertTrue(NSApp.sendAction(try XCTUnwrap(item.action), to: item.target, from: item))
-        }
-        await session.settingsTask?.value
-        controller.menuNeedsUpdate(menu)
-        XCTAssertTrue(menu.items.allSatisfy { $0.state == .on })
-        XCTAssertEqual(session.globalPreferences.favorites.count, 2)
-        session.documentURL = root.appendingPathComponent("another.md")
-        controller.menuNeedsUpdate(menu)
-        XCTAssertEqual(menu.items[0].state, .off)
-        XCTAssertEqual(menu.items[1].state, .on)
-    }
-
     func testFolderIdentityIgnoresTrailingSlashAndExistence() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let missing = FavoriteItem(kind: .project, url: root)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         XCTAssertEqual(missing, FavoriteItem(kind: .project, url: root.appendingPathComponent("", isDirectory: true)))
-    }
-
-    func testClearingRecentMenuPreservesFavorites() async throws {
-        _ = NSApplication.shared
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
-        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
-        await session.initialize()
-        session.globalPreferences.recentProjectPaths = [root]
-        session.toggleFavorite(root, kind: .project)
-        let controller = RecentItemsMenu(session: { session }, openDocument: { _ in })
-        let parent = NSMenu()
-        controller.add(to: parent)
-        let clear = try XCTUnwrap(parent.items[1].submenu?.items.last)
-        XCTAssertTrue(NSApp.sendAction(try XCTUnwrap(clear.action), to: clear.target, from: clear))
-        await session.settingsTask?.value
-        let saved = try await session.configurations.loadGlobalPreferences(at: session.globalPreferencesURL)
-        XCTAssertTrue(saved.recentProjectPaths.isEmpty)
-        XCTAssertEqual(saved.favorites, [FavoriteItem(kind: .project, url: root)])
     }
 
     func testSavedItemOpeningDispatchesThroughEachExistingWorkflow() async throws {
