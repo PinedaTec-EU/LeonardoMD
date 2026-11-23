@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-23T08:40:25.852462+00:00",
+  "capture": {
+    "captured_at": "2026-11-23T08:38:25.336000+00:00",
+    "route": "/native/preferences/updates",
+    "screen": "Preferences / updates",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Illustrated pane; standalone synthetic preferences; light theme; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 780,
+      "height": 780
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1560,
+    "height_px": 1560,
+    "sha256": "0943c69b8a7d37203c46c3656043293fcb724b8ada5799af3c3814adfa3be2c2"
+  },
+  "source": {
+    "revision_at_collection": "6a8245d7e00f2a547817310e7836f90d8bcec286",
+    "tracked_changes_present": true,
+    "untracked_files_present": false
+  }
+}

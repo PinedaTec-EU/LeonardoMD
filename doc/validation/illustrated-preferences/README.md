@@ -4,6 +4,22 @@
 
 Production and bundled-help source tested at `7e688537fedc969a686c903cf1be8fc2e0d400ba`. Subsequent changes record evidence and compilation counts.
 
+## Scoped visual evidence
+
+Four production SwiftUI pane captures use synthetic standalone settings in
+Spanish, light theme, at 780 × 780 points. The capture harness ran through
+XCTest on PR head `6a8245d7e00f2a547817310e7836f90d8bcec286`. The final
+evidence commit changes the captures, report and compilation accounting.
+
+- [General](preferences-general-es.png)
+- [Extensions](preferences-extensions-es.png)
+- [Synchronization with Share selected](preferences-sync-es.png)
+- [Updates](preferences-updates-es.png)
+
+The [Remote selector state](../../guide/es/assets/sync-connections-v125.png)
+and the linked Mac's expanded detail below cover the alternate synchronization
+state. The guide checks are recorded as separate regression results.
+
 ## Native evidence
 
 - Route: LeonardoMD → Preferences → General, Extensions, Synchronization and Updates. The first packaged instance showed the four illustrated headers at 780 × 780 points and exposed the English and Spanish role buttons. Switching to Remote exposed its scrollable device workspace. The preview used Leonardo Classic. No real device was paired or refreshed for QA.
