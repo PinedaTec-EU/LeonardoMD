@@ -41,11 +41,11 @@ final class UserGuideFeatureCaptureTests: XCTestCase {
         try await capture(PaletteEditor(session: session, projectScope: false), name: "palette", size: NSSize(width: 640, height: 400),
                           state: "Customize palette; initial valid global palette", session: session, destination: destination, code: code)
         try await capture(SynchronizationPreferencesView(session: session, source: mobile, client: peers), name: "mobile", size: NSSize(width: 532, height: 490),
-                          state: "Synchronization / Share from this Mac; helper disabled; isolated configuration", session: session, destination: destination, code: code,
-                          pixelScale: 1.8)
+                          state: "Synchronization / Share; helper disabled; isolated configuration", session: session, destination: destination, code: code,
+                          pixelScale: 1.7)
         try await capture(SynchronizationPreferencesView(session: session, source: mobile, client: peers, initialPage: .connections), name: "macs", size: NSSize(width: 532, height: 490),
-                          state: "Synchronization / Connect to other computers; helper disabled; isolated configuration", session: session, destination: destination, code: code,
-                          pixelScale: 1.8)
+                          state: "Synchronization / Remote; helper disabled; isolated configuration", session: session, destination: destination, code: code,
+                          pixelScale: 1.7)
         try await capture(UpdatePreferencesView(updates: updates), name: "updates", size: NSSize(width: 560, height: 550),
                           state: "Updates; stable subscription; fake driver; no network or install", session: session, destination: destination, code: code)
         await mobile.stop()
