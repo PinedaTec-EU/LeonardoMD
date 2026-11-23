@@ -1,6 +1,7 @@
 #if os(macOS)
 import Foundation
-import LeonardoSync
+import Security
+@testable import LeonardoSync
 import LeonardoDesktopSync
 import XCTest
 
@@ -31,6 +32,35 @@ final class FileDesktopPeerCredentialStoreTests: XCTestCase {
         XCTAssertEqual(legacyReads, 1)
     }
 
+    func testLockedAndCancelledImportCanBeRetriedExplicitly() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let token = String(repeating: "c", count: 64)
+        let legacy = LegacyPeerCredentialStore(token: token)
+        let store = FileDesktopPeerCredentialStore(directory: directory, legacy: legacy)
+        let id = UUID()
+        await legacy.fail(with: errSecInteractionNotAllowed)
+        do {
+            _ = try await store.credential(deviceID: id)
+            XCTFail("Expected silent import to defer")
+        } catch DesktopPeerCredentialError.legacyAuthorizationUnavailable {}
+        await legacy.fail(with: errSecUserCanceled)
+        do {
+            _ = try await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(true) {
+                try await store.credential(deviceID: id)
+            }
+            XCTFail("Expected cancelled import to defer")
+        } catch DesktopPeerCredentialError.legacyAuthorizationUnavailable {}
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+        await legacy.fail(with: nil)
+        let imported = try await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(true) {
+            try await store.credential(deviceID: id)
+        }
+        XCTAssertEqual(imported, token)
+        let policies = await legacy.interactionPolicies
+        XCTAssertEqual(policies, [false, true, true])
+    }
+
     func testNewPairingDoesNotReadLegacyStore() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -49,11 +79,17 @@ final class FileDesktopPeerCredentialStoreTests: XCTestCase {
 private actor LegacyPeerCredentialStore: DeviceCredentialStore {
     let token: String?
     private(set) var reads = 0
+    private(set) var interactionPolicies: [Bool] = []
+    private var failure: OSStatus?
 
     init(token: String?) { self.token = token }
 
-    func credential(deviceID: UUID) -> String? {
+    func fail(with status: OSStatus?) { failure = status }
+
+    func credential(deviceID: UUID) throws -> String? {
         reads += 1
+        interactionPolicies.append(SecureSecretStore.allowsAuthenticationUI)
+        if let failure { throw CredentialStorageError(status: failure) }
         return token
     }
 

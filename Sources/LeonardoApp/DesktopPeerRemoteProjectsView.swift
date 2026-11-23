@@ -127,7 +127,7 @@ struct DesktopPeerRemoteProjectsView: View {
         HStack(spacing: 8) {
             if !connection.revoked {
                 Button(L10n.text("Update list"), systemImage: "arrow.clockwise") {
-                    Task { await controller.refresh(connection.id) }
+                    Task { await controller.refreshConnectionOnRequest(connection.id) }
                 }
                 .disabled(!controller.helper.online || controller.busy)
             }

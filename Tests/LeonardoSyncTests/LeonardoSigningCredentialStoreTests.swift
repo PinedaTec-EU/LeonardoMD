@@ -30,6 +30,35 @@ final class LeonardoSigningCredentialStoreTests: XCTestCase {
         }
         XCTAssertEqual(status, errSecInteractionNotAllowed)
     }
+    func testOverlappingSilentReadsBothComplete() {
+        let firstEntered = DispatchSemaphore(value: 0)
+        let releaseFirst = DispatchSemaphore(value: 0)
+        let secondStarted = DispatchSemaphore(value: 0)
+        let firstFinished = expectation(description: "First silent read finished")
+        let secondFinished = expectation(description: "Second silent read finished")
+        DispatchQueue.global().async {
+            let result = LoginKeychainInteraction.perform(allowed: false, failure: { $0 }) {
+                firstEntered.signal()
+                XCTAssertEqual(releaseFirst.wait(timeout: .now() + 5), .success)
+                return errSecSuccess
+            }
+            XCTAssertEqual(result, errSecSuccess)
+            firstFinished.fulfill()
+        }
+        XCTAssertEqual(firstEntered.wait(timeout: .now() + 5), .success)
+        DispatchQueue.global().async {
+            let result = LoginKeychainInteraction.perform(allowed: false, failure: { $0 }) {
+                secondStarted.signal()
+                return errSecSuccess
+            }
+            if result != errSecSuccess { secondStarted.signal() }
+            XCTAssertEqual(result, errSecSuccess)
+            secondFinished.fulfill()
+        }
+        XCTAssertEqual(secondStarted.wait(timeout: .now() + 0.1), .timedOut)
+        releaseFirst.signal()
+        wait(for: [firstFinished, secondFinished], timeout: 5)
+    }
 #endif
 
     func testConcurrentTrustImportsRejectAnAliasWithoutPoisoningTheRegistry() async throws {

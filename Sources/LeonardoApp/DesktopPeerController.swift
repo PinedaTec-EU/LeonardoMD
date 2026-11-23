@@ -1,6 +1,5 @@
 import Foundation
 import Observation
-import Security
 import LeonardoSync
 import LeonardoSyncTransport
 import LeonardoDesktopSync
@@ -114,7 +113,7 @@ final class DesktopPeerController {
 
     private func present(_ error: Error) {
         if !FileDesktopPeerCredentialStore.allowsLegacyAuthorization,
-           (error as? CredentialStorageError)?.status == errSecInteractionNotAllowed {
+           (error as? DesktopPeerCredentialError) == .legacyAuthorizationUnavailable {
             return
         }
         self.error = PeerSyncErrorMessage.text(error)
@@ -139,7 +138,7 @@ final class DesktopPeerController {
                     do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
                     guard let self else { return }
                     guard !self.busy else { continue }
-                    for id in self.connections.filter({ !$0.revoked }).map(\.id) {
+                    for id in self.connections.filter({ !$0.revoked && !$0.credentialDeferred }).map(\.id) {
                         guard !Task.isCancelled else { return }
                         await self.refresh(id)
                     }
@@ -164,15 +163,24 @@ final class DesktopPeerController {
             let input = address.trimmingCharacters(in: .whitespacesAndNewlines)
             let normalized = input.contains("://") ? input : "https://" + input
             guard let url = URL(string: normalized) else { throw TransportError.invalidEndpoint }
+            let connection: DesktopPeerConnection
             if url.scheme == "littleleonardo" {
                 let qr = try DirectPairingQR.decode(url, now: Date())
-                _ = try await library.enroll(endpoint: qr.endpoint, fingerprint: qr.certificateFingerprint, invitation: qr.invitation, name: name)
+                connection = try await library.enroll(endpoint: qr.endpoint, fingerprint: qr.certificateFingerprint, invitation: qr.invitation, name: name)
             } else {
-                _ = try await library.enroll(endpoint: url, fingerprint: nil, invitation: nil, name: name)
+                connection = try await library.enroll(endpoint: url, fingerprint: nil, invitation: nil, name: name)
             }
-            try await reload()
+            connections.append(connection)
+            do { try await reload() }
+            catch { present(error) }
             return true
         } catch { present(error); return false }
+    }
+
+    func refreshConnectionOnRequest(_ id: UUID) async {
+        await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(true) {
+            await refresh(id)
+        }
     }
 
     func refresh(_ id: UUID) async {
@@ -234,7 +242,8 @@ final class DesktopPeerController {
         }
         await helper.refresh()
         guard helper.online else { return }
-        for connection in connections where !connection.revoked {
+        for connection in connections where !connection.revoked &&
+            (FileDesktopPeerCredentialStore.allowsLegacyAuthorization || !connection.credentialDeferred) {
             await refresh(connection.id)
         }
     }
@@ -409,7 +418,7 @@ final class DesktopPeerController {
         let valid = Set(copies.map(\.id))
         submitted.formIntersection(valid); unchanged.formIntersection(valid)
         comparisons = comparisons.filter { valid.contains($0.key) }
-        let active = Set(connections.filter { !$0.revoked }.map(\.id))
+        let active = Set(connections.filter { !$0.revoked && !$0.credentialDeferred }.map(\.id))
         available = available.filter { active.contains($0.key) }
     }
 }

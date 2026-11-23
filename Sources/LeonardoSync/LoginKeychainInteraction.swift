@@ -3,19 +3,38 @@ import Foundation
 import Security
 
 enum LoginKeychainInteraction {
-    private static let lock = NSLock()
+    private final class Gate: @unchecked Sendable {
+        private let condition = NSCondition()
+        private var activeInteraction: Bool?
 
-    /// The legacy login Keychain's interaction setting applies to the process.
-    /// Keep changes inside one synchronous operation and restore the prior setting.
-    static func perform<T>(allowed: Bool, failure: (OSStatus) -> T, _ operation: () -> T) -> T {
-        if allowed {
-            return lock.withLock(operation)
+        func acquire(allowed: Bool) -> Bool {
+            condition.lock()
+            defer { condition.unlock() }
+            while let activeInteraction {
+                if activeInteraction && !allowed { return false }
+                condition.wait()
+            }
+            activeInteraction = allowed
+            // Silent waiters must defer if an interactive operation won the slot.
+            if allowed { condition.broadcast() }
+            return true
         }
 
-        // An explicit authorization can be waiting for the user. Background
-        // work must neither block on that dialog nor open another one.
-        guard lock.try() else { return failure(errSecInteractionNotAllowed) }
-        defer { lock.unlock() }
+        func release() {
+            condition.lock()
+            activeInteraction = nil
+            condition.broadcast()
+            condition.unlock()
+        }
+    }
+
+    private static let gate = Gate()
+
+    /// The login Keychain's interaction setting applies to the process.
+    static func perform<T>(allowed: Bool, failure: (OSStatus) -> T, _ operation: () -> T) -> T {
+        guard gate.acquire(allowed: allowed) else { return failure(errSecInteractionNotAllowed) }
+        defer { gate.release() }
+        if allowed { return operation() }
 
         var previous = DarwinBoolean(true)
         let readStatus = SecKeychainGetUserInteractionAllowed(&previous)

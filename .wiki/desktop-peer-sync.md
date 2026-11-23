@@ -12,7 +12,8 @@ Outbound Mac pairing tokens live in `DesktopPeers/Credentials` under the user's
 LeonardoMD Application Support directory. New tokens go directly to private
 files. Existing tokens migrate from the legacy desktop-peer Keychain service
 when first read, with interactive authorization available through **Update
-list**. Once written, the file is authoritative across app updates. Removal
+list**. A deferred import keeps that connection listed and quarantines its
+cached projects while healthy connections continue synchronizing. Once written, the file is authoritative across app updates. Removal
 replaces its contents with an empty marker so a later read cannot reimport a
 revoked token. See [#537](https://github.com/PinedaTec-EU/LeonardoMD/issues/537).
 

@@ -1,6 +1,11 @@
 #if os(macOS)
 import Foundation
+import Security
 import LeonardoSync
+
+public enum DesktopPeerCredentialError: Error, Equatable {
+    case legacyAuthorizationUnavailable
+}
 
 /// Stores outbound desktop peer tokens independently of the installed app.
 public actor FileDesktopPeerCredentialStore: DeviceCredentialStore {
@@ -18,8 +23,14 @@ public actor FileDesktopPeerCredentialStore: DeviceCredentialStore {
         let destination = location(for: deviceID)
         if let data = try read(destination) { return try decode(data) }
 
-        let token = try await SecureSecretStore.$allowsAuthenticationUI.withValue(Self.allowsLegacyAuthorization) {
-            try await legacy.credential(deviceID: deviceID)
+        let token: String?
+        do {
+            token = try await SecureSecretStore.$allowsAuthenticationUI.withValue(Self.allowsLegacyAuthorization) {
+                try await legacy.credential(deviceID: deviceID)
+            }
+        } catch let error as CredentialStorageError where
+            [errSecInteractionNotAllowed, errSecAuthFailed, errSecUserCanceled, errSecNotAvailable].contains(error.status) {
+            throw DesktopPeerCredentialError.legacyAuthorizationUnavailable
         }
         // A save or removal may have completed while the legacy read was suspended.
         if let data = try read(destination) { return try decode(data) }

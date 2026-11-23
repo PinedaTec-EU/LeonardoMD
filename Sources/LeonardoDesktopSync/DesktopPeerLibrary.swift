@@ -32,7 +32,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         try enter(); defer { changing = false }
         var result: [DesktopPeerConnection] = []
         for id in try await connectionStore.connectionIDs() {
-            if let value = try await currentConnection(id: id) { result.append(value) }
+            if let value = try await listedConnection(id: id) { result.append(value) }
         }
         return result
     }
@@ -41,7 +41,8 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         try enter(); defer { changing = false }
         var result: [DesktopPeerCopy] = []
         for id in try await connectionStore.connectionIDs() {
-            guard let connection = try await currentConnection(id: id), !connection.revoked else { continue }
+            guard let connection = try await listedConnection(id: id),
+                  !connection.revoked, !connection.credentialDeferred else { continue }
             for (projectID, copyID) in connection.copies {
                 guard let grant = connection.grants[projectID],
                       let copy = try await copyStore.load(id: copyID),
@@ -375,6 +376,18 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     private func requireConnection(_ id: UUID) async throws -> DesktopPeerConnection {
         guard let value = try await currentConnection(id: id) else { throw DesktopPeerLibraryError.unknownConnection }
         return value
+    }
+
+    private func listedConnection(id: UUID) async throws -> DesktopPeerConnection? {
+        do {
+            return try await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(false) {
+                try await currentConnection(id: id)
+            }
+        } catch DesktopPeerCredentialError.legacyAuthorizationUnavailable {
+            guard var connection = try await connectionStore.load(id: id) else { return nil }
+            connection.credentialDeferred = true
+            return connection
+        }
     }
 
     private func currentConnection(id: UUID) async throws -> DesktopPeerConnection? {
