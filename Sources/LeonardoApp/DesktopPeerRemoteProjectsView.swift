@@ -1,12 +1,18 @@
+import AppKit
 import SwiftUI
 import LeonardoCore
 import LeonardoSync
 import LeonardoSyncUI
 
 struct DesktopPeerRemoteProjectsView: View {
+    private static let computerArtwork = Bundle.module.url(forResource: "sync-computer", withExtension: "png")
+        .flatMap { NSImage(contentsOf: $0) }
+
     @Bindable var controller: DesktopPeerController
     let showNonDocumentFiles: Bool
+    @Environment(\.leonardoAccent) private var accent
     @State private var selectedConnectionID: UUID?
+    @State private var detailsExpanded = true
     @State private var browsingID: UUID?
     @State private var browsingPath: String?
     @State private var renamingConnection: DesktopPeerConnection?
@@ -37,15 +43,11 @@ struct DesktopPeerRemoteProjectsView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity, minHeight: 160, alignment: .leading)
             } else {
-                HStack(alignment: .top, spacing: 14) {
-                    hostList
-                        .frame(width: 215, alignment: .topLeading)
-                    Divider()
-                    if let connection = selectedConnection {
-                        hostDetail(connection)
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(connections) { connection in
+                        connectionRow(connection)
                     }
                 }
-                .frame(minHeight: 360, maxHeight: .infinity, alignment: .topLeading)
             }
         }
         .sheet(isPresented: Binding(get: { browsingID != nil }, set: { if !$0 { browsingID = nil; browsingPath = nil } })) {
@@ -59,58 +61,98 @@ struct DesktopPeerRemoteProjectsView: View {
         }
     }
 
-    private var hostList: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach(connections) { connection in
+    private func connectionRow(_ connection: DesktopPeerConnection) -> some View {
+        let expanded = detailsExpanded && selectedConnection?.id == connection.id
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
                 Button {
                     selectedConnectionID = connection.id
+                    detailsExpanded = !expanded
                 } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Label(controller.reviewStore.hostName(for: connection), systemImage: "laptopcomputer")
-                            .lineLimit(1).truncationMode(.middle)
-                        Text(connection.revoked ? L10n.text("Revoked")
-                             : (connection.comparisonCode == nil ? L10n.text("Linked") : L10n.text("Awaiting approval")))
-                            .font(.caption).foregroundStyle(.secondary)
-                            .padding(.leading, 23)
+                    HStack(spacing: 10) {
+                        Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 12)
+                            .accessibilityHidden(true)
+                        Group {
+                            if let artwork = Self.computerArtwork {
+                                Image(nsImage: artwork).resizable().scaledToFit()
+                            } else {
+                                Image(systemName: "laptopcomputer").imageScale(.large)
+                            }
+                        }
+                        .frame(width: 42, height: 34)
+                        .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(controller.reviewStore.hostName(for: connection))
+                                .font(.headline)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Text(connection.revoked ? L10n.text("Revoked")
+                                 : (connection.comparisonCode == nil ? L10n.text("Linked") : L10n.text("Awaiting approval")))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        Spacer(minLength: 0)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8).padding(.horizontal, 9)
-                    .background(selectedConnection?.id == connection.id ? Color.accentColor.opacity(0.12) : .clear,
-                                in: RoundedRectangle(cornerRadius: 7))
-                    .contentShape(RoundedRectangle(cornerRadius: 7))
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(expanded ? .isSelected : [])
                 .accessibilityIdentifier("remote-host-\(connection.id.uuidString)")
+
+                if expanded {
+                    connectionActions(connection)
+                }
             }
-            Spacer(minLength: 0)
+            .padding(10)
+            .background(expanded ? accent.opacity(0.10) : .clear,
+                        in: RoundedRectangle(cornerRadius: 7))
+
+            if expanded {
+                hostDetail(connection)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+            }
+            if connection.id != connections.last?.id {
+                Divider()
+            }
         }
+    }
+
+    private func connectionActions(_ connection: DesktopPeerConnection) -> some View {
+        HStack(spacing: 8) {
+            if !connection.revoked {
+                Button(L10n.text("Update list"), systemImage: "arrow.clockwise") {
+                    Task { await controller.refresh(connection.id) }
+                }
+                .disabled(!controller.helper.online || controller.busy)
+            }
+            Menu {
+                Button(L10n.text("Rename computer…"), systemImage: "pencil") {
+                    hostNameDraft = controller.reviewStore.hostName(for: connection)
+                    renamingConnection = connection
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle").imageScale(.large)
+            }
+            .menuStyle(.borderlessButton)
+            .accessibilityLabel(L10n.text("Rename computer…"))
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private func hostDetail(_ connection: DesktopPeerConnection) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(controller.reviewStore.hostName(for: connection)).font(.title3.weight(.semibold))
-                    Text(connection.endpoint.absoluteString).font(.caption).foregroundStyle(.secondary)
-                        .textSelection(.enabled).lineLimit(1).truncationMode(.middle)
-                }
-                Spacer()
-                Menu {
-                    Button(L10n.text("Rename computer…"), systemImage: "pencil") {
-                        hostNameDraft = controller.reviewStore.hostName(for: connection)
-                        renamingConnection = connection
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle").imageScale(.large)
-                }
-                .menuStyle(.borderlessButton)
-                if !connection.revoked {
-                    Button(L10n.text("Update list"), systemImage: "arrow.clockwise") {
-                        Task { await controller.refresh(connection.id) }
-                    }
-                    .disabled(!controller.helper.online || controller.busy)
-                }
-            }
+            Text(connection.endpoint.absoluteString)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+                .lineLimit(1)
+                .truncationMode(.middle)
 
             if let code = connection.comparisonCode {
                 VStack(alignment: .leading, spacing: 4) {
@@ -125,17 +167,12 @@ struct DesktopPeerRemoteProjectsView: View {
                 Text(L10n.text("This connection has been revoked."))
                     .foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        newProjects(connection)
-                        newFiles(connection)
-                        acceptedProjects(connection)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
+                newProjects(connection)
+                newFiles(connection)
+                acceptedProjects(connection)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func newProjects(_ connection: DesktopPeerConnection) -> some View {
@@ -155,17 +192,24 @@ struct DesktopPeerRemoteProjectsView: View {
                     HStack(spacing: 9) {
                         Image(systemName: "folder").foregroundStyle(.tint)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(project.name).font(.headline)
+                            Text(project.name).font(.headline).lineLimit(1).truncationMode(.middle)
                             Text(String(format: L10n.text("Shared by %@"), controller.reviewStore.hostName(for: connection)))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer(minLength: 8)
-                        Button(L10n.text("Add project")) {
-                            Task { await controller.addRemoteProject(connectionID: connection.id, projectID: project.id) }
-                        }.disabled(!controller.helper.online || controller.busy)
-                        Button(L10n.text("Ignore")) {
-                            controller.ignoreRemoteProject(connectionID: connection.id, projectID: project.id)
-                        }.disabled(controller.busy)
+                        HStack(spacing: 8) {
+                            Button(L10n.text("Add project")) {
+                                Task { await controller.addRemoteProject(connectionID: connection.id, projectID: project.id) }
+                            }
+                            .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
+                            .disabled(!controller.helper.online || controller.busy)
+                            Button(L10n.text("Ignore")) {
+                                controller.ignoreRemoteProject(connectionID: connection.id, projectID: project.id)
+                            }
+                            .buttonStyle(PremiumButtonStyle(compact: true))
+                            .disabled(controller.busy)
+                        }
+                        .fixedSize(horizontal: true, vertical: false)
                     }
                     .padding(.vertical, 5)
                     Divider()
@@ -194,24 +238,27 @@ struct DesktopPeerRemoteProjectsView: View {
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                         Spacer(minLength: 8)
-                        Button(L10n.text("Open")) {
-                            browsingID = notice.downloadID
-                            browsingPath = notice.entry.path
-                            controller.dismissNewFile(connectionID: connection.id, projectID: notice.projectID,
-                                                     path: notice.entry.path)
-                        }.disabled(!notice.isDownloaded && !controller.helper.online)
-                        Button(L10n.text("Keep offline")) {
-                            Task {
-                                await controller.keepNewFileOffline(connectionID: connection.id,
-                                    projectID: notice.projectID, path: notice.entry.path)
+                        HStack(spacing: 8) {
+                            Button(L10n.text("Open")) {
+                                browsingID = notice.downloadID
+                                browsingPath = notice.entry.path
+                                controller.dismissNewFile(connectionID: connection.id, projectID: notice.projectID,
+                                                         path: notice.entry.path)
+                            }.disabled(!notice.isDownloaded && !controller.helper.online)
+                            Button(L10n.text("Keep offline")) {
+                                Task {
+                                    await controller.keepNewFileOffline(connectionID: connection.id,
+                                        projectID: notice.projectID, path: notice.entry.path)
+                                }
+                            }.disabled(!controller.helper.online || controller.busy)
+                            Button(L10n.text("Ignore"), systemImage: "xmark") {
+                                controller.dismissNewFile(connectionID: connection.id, projectID: notice.projectID,
+                                                          path: notice.entry.path)
                             }
-                        }.disabled(!controller.helper.online || controller.busy)
-                        Button(L10n.text("Ignore"), systemImage: "xmark") {
-                            controller.dismissNewFile(connectionID: connection.id, projectID: notice.projectID,
-                                                      path: notice.entry.path)
+                            .labelStyle(.iconOnly)
+                            .help(L10n.text("Dismiss this notice. Browse files can still open it; existing offline rules still apply."))
                         }
-                        .labelStyle(.iconOnly)
-                        .help(L10n.text("Dismiss this notice. Browse files can still open it; existing offline rules still apply."))
+                        .fixedSize(horizontal: true, vertical: false)
                     }
                     .padding(.vertical, 5)
                     Divider()
@@ -234,18 +281,21 @@ struct DesktopPeerRemoteProjectsView: View {
                     HStack(spacing: 9) {
                         Image(systemName: "folder").foregroundStyle(.tint)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(descriptor.name).font(.headline)
+                            Text(descriptor.name).font(.headline).lineLimit(1).truncationMode(.middle)
                             Text(cached.map { String(format: L10n.text("%@ · %d remote files"),
                                                      controller.reviewStore.hostName(for: connection), $0.catalogue.files.count) }
                                  ?? controller.reviewStore.hostName(for: connection))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer(minLength: 8)
-                        Button(L10n.text("Browse files")) { browsingID = downloadID }
-                            .disabled(cached == nil)
-                        Button(L10n.text("Create editable copy")) {
-                            Task { await controller.importProject(connectionID: connection.id, projectID: descriptor.id) }
-                        }.disabled(!controller.helper.online || controller.busy)
+                        HStack(spacing: 8) {
+                            Button(L10n.text("Browse files")) { browsingID = downloadID }
+                                .disabled(cached == nil)
+                            Button(L10n.text("Create editable copy")) {
+                                Task { await controller.importProject(connectionID: connection.id, projectID: descriptor.id) }
+                            }.disabled(!controller.helper.online || controller.busy)
+                        }
+                        .fixedSize(horizontal: true, vertical: false)
                     }
                     .padding(.vertical, 5)
                     Divider()

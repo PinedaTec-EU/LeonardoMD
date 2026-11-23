@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import LeonardoCore
 
@@ -17,7 +18,7 @@ struct PreferencesView: View {
         _selectedTab = State(initialValue: selectedTab)
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text(L10n.text("Preferences")).font(.title2.bold())
                 Spacer()
@@ -25,31 +26,47 @@ struct PreferencesView: View {
             }
             PremiumTabPanel(selection: $selectedTab, options: ["general", "extensions", "sync", "updates"],
                             title: { preferencesTabTitle(for: $0) }) {
-                switch selectedTab {
-                case "extensions":
-                    VStack(spacing: 0) {
-                        scopeHeader()
-                        ExtensionPreferences(session: session, projectScope: projectScope)
-                    }
-                case "sync":
-                    macPreferences("Service and device settings belong to this Mac.") {
-                        SynchronizationPreferencesView(session: session)
-                    }
-                case "updates":
-                    macPreferences("Update preferences apply to all windows on this Mac.") {
-                        UpdatePreferencesView(updates: updates)
-                    }
-                default:
-                    generalPreferences
+                VStack(spacing: 0) {
+                    IllustratedPreferencesHeader(title: preferencesTabTitle(for: selectedTab),
+                                                artwork: PreferencesArtwork(rawValue: selectedTab) ?? .general)
+                    Divider()
+                    selectedPane
                 }
             }
-        }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
+        }.buttonStyle(PremiumButtonStyle()).padding(24)
+        .frame(width: windowSize.width, height: windowSize.height)
         .background(UpdatePreferencesWindowIdentity())
         .onAppear { projectScope = session.projectURL != nil }
         .onChange(of: session.projectURL) { _, root in
             if root == nil { projectScope = false }
         }
         .sheet(isPresented: $editingPalette) { PaletteEditor(session: session, projectScope: projectScope).modifier(SessionAppearance(session: session)) }
+    }
+
+    private var windowSize: CGSize {
+        let available = NSScreen.main?.visibleFrame.size ?? CGSize(width: 780, height: 820)
+        return CGSize(width: min(780, available.width - 32), height: min(780, available.height - 48))
+    }
+
+    @ViewBuilder
+    private var selectedPane: some View {
+        switch selectedTab {
+        case "extensions":
+            VStack(spacing: 0) {
+                scopeHeader()
+                ExtensionPreferences(session: session, projectScope: projectScope)
+            }
+        case "sync":
+            macPreferences("Service and device settings belong to this Mac.") {
+                SynchronizationPreferencesView(session: session)
+            }
+        case "updates":
+            macPreferences("Update preferences apply to all windows on this Mac.") {
+                UpdatePreferencesView(updates: updates)
+            }
+        default:
+            generalPreferences
+        }
     }
 
     private func macPreferences<Content: View>(_ explanation: String, @ViewBuilder content: () -> Content) -> some View {
