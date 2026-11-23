@@ -222,3 +222,5 @@ The native apps share a bundled bilingual catalog of merged PR descriptions thro
 
 
 [Issue #584](https://github.com/PinedaTec-EU/LeonardoMD/issues/584) moves visual acceptance to the running app on the desktop or device. Attach scoped evidence to the PR. CI runs native functional checks and packaging.
+
+- macOS startup restores the principal instance’s previous windows, projects, and tabs by default ([#90](https://github.com/PinedaTec-EU/LeonardoMD/issues/90)). The Mac-wide preference and location-only snapshot live in `StartupPreferences.swift` and `SessionRestoration.swift`. Explicit startup targets take precedence.

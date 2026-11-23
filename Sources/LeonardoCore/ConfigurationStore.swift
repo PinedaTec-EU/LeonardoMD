@@ -192,6 +192,9 @@ public actor ConfigurationStore {
             updated: updated.markdown,
             baseline: baseline.markdown
         )
+        if updated.restorePreviousSession != baseline.restorePreviousSession {
+            merged.restorePreviousSession = updated.restorePreviousSession
+        }
         if updated.showHiddenFiles != baseline.showHiddenFiles {
             merged.showHiddenFiles = updated.showHiddenFiles
         }

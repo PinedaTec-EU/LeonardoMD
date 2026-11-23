@@ -1,4 +1,6 @@
 {
+  "Reopen documents and projects on startup": "Reabrir documentos y proyectos al iniciar",
+  "Reopens the previous session on this Mac. Opening a file directly takes priority.": "Restaura la sesión anterior en este Mac. Abrir un archivo directamente tiene prioridad.",
   "This file has signing history, but its current signing identity is unavailable. Restore the exact signing header before continuing.": "Este archivo tiene un historial de firma, pero no se puede identificar su revisión. Restaura la cabecera de firma exacta antes de continuar.",
   "The document has no stable signing identity or revision. Create a new revision before continuing.": "El documento carece de un identificador o una revisión de firma válidos. Crea una revisión nueva antes de continuar.",
   "More than one signing session matches this document revision. Reload it or create a new revision before continuing.": "Varias sesiones de firma corresponden a esta revisión. Vuelve a abrir el documento o crea una revisión nueva antes de continuar.",
