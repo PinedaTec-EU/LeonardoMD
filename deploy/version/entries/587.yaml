@@ -1,0 +1,4 @@
+{
+  "build": 1,
+  "summary": "The receiving Mac resumes interrupted cleanup of revoked remote copies and queued changes on restart, even when the source Mac is unreachable."
+}

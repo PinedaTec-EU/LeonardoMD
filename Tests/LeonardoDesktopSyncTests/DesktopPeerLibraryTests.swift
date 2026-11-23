@@ -832,8 +832,8 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let denied = try await fixture.connections.load(id: connection.id)
         XCTAssertEqual(denied?.revoked, true)
         XCTAssertEqual(denied?.copies[copy.remoteProjectID], copy.id)
-        let hidden = try await fixture.library.copies()
-        XCTAssertTrue(hidden.isEmpty)
+        let visible = try await fixture.library.copies()
+        XCTAssertEqual(visible.map(\.id), [otherCopy.id])
         do { _ = try await fixture.library.open(copyID: copy.id); XCTFail("Revoked copy reopened") }
         catch { XCTAssertEqual(error as? SyncError, .revoked) }
         XCTAssertTrue(FileManager.default.fileExists(atPath: directory.path))
