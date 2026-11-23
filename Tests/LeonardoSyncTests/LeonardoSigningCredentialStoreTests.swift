@@ -14,12 +14,21 @@ final class LeonardoSigningCredentialStoreTests: XCTestCase {
         }
 
         let initial = interactionAllowed()
-        XCTAssertFalse(SecurityKeychainBackend.withInteractionPolicy(prompt: nil, interactionAllowed))
+        XCTAssertFalse(LoginKeychainInteraction.perform(allowed: false, failure: { _ in true }, interactionAllowed))
         XCTAssertEqual(
-            SecurityKeychainBackend.withInteractionPolicy(prompt: "Authorize signing", interactionAllowed),
+            LoginKeychainInteraction.perform(allowed: true, failure: { _ in !initial }, interactionAllowed),
             initial
         )
         XCTAssertEqual(interactionAllowed(), initial)
+    }
+    func testBackgroundReadDefersWhileExplicitAuthorizationIsInFlight() {
+        let status = LoginKeychainInteraction.perform(allowed: true, failure: { $0 }) {
+            LoginKeychainInteraction.perform(allowed: false, failure: { $0 }) {
+                XCTFail("Background access must not enter the Keychain during authorization")
+                return errSecSuccess
+            }
+        }
+        XCTAssertEqual(status, errSecInteractionNotAllowed)
     }
 #endif
 
