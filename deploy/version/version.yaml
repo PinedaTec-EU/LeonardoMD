@@ -1259,9 +1259,19 @@
       "pr": 519,
       "summary": "The Sync diagnostics sheet uses the suite controls and a tinted report where you can select and copy text with the mouse.",
       "to_version": "0.3.2189"
+    },
+    {
+      "delta": {
+        "build": 7
+      },
+      "from_version": "0.3.2189",
+      "merge_sha": "ada7982687539d81d818d88296600735d1e06fdb",
+      "pr": 576,
+      "summary": "Preferences now has illustrated headers, and Synchronization gives linked Macs and their projects more room.",
+      "to_version": "0.3.2196"
     }
   ],
-  "current_version": "0.3.2189",
+  "current_version": "0.3.2196",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

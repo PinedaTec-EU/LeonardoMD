@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2196
+
+- #575 Updated: illustrate macOS Preferences ([#576](https://github.com/PinedaTec-EU/LeonardoMD/pull/576))
+
+<p>Preferences now has illustrated headers, and Synchronization gives linked Macs and their projects more room.</p>
+
+Source: `ada7982687539d81d818d88296600735d1e06fdb`. Delta: `{"build": 7}`.
+
 ## 0.3.2189
 
 - #518 Updated: style Sync diagnostics and support pointer selection ([#519](https://github.com/PinedaTec-EU/LeonardoMD/pull/519))
