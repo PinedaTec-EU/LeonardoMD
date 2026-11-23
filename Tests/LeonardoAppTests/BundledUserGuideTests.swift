@@ -201,7 +201,7 @@ final class BundledUserGuideTests: XCTestCase {
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
                 }
-                for name in ["palette", "activation-switch", "sync-sharing-v125", "sync-review-draft-unavailable"] {
+                for name in ["palette", "activation-switch", "sync-sharing-v130", "sync-review-draft-unavailable"] {
                     let selector = "img[src$=\"/\(name).png\"]"
                     try await waitFor("document.querySelector('\(selector)') !== null && document.querySelector('\(selector)').naturalWidth > 0", in: web)
                     _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")

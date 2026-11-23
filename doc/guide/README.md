@@ -1,16 +1,12 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v126-en.mdlz` and `Guide-v126-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v130-en.mdlz` and `Guide-v130-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v126/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v130/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v126 explains how to authorize desktop peer synchronization from **Update list**.
-Guide v126 EN SHA-256: `998d973d42c7f70ebe795d68da38534c1132948120d3936028b77f5a08c4fc59`
-and ES SHA-256: `179c0210320f689f1ed1e05bfcf6c0c2e6ca86dfdee4aad309c2f17a0b3fd968`.
-
-Guide v125 documents the illustrated Preferences and the Share / Remote workflows.
+Guide v130 documents the illustrated Preferences and the Share / Remote workflows.
 
 Guide v120 retains the guided-signing content from v119 and explains mouse selection
 in the Sync diagnostic report. Package SHA-256: EN `1ffb6a548c4c5687254bfe69edb962a8a7eee836ad43032868814a262cc14e19`, ES `79e27f4d0501574ce0ff8719d652afcf05484084d1fb2278ae9eb88dbc2abeeb`.
