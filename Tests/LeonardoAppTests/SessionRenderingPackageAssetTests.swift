@@ -1,7 +1,6 @@
 #if os(macOS)
 import AppKit
 import CryptoKit
-import PDFKit
 import WebKit
 import XCTest
 import LeonardoCore
@@ -191,20 +190,35 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
             )
         }
         let pdf = try await host.exportPDF()
-        let page = try XCTUnwrap(PDFDocument(data: pdf)?.page(at: 0))
-        let image = page.thumbnail(of: NSSize(width: 800, height: 1_000), for: .mediaBox)
-        let tiff = try XCTUnwrap(image.tiffRepresentation)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiff))
-        XCTAssertTrue(containsBlueAsset(in: bitmap), "Exported PDF must render the blue extraction asset")
+        if let evidenceDirectory {
+            try pdf.write(to: evidenceDirectory.appendingPathComponent("\(state).pdf"), options: .atomic)
+        }
+        XCTAssertTrue(try containsBlueAsset(in: pdf), "Exported PDF must render the blue extraction asset")
     }
 
-    private func containsBlueAsset(in bitmap: NSBitmapImageRep) -> Bool {
-        for y in stride(from: 0, to: bitmap.pixelsHigh, by: 2) {
-            for x in stride(from: 0, to: bitmap.pixelsWide, by: 2) {
-                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
-                if color.blueComponent > 0.8 && color.redComponent < 0.1 && color.greenComponent < 0.1 {
-                    return true
-                }
+    private func containsBlueAsset(in pdf: Data) throws -> Bool {
+        let provider = try XCTUnwrap(CGDataProvider(data: pdf as CFData))
+        let document = try XCTUnwrap(CGPDFDocument(provider))
+        let page = try XCTUnwrap(document.page(at: 1))
+        let bounds = page.getBoxRect(.mediaBox)
+        let width = Int(bounds.width.rounded(.up))
+        let height = Int(bounds.height.rounded(.up))
+        let colorSpace = try XCTUnwrap(CGColorSpace(name: CGColorSpace.sRGB))
+        let bitmap = try XCTUnwrap(CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        ))
+        bitmap.setFillColor(NSColor.white.cgColor)
+        bitmap.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        bitmap.translateBy(x: -bounds.minX, y: -bounds.minY)
+        bitmap.drawPDFPage(page)
+
+        let pixels = try XCTUnwrap(bitmap.data).assumingMemoryBound(to: UInt8.self)
+        for y in stride(from: 0, to: height, by: 2) {
+            for x in stride(from: 0, to: width, by: 2) {
+                let index = y * bitmap.bytesPerRow + x * 4
+                if pixels[index] < 26 && pixels[index + 1] < 26 && pixels[index + 2] > 204 { return true }
             }
         }
         return false
