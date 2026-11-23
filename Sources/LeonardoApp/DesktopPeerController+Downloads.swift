@@ -44,7 +44,7 @@ extension DesktopPeerController {
             try await downloads.restore(allowedIDs: granted,
                                         authorizations: downloadAuthorizations(for: granted),
                                         quarantinedIDs: quarantined)
-            for connection in connections where !connection.revoked {
+            for connection in connections where !connection.revoked && !connection.credentialDeferred {
                 let copiedProjectIDs = Set(copies.filter { $0.connectionID == connection.id }.map(\.remoteProjectID))
                 let cachedProjectIDs = Set(connection.grants.keys.filter { projectID in
                     guard !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(projectID) else {
@@ -56,7 +56,9 @@ extension DesktopPeerController {
                 })
                 reviewStore.acceptExistingProjects(cachedProjectIDs, connectionID: connection.id)
             }
-            reviewStore.finishExistingProjectMigration()
+            if !connections.contains(where: \.credentialDeferred) {
+                reviewStore.finishExistingProjectMigration()
+            }
         }
 
         let allowed = Set(connections.filter { !$0.revoked }.flatMap { connection in
