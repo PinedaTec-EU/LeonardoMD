@@ -51,10 +51,13 @@ implement general candidate-scoped working-copy isolation.
 Validate deterministic packages with
 `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`.
 Run focused native `BundledUserGuideTests` through the repository's compilation
-recorder, then the required full checks. Inspect both locales in actual
-WKWebView, including changed images, examples and practice/save behavior. Keep
-fresh review captures separate from authored instructional screenshots; record
-their source SHA and any evidence-only mapping under the PR delivery contract.
+recorder when the bundled Help behavior or package changes. Scope packaged Help
+QA to the section, rendering, or practice interaction affected by the change,
+in both locales. A feature's Help text update calls for checking its changed
+section. Apply the [repository visual QA scope](../../AGENTS.md#scope-native-visual-qa-to-affected-screens)
+to the live checks and captures. Keep fresh review captures separate from
+authored instructional screenshots and record their source SHA under the PR
+delivery contract.
 
 Before marking the PR ready, its Help impact section must identify changed
 chapters/images and validation, or justify no visible impact. During review,

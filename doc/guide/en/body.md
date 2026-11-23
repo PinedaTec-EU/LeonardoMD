@@ -575,7 +575,7 @@ its local image file; remove unused files deliberately after checking references
 
 *Customize palette: the four editable colors, contrast preview and Apply.*
 
-Open **LeonardoMD → Preferences…** (⌘,). Tab navigation stays fixed; General and Extensions each have their own **Global / This project** selector. Read that selector before changing a setting.
+Open **LeonardoMD → Preferences…** (⌘,). Each tab describes its scope below the title. Tab navigation stays fixed; General and Extensions each have their own **Global / This project** selector. Read that selector before changing a setting.
 
 | Scope | Examples | Where it applies |
 | --- | --- | --- |
@@ -669,7 +669,7 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Share in Synchronization preferences](assets/sync-sharing-v125.png)
+![Share in Synchronization preferences](assets/sync-sharing-v130.png)
 
 Little Leonardo is a **read-only companion for the shared source**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
@@ -694,7 +694,7 @@ the JSON copy on the Mac only after it verifies the local source, frozen snapsho
 chain prefix and the public-key fingerprints checked through a separate channel;
 the import is a compare-and-swap and never overwrites newer progress.
 
-1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a short status message. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
+1. Enable **Leonardo Sync** with the shared switch next to **Share** and **Remote**. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a short status message. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
    Use **View diagnostics…** above the role selector to see the Sync service status, the last check, the LeonardoMD version and recent service events from this session. **Copy diagnostics** puts the entire report on the clipboard. To copy just part of it, drag over the text and right-click the selection to choose **Copy**. Paste the copied text into another app. It excludes invitations, pairing codes, device names, network addresses and file paths. **Email diagnostics…** opens a draft in your default mail app with the same report in the message body, addressed to `leonardo@pinedatec.eu`. Review the draft and send it from your mail app. If your default app opens but no draft appears, return to the diagnostic sheet, choose **Copy diagnostics**, and paste the report into a new email to `leonardo@pinedatec.eu`. You can use your usual mail app or webmail.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
@@ -887,7 +887,7 @@ If a safe stop cannot be confirmed, installation is postponed rather than forcib
 
 ## 15. Connect to other computers and offline copies
 
-![Remote in Synchronization preferences](assets/sync-connections-v125.png)
+![Remote in Synchronization preferences](assets/sync-connections-v130.png)
 
 The illustrated **Share** and **Remote** buttons switch between these two views. In **Remote**, expand a Mac to review its new projects and files, or open its menu to rename it.
 

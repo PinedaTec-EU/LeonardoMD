@@ -641,7 +641,7 @@
   "Synchronization role": "Función de sincronización",
   "Enable Leonardo Sync": "Activar Leonardo Sync",
   "Enable synchronization and sharing to apply review decisions.": "Activa la sincronización y el uso compartido para aplicar las decisiones.",
-  "Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor.": "Necesario para compartir y conectarte. Al desactivarlo, ambas direcciones quedan sin conexión aunque LeonardoMD esté abierto. Se inicia al iniciar sesión y sigue compartiendo archivos guardados al cerrar el editor.",
+  "When off, sharing and remote access stop even with LeonardoMD open. Starts at login and shares saved files after you close the editor.": "Al desactivarlo, se cortan el uso compartido y el acceso remoto aunque LeonardoMD siga abierto. Arranca al iniciar sesión y comparte archivos guardados al cerrar el editor.",
   "Choose saved content from this Mac for Little Leonardo and other computers. Connecting to another computer does not require sharing your own files.": "Elige contenido guardado de este Mac para Little Leonardo y otros equipos. Conectarte a otro equipo no requiere compartir tus propios archivos.",
   "Content shared from this Mac": "Contenido compartido desde este Mac",
   "Open a project and choose Share current project to select its folders or files.": "Abre un proyecto y pulsa Compartir proyecto actual para elegir sus carpetas o archivos.",

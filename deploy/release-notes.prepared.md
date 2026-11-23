@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2205
+
+- #337 Updated: compact macOS preferences headers ([#581](https://github.com/PinedaTec-EU/LeonardoMD/pull/581))
+
+<p>Compact Preferences headers and put Share and Remote beside the Leonardo Sync service.</p>
+
+Source: `d078a13c1312bd4d82ddc65120ce29ddc135a0f7`. Delta: `{"build": 9}`.
+
 ## 0.3.2196
 
 - #575 Updated: illustrate macOS Preferences ([#576](https://github.com/PinedaTec-EU/LeonardoMD/pull/576))

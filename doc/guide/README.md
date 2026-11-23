@@ -1,14 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v128-en.mdlz` and `Guide-v128-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v135-en.mdlz` and `Guide-v135-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v128/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v135/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v128 adds the macOS startup restoration switch to chapter 11. Package SHA-256: EN `edcb0ff2c6bcb6a59f70a7c70e0ed2b7650ca08bb2856ea6608dd3840320ba5c`, ES `af42c7ca7742f4bc3ac6db3f079939a730fc8fe32cce3afe0a7eb088d47fb3b6`.
+Guide v135 documents the macOS startup restoration switch in chapter 11. Package SHA-256: EN `c6a8c5455b10424145c2f74e05160630e1b72d9af042257e208eac71f84f9ef5`, ES `6e7b4e09d0cd4f95611683f29fced617b6c38342abc60084674814836822bbf6`.
 
-Guide v125 documents the illustrated Preferences and the Share / Remote workflows.
+Guide v130 documents the illustrated Preferences and the Share / Remote workflows.
 
 Guide v120 retains the guided-signing content from v119 and explains mouse selection
 in the Sync diagnostic report. Package SHA-256: EN `1ffb6a548c4c5687254bfe69edb962a8a7eee836ad43032868814a262cc14e19`, ES `79e27f4d0501574ce0ff8719d652afcf05484084d1fb2278ae9eb88dbc2abeeb`.

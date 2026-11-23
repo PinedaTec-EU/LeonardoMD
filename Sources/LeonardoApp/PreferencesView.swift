@@ -28,8 +28,8 @@ struct PreferencesView: View {
                             title: { preferencesTabTitle(for: $0) }) {
                 VStack(spacing: 0) {
                     IllustratedPreferencesHeader(title: preferencesTabTitle(for: selectedTab),
+                                                subtitle: preferencesTabDescription,
                                                 artwork: PreferencesArtwork(rawValue: selectedTab) ?? .general)
-                    Divider()
                     selectedPane
                 }
             }
@@ -57,11 +57,11 @@ struct PreferencesView: View {
                 ExtensionPreferences(session: session, projectScope: projectScope)
             }
         case "sync":
-            macPreferences("Service and device settings belong to this Mac.") {
+            macPreferences {
                 SynchronizationPreferencesView(session: session)
             }
         case "updates":
-            macPreferences("Update preferences apply to all windows on this Mac.") {
+            macPreferences {
                 UpdatePreferencesView(updates: updates)
             }
         default:
@@ -69,16 +69,29 @@ struct PreferencesView: View {
         }
     }
 
-    private func macPreferences<Content: View>(_ explanation: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func macPreferences<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        Group {
             if InstanceRuntime.isAdditional {
                 Text(L10n.text("Synchronization and updates are managed by the principal instance. Open these preferences there."))
-                    .foregroundStyle(.secondary).padding().frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .foregroundStyle(.secondary).padding()
             } else {
-                content().frame(maxWidth: .infinity, maxHeight: .infinity)
+                content()
             }
-            Text(L10n.text(explanation)).font(.caption).foregroundStyle(.secondary)
-                .padding(.horizontal, 16).padding(.bottom, 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var preferencesTabDescription: String {
+        switch selectedTab {
+        case "sync":
+            return L10n.text("Service and device settings belong to this Mac.")
+        case "updates":
+            return L10n.text("Update preferences apply to all windows on this Mac.")
+        default:
+            if projectScope, let projectURL = session.projectURL {
+                return L10n.format("Project: %@", projectURL.lastPathComponent)
+            }
+            return L10n.text("Global preferences apply to the standalone viewer and projects that inherit them.")
         }
     }
 
@@ -91,8 +104,8 @@ struct PreferencesView: View {
         }
     }
 
-    private func scopeHeader(_ title: String? = nil) -> some View {
-        PreferencesScopeHeader(title: title, projectURL: session.projectURL, projectScope: $projectScope)
+    private func scopeHeader() -> some View {
+        PreferencesScopeHeader(projectURL: session.projectURL, projectScope: $projectScope)
     }
 
     private var generalPreferences: some View {
