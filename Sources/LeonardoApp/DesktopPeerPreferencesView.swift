@@ -25,7 +25,7 @@ struct DesktopPeerPreferencesView: View {
                         .disabled(!controller.helper.online || controller.busy)
                     Button(L10n.text("Update list"), systemImage: "arrow.clockwise") {
                         Task { await controller.refreshAllConnections() }
-                    }.disabled(!controller.helper.online || controller.busy || controller.connections.isEmpty)
+                    }.disabled(!controller.helper.online || controller.busy || (controller.connections.isEmpty && !controller.needsConnectionReload))
                 }
                 Text(L10n.text("Enable Leonardo Sync on this Mac and sharing on the other Mac, then compare the codes."))
                     .font(.caption).foregroundStyle(.secondary)
@@ -66,7 +66,7 @@ struct DesktopPeerPreferencesView: View {
         }.formStyle(.grouped)
         .task {
             await controller.initialize()
-            await controller.refreshAllConnections()
+            await controller.refreshAllConnectionsInBackground()
         }
         .task {
             while !Task.isCancelled {

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Security
 import LeonardoSync
 import LeonardoSyncTransport
 import LeonardoDesktopSync
@@ -85,6 +86,14 @@ final class DesktopPeerController {
     }
 
     func initialize() async {
+        await SecureSecretStore.$allowsAuthenticationUI.withValue(false) {
+            await loadConnections()
+        }
+    }
+
+    private(set) var needsConnectionReload = false
+
+    private func loadConnections() async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         do {
@@ -95,8 +104,20 @@ final class DesktopPeerController {
                 return try await self.fetchDownload(id: id, entry: entry)
             }
             try await restoreDownloads()
+            needsConnectionReload = false
             startAutomaticSync()
-        } catch { self.error = PeerSyncErrorMessage.text(error) }
+        } catch {
+            needsConnectionReload = true
+            present(error)
+        }
+    }
+
+    private func present(_ error: Error) {
+        if !SecureSecretStore.allowsAuthenticationUI,
+           (error as? CredentialStorageError)?.status == errSecInteractionNotAllowed {
+            return
+        }
+        self.error = PeerSyncErrorMessage.text(error)
     }
 
     func updateInterval(_ minutes: Int) {
@@ -113,19 +134,21 @@ final class DesktopPeerController {
         guard syncIntervalMinutes > 0 else { return }
         let seconds = syncIntervalMinutes * 60
         automaticTask = Task { [weak self] in
-            while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
-                guard let self else { return }
-                guard !self.busy else { continue }
-                for id in self.connections.filter({ !$0.revoked }).map(\.id) {
-                    guard !Task.isCancelled else { return }
-                    await self.refresh(id)
-                }
-                for id in self.copies.map(\.id) {
-                    guard !Task.isCancelled else { return }
-                    await self.compare(id)
-                    guard !Task.isCancelled else { return }
-                    if self.copies.contains(where: { $0.id == id }) { await self.send(id) }
+            await SecureSecretStore.$allowsAuthenticationUI.withValue(false) {
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
+                    guard let self else { return }
+                    guard !self.busy else { continue }
+                    for id in self.connections.filter({ !$0.revoked }).map(\.id) {
+                        guard !Task.isCancelled else { return }
+                        await self.refresh(id)
+                    }
+                    for id in self.copies.map(\.id) {
+                        guard !Task.isCancelled else { return }
+                        await self.compare(id)
+                        guard !Task.isCancelled else { return }
+                        if self.copies.contains(where: { $0.id == id }) { await self.send(id) }
+                    }
                 }
             }
         }
@@ -149,7 +172,7 @@ final class DesktopPeerController {
             }
             try await reload()
             return true
-        } catch { self.error = PeerSyncErrorMessage.text(error); return false }
+        } catch { present(error); return false }
     }
 
     func refresh(_ id: UUID) async {
@@ -184,12 +207,22 @@ final class DesktopPeerController {
                 }
                 reviewStore.reconcileFiles(currentPaths, connectionID: id, projectID: descriptor.id)
             }
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload(); try? await restoreDownloads() }
+        } catch { present(error); try? await reload(); try? await restoreDownloads() }
         for project in downloads.projects { await downloads.downloadRetained(id: project.id) }
     }
 
+    func refreshAllConnectionsInBackground() async {
+        await SecureSecretStore.$allowsAuthenticationUI.withValue(false) {
+            await refreshAllConnections()
+        }
+    }
+
     func refreshAllConnections() async {
-        guard !InstanceRuntime.isAdditional else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        if needsConnectionReload {
+            await loadConnections()
+            guard !needsConnectionReload else { return }
+        }
         await helper.refresh()
         guard helper.online else { return }
         for connection in connections where !connection.revoked {
@@ -231,7 +264,7 @@ final class DesktopPeerController {
             }
             reviewStore.acceptProject(connectionID: connectionID, projectID: projectID)
         } catch {
-            self.error = PeerSyncErrorMessage.text(error)
+            present(error)
             try? await restoreDownloads()
         }
     }
@@ -276,14 +309,14 @@ final class DesktopPeerController {
             try authorizeStorage()
             _ = try await library.importProject(connectionID: connectionID, projectID: projectID)
             try await reload()
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
+        } catch { present(error); try? await reload() }
     }
 
     func open(_ id: UUID) async -> URL? {
         guard !InstanceRuntime.isAdditional, !busy else { return nil }
         busy = true; defer { busy = false }
         do { try authorizeStorage(); return try await library.open(copyID: id) }
-        catch { self.error = PeerSyncErrorMessage.text(error); return nil }
+        catch { present(error); return nil }
     }
 
     func send(_ id: UUID) async {
@@ -305,7 +338,7 @@ final class DesktopPeerController {
             if try await library.send(copyID: id, buffers: selected) != nil { submitted.insert(id) }
             else { unchanged.insert(id) }
             try await reload()
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
+        } catch { present(error); try? await reload() }
     }
 
     func compare(_ id: UUID) async {
@@ -320,7 +353,7 @@ final class DesktopPeerController {
             let selectedBuffers = try await buffers(root).filter { selection?.contains($0.path) == true }
             comparisons[id] = try await library.compare(copyID: id, buffers: selectedBuffers)
             try await reload()
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
+        } catch { present(error); try? await reload() }
     }
 
     private func authorizePeerPath(_ url: URL) throws {
