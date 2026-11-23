@@ -25,40 +25,6 @@ class QABundleTests(unittest.TestCase):
             'CFBundleExecutable': executable, 'CFBundlePackageType': 'APPL',
         }))
 
-    def test_signed_qa_copies_share_identity_but_keep_separate_paths(self):
-        self.write_metadata('LeonardoMD')
-        info = self.bundle / 'Contents/Info.plist'
-        original = info.read_bytes()
-        with patch.object(qa_bundle, 'verify_bundle', side_effect=lambda bundle:
-                          plistlib.loads((bundle / 'Contents/Info.plist').read_bytes())), \
-                patch.object(qa_bundle.bundle_dependencies, 'sign_bundle') as sign:
-            first = qa_bundle.prepare_bundle(self.bundle, 'Developer ID')
-            self.addCleanup(shutil.rmtree, first.parent)
-            second = qa_bundle.prepare_bundle(self.bundle, 'Developer ID')
-            self.addCleanup(shutil.rmtree, second.parent)
-        self.assertNotEqual(first, second)
-        for bundle in (first, second):
-            metadata = plistlib.loads((bundle / 'Contents/Info.plist').read_bytes())
-            self.assertEqual(metadata['CFBundleIdentifier'], 'eu.pinedatec.LeonardoMD.qa')
-            self.assertEqual(metadata['CFBundleExecutable'], 'LeonardoMD')
-        self.assertEqual(info.read_bytes(), original)
-        self.assertEqual([call.args for call in sign.call_args_list],
-                         [(first, 'Developer ID'), (second, 'Developer ID')])
-
-    def test_auto_selection_requires_one_distinct_developer_id(self):
-        developer = '  1) ' + 'A' * 40 + ' "Developer ID Application: Owner (TEAM)"\n'
-        distribution = '  2) ' + 'B' * 40 + ' "Apple Distribution: Owner (TEAM)"\n'
-        second_developer = developer.replace('A' * 40, 'C' * 40)
-        with patch.object(subprocess, 'run') as run:
-            for output, selected in (
-                (distribution, None),
-                (developer + distribution + developer, 'A' * 40),
-                (developer + second_developer, None),
-            ):
-                with self.subTest(output=output):
-                    run.return_value = subprocess.CompletedProcess([], 0, stdout=output)
-                    self.assertEqual(qa_bundle.local_developer_id(), selected)
-
     def test_original_test_runner_packaging_is_rejected(self):
         self.write_metadata('RecentsQA')
         with self.assertRaisesRegex(ValueError, 'real LeonardoMD'):

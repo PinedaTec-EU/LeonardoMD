@@ -36,11 +36,7 @@ The application icon uses the approved Leonardo Classic folded-L artwork. Its or
 
 ## Native QA launches
 
-Use `./launch.sh --qa` to build and launch a disposable copy of the real app. The helper preserves the executable, resources and frameworks, gives the copy a QA bundle identity and re-signs it. Packaging rejects an incorrect executable or a direct XCTest dependency before launch. Run XCTest checks with `swift test`; never package `xctest` as a GUI app.
-
-QA uses the stable `eu.pinedatec.LeonardoMD.qa` identifier when signed with a Developer ID Application certificate. The launcher automatically selects the certificate if there is exactly one valid Developer ID Application identity. Set `LEONARDO_QA_SIGN_IDENTITY` in `.env.local` to select a specific identity, or set it to `-` to use ad hoc signing. When automatic selection cannot identify a single certificate, the launcher uses ad hoc signing and prints a warning.
-
-On the first access to a desktop peer credential from signed QA, macOS may ask for permission. Choose **Always Allow** if you want the permission to carry across QA builds signed with the same identity. Ad hoc copies have a different signing identity on each build. The existing peer connections and credentials remain in use.
+Use `./launch.sh --qa` to build and launch a disposable copy of the real app. The helper preserves the executable, resources and frameworks, gives the copy a unique bundle identity and re-signs it. Packaging rejects an incorrect executable or a direct XCTest dependency before launch. Run XCTest checks with `swift test`; never package `xctest` as a GUI app.
 
 The command prints the temporary bundle path. Existing LeonardoMD instances keep product-wide single-instance ownership; a forwarded launch does not verify fresh startup. Confirm a new PID and `application_ready` startup records before claiming a fresh-process pass. Quit your existing app normally first when you want a separate startup check. Remove the printed temporary directory only after its QA process has finished.
 

@@ -925,7 +925,7 @@ In **Synchronization → Storage and cache**, enter the temporary limit as a who
 
 Automatic refresh defaults to every minute while the receiving app is active; an existing interval preference is preserved. iOS also refreshes on foreground activation and pauses while suspended. Transfers need a reachable source Mac. Offline, only previously downloaded content opens. Confirmed revocation removes access to the managed reader cache.
 
-On macOS, automatic refresh cannot open a Keychain authorization dialog. If macOS requires permission to read a paired Mac’s credential, choose **Update list** in Synchronization settings and authorize access there.
+Leonardo stores Mac-to-Mac pairing credentials in its Application Support folder in your user Library, so app updates preserve your connections. If a connection from an older version needs permission to import its credential from Keychain, choose **Update list** in Synchronization settings and authorize the import. Automatic refresh stays silent.
 
 On Mac, **Create editable copy** explicitly downloads the complete working copy for editing and the existing proposal/review workflow. These copies are separate from the automatically cleaned reader cache. Browsing or keeping files offline does not send edits.
 

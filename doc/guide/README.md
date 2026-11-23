@@ -1,10 +1,12 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v130-en.mdlz` and `Guide-v130-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v131-en.mdlz` and `Guide-v131-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v130/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v131/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v131 explains how to import an existing Mac pairing credential when macOS requires approval.
 
 Guide v130 documents the illustrated Preferences and the Share / Remote workflows.
 

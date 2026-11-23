@@ -77,7 +77,9 @@ final class DesktopPeerController {
             self.library = DesktopPeerLibrary(
                 connections: FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections", isDirectory: true)),
                 copies: copies, workspace: DesktopPeerWorkspace(root: workingRoot, copies: copies),
-                credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers"),
+                credentials: FileDesktopPeerCredentialStore(
+                    directory: root.appendingPathComponent("Credentials", isDirectory: true),
+                    legacy: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers")),
                 remote: HelperGatedPeerRemote(requireOnline: { try await sharedHelper.requireReadyHelper() }), revoker: revoker,
                 outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox", isDirectory: true)),
                 receiptApplier: DesktopPeerReceiptApplier(workingRoot: workingRoot, copies: copies,
@@ -86,9 +88,7 @@ final class DesktopPeerController {
     }
 
     func initialize() async {
-        await SecureSecretStore.$allowsAuthenticationUI.withValue(false) {
-            await loadConnections()
-        }
+        await loadConnections()
     }
 
     private(set) var needsConnectionReload = false
@@ -113,7 +113,7 @@ final class DesktopPeerController {
     }
 
     private func present(_ error: Error) {
-        if !SecureSecretStore.allowsAuthenticationUI,
+        if !FileDesktopPeerCredentialStore.allowsLegacyAuthorization,
            (error as? CredentialStorageError)?.status == errSecInteractionNotAllowed {
             return
         }
@@ -134,7 +134,7 @@ final class DesktopPeerController {
         guard syncIntervalMinutes > 0 else { return }
         let seconds = syncIntervalMinutes * 60
         automaticTask = Task { [weak self] in
-            await SecureSecretStore.$allowsAuthenticationUI.withValue(false) {
+            await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(false) {
                 while !Task.isCancelled {
                     do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
                     guard let self else { return }
@@ -212,12 +212,21 @@ final class DesktopPeerController {
     }
 
     func refreshAllConnectionsInBackground() async {
-        await SecureSecretStore.$allowsAuthenticationUI.withValue(false) {
-            await refreshAllConnections()
+        await refreshConnections()
+    }
+
+    private var importingLegacyCredentials = false
+
+    func refreshAllConnections() async {
+        guard !importingLegacyCredentials else { return }
+        importingLegacyCredentials = true
+        defer { importingLegacyCredentials = false }
+        await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(true) {
+            await refreshConnections()
         }
     }
 
-    func refreshAllConnections() async {
+    private func refreshConnections() async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         if needsConnectionReload {
             await loadConnections()
