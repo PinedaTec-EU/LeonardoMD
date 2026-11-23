@@ -667,6 +667,8 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
+![Share in Synchronization preferences](assets/sync-sharing-v124.png)
+
 Little Leonardo is a **read-only companion for the shared source**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
 For an MDLF v2 guided-signing document, Little Leonardo can also make an explicit
@@ -882,6 +884,8 @@ When you choose **Install and relaunch**, the updater first pauses Leonardo Sync
 If a safe stop cannot be confirmed, installation is postponed rather than forcibly terminating a potentially active writer. This preparation requires an application version that includes it before the update begins. Versions up to 0.3.1270 can already have an old service that no longer accepts authenticated communication after replacement; this correction does not retroactively make that state safe to terminate. Leave pairings and permissions intact and arrange a controlled recovery before testing a later update. Replacing the application outside its built-in updater does not run this preparation.
 
 ## 15. Connect to other computers and offline copies
+
+![Remote in Synchronization preferences](assets/sync-connections-v124.png)
 
 The illustrated **Share** and **Remote** buttons switch between these two views. In **Remote**, expand a Mac to review its new projects and files, or open its menu to rename it.
 

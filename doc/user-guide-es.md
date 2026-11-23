@@ -679,6 +679,8 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
+![Compartir en las preferencias de Sincronización](guide/es/assets/sync-sharing-v124.png)
+
 Little Leonardo es un **compañero de solo lectura para la fuente compartida**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
 Para un documento MDLF v2 con firma guiada, Little Leonardo también puede crear
@@ -905,6 +907,8 @@ Al elegir **Instalar y reiniciar**, el actualizador pausa primero Leonardo Sync 
 Si no se puede confirmar la parada segura, se aplaza la instalación en vez de terminar por la fuerza un proceso que podría estar escribiendo. Esta preparación requiere que la aplicación de origen ya la incluya antes de empezar la actualización. Las versiones hasta 0.3.1270 pueden tener un servicio antiguo que ya no acepta comunicación autenticada tras sustituir la aplicación; esta corrección no convierte retroactivamente ese estado en seguro para terminarlo. Conserva los emparejamientos y permisos y acuerda una recuperación controlada antes de probar una actualización posterior. Sustituir la aplicación fuera de su actualizador integrado no ejecuta esta preparación.
 
 ## 15. Conectarme a otros equipos y copias sin conexión
+
+![Remoto en las preferencias de Sincronización](guide/es/assets/sync-connections-v124.png)
 
 Los botones ilustrados **Compartir** y **Remoto** cambian de vista. En **Remoto**, despliega un Mac para revisar sus proyectos y archivos nuevos, o abre su menú para cambiarle el nombre.
 
