@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-23T23:43:11Z",
+  "route": "Home",
+  "screen": "Home",
+  "browser_name": "Native LeonardoMD macOS app",
+  "browser_version": "0.3.2205 (2205) on macOS 27.2.1 (26B131)",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Neutral QA profile with no preferences file. First available normal window shows Leonardo Classic.",
+  "data_provenance": "synthetic"
+}

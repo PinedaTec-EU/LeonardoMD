@@ -1,4 +1,4 @@
 {
-  "build": 2,
-  "summary": "Leonardo Classic is the default macOS palette from the first window, removing the brief blue flash for users of this theme."
+  "build": 4,
+  "summary": "Leonardo Classic is the macOS default, and the first window opens with the saved palette when one is set."
 }
