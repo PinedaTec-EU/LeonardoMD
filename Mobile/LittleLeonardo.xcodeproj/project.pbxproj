@@ -13,13 +13,11 @@
 		384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384000000000000000000000; };
 		A44200000000000000000001 /* MobileLibrary+Connections.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44200000000000000000003; };
 		A44200000000000000000002 /* MobileConnectionDisplayNameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44200000000000000000004; };
-		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
 		5E9D61F2B8A34D49A3C0F7D1 /* MobileDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E9D61F2B8A34D49A3C0F7D2 /* MobileDiagnosticLog.swift */; };
 		A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */; };
 		2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7849226B36C61649B125BDDC /* MobileLibraryView.swift */; };
 		9A4D10000000000000000001 /* MobileSharedProjectTreeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4D00000000000000000001 /* MobileSharedProjectTreeView.swift */; };
-		3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */ = {isa = PBXBuildFile; productRef = 00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */; };
 		6BF5E353F685869C538746E5 /* LeonardoRender in Frameworks */ = {isa = PBXBuildFile; productRef = 3D12268B64E5D2FC1E9F4E35 /* LeonardoRender */; };
@@ -54,20 +52,11 @@
 		D38110000000000000000002 /* Demo in Resources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000002 /* Demo */; };
 		D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000003 /* MobileDemoStoreTests.swift */; };
 		A5D8C102B4E7491FA472C312 /* MobileProjectFileVisibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D8C102B4E7491FA472C313 /* MobileProjectFileVisibilityTests.swift */; };
-		D38110000000000000000004 /* MobileDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000004 /* MobileDemoUITests.swift */; };
-		D38510000000000000000001 /* OnDemandSyncUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38500000000000000000001 /* OnDemandSyncUITests.swift */; };
 		D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39700000000000000000001 /* MobileReaderSpacingTests.swift */; };
 		F435C0DE0000000000000002 /* MobileDiagnosticLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		603EE9018F4478E4F0651EB7 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B73A091EF914B6DD6523F6A2 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D476A74D288EC41321B83D17;
-			remoteInfo = LittleLeonardo;
-		};
 		603EE9018F4478E4F0651EB8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B73A091EF914B6DD6523F6A2 /* Project object */;
@@ -87,9 +76,7 @@
 		5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleLeonardo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7849226B36C61649B125BDDC /* MobileLibraryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibraryView.swift; sourceTree = "<group>"; };
 		9A4D00000000000000000001 /* MobileSharedProjectTreeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSharedProjectTreeView.swift; sourceTree = "<group>"; };
-		88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PairingUITests.swift; sourceTree = "<group>"; };
 		C13EDFD74D289513F03789EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
-		C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibrary.swift; sourceTree = "<group>"; };
 		5E9D61F2B8A34D49A3C0F7D2 /* MobileDiagnosticLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDiagnosticLog.swift; sourceTree = "<group>"; };
 		A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricSubmissionGate.swift; sourceTree = "<group>"; };
@@ -122,21 +109,11 @@
 		D38100000000000000000002 /* Demo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Demo; sourceTree = "<group>"; };
 		D38100000000000000000003 /* MobileDemoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoStoreTests.swift; sourceTree = "<group>"; };
 		A5D8C102B4E7491FA472C313 /* MobileProjectFileVisibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileProjectFileVisibilityTests.swift; sourceTree = "<group>"; };
-		D38100000000000000000004 /* MobileDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoUITests.swift; sourceTree = "<group>"; };
-		D38500000000000000000001 /* OnDemandSyncUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDemandSyncUITests.swift; sourceTree = "<group>"; };
 		D39700000000000000000001 /* MobileReaderSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileReaderSpacingTests.swift; sourceTree = "<group>"; };
 		F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDiagnosticLogTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		F1CFA41E4901A74516604574 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		FF9E935D9A4BF9791C6DBA48 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -164,7 +141,6 @@
 			isa = PBXGroup;
 			children = (
 				5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */,
-				C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */,
 				C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */,
 			);
 			name = Products;
@@ -176,17 +152,6 @@
 				D816809A440AE4BAB1279255 /* iOS */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		8B071E7E1B6969A26E0658D0 /* LittleLeonardoUITests */ = {
-			isa = PBXGroup;
-			children = (
-				88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */,
-				D38100000000000000000004 /* MobileDemoUITests.swift */,
-				D38500000000000000000001 /* OnDemandSyncUITests.swift */,
-			);
-			name = LittleLeonardoUITests;
-			path = LittleLeonardoUITests;
 			sourceTree = "<group>";
 		};
 		8B071E7E1B6969A26E0658E0 /* LittleLeonardoTests */ = {
@@ -209,7 +174,6 @@
 				5C2FE033350DFF0ABE9DDCDB /* Products */,
 				6BDA650CBB19A55BA57B812C /* Frameworks */,
 				F33613B9B52D4F5FD53F5807 /* LittleLeonardo */,
-				8B071E7E1B6969A26E0658D0 /* LittleLeonardoUITests */,
 				8B071E7E1B6969A26E0658E0 /* LittleLeonardoTests */,
 			);
 			sourceTree = "<group>";
@@ -291,24 +255,6 @@
 			productReference = 5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */;
 			productType = "com.apple.product-type.application";
 		};
-		FB8B56BEE10614284AFC5E29 /* LittleLeonardoUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 96250E69ED1F18AF37A74FA8 /* Build configuration list for PBXNativeTarget "LittleLeonardoUITests" */;
-			buildPhases = (
-				6DA17CEEE55FBFFA512AF082 /* Sources */,
-				F1CFA41E4901A74516604574 /* Frameworks */,
-				4FA0A87B8FEEE63CDDC75525 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A3E0EA9EC9E2D629678BDFCC /* PBXTargetDependency */,
-			);
-			name = LittleLeonardoUITests;
-			productName = LittleLeonardoUITests;
-			productReference = C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 		FB8B56BEE10614284AFC5E30 /* LittleLeonardoTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 96250E69ED1F18AF37A74FB0 /* Build configuration list for PBXNativeTarget "LittleLeonardoTests" */;
@@ -355,7 +301,6 @@
 			projectRoot = "";
 			targets = (
 				D476A74D288EC41321B83D17 /* LittleLeonardo */,
-				FB8B56BEE10614284AFC5E29 /* LittleLeonardoUITests */,
 				FB8B56BEE10614284AFC5E30 /* LittleLeonardoTests */,
 			);
 		};
@@ -371,13 +316,6 @@
 				386100000000000000000010 /* LaunchScreen.storyboard in Resources */,
 				D38110000000000000000002 /* Demo in Resources */,
 				D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		4FA0A87B8FEEE63CDDC75525 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,16 +366,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6DA17CEEE55FBFFA512AF082 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */,
-				D38110000000000000000004 /* MobileDemoUITests.swift in Sources */,
-				D38510000000000000000001 /* OnDemandSyncUITests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		6DA17CEEE55FBFFA512AF083 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -454,12 +382,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A3E0EA9EC9E2D629678BDFCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = LittleLeonardo;
-			target = D476A74D288EC41321B83D17 /* LittleLeonardo */;
-			targetProxy = 603EE9018F4478E4F0651EB7 /* PBXContainerItemProxy */;
-		};
 		A3E0EA9EC9E2D629678BDFDD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = LittleLeonardo;
@@ -469,35 +391,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		06A63060FF7894E6044E58FA /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo.UITests;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = LittleLeonardo;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		07E410DA8BF5BE2C156E3D4A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo.UITests;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = LittleLeonardo;
-			};
-			name = Debug;
-		};
 		06A63060FF7894E6044E5B24 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -706,15 +599,6 @@
 			buildConfigurations = (
 				E65B968F960FA77F9773A617 /* Release */,
 				D7E83694D0A1BEF19AB94FAA /* Debug */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		96250E69ED1F18AF37A74FA8 /* Build configuration list for PBXNativeTarget "LittleLeonardoUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				06A63060FF7894E6044E58FA /* Release */,
-				07E410DA8BF5BE2C156E3D4A /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

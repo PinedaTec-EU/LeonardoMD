@@ -51,14 +51,6 @@ final class GraphicRuntimeTests: XCTestCase {
         XCTAssertTrue(parsed.page(at: 1)?.string?.contains("SECOND PAGE") == true)
         XCTAssertFalse(parsed.page(at: 0)?.string?.contains("SECOND PAGE") == true)
         XCTAssertEqual(try XCTUnwrap(parsed.page(at: 0)).bounds(for: .mediaBox).width, 595.276, accuracy: 1)
-        if let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
-            let output = URL(fileURLWithPath: directory).appendingPathComponent("graphics")
-            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-            try pdf.write(to: output.appendingPathComponent("page-objects.pdf"))
-            let image = try await web.takeSnapshot(configuration: nil)
-            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-            try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: output.appendingPathComponent("selected-object.png"))
-        }
         config.allowsEditing = false; config.allowsFormFilling = true
         host.apply(content: source, baseURL: base, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         try await wait("document.querySelectorAll('.leonardo-object-toolbar').length === 0 && document.querySelector('.leonardo-rubric-field')?.disabled === false", web)

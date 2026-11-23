@@ -189,46 +189,6 @@ final class BundledUserGuideTests: XCTestCase {
             // WKWebView snapshots are a separate opt-in from broad native
             // component captures. Keep long-running snapshot teardown out of
             // ordinary CI rendering while retaining both locale assertions.
-            if let output = ProcessInfo.processInfo.environment["LEONARDO_BUNDLED_GUIDE_CAPTURE_EVIDENCE"] {
-                let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
-                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                let encodedSource = try XCTUnwrap(String(data: JSONEncoder().encode(session.content), encoding: .utf8))
-                try await waitFor("window.LeonardoEditing.currentSource() === \(encodedSource)", in: web)
-                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("math-regression", ".math-rendered:has(.katex-tag)"), ("chart", ".vega-lite-placeholder")] {
-                    _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
-                    let readySelector = name.hasPrefix("math") ? selector : selector + " svg"
-                    try await waitFor("document.querySelector('\(readySelector)') !== null", in: web)
-                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
-                        language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
-                }
-                for name in ["palette", "activation-switch", "sync-sharing-v130", "sync-review-draft-unavailable"] {
-                    let selector = "img[src$=\"/\(name).png\"]"
-                    try await waitFor("document.querySelector('\(selector)') !== null && document.querySelector('\(selector)').naturalWidth > 0", in: web)
-                    _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
-                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
-                        language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
-                }
-                _ = try await web.evaluateJavaScript("Array.from(document.querySelectorAll('p')).find(node => node.textContent.includes('[LL1 op=snapshot')).scrollIntoView({block:'center'})")
-                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("transport-diagnostic-\(language.rawValue).png"),
-                    language: language.rawValue, state: "Interrupted HTTPS response guidance; diagnostic code contains no request identifiers")
-                let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
-                for name in illustrations {
-                    _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
-                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
-                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(expectedImageCount) guide images loaded")
-                }
-                _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
-                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),
-                    language: language.rawValue, state: "Guide preview; all local images loaded")
-                _ = try await web.evaluateJavaScript("document.querySelector('a[href$=\"/practice.mdlr\"]').scrollIntoView({block:'center'})")
-                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-action-\(language.rawValue).png"),
-                    language: language.rawValue, state: "Reading guide; separate-practice action; no inline controls")
-                let welcome = NSHostingView(rootView: WelcomeView(session: session))
-                try await GuideCaptureSupport.captureWelcome(welcome, size: NSSize(width: 1100, height: 850),
-                    to: directory.appendingPathComponent("welcome-\(language.rawValue).png"), language: language.rawValue)
-                let provenance = "Head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local")\nNative NSHostingView / WKWebView, 1100x850 points; synthetic practice data; language \(language.rawValue). Component test, not a fresh product process.\n"
-                try provenance.write(to: directory.appendingPathComponent("provenance-\(language.rawValue).txt"), atomically: true, encoding: .utf8)
-            }
         }
     }
 
@@ -276,15 +236,6 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertTrue(text.contains(language == .english ? "Import with your agent" : "Importar con tu agente"))
             XCTAssertTrue(text.contains("leonardo-format"))
             XCTAssertTrue(text.contains(language == .english ? "Request to copy" : "Encargo que puedes copiar"))
-            if let output = ProcessInfo.processInfo.environment["LEONARDO_BUNDLED_GUIDE_CAPTURE_EVIDENCE"] {
-                let directory = URL(fileURLWithPath: output).appendingPathComponent("agent-import")
-                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("overview-\(language.rawValue).png"),
-                    language: language.rawValue, state: "Agent import guide; original illustrative PNG loaded; no PDF selected or sent")
-                _ = try await web.evaluateJavaScript("document.querySelector('pre').scrollIntoView({block:'start'})")
-                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("prompt-\(language.rawValue).png"),
-                    language: language.rawValue, state: "Agent import guide; copyable conversion request")
-            }
         }
     }
 

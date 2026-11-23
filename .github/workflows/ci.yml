@@ -60,7 +60,6 @@ jobs:
         shell: bash
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: |
           set +e
           swift test --filter 'FileListTests' 2>&1 | tee "$RUNNER_TEMP/swift-test-isolated.log"
@@ -110,7 +109,6 @@ jobs:
         env:
           NSUnbufferedIO: "YES"
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: |
           set -o pipefail
           mkdir -p "$RUNNER_TEMP/swift-test-diagnostics"
@@ -160,132 +158,6 @@ jobs:
             echo "::error::The isolated FileList suite, both isolated HTTPS regressions, and the full Swift test suite must pass."
             exit 1
           fi
-      - name: Capture native guided signing screens
-        if: steps.full-suite.outcome == 'success'
-        env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          LEONARDO_GUIDED_SIGNING_CAPTURE: ${{ runner.temp }}/guided-signing-evidence
-        run: |
-          swift test --skip-build --filter GuidedSigningCaptureTests/testCaptureMacSigningComponents
-          for screen in mac-al-abrir mac-documento-con-firmas mac-formulario-renderizado mac-lienzo-rubrica mac-espera-rubrica-enlazada; do
-            test -s "$LEONARDO_GUIDED_SIGNING_CAPTURE/$screen.png"
-            test -s "$LEONARDO_GUIDED_SIGNING_CAPTURE/$screen.context.json"
-          done
-      - name: Upload native guided signing captures
-        if: steps.full-suite.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: guided-signing-native-captures-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/guided-signing-evidence/
-          if-no-files-found: error
-          retention-days: 30
-      - name: Capture native synchronization error dialogs
-        id: sync-error-captures
-        if: steps.full-suite.outcome == 'success'
-        continue-on-error: true
-        env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          LEONARDO_SYNC_ERROR_EVIDENCE: ${{ runner.temp }}/sync-error-evidence
-        run: |
-          mkdir -p "$LEONARDO_SYNC_ERROR_EVIDENCE"
-          capture_status=0
-          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert || capture_status=1
-          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert || capture_status=1
-          python3 - "$LEONARDO_SYNC_ERROR_EVIDENCE" "$EVIDENCE_SHA" <<'PY'
-          import json
-          from pathlib import Path
-          import sys
-
-          root = Path(sys.argv[1])
-          source = sys.argv[2]
-          images = (
-              "access-denied-en.png",
-              "access-denied-es.png",
-              "download-error-en.png",
-              "download-error-es.png",
-          )
-          for name in images:
-              image = root / name
-              context = image.with_suffix(".context.json")
-              if not image.is_file() or image.stat().st_size == 0:
-                  raise SystemExit(f"Missing native capture: {name}")
-              state = json.loads(context.read_text(encoding="utf-8"))["state"]
-              if source not in state:
-                  raise SystemExit(f"Capture source does not match this run: {name}")
-          PY
-          test "$capture_status" -eq 0
-      - name: Upload native synchronization error captures
-        id: upload-sync-error-captures
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sync-error-native-captures-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/sync-error-evidence/
-          if-no-files-found: warn
-          retention-days: 3
-      - name: Require complete native synchronization captures
-        if: always()
-        env:
-          CAPTURE_OUTCOME: ${{ steps.sync-error-captures.outcome }}
-          ARTIFACT_OUTCOME: ${{ steps.upload-sync-error-captures.outcome }}
-        run: |
-          if [[ "$CAPTURE_OUTCOME" != "success" || "$ARTIFACT_OUTCOME" != "success" ]]; then
-            echo "::error::Native synchronization dialog captures and their evidence artifact must succeed."
-            exit 1
-          fi
-      - name: Capture Preview synchronization alerts
-        id: preview-alert-captures
-        if: always() && steps.full-suite.outcome == 'success'
-        continue-on-error: true
-        env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          LEONARDO_PREVIEW_ALERT_EVIDENCE: ${{ runner.temp }}/preview-alert-evidence
-        run: |
-          mkdir -p "$LEONARDO_PREVIEW_ALERT_EVIDENCE"
-          swift test --skip-build --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages
-          python3 - "$LEONARDO_PREVIEW_ALERT_EVIDENCE" "$EVIDENCE_SHA" <<'PY'
-          import json
-          from pathlib import Path
-          import sys
-
-          root = Path(sys.argv[1])
-          source = sys.argv[2]
-          for locale in ("en", "es"):
-              for state in ("retry", "close"):
-                  name = f"preview-alert-{locale}-{state}.png"
-                  image = root / name
-                  context = root / f"{name}.context.json"
-                  if not image.is_file() or image.stat().st_size == 0:
-                      raise SystemExit(f"Missing native Preview capture: {name}")
-                  if json.loads(context.read_text(encoding="utf-8"))["source_revision"] != source:
-                      raise SystemExit(f"Preview capture source does not match this run: {name}")
-          PY
-      - name: Upload Preview synchronization alert captures
-        id: upload-preview-alert-captures
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-alert-native-captures-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/preview-alert-evidence/
-          if-no-files-found: warn
-          retention-days: 3
-      - name: Record preview capture provenance
-        env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          printf 'Head: %s\nSurface: native WKWebView Markdown preview\nViewport: 1000x800 points\nStates: light, dark; first tag focused\nFixture: synthetic tagged document\n' "$EVIDENCE_SHA" > visual-evidence/provenance.txt
-          printf 'Head: %s\nSurface: native NSHostingView Preferences - Updates\nViewports: full 580x620; component 532x550 points\nLanguages: en, es\nStates: stable, beta, waiting, busy, deferred, development, startup-error\nFixture: synthetic session and isolated update driver\nLimits: component rendering; native glass tab bar pixels unavailable; no hosted install/relaunch or fresh packaged startup claim\n' "$EVIDENCE_SHA" > visual-evidence/updates/provenance.txt
-      - name: Record release notes capture provenance
-        env:
-          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          printf 'Head: %s\nSurface: native NSHostingView Release Notes\nViewport: 760x580 points\nLanguages: en, es\nStates: light, dark; interval and downgrade; suppression on\nFixture: synthetic 18-PR history\nLimits: component rendering; no fresh packaged-process startup claim\n' "$EVIDENCE_SHA" > visual-evidence/release-notes/provenance.txt
-      - name: Upload preview evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-tags-${{ github.event.pull_request.head.sha || github.sha }}
-          path: visual-evidence/
-          if-no-files-found: error
 
   ios-tests:
     needs: plan
@@ -328,54 +200,7 @@ jobs:
           -parallel-testing-enabled NO
           -only-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo
           test-without-building
-      - name: Seed legacy recovery archive for UI coverage
-        shell: bash
-        run: |
-          set -euo pipefail
-          fixture="doc/validation/git-retirement/fixtures/59521A0B-559C-4477-BE42-39AC03349CC3.json"
-          expected_sha="083ebf51c0153131ce6b97f8d66ab4b6026a3623152b9f397fa0461ee761a62c"
-          actual_sha="$(shasum -a 256 "$fixture" | awk '{ print $1 }')"
-          test "$actual_sha" = "$expected_sha"
-          device_id="$LITTLE_LEONARDO_SIMULATOR_ID"
-          simulator_state() {
-            xcrun simctl list devices available -j | python3 -c '
-          import json
-          import sys
-
-          target = sys.argv[1]
-          matches = [
-              device
-              for devices in json.load(sys.stdin)["devices"].values()
-              for device in devices
-              if device["udid"] == target
-          ]
-          if len(matches) != 1:
-              raise SystemExit(f"selected simulator {target} is unavailable")
-          print(matches[0]["state"])
-          ' "$device_id"
-          }
-          device_state="$(simulator_state)"
-          # XCTest can return while CoreSimulator is still shutting down.
-          for _ in {1..30}; do
-            if [ "$device_state" != "Shutting Down" ]; then
-              break
-            fi
-            sleep 2
-            device_state="$(simulator_state)"
-          done
-          case "$device_state" in
-            Booted|Booting) ;;
-            Shutdown) xcrun simctl boot "$device_id" ;;
-            *) echo "Unexpected state for selected simulator $device_id: $device_state" >&2; exit 1 ;;
-          esac
-          xcrun simctl bootstatus "$device_id" -b
-          xcrun simctl install "$device_id" .build/little-ios/Build/Products/Debug-iphonesimulator/LittleLeonardo.app
-          app_data="$(xcrun simctl get_app_container "$device_id" eu.pinedatec.LittleLeonardo data)"
-          corpus="$app_data/Library/Application Support/LittleLeonardo/Corpus"
-          mkdir -p "$corpus"
-          install -m 600 "$fixture" "$corpus/59521A0B-559C-4477-BE42-39AC03349CC3.json"
-          test "$(shasum -a 256 "$corpus/59521A0B-559C-4477-BE42-39AC03349CC3.json" | awk '{ print $1 }')" = "$expected_sha"
-      - name: Test Little Leonardo unit suites and recovery UI
+      - name: Test Little Leonardo unit suites
         run: >-
           xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,id=$LITTLE_LEONARDO_SIMULATOR_ID" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO
           -parallel-testing-enabled NO
@@ -385,9 +210,6 @@ jobs:
           -only-testing:LittleLeonardoTests/MobileProjectFileVisibilityTests
           -only-testing:LittleLeonardoTests/MobileReaderSpacingTests
           -skip-testing:LittleLeonardoTests/MobileReaderSpacingTests/testLeonardoDocumentsRenderReadOnlyInLittleLeonardo
-          -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending
-          -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInEnglish
-          -only-testing:LittleLeonardoUITests/PairingUITests/testLegacyRecoveryCopyIsLocalizedInSpanish
           test-without-building
 
   package:

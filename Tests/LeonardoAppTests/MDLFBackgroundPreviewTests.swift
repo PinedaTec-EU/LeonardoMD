@@ -62,17 +62,6 @@ final class MDLFBackgroundPreviewTests: XCTestCase {
         XCTAssertEqual(try LeonardoFormatParser.parse(session.content).metadata, metadata)
         let reopenedWeb = try await findWebView(in: hosting)
         try await waitFor("document.querySelector('.leonardo-document-background img')?.naturalWidth > 0 && document.body.textContent.includes('CLIENTE VALIDADO')", in: reopenedWeb)
-        if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
-            let directory = URL(fileURLWithPath: output).appendingPathComponent("mdlf-background")
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let image = try await reopenedWeb.takeSnapshot(configuration: nil)
-            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-            try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-                .write(to: directory.appendingPathComponent("reopened.png"))
-            try pdf.write(to: directory.appendingPathComponent("invoice.pdf"))
-            let context = "Head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local")\nSurface: WorkspaceView / WKWebView, 900x900 points\nState: native MDLF background after Preview edit, save and reopen\n"
-            try context.write(to: directory.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
-        }
     }
 
     private func findWebView(in view: NSView) async throws -> WKWebView {

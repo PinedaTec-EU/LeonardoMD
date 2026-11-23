@@ -19,19 +19,6 @@ final class TrashUnavailableConfirmationTests: XCTestCase {
                 XCTAssertTrue(controls.compactMap { ($0 as? NSButton)?.title }.contains(L10n.text("Delete Permanently")))
                 let copy = controls.compactMap { ($0 as? NSTextField)?.stringValue }.joined(separator: " ")
                 XCTAssertTrue(copy.contains(L10n.text("Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.")))
-                if !confirm, let directory = ProcessInfo.processInfo.environment["LEONARDO_TRASH_CAPTURE_DIR"] {
-                    let destination = URL(fileURLWithPath: directory)
-                    try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-                    try await Task.sleep(for: .milliseconds(200))
-                    let capture = Process()
-                    capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                    capture.arguments = ["-x", "-o", "-l", String(sheet.windowNumber),
-                        destination.appendingPathComponent("trash-unavailable-\(language.rawValue).png").path]
-                    try capture.run()
-                    capture.waitUntilExit()
-                    XCTAssertEqual(capture.terminationStatus, 0)
-                    print("Trash warning capture: language=\(language.rawValue), viewport=\(sheet.frame.size)")
-                }
                 fixture.window.endSheet(sheet, returnCode: confirm ? .alertSecondButtonReturn : .alertFirstButtonReturn)
                 await operation.value
                 XCTAssertEqual(FileManager.default.fileExists(atPath: fixture.document.path), !confirm)

@@ -70,7 +70,6 @@ final class VegaLiteRuntimeTests: XCTestCase {
 
         let pdf = try await host.exportPDF()
         XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
-        try await captureEvidenceIfRequested(web, name: "vega-lite-bar")
     }
 
     func testExternalPaintReferencesAreRejectedBeforeSVGInsertion() async throws {
@@ -248,42 +247,5 @@ final class VegaLiteRuntimeTests: XCTestCase {
         host.subviews.compactMap { $0 as? WKWebView }.first
     }
 
-    private func captureEvidenceIfRequested(_ web: WKWebView, name: String) async throws {
-        guard let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
-        let image: NSImage = try await withCheckedThrowingContinuation { continuation in
-            web.takeSnapshot(with: nil) { image, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else if let image {
-                    continuation.resume(returning: image)
-                } else {
-                    continuation.resume(throwing: CocoaError(.fileReadUnknown))
-                }
-            }
-        }
-        guard let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let png = bitmap.representation(using: .png, properties: [:]) else {
-            throw CocoaError(.fileReadUnknown)
-        }
-        let root = URL(fileURLWithPath: directory, isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        try png.write(to: root.appendingPathComponent(name + ".png"), options: [.atomic])
-        let environment = ProcessInfo.processInfo.environment
-        let evidenceSHA = environment["EVIDENCE_SHA"] ?? environment["GITHUB_SHA"] ?? environment["CI_COMMIT_SHA"] ?? "unknown"
-        let metadata: [String: Any] = [
-            "head": evidenceSHA,
-            "evidenceSHA": evidenceSHA,
-            "surface": "actual MarkdownPreviewHost/WKWebView",
-            "feature": "Vega-Lite offline SVG bar chart",
-            "browser": try await evaluate("navigator.userAgent", in: web),
-            "capturedAtUTC": ISO8601DateFormatter().string(from: Date()),
-            "captureMode": "viewport",
-            "viewportPoints": "\(Int(web.bounds.width))x\(Int(web.bounds.height))",
-            "imagePixels": "\(bitmap.pixelsWide)x\(bitmap.pixelsHigh)"
-        ]
-        let data = try JSONSerialization.data(withJSONObject: metadata, options: [.prettyPrinted, .sortedKeys])
-        try data.write(to: root.appendingPathComponent(name + ".json"), options: [.atomic])
-    }
 }
 #endif

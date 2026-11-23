@@ -206,9 +206,6 @@ final class InlineFormTests: XCTestCase {
         XCTAssertFalse(pdfText.contains("Solo lectura"), "PDF must omit the generated read-only badge")
         let interactiveAgain = try await web.evaluateJavaScript("!document.querySelector('main').classList.contains('leonardo-form-export')") as? Bool
         XCTAssertEqual(interactiveAgain, true)
-        if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
-            try await capture(web: web, host: host, session: session, output: output, pdf: pdf)
-        }
         await session.setDocumentMode(.preview)
         XCTAssertEqual(session.mode, .preview)
         var previewWeb = web
@@ -218,7 +215,6 @@ final class InlineFormTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(20))
         }
         try await waitFor("document.querySelectorAll('[data-field-input]').length === 11 && Array.from(document.querySelectorAll('[data-field-input]')).every(n => n.disabled)", in: previewWeb)
-        try await captureMode(previewWeb, name: "preview")
         XCTAssertFalse(session.updateLeonardoField("name", text: "blocked"))
         let previewSource = session.content
         _ = try await previewWeb.evaluateJavaScript("""
@@ -240,7 +236,6 @@ final class InlineFormTests: XCTestCase {
         }
         XCTAssertFalse(splitWeb === previewWeb, "Split must attach its own preview pane")
         try await waitFor("document.querySelectorAll('[data-field-input]').length === 11 && Array.from(document.querySelectorAll('[data-field-input]')).every(n => n.disabled)", in: splitWeb)
-        try await captureMode(splitWeb, name: "split")
         XCTAssertFalse(session.updateLeonardoField("name", text: "blocked in Split"))
         await session.openDocument(url)
         XCTAssertEqual(session.leonardoFieldText("name"), "Ada 漢字")
@@ -280,60 +275,6 @@ final class InlineFormTests: XCTestCase {
         session.showInspector = false
         staleHelp("email")
         XCTAssertFalse(session.showInspector)
-    }
-
-    private func captureMode(_ web: WKWebView, name: String) async throws {
-        guard let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
-        let destination = URL(fileURLWithPath: output).appendingPathComponent("inline-forms")
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        _ = try await web.evaluateJavaScript("window.scrollTo(0, 0)")
-        let image = try await web.takeSnapshot(configuration: nil)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-        try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("\(name).png"))
-    }
-
-    private func capture(web: WKWebView, host: NSView, session: AppSession, output: String, pdf: Data) async throws {
-        let destination = URL(fileURLWithPath: output).appendingPathComponent("inline-forms")
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        try pdf.write(to: destination.appendingPathComponent("form.pdf"))
-        // Capture the stable theme endpoint rather than WebKit's transition
-        // clock, which can be paused in an inactive XCTest-hosted window.
-        _ = try await web.evaluateJavaScript("document.body.style.transition = 'none'")
-        for (name, palette): (String, PaletteID) in [("light", .leonardoClassic), ("dark", .graphiteGlass)] {
-            session.setPalette(palette.rawValue, project: false)
-            session.setPaper(PaperEffect.solid.rawValue, project: false)
-            await session.settingsTask?.value
-            let background = session.renderConfiguration.appearance.backgroundHex
-            let rgb = stride(from: 1, to: 7, by: 2).map { offset in
-                Int(String(background.dropFirst(offset).prefix(2)), radix: 16)!
-            }
-            let cssBackground = "rgb(\(rgb[0]), \(rgb[1]), \(rgb[2]))"
-            try await waitFor("getComputedStyle(document.body).backgroundColor === '\(cssBackground)'", in: web)
-            let image = try await web.takeSnapshot(configuration: nil)
-            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-            try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("document-\(name).png"))
-            _ = try await web.evaluateJavaScript("document.querySelector('[data-field=\"copy\"]').scrollIntoView({block:'center'})")
-            let lower = try await web.takeSnapshot(configuration: nil)
-            let lowerBitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(lower.tiffRepresentation)))
-            try XCTUnwrap(lowerBitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("document-lower-\(name).png"))
-            _ = try await web.evaluateJavaScript("window.scrollTo(0, 0)")
-            for field in ["email", "reference"] {
-                session.showLeonardoFieldHelp(field)
-                host.window?.makeKeyAndOrderFront(nil)
-                try await Task.sleep(for: .milliseconds(250))
-                if name == "light" {
-                    host.layoutSubtreeIfNeeded()
-                    host.displayIfNeeded()
-                    let integrated = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-                    host.cacheDisplay(in: host.bounds, to: integrated)
-                    try XCTUnwrap(integrated.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("workspace-\(field)-\(name).png"))
-                }
-                let panel = NSHostingView(rootView: LeonardoFieldHelp(session: session).modifier(SessionAppearance(session: session)))
-                try await NativeViewCaptureSupport.capture(panel, size: NSSize(width: 320, height: 800), to: destination.appendingPathComponent("help-\(field)-\(name).png"))
-            }
-        }
-        let sha = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local-working-tree"
-        try "Head: \(sha)\nSurface: real native WorkspaceView / WKWebView (1440x1024 points window), integrated selected field-help sidebar in light theme; separate help panels in both themes\nFixture: synthetic form showcase; all types, repeated text, invalid email draft, switch on; editable and read-only help\nLimits: hosted XCTest component validation, no fresh packaged process claim; owner’s running app untouched\n".write(to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
     }
 
     private func webView(in view: NSView) async throws -> WKWebView {
