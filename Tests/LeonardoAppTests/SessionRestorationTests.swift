@@ -100,6 +100,49 @@ final class SessionRestorationTests: XCTestCase {
         XCTAssertEqual(tabs.activeID, initialID)
     }
 
+    func testCloseWaitsOnlyForADestinationReservedForStartup() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        let independentWindow = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { tabs.stop(); independentWindow.stop() }
+        let restoringID = try XCTUnwrap(tabs.activeID)
+        tabs.reserveStartupTab(restoringID)
+        let newID = try XCTUnwrap(tabs.addTab())
+        var waits = 0
+        tabs.waitForStartup = { [weak tabs] in waits += 1; tabs?.releaseStartupTabs() }
+        independentWindow.waitForStartup = { XCTFail("An independent window should not wait for restoration") }
+
+        await independentWindow.awaitStartupBeforeClosing()
+        await tabs.close(newID)
+        XCTAssertEqual(tabs.tabs.map(\.id), [restoringID])
+        XCTAssertEqual(waits, 0)
+
+        await tabs.close(restoringID)
+        XCTAssertEqual(waits, 1)
+        XCTAssertFalse(tabs.tabs.contains { $0.id == restoringID })
+    }
+
+    func testLaterStandaloneRestoredTabUsesPersistedOpeningMode() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let preferencesURL = root.appendingPathComponent("preferences.json")
+        let document = root.appendingPathComponent("notes.md")
+        try "# Startup fixture".write(to: document, atomically: true, encoding: .utf8)
+        var preferences = GlobalPreferences.default
+        preferences.markdown.defaultMode = .split
+        try await ConfigurationStore.shared.saveGlobalPreferences(preferences, at: preferencesURL)
+        let tabs = DocumentTabs(preferencesURL: preferencesURL)
+        defer { tabs.stop() }
+        let initialID = try XCTUnwrap(tabs.activeID)
+
+        await tabs.restore(.init(tabs: [.init(), .init(document: document)], selectedTab: 1), initialTabID: initialID)
+
+        XCTAssertEqual(tabs.activeSession.documentURL, document)
+        XCTAssertEqual(tabs.activeSession.mode, .split)
+    }
+
     func testStartupSwitchFromProjectWritesOnlyGlobalPreferences() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

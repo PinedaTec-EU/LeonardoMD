@@ -114,10 +114,14 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         diagnostics.record(.menuConfigured)
         let initialWindow = windows.first ?? showDocumentWindow()
         let initialTabID = initialWindow.documents.activeID
+        if role == .primary, let initialTabID {
+            initialWindow.documents.reserveStartupTab(initialTabID)
+        }
         startupTask = Task {
             if role == .primary, let initialTabID {
                 await restoreStartupSession(in: initialWindow, initialTabID: initialTabID)
             }
+            initialWindow.documents.releaseStartupTabs()
             startupTask = nil
             processPendingLaunches()
         }
@@ -369,9 +373,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         let controller = DocumentWindow()
         if isFirstWindow { diagnostics.record(.firstWindowCreated) }
         windows.append(controller)
-        let canClose = { [weak self] in self?.startupTask == nil }
-        controller.canClose = canClose
-        controller.documents.canCloseTab = canClose
+        controller.documents.waitForStartup = { [weak self] in
+            await self?.startupTask?.value
+        }
         controller.onClose = { [weak self, weak controller] savedWindow in
             guard let self else { return }
             windows.removeAll { $0 === controller }
@@ -546,7 +550,6 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     let documents = DocumentTabs()
     var session: AppSession { documents.activeSession }
     var onClose: ((SavedSession.Window?) -> Void)?
-    var canClose: () -> Bool = { true }
     private var preparedSession: SavedSession.Window?
 
     init() {
@@ -570,8 +573,8 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     required init?(coder: NSCoder) { nil }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if preparedSession != nil { return true }
-        guard canClose() else { return false }
         Task {
+            await documents.awaitStartupBeforeClosing()
             guard await documents.prepareClose() else { return }
             let savedWindow = documents.savedWindow
             await documents.finishPreparedClose()

@@ -55,22 +55,26 @@ extension DocumentTabs {
 
     func restore(_ window: SavedSession.Window, initialTabID: UUID) async {
         var selectedID = initialTabID
+        defer { releaseStartupTabs() }
         for (index, saved) in window.tabs.enumerated() {
-            guard acceptsExternalDrops else { return }
+            guard await waitForStartupRestoreAccess() else { return }
             // Preserve empty tabs and selection, while skipping unavailable locations.
             guard let id = index == 0 ? initialTabID : addTab(),
                   let session = tabs.first(where: { $0.id == id })?.session else { return }
+            reserveStartupTab(id)
+            await session.initialize()
+            guard await waitForStartupRestoreAccess() else { return }
             if let project = saved.project, Self.available(project, directory: true) {
                 await session.openProject(project)
             }
-            guard acceptsExternalDrops else { return }
+            guard await waitForStartupRestoreAccess() else { return }
             if let document = saved.document, Self.available(document, directory: false),
                AppSession.supportedDocumentExtensions.contains(document.pathExtension.lowercased()) {
                 await session.openDocument(document, packagePreference: .package)
             }
             if index == window.selectedTab { selectedID = id }
         }
-        select(selectedID)
+        if await waitForStartupRestoreAccess() { select(selectedID) }
     }
 
     private static func available(_ url: URL, directory: Bool) -> Bool {
