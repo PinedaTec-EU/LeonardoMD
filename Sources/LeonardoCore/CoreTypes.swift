@@ -241,6 +241,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var followActiveFile: Bool
     public var paperEffect: PaperEffect
     public var markdown: MarkdownFeatures
+    public var restorePreviousSession: Bool
     public var showHiddenFiles: Bool
     public var showNonDocumentFiles: Bool
     public var favorites: [FavoriteItem]
@@ -260,6 +261,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         followActiveFile: Bool = true,
         paperEffect: PaperEffect = .white,
         markdown: MarkdownFeatures = MarkdownFeatures(),
+        restorePreviousSession: Bool = true,
         showHiddenFiles: Bool = false,
         showNonDocumentFiles: Bool = false,
         favorites: [FavoriteItem] = [],
@@ -274,6 +276,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         self.followActiveFile = followActiveFile
         self.paperEffect = paperEffect
         self.markdown = markdown
+        self.restorePreviousSession = restorePreviousSession
         self.showHiddenFiles = showHiddenFiles
         self.showNonDocumentFiles = showNonDocumentFiles
         self.favorites = favorites
@@ -292,6 +295,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         case followActiveFile
         case paperEffect
         case markdown
+        case restorePreviousSession
         case showHiddenFiles
         case showNonDocumentFiles
         case favorites
@@ -313,6 +317,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         followActiveFile = try container.decodeIfPresent(Bool.self, forKey: .followActiveFile) ?? true
         paperEffect = try container.decodeIfPresent(PaperEffect.self, forKey: .paperEffect) ?? .white
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown) ?? MarkdownFeatures()
+        restorePreviousSession = try container.decodeIfPresent(Bool.self, forKey: .restorePreviousSession) ?? true
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
         showNonDocumentFiles = try container.decodeIfPresent(Bool.self, forKey: .showNonDocumentFiles) ?? false
         favorites = try container.decodeIfPresent([FavoriteItem].self, forKey: .favorites) ?? []

@@ -326,7 +326,8 @@ final class AppSession {
         }
     }
 
-    func openDocument(_ url: URL, line: Int? = nil, packagePreference: LeonardoPackageOpenPreference? = nil) async {
+    func openDocument(_ url: URL, line: Int? = nil, packagePreference: LeonardoPackageOpenPreference? = nil,
+                      restoringExtraction: SavedSession.Extraction? = nil) async {
         guard !isClosing, !stopped, !isSyncSuspended else { return }
         let access = beginDocumentAccess(to: url)
         defer { finishDocumentAccess(access) }
@@ -374,6 +375,9 @@ final class AppSession {
             if kind.isLeonardo {
                 _ = try LeonardoFormatParser.parse(loaded.content)
             }
+            let restoredWorkspace = try restoringExtraction.map { _ in
+                try LeonardoPackageTransport.reopenExtraction(documentURL: url)
+            }
             if let previousPackageWorkspace {
                 discardPackageWorkspace()
                 await waitForPackageWorkspaceDisposal()
@@ -382,9 +386,10 @@ final class AppSession {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             isProtected = true
             documentURL = url
-            documentSourceURL = nil
+            documentSourceURL = restoringExtraction?.sourcePackage
             documentKind = kind
-            documentStorage = .localFile
+            packageWorkspace = restoredWorkspace
+            documentStorage = restoredWorkspace == nil ? .localFile : .extracted
             leonardoFormatWarning = kind == .markdown && Self.containsLeonardoMarkers(loaded.content)
             snapshot = loaded
             content = loaded.content
@@ -392,7 +397,7 @@ final class AppSession {
             mode = line == nil ? kind.defaultMode(global: resolved.defaultMode) : .edit
             requestedLine = line
             externalConflict = false
-            saveStatus = "Saved · local file"
+            saveStatus = restoredWorkspace == nil ? "Saved · local file" : "Saved · extracted folder"
             updateTitle()
             await prepareGuidedSigningIfNeeded()
             let elapsed = started.duration(to: .now).components

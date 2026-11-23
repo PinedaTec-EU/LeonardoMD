@@ -581,6 +581,8 @@ Open **LeonardoMD → Preferences…** (⌘,). Each tab describes its scope belo
 
 Choose English or Español under **General → On this Mac → Language**. General also controls package opening, Markdown-to-MDLF saves, frontmatter visibility, external-link confirmation, hidden files, non-document file visibility and following the active file. **Show non-document files** reveals images and other file types in the Mac project list and remote project browser. It is off by default and changes only which rows appear; it does not remove files or affect Markdown image links. The sidebar's filter menu uses the same saved setting. Read each description: these controls do not all become project settings because a project is open.
 
+In **General → On this Mac**, **Reopen documents and projects on startup** is on by default. After quitting, Leonardo reopens the previous session’s projects and documents, in tab order with the same tabs selected. Missing locations are skipped. Turn it off to start with an empty window and keep your recent items. This applies to the next launch of the primary instance, including when you change it from a project. If you start Leonardo by opening a file directly, it opens that file instead of restoring the session.
+
 The active file stays highlighted in the project explorer in light and dark appearance, including MDLF, MDLR and MDLZ. Turning off **Follow active file** stops automatic expansion and scrolling; it keeps the visible active row highlighted. Leonardo file colors adapt to the appearance, and the selection color takes precedence.
 
 Leonardo Classic is the default palette when no palette has been saved.
