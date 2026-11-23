@@ -1,6 +1,7 @@
 #if os(macOS)
 import AppKit
 import CryptoKit
+import PDFKit
 import WebKit
 import XCTest
 import LeonardoCore
@@ -82,10 +83,37 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
             state: "extracted",
             evidenceDirectory: evidenceDirectory
         )
+        let extractedDocument = try XCTUnwrap(session.documentURL)
+        let editedSource = try String(contentsOf: extractedDocument, encoding: .utf8) + "\n\nEdited in the extraction.\n"
+        try editedSource.write(to: extractedDocument, atomically: true, encoding: .utf8)
+        let archiveBeforeQuit = try Data(contentsOf: package)
+        let store = SessionRestoration(preferencesURL: root.appendingPathComponent("preferences.json"))
+        let closeApproved = await tabs.prepareClose()
+        XCTAssertTrue(closeApproved)
+        try store.save(SavedSession(windows: [tabs.savedWindow]))
+        await tabs.finishPreparedClose()
+        let saved = try XCTUnwrap(store.load(restorePreviousSession: true, explicitURLs: []).flatMap { $0.windows.first })
+
+        let restored = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { restored.stop() }
+        await restored.restore(saved, initialTabID: try XCTUnwrap(restored.activeID))
+        let reopened = restored.activeSession
+        XCTAssertEqual(reopened.projectURL?.standardizedFileURL, project.standardizedFileURL)
+        XCTAssertEqual(reopened.documentURL?.standardizedFileURL, extractedDocument.standardizedFileURL)
+        XCTAssertEqual(reopened.documentStorage, .extracted)
+        XCTAssertEqual(reopened.content, editedSource)
+        XCTAssertEqual(try Data(contentsOf: package), archiveBeforeQuit)
+        try await assertWorkspaceAssetAndPDF(
+            session: reopened,
+            expectedAsset: packageAsset,
+            expectedAssetPath: "assets/\(hash).svg",
+            state: "restored-extraction",
+            evidenceDirectory: evidenceDirectory
+        )
         if let evidenceDirectory {
             let context = """
             Surface: actual MarkdownPreviewHost/WKWebView using AppSession.renderConfiguration
-            States: package and extracted workspace with the same active project
+            States: package, extracted workspace and restored extraction with the same active project
             Viewport: 800x600 points
             Project conflict: assets/logo.svg and assets/\(hash).svg are red
             Package asset: assets/\(hash).svg is blue and is loaded from the workspace root
@@ -163,7 +191,23 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
             )
         }
         let pdf = try await host.exportPDF()
-        XCTAssertTrue(pdf.starts(with: Data("%PDF-".utf8)))
+        let page = try XCTUnwrap(PDFDocument(data: pdf)?.page(at: 0))
+        let image = page.thumbnail(of: NSSize(width: 800, height: 1_000), for: .mediaBox)
+        let tiff = try XCTUnwrap(image.tiffRepresentation)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiff))
+        XCTAssertTrue(containsBlueAsset(in: bitmap), "Exported PDF must render the blue extraction asset")
+    }
+
+    private func containsBlueAsset(in bitmap: NSBitmapImageRep) -> Bool {
+        for y in stride(from: 0, to: bitmap.pixelsHigh, by: 2) {
+            for x in stride(from: 0, to: bitmap.pixelsWide, by: 2) {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                if color.blueComponent > 0.8 && color.redComponent < 0.1 && color.greenComponent < 0.1 {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     private func captureSnapshot(_ webView: WKWebView, to url: URL) async throws {

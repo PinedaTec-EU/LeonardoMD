@@ -2,9 +2,13 @@ import Foundation
 
 /// Locations only: document contents remain owned by the normal save workflow.
 struct SavedSession: Codable, Equatable {
+    struct Extraction: Codable, Equatable {
+        var sourcePackage: URL?
+    }
     struct Tab: Codable, Equatable {
         var project: URL?
         var document: URL?
+        var extraction: Extraction?
     }
     struct Window: Codable, Equatable {
         var tabs: [Tab]
@@ -49,7 +53,10 @@ struct SessionRestoration {
 extension DocumentTabs {
     var savedWindow: SavedSession.Window {
         SavedSession.Window(tabs: tabs.map {
-            SavedSession.Tab(project: $0.session.projectURL, document: $0.session.displayDocumentURL)
+            let session = $0.session
+            let extraction = session.documentStorage == .extracted
+                ? SavedSession.Extraction(sourcePackage: session.documentSourceURL) : nil
+            return SavedSession.Tab(project: session.projectURL, document: session.displayDocumentURL, extraction: extraction)
         }, selectedTab: tabs.firstIndex { $0.id == activeID } ?? 0)
     }
 
@@ -70,7 +77,7 @@ extension DocumentTabs {
             guard await waitForStartupRestoreAccess() else { return }
             if let document = saved.document, Self.available(document, directory: false),
                AppSession.supportedDocumentExtensions.contains(document.pathExtension.lowercased()) {
-                await session.openDocument(document, packagePreference: .package)
+                await session.openDocument(document, packagePreference: .package, restoringExtraction: saved.extraction)
             }
             if index == window.selectedTab { selectedID = id }
         }

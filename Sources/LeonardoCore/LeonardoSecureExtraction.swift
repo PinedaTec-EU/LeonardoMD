@@ -174,6 +174,20 @@ enum LeonardoSecureExtraction {
         }
     }
 
+    static func existingWorkspaceOwnership(at directoryURL: URL) throws -> LeonardoExtractionOwnership {
+        let path = try AbsolutePath(directoryURL)
+        let parent = try openDirectory(path.parent)
+        defer { parent.close() }
+        let rootFD = try openDirectoryComponent(parent.fd, path.leaf)
+        defer { Darwin.close(rootFD) }
+        let root = try metadata(of: rootFD).identity
+        guard try metadata(at: parent.fd, name: path.leaf)?.identity == root else {
+            throw LeonardoSecureExtractionFailure.identityChanged
+        }
+        try verifyParentPath(path.parent, identity: parent.identity)
+        return LeonardoExtractionOwnership(root: root, parent: parent.identity)
+    }
+
     static func verifyWorkspace(at directoryURL: URL, ownership: LeonardoExtractionOwnership) throws {
         let path = try AbsolutePath(directoryURL)
         let parent = try openDirectory(path.parent)
@@ -683,6 +697,10 @@ enum LeonardoSecureExtraction {
         to destination: URL,
         hooks: LeonardoSecureExtractionHooks?
     ) throws -> LeonardoExtractionOwnership {
+        throw LeonardoSecureExtractionFailure.unsupported
+    }
+
+    static func existingWorkspaceOwnership(at directoryURL: URL) throws -> LeonardoExtractionOwnership {
         throw LeonardoSecureExtractionFailure.unsupported
     }
 

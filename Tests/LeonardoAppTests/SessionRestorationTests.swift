@@ -167,6 +167,13 @@ final class SessionRestorationTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: projectURL.path)[.modificationDate] as? Date, referenceDate)
     }
 
+    func testOlderSessionWithoutExtractionMetadataStillDecodes() throws {
+        let json = #"{"windows":[{"tabs":[{"document":"file:///tmp/notes.md"}],"selectedTab":0}]}"#
+        let saved = try JSONDecoder().decode(SavedSession.self, from: Data(json.utf8))
+        XCTAssertEqual(saved.windows.first?.tabs.first?.document, URL(fileURLWithPath: "/tmp/notes.md"))
+        XCTAssertNil(saved.windows.first?.tabs.first?.extraction)
+    }
+
     func testMissingLocationsAndInvalidData() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let preferencesURL = root.appendingPathComponent("preferences.json")
