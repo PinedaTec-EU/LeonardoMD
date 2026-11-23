@@ -867,6 +867,40 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertEqual(recovered.access, .authorized)
     }
 
+    func testHeldLegacyAuthorizationLeavesHealthyRefreshAndEnrollmentUsable() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let locked = try await fixture.library.enroll(
+            endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Legacy")
+        let started = expectation(description: "Interactive import entered the legacy store")
+        await fixture.credentials.holdAuthorization(id: locked.id, started: started)
+        let migrated = FileDesktopPeerCredentialStore(directory: fixture.root.appendingPathComponent("Tokens"),
+                                                      legacy: fixture.credentials)
+        let library = DesktopPeerLibrary(connections: fixture.connections, copies: fixture.copies,
+            workspace: fixture.workspace, credentials: migrated, remote: fixture.remote, revoker: fixture.revoker)
+        let healthy = try await library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Healthy")
+        let authorization = Task { try await library.authorizeLegacyCredential(connectionID: locked.id) }
+        await fulfillment(of: [started], timeout: 5)
+        do {
+            let listed = try await library.connections()
+            XCTAssertTrue(listed.first { $0.id == locked.id }?.credentialDeferred == true)
+            await fixture.remote.setAccess(.authorized)
+            let refreshed = try await library.refresh(connectionID: healthy.id)
+            XCTAssertEqual(refreshed.access, .authorized)
+            let added = try await library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Added")
+            XCTAssertNotEqual(added.id, healthy.id)
+        } catch {
+            await fixture.credentials.finishAuthorization()
+            _ = try? await authorization.value
+            throw error
+        }
+        await fixture.credentials.finishAuthorization()
+        try await authorization.value
+        let listed = try await library.connections()
+        XCTAssertEqual(listed.count, 3)
+        XCTAssertFalse(listed.contains(where: \.credentialDeferred))
+    }
+
     func testServerDeviceIDReuseCannotReplaceAnotherConnectionsCredentialAccount() async throws {
         let fixture = try PeerLibraryFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -948,9 +982,32 @@ private actor PeerAuthorizationBarrierFixture {
 private actor PeerMemoryCredentials: DeviceCredentialStore {
     private var values: [UUID: String] = [:]
     private var deferredID: UUID?
+    private var authorizationStarted: XCTestExpectation?
+    private var authorizationResult: CheckedContinuation<Void, Never>?
+
+    func holdAuthorization(id: UUID, started: XCTestExpectation) {
+        deferredID = id
+        authorizationStarted = started
+    }
+
+    func finishAuthorization() {
+        deferredID = nil
+        authorizationStarted = nil
+        authorizationResult?.resume()
+        authorizationResult = nil
+    }
+
     func deferRead(id: UUID?) { deferredID = id }
-    func credential(deviceID: UUID) throws -> String? {
-        if deviceID == deferredID { throw DesktopPeerCredentialError.legacyAuthorizationUnavailable }
+    func credential(deviceID: UUID) async throws -> String? {
+        if deviceID == deferredID {
+            guard let started = authorizationStarted, SecureSecretStore.allowsAuthenticationUI else {
+                throw DesktopPeerCredentialError.legacyAuthorizationUnavailable
+            }
+            await withCheckedContinuation { continuation in
+                authorizationResult = continuation
+                started.fulfill()
+            }
+        }
         return values[deviceID]
     }
     func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }

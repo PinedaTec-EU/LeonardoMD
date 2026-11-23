@@ -112,8 +112,7 @@ final class DesktopPeerController {
     }
 
     private func present(_ error: Error) {
-        if !FileDesktopPeerCredentialStore.allowsLegacyAuthorization,
-           (error as? DesktopPeerCredentialError) == .legacyAuthorizationUnavailable {
+        if (error as? DesktopPeerCredentialError) == .legacyAuthorizationUnavailable {
             return
         }
         self.error = PeerSyncErrorMessage.text(error)
@@ -178,8 +177,15 @@ final class DesktopPeerController {
     }
 
     func refreshConnectionOnRequest(_ id: UUID) async {
-        await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(true) {
+        guard !InstanceRuntime.isAdditional, !busy, !importingLegacyCredentials else { return }
+        do {
+            try authorizeStorage()
+            if connections.contains(where: { $0.id == id && $0.credentialDeferred }) {
+                try await authorizeLegacyCredentials([id])
+            }
             await refresh(id)
+        } catch {
+            self.error = PeerSyncErrorMessage.text(error)
         }
     }
 
@@ -226,12 +232,23 @@ final class DesktopPeerController {
     private var importingLegacyCredentials = false
 
     func refreshAllConnections() async {
-        guard !importingLegacyCredentials else { return }
+        guard !InstanceRuntime.isAdditional, !busy, !importingLegacyCredentials else { return }
+        do {
+            try authorizeStorage()
+            let deferredIDs = connections.filter(\.credentialDeferred).map(\.id)
+            try await authorizeLegacyCredentials(deferredIDs)
+            if !deferredIDs.isEmpty { await loadConnections() }
+            await refreshConnections()
+        } catch {
+            self.error = PeerSyncErrorMessage.text(error)
+        }
+    }
+
+    private func authorizeLegacyCredentials(_ ids: [UUID]) async throws {
+        guard !ids.isEmpty else { return }
         importingLegacyCredentials = true
         defer { importingLegacyCredentials = false }
-        await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(true) {
-            await refreshConnections()
-        }
+        for id in ids { try await library.authorizeLegacyCredential(connectionID: id) }
     }
 
     private func refreshConnections() async {
@@ -242,8 +259,7 @@ final class DesktopPeerController {
         }
         await helper.refresh()
         guard helper.online else { return }
-        for connection in connections where !connection.revoked &&
-            (FileDesktopPeerCredentialStore.allowsLegacyAuthorization || !connection.credentialDeferred) {
+        for connection in connections where !connection.revoked && !connection.credentialDeferred {
             await refresh(connection.id)
         }
     }

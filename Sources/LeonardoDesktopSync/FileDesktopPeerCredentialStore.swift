@@ -13,6 +13,7 @@ public actor FileDesktopPeerCredentialStore: DeviceCredentialStore {
 
     private let directory: URL
     private let legacy: any DeviceCredentialStore
+    private var authorizingLegacyCredential = false
 
     public init(directory: URL, legacy: any DeviceCredentialStore) {
         self.directory = directory
@@ -23,9 +24,16 @@ public actor FileDesktopPeerCredentialStore: DeviceCredentialStore {
         let destination = location(for: deviceID)
         if let data = try read(destination) { return try decode(data) }
 
+        guard !authorizingLegacyCredential else {
+            throw DesktopPeerCredentialError.legacyAuthorizationUnavailable
+        }
+        let interactive = Self.allowsLegacyAuthorization
+        if interactive { authorizingLegacyCredential = true }
+        defer { if interactive { authorizingLegacyCredential = false } }
+
         let token: String?
         do {
-            token = try await SecureSecretStore.$allowsAuthenticationUI.withValue(Self.allowsLegacyAuthorization) {
+            token = try await SecureSecretStore.$allowsAuthenticationUI.withValue(interactive) {
                 try await legacy.credential(deviceID: deviceID)
             }
         } catch let error as CredentialStorageError where

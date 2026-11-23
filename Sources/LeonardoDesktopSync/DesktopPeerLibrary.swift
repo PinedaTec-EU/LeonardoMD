@@ -75,6 +75,15 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         return connection
     }
 
+    public func authorizeLegacyCredential(connectionID: UUID) async throws {
+        guard let connection = try await connectionStore.load(id: connectionID),
+              !connection.revoked, !confirmedDeniedConnectionIDs.contains(connectionID) else { throw SyncError.revoked }
+        // Authorization can wait for the user. Keep it outside the library's mutation gate.
+        try await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(true) {
+            _ = try await requireCredential(connection)
+        }
+    }
+
     public func refresh(connectionID: UUID) async throws -> DirectDeviceStatus {
         try enter(); defer { changing = false }
         let connection = try await requireConnection(connectionID)

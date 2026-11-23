@@ -59,6 +59,7 @@ public protocol DesktopPeerLibraryAccess: Sendable {
     func connections() async throws -> [DesktopPeerConnection]
     func copies() async throws -> [DesktopPeerCopy]
     func enroll(endpoint: URL, fingerprint: Data?, invitation: PairingInvitation?, name: String) async throws -> DesktopPeerConnection
+    func authorizeLegacyCredential(connectionID: UUID) async throws
     func refresh(connectionID: UUID) async throws -> DirectDeviceStatus
     func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue
     func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile
@@ -88,6 +89,7 @@ public extension DesktopPeerRemote {
     func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile { throw DesktopPeerLibraryError.unknownCopy }
 }
 public extension DesktopPeerLibraryAccess {
+    func authorizeLegacyCredential(connectionID: UUID) async throws { throw PairingError.invalidCredential }
     func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue { throw DesktopPeerLibraryError.unknownCopy }
     func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile { throw DesktopPeerLibraryError.unknownCopy }
     func fileRead(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> DesktopPeerFileRead {
