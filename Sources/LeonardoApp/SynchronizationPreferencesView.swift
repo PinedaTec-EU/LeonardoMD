@@ -5,7 +5,9 @@ struct SynchronizationPreferencesView: View {
     enum Page: String, CaseIterable, Identifiable {
         case sharing, connections
         var id: Self { self }
-        @MainActor var title: String { L10n.text(self == .sharing ? "Share from this Mac" : "Connect to other computers") }
+        var artwork: PreferencesArtwork { self == .sharing ? .share : .remote }
+        @MainActor var title: String { L10n.text(self == .sharing ? "Share" : "Remote") }
+        @MainActor var help: String { L10n.text(self == .sharing ? "Share from this Mac" : "Connect to other computers") }
     }
 
     let session: AppSession
@@ -26,10 +28,7 @@ struct SynchronizationPreferencesView: View {
                     .toggleStyle(PremiumSwitchStyle())
                     .padding(8)
             }.padding(.horizontal, 16).fixedSize(horizontal: false, vertical: true)
-            Picker(L10n.text("Synchronization role"), selection: $page) {
-                ForEach(Page.allCases) { Text($0.title).tag($0) }
-            }.pickerStyle(.segmented).labelsHidden().padding(.horizontal, 16)
-                .accessibilityIdentifier("synchronization-role")
+            SyncRoleSelector(selection: $page)
                 .fixedSize(horizontal: false, vertical: true)
             switch page {
             case .sharing:

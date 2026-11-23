@@ -74,6 +74,8 @@ extension AppSession {
                 saveStatus = "External conflict · edits protected"
             }
             else { await reloadFromDisk() }
+        } else {
+            await recheckSealedSigningResources()
         }
         if projectURL != nil { await refreshTree() }
     }

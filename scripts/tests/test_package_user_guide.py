@@ -80,8 +80,12 @@ class PackageUserGuideTests(unittest.TestCase):
                 revision = int(match.group(1))
                 self.assertEqual(guide.read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / guide.name).read_bytes())
                 with zipfile.ZipFile(guide) as archive:
-                    expected_images = 22 if language == 'es' else 21
+                    expected_images = 23 if language == 'es' else 22
                     self.assertEqual(len(archive.namelist()), expected_images + 1)
+                    image = 'guided-signing-verification.png'
+                    self.assertEqual(archive.read(f'assets/{image}'),
+                                     (ROOT / 'doc/guide' / language / 'assets' / image).read_bytes())
+                    self.assertIn(f'guide/{language}/assets/{image}', web_source)
                     # Conservative 16-bit RGBA source envelope catches image
                     # budget regressions before the native all-images check.
                     image_bytes = 0

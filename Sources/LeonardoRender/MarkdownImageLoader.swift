@@ -16,6 +16,7 @@ actor MarkdownImageLoader {
         let data: Data
         let mimeType: String
         let estimatedBytes: Int
+        var originalSHA256 = Data()
     }
 
     private static let allowedSourceTypes = Set(LeonardoLocalImagePolicy.extensions
@@ -39,13 +40,14 @@ actor MarkdownImageLoader {
             admissions.removeAll()
         }
         let (data, extensionName) = try read(input)
-        let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let sourceDigest = SHA256.hash(data: data)
+        let digest = sourceDigest.map { String(format: "%02x", $0) }.joined()
         let key = "\(identity)|\(extensionName)|\(target.longestSide)|\(target.pixels)|\(digest)"
         let isRepeat = admissions.contains(key)
         guard isRepeat || (admissions.count < policy.maximumRequests && admittedBytes < policy.maximumDocumentBytes) else {
             throw MarkdownImageError.documentLimit
         }
-        let resource = try autoreleasepool {
+        var resource = try autoreleasepool {
             try Task.checkCancellation()
             if extensionName == "svg" {
                 // Keep vector rendering and intrinsic dimensions; do not flatten SVG into a bitmap.
@@ -62,6 +64,7 @@ actor MarkdownImageLoader {
             admittedBytes += resource.estimatedBytes
             admissions.insert(key)
         }
+        resource.originalSHA256 = Data(sourceDigest)
         return resource
     }
 

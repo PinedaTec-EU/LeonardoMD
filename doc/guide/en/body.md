@@ -184,6 +184,84 @@ answers but do not block saving an unfinished draft. Fix the reported issue,
 then recheck the whole form before exporting a response. Changing a label must
 not silently change its field identifier or invalidate previous answers.
 
+### Guided signing (MDLF v2)
+
+Documents that declare format version 2 can show a **Sign** button in the
+document toolbar. The header lists every required signer position and the
+rubric fields assigned to it, together with a stable document ID and positive
+semantic revision. Version 1 documents keep the ordinary Fill form flow; Little
+Leonardo can preview both versions. The normal shared preview is read-only.
+
+Before a position can review a location, choose an existing local profile or
+create one with the signer’s full name, identity-document type and number.
+Then choose that signer’s personal credential and explicitly authorize the
+assignment. Saving identity details and saving a profile rubric are separate
+choices. When reusing a profile that saved only a rubric, enter the signer’s
+full name and document details in the assignment form. A declared identity is shown as declared; a rubric or a local
+biometric prompt does not prove independent identity verification.
+
+The reviewer must select the position, begin the review and follow the exact
+field occurrences in source order. For each occurrence, read the displayed
+context, draw a new rubric in the signing-only canvas or choose a saved profile rubric, explicitly confirm any
+reuse, and confirm that exact occurrence. To draw on a linked Little Leonardo,
+choose **Use a linked Little Leonardo** from the rubric canvas. The waiting
+panel shows the selected device. Choose **Cancel request** to stop the request,
+**Draw on this Mac** to return to the canvas, or **Close** to leave the dialog.
+Review the received stroke and choose **Use rubric** back on the Mac. The request carries
+ink capture only. The document and signing credential stay on the Mac.
+Drawing in this workflow never adds
+a rubric to the shared rubric library; saving a profile rubric remains a
+separate, explicit choice. Repeated fields are separate locations. The review
+can be paused and resumed; **Sign** remains available while another declared
+position is still pending. The private key is encrypted
+with the personal password before it is stored in the device keychain. On
+macOS this is the user's login keychain, so it retains OS keychain protection
+but does not claim a per-signature biometric identity. Touch ID or another
+shared device prompt only unlocks local keychain material; it does not identify
+which person is signing.
+
+Before the first confirmation, the review panel lists optional form fields that
+are currently blank and will remain blank. This is an informational notice,
+not a second confirmation; it disappears once the first location snapshot is
+sealed.
+
+Use image paths relative to the document folder in guided-signing forms.
+Replace online images in the original before signing, so the seal can cover
+the actual image bytes.
+If an image changes or fails to open during review, check the updated preview
+before confirming again.
+You can edit and save an unsigned draft to replace a missing image or an
+online image before trying again. Little Leonardo needs a fresh exported copy
+after you replace an image. A guided rubric stays blank until Leonardo verifies
+its signature at that occurrence. The signing panel marks each verified position
+in green. If the key is unknown or the proof cannot be verified, the position
+shows the reason and keeps its rubric hidden.
+
+![Mac signing inspector with a verified signature, an unconfirmed key and a failed verification](assets/guided-signing-verification.png)
+
+A signing copy brings completed signatures that Leonardo can verify. The Mac
+keeps the unfinished review already saved on that installation. For locations
+reviewed elsewhere without a final signature, confirm each location here before
+signing. Use a current copy if Leonardo rejects an older or divergent copy.
+
+Save the completed form on the Mac before confirming the first location or
+exchanging a signing copy. The
+first confirmation seals the saved answers, assignments, document revision
+and referenced resources. Invalid required answers, unavailable locations or
+a changed document block confirmation. Little Leonardo also blocks confirmation
+when a referenced local image cannot be displayed.
+If the sealed document or a resource changes, the toolbar shows
+**Signed document changed**. Open it to see the available correction action.
+Corrections require **Start a new revision for corrections…**
+and every position must be assigned and reviewed again. Signatures and the
+public trust records stay outside the editable document in protected local
+sidecar storage, so changing or removing the header cannot bypass an existing
+review. If Leonardo can recover the sealed revision after an external edit,
+start the new revision and choose **Save copy…** before signing again. This
+preserves the external file. If Leonardo cannot determine the sealed source,
+restore the original document and resources from a trusted copy. Verify an
+unknown signing key against its fingerprint through a separate trusted channel.
+
 ## 5. Export and share
 
 ![Choose an export for its recipient](assets/export.png)
@@ -589,17 +667,36 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Synchronization → Share from this Mac; the common service and sharing are off in this example.](assets/sync-sharing-v14.png)
+![Share in Synchronization preferences](assets/sync-sharing-v125.png)
 
-*Synchronization → Share from this Mac; the common service and sharing are off in this example.*
+Little Leonardo is a **read-only companion for the shared source**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
-Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
+For an MDLF v2 guided-signing document, Little Leonardo can also make an explicit
+offline signing copy from the document view. **Sign copy** opens the local
+workflow without editing or synchronizing the shared source. Assign each declared
+position to a local profile or a newly entered full name, document type and
+number; identity details and a profile rubric have separate save choices. Enrol
+and authorize a personal credential, read the complete copy in the built-in
+read-only preview, use **View location** to jump to each exact occurrence in
+source order, draw or explicitly confirm reuse of a rubric, and pause or resume
+as needed. The preview never edits the copy; only a detached, independently
+verified final signature paints a rubric at its exact occurrence. Partial review
+remains visibly pending. Use the full reader before confirming locations if the form contains ordinary rubric answers, embedded images or page objects such as a rubric inserted on the page.
+After you verify a newer copy, Little Leonardo keeps the newer progress when
+you reopen an older copy of the same signing session. Complete the individual
+location reviews on this installation before final signing. A detached copy
+transfers verified signatures and you can resume unfinished local review here.
+**Export signed copy** shows the declared identities and rubrics that will leave
+the device. It includes no private key, local path or unrelated profile. Import
+the JSON copy on the Mac only after it verifies the local source, frozen snapshot,
+chain prefix and the public-key fingerprints checked through a separate channel;
+the import is a compare-and-swap and never overwrites newer progress.
 
 1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a short status message. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
-   Use **View diagnostics…** above the role selector to see the Sync service status, the last check, the LeonardoMD version and recent service events from this session. **Copy diagnostics** puts that report on the clipboard. It excludes invitations, pairing codes, device names, network addresses and file paths. **Email diagnostics…** opens a draft in your default mail app with the same report in the message body, addressed to `leonardo@pinedatec.eu`. Review the draft and send it from your mail app. If your default app opens but no draft appears, return to the diagnostic sheet, choose **Copy diagnostics**, and paste the report into a new email to `leonardo@pinedatec.eu`. You can use your usual mail app or webmail.
+   Use **View diagnostics…** above the role selector to see the Sync service status, the last check, the LeonardoMD version and recent service events from this session. **Copy diagnostics** puts the entire report on the clipboard. To copy just part of it, drag over the text and right-click the selection to choose **Copy**. Paste the copied text into another app. It excludes invitations, pairing codes, device names, network addresses and file paths. **Email diagnostics…** opens a draft in your default mail app with the same report in the message body, addressed to `leonardo@pinedatec.eu`. Review the draft and send it from your mail app. If your default app opens but no draft appears, return to the diagnostic sheet, choose **Copy diagnostics**, and paste the report into a new email to `leonardo@pinedatec.eu`. You can use your usual mail app or webmail.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
-4. Create an invitation. If the network changes, the old QR and link may disappear; once the local address is available again, create and share a new invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. If Little Leonardo rejects an invalid or expired scanned QR, its short alert includes a reference code; open **Sync settings → View log** to find the matching entry. Ask the source Mac to create a fresh invitation if the QR has expired. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
+4. Create an invitation. If the network changes, the old QR and link may disappear; once the local address is available again, create and share a new invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Remote** on another Mac. If Little Leonardo rejects an invalid or expired scanned QR, its short alert includes a reference code; open **Sync settings → View log** to find the matching entry. Ask the source Mac to create a fresh invitation if the QR has expired. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
 
 **Review changes** requires the local sharing service to be available. **Allow connection**, **Reject** and **Revoke** require a healthy sync helper. An affected action stays disabled while its requirement is unavailable. Paired devices remain listed when sharing from this Mac is off.
@@ -788,11 +885,11 @@ If a safe stop cannot be confirmed, installation is postponed rather than forcib
 
 ## 15. Connect to other computers and offline copies
 
-![Synchronization → Connect to other computers before pairing or importing a project.](assets/sync-connections-v14.png)
+![Remote in Synchronization preferences](assets/sync-connections-v125.png)
 
-*Synchronization → Connect to other computers before pairing or importing a project.*
+The illustrated **Share** and **Remote** buttons switch between these two views. In **Remote**, expand a Mac to review its new projects and files, or open its menu to rename it.
 
-Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before browsing. The connection appears under the source computer's host name; use its menu to save a clearer name on this Mac. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
+Use **Preferences → Synchronization → Remote** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before browsing. The connection appears under the source computer's host name; use its menu to save a clearer name on this Mac. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
 
 Choose **Update list** to check for new projects or files, or use the selected synchronization interval. On macOS, new projects appear under **New projects to review** for the computer that shares them. **Add project** saves a remote reference; it does not download the project's files. **Ignore** dismisses that notice on this Mac without changing the source grant. The project stays dismissed until the source Mac removes it or changes its authorized scope or selection; after that change is refreshed, it returns for review. Projects that were already available before this review was introduced remain selected on upgrade.
 
@@ -869,7 +966,7 @@ Menu availability depends on the current document and state. Text fields keep no
 
 ## 18. Availability, privacy and limits
 
-This guide describes the macOS application. Little Leonardo's read-only role is distinct from the desktop. Do not infer Windows availability or a visual form designer from the open format. Field definitions and advanced layout are authored in metadata/source or with an appropriately equipped agent. A displayed math formula does not compute field values.
+This guide describes the macOS application. Little Leonardo's read-only shared-source role is distinct from the desktop, although its explicit signing-copy exchange can collect detached proofs offline. Do not infer Windows availability or a visual form designer from the open format. Field definitions and advanced layout are authored in metadata/source or with an appropriately equipped agent. A displayed math formula does not compute field values.
 
 Local reading, packaged images and bundled rendering engines work offline. Remote images, external links, updates and transfers have their own network requirements. Project settings are portable configuration, not a place to put passwords. Pairing, sharing, Git Push and sending a document to an AI provider are distinct disclosure decisions. Review the target and content each time.
 

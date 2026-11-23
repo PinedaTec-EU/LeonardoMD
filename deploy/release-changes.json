@@ -1229,6 +1229,46 @@
       "pr": 515,
       "summary": "Sync diagnostics explains how to copy the report and email it manually when the default mail app does not show a draft.",
       "to_version": "0.3.1968"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.1968",
+      "merge_sha": "9f795c042debf9876d7c40dde869c800c010532c",
+      "pr": 547,
+      "summary": "Run the iOS read-only document rendering check independently in CI and allow time for a cold WebKit start.",
+      "to_version": "0.3.1969"
+    },
+    {
+      "delta": {
+        "build": 217
+      },
+      "from_version": "0.3.1969",
+      "merge_sha": "9f5b3a14e0ca011fabb17aebed7ebb6d62698ee8",
+      "pr": 520,
+      "summary": "Adds guided multi-signer forms with per-location rubric review, resume, tamper detection and exchange of signed copies between LeonardoMD and Little Leonardo.",
+      "to_version": "0.3.2186"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.2186",
+      "merge_sha": "60f1adbbb17e2e3145e485b0fa2b5d71cc0e28ad",
+      "pr": 519,
+      "summary": "The Sync diagnostics sheet uses the suite controls and a tinted report where you can select and copy text with the mouse.",
+      "to_version": "0.3.2189"
+    },
+    {
+      "delta": {
+        "build": 7
+      },
+      "from_version": "0.3.2189",
+      "merge_sha": "ada7982687539d81d818d88296600735d1e06fdb",
+      "pr": 576,
+      "summary": "Preferences now has illustrated headers, and Synchronization gives linked Macs and their projects more room.",
+      "to_version": "0.3.2196"
     }
   ],
   "initial_version": "0.1.56",
@@ -1239,5 +1279,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1968"
+  "version": "0.3.2196"
 }

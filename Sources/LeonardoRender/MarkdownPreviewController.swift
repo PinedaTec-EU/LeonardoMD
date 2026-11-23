@@ -69,6 +69,38 @@ public final class MarkdownPreviewController: ObservableObject {
         host?.scroll(toSourceLine: line)
     }
 
+    /// Scrolls to one exact form occurrence. A field may occur more than once
+    /// on one source line, so the occurrence is part of the DOM target.
+    public func scroll(toField fieldID: String, occurrence: Int) {
+        host?.scroll(toField: fieldID, occurrence: occurrence)
+    }
+
+    /// Checks that the renderer exposed one exact occurrence as a DOM target.
+    public func hasFieldTarget(_ fieldID: String, occurrence: Int, expectedCount: Int? = nil) async -> Bool {
+        await host?.hasFieldTarget(fieldID, occurrence: occurrence, expectedCount: expectedCount) ?? false
+    }
+
+    public func hasSigningFieldTargets(_ counts: [String: Int], source: String) async -> Bool {
+        await host?.hasSigningFieldTargets(counts, source: source) ?? false
+    }
+
+    /// Checks decoded images and the candidate set in the live preview.
+    public func hasRenderedLocalImages(
+        _ paths: [String], references: [String], includesEmbeddedImages: Bool = false
+    ) async -> Bool {
+        await host?.hasRenderedLocalImages(paths, references: references, includesEmbeddedImages: includesEmbeddedImages) ?? false
+    }
+
+    public func hasReviewedSigningImages(
+        _ digests: [URL: Data], references: [String], includesEmbeddedImages: Bool
+    ) async -> Bool {
+        await host?.hasReviewedSigningImages(digests, references: references, includesEmbeddedImages: includesEmbeddedImages) ?? false
+    }
+
+    public func reloadSigningImagePreview() {
+        host?.reloadSigningImagePreview()
+    }
+
     public func scroll(toFraction fraction: Double) {
         host?.scroll(toFraction: fraction)
     }

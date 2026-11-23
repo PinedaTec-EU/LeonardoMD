@@ -7,7 +7,8 @@ import XCTest
 /// bind the original context and image without reconstructing capture-time facts.
 @MainActor
 enum GuideCaptureSupport {
-    static func capture(_ web: WKWebView, to url: URL, language: String, state: String) async throws {
+    static func capture(_ web: WKWebView, to url: URL, language: String, state: String,
+                        route: String? = nil, screen: String? = nil) async throws {
         // A source acknowledgement/image load does not imply that a large
         // scroll has been composited. Use a bounded settling interval: WebKit
         // can pause requestAnimationFrame for an occluded test window.
@@ -18,6 +19,8 @@ enum GuideCaptureSupport {
             """)
         let observed = try XCTUnwrap(result as? [String: Any])
         var context = baseContext(language: language, state: state)
+        if let route { context["route"] = route }
+        if let screen { context["screen"] = screen }
         context["browser_name"] = "Native WKWebView; User-Agent reports engine compatibility versions"
         context["browser_version"] = try XCTUnwrap(observed["userAgent"] as? String)
         context["viewport_css"] = ["width": try XCTUnwrap(observed["width"] as? NSNumber).intValue,
@@ -27,6 +30,7 @@ enum GuideCaptureSupport {
         context["captured_at"] = timestamp()
         let image = try await web.takeSnapshot(configuration: nil)
         let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
+        context["image_pixels"] = ["width": bitmap.pixelsWide, "height": bitmap.pixelsHigh]
         try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url)
         try write(context, beside: url)
     }

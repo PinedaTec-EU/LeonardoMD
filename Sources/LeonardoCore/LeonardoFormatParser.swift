@@ -25,8 +25,7 @@ public enum LeonardoFormatParser {
         guard let formatVersion = dictionary["formatVersion"] as? Int else {
             throw LeonardoFormatError.missingFormatVersion
         }
-        guard formatVersion > 0,
-              formatVersion <= LeonardoFormat.currentVersion else {
+        guard LeonardoFormat.supportedVersions.contains(formatVersion) else {
             throw LeonardoFormatError.unsupportedVersion(formatVersion)
         }
         try LeonardoFormatMetadataSchema.validate(dictionary)
@@ -44,8 +43,7 @@ public enum LeonardoFormatParser {
         guard metadata.formatVersion == formatVersion else {
             throw LeonardoFormatError.invalidMetadataJSON
         }
-        guard metadata.formatVersion > 0,
-              metadata.formatVersion <= LeonardoFormat.currentVersion else {
+        guard LeonardoFormat.supportedVersions.contains(metadata.formatVersion) else {
             throw LeonardoFormatError.unsupportedVersion(metadata.formatVersion)
         }
         try LeonardoFormatMetadataSafety.validate(metadata)
@@ -56,8 +54,7 @@ public enum LeonardoFormatParser {
         guard document.metadata.format == LeonardoFormat.identifier else {
             throw LeonardoFormatError.missingFormatIdentifier
         }
-        guard document.metadata.formatVersion > 0,
-              document.metadata.formatVersion <= LeonardoFormat.currentVersion else {
+        guard LeonardoFormat.supportedVersions.contains(document.metadata.formatVersion) else {
             throw LeonardoFormatError.unsupportedVersion(document.metadata.formatVersion)
         }
         let encoder = JSONEncoder()
@@ -186,6 +183,7 @@ public enum LeonardoFormatValidator {
     ) -> [LeonardoDiagnostic] {
         var diagnostics: [LeonardoDiagnostic] = []
         validateEnvelope(document.metadata, into: &diagnostics)
+        validateSigning(document.metadata, into: &diagnostics)
         validateFields(document.metadata, context: context, into: &diagnostics)
         validateReferences(document.body, fields: document.metadata.fields, into: &diagnostics)
         if let layout = document.metadata.layout {
@@ -210,7 +208,7 @@ public enum LeonardoFormatValidator {
             diagnostics.append(LeonardoDiagnostic(severity: .error, code: "format.identifier", message: "The metadata format must be mdlf."))
             return
         }
-        if metadata.formatVersion != LeonardoFormat.currentVersion {
+        if !LeonardoFormat.supportedVersions.contains(metadata.formatVersion) {
             diagnostics.append(LeonardoDiagnostic(severity: .error, code: "format.version", message: "The metadata format version is unsupported."))
             return
         }
@@ -219,6 +217,39 @@ public enum LeonardoFormatValidator {
         }
         if metadata.document.kind == .form && metadata.fields.isEmpty {
             diagnostics.append(LeonardoDiagnostic(severity: .warning, code: "form.noFields", message: "This document is marked as a form but declares no fields."))
+        }
+    }
+
+    private static func validateSigning(_ metadata: LeonardoMetadata, into diagnostics: inout [LeonardoDiagnostic]) {
+        guard let declaration = metadata.document.signing else {
+            let assignedField = metadata.fields.values.contains { $0.signerPosition != nil }
+            if assignedField {
+                diagnostics.append(.init(severity: .error, code: "signing.declaration", message: "Signer positions require a v2 signing declaration."))
+            }
+            return
+        }
+        guard metadata.formatVersion >= LeonardoFormat.signingVersion else {
+            diagnostics.append(.init(severity: .error, code: "signing.version", message: "Signing declarations require MDLF v2."))
+            return
+        }
+        if metadata.document.id?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
+            diagnostics.append(.init(severity: .error, code: "signing.documentID", message: "Signing documents must declare a stable document ID."))
+        }
+        if metadata.document.revision.map({ $0 >= 1 }) != true {
+            diagnostics.append(.init(severity: .error, code: "signing.revision", message: "Signing documents must declare a positive revision."))
+        }
+        let identifiers = declaration.positions.map(\.id)
+        if declaration.positions.isEmpty || Set(identifiers).count != identifiers.count {
+            diagnostics.append(.init(severity: .error, code: "signing.positions", message: "Signer positions must be present and uniquely identified."))
+        }
+        for position in declaration.positions {
+            if !matches(position.id, pattern: fieldIDPattern) || position.label.isEmpty || position.label.count > 120 {
+                diagnostics.append(.init(severity: .error, code: "signing.position", message: "Signer position identifiers and labels are invalid."))
+            }
+            let hasField = metadata.fields.values.contains { $0.type == .rubric && $0.signerPosition == position.id }
+            if !hasField {
+                diagnostics.append(.init(severity: .error, code: "signing.assignment", message: "Every signer position must have a rubric field assigned."))
+            }
         }
     }
 
@@ -266,6 +297,15 @@ public enum LeonardoFormatValidator {
             if definition.appearance != nil && definition.type != .checkbox {
                 diagnostics.append(LeonardoDiagnostic(severity: .error, code: "field.appearance", message: "Appearance is only supported for checkbox fields.", fieldID: fieldID))
             }
+            if let signerPosition = definition.signerPosition {
+                if metadata.formatVersion < LeonardoFormat.signingVersion {
+                    diagnostics.append(.init(severity: .error, code: "field.signingVersion", message: "Signer assignments require MDLF v2.", fieldID: fieldID))
+                } else if definition.type != .rubric {
+                    diagnostics.append(.init(severity: .error, code: "field.signerPosition", message: "Only rubric fields can be assigned to a signer position.", fieldID: fieldID))
+                } else if metadata.document.signing?.positions.contains(where: { $0.id == signerPosition }) != true {
+                    diagnostics.append(.init(severity: .error, code: "field.signerPosition", message: "The signer position is not declared in the document header.", fieldID: fieldID))
+                }
+            }
             if let size = definition.rubricSize, definition.type != .rubric || ![size.width, size.height].allSatisfy({ $0.isFinite && $0 > 0 && $0 <= 10000 }) {
                 diagnostics.append(.init(severity: .error, code: "field.rubricSize", message: "Rubric size requires a rubric field and positive bounded dimensions.", fieldID: fieldID))
             }
@@ -309,7 +349,7 @@ public enum LeonardoFormatValidator {
         }
     }
 
-    private static func validateValue(
+    static func validateValue(
         _ value: LeonardoJSONValue,
         definition: LeonardoFieldDefinition,
         fieldID: String,

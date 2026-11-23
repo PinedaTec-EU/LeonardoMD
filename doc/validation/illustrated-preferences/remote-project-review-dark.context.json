@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-23T00:14:55.039Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 460,
+    "width" : 600
+  },
+  "os" : "Version 27.2.1 (Build 26B131)",
+  "route" : "\/native\/remote-projects",
+  "screen" : "Remote projects grouped by connected Mac",
+  "source_sha" : "7e688537fedc969a686c903cf1be8fc2e0d400ba",
+  "state" : "Synthetic MacBook expanded in dark appearance; Incoming Research awaits Add or Ignore; docs\/future.md awaits review; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 460,
+    "width" : 600
+  }
+}

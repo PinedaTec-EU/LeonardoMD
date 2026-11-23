@@ -185,6 +185,90 @@ indicado y revisa el formulario completo antes de exportar una respuesta.
 Cambiar una etiqueta no debe alterar silenciosamente el identificador ni
 invalidar respuestas anteriores.
 
+### Firma guiada (MDLF v2)
+
+Los documentos que declaran la versión de formato 2 pueden mostrar el botón
+**Firmar** en la barra del documento. La cabecera enumera todos los puestos de
+firma obligatorios y los campos de rúbrica asignados a cada uno, junto con una
+ID estable del documento y una revisión semántica positiva. Los documentos
+de la versión 1 mantienen el flujo normal de **Rellenar formulario**; Little
+Leonardo puede previsualizar ambas versiones. La vista compartida normal es de solo lectura.
+
+Antes de revisar un puesto, elige un perfil local o crea uno con el nombre
+completo de la persona, el tipo de documento de identidad y su número. Después
+elige su credencial personal y autoriza explícitamente la asignación. Guardar
+los datos de identidad y guardar una rúbrica de perfil son decisiones
+independientes. La identidad declarada se muestra como declarada: una rúbrica o
+un aviso biométrico local no demuestra una verificación independiente.
+
+Si reutilizas un perfil que solo guardó la rúbrica,
+introduce el nombre completo y los datos del documento del firmante al asignarlo.
+
+La persona revisora debe seleccionar el puesto, iniciar la revisión y seguir
+las apariciones exactas de los campos en orden de origen. Para cada aparición,
+lee el contexto mostrado, dibuja una rúbrica nueva en el lienzo exclusivo de firma o elige una guardada,
+confirma expresamente cualquier reutilización y confirma esa aparición exacta.
+Para dibujar en un Little Leonardo vinculado, elige **Usar un Little Leonardo
+enlazado** desde el lienzo. El panel de espera muestra el dispositivo
+seleccionado. Pulsa **Cancelar petición** para detener la solicitud, **Dibujar en
+este Mac** para volver al lienzo o **Cerrar** para salir del diálogo. En el Mac,
+revisa el trazo recibido y pulsa
+**Usar rúbrica**. El dispositivo vinculado solo captura el trazo. El documento
+y la credencial de firma permanecen en el Mac.
+Dibujar en este flujo nunca añade la rúbrica a la biblioteca compartida; guardar
+una rúbrica de perfil sigue siendo una decisión separada y explícita. Los
+campos repetidos son ubicaciones distintas. La revisión se puede pausar y
+reanudar; **Firmar** sigue disponible mientras quede otro puesto declarado
+pendiente. La clave privada se cifra con la contraseña personal antes de
+guardarse en el llavero del dispositivo. En macOS es el llavero de inicio de
+sesión del usuario: conserva la protección del llavero del sistema, pero no
+declara una identidad biométrica para cada firma. Touch ID u otro aviso
+compartido solo desbloquea material local del llavero: no identifica qué
+persona está firmando.
+
+Antes de la primera confirmación, el panel de revisión enumera los campos
+opcionales que están vacíos y seguirán vacíos. Es un aviso informativo, no una
+segunda confirmación; desaparece cuando se sella la primera instantánea de
+ubicación.
+
+Usa rutas de imagen relativas a la carpeta del documento en los formularios con firma guiada.
+Sustituye las imágenes en línea en el original antes de firmar para que el
+sello cubra su contenido. Si una imagen cambia o falla al abrirse durante la
+revisión, vuelve a leer la vista actualizada antes de confirmar. Puedes editar
+y guardar un borrador sin firmar para sustituir una imagen ausente o en línea
+antes de reintentar. Vuelve a exportar la copia para Little Leonardo después de
+sustituir una imagen. Cada rúbrica permanece vacía hasta que Leonardo verifica
+su firma en esa aparición. El panel muestra en verde cada puesto verificado.
+Si falta confirmar la clave o falla la verificación de la prueba, el puesto
+muestra el motivo y la rúbrica permanece oculta.
+
+![Panel del Mac con una firma verificada, una clave sin confirmar y una verificación fallida](assets/guided-signing-verification.png)
+
+Una copia de firma incorpora las firmas completas que Leonardo puede verificar.
+El Mac conserva la revisión pendiente guardada en esa instalación. Si revisaste
+ubicaciones en otro dispositivo y aún falta la firma final, confirma aquí cada
+ubicación antes de firmar. Usa una copia actualizada si Leonardo rechaza una
+copia anterior o con avances distintos.
+
+Guarda el formulario cumplimentado en el Mac antes de confirmar la primera
+ubicación o intercambiar una copia de firma. La primera confirmación sella las respuestas guardadas, las
+asignaciones, la revisión del documento y los recursos referenciados. Los
+valores obligatorios inválidos, las ubicaciones que no se muestran y un
+documento cambiado bloquean la confirmación. Little Leonardo también la
+bloquea si no puede mostrar una imagen local referenciada. Si el documento
+sellado o uno de sus recursos cambia, la barra muestra **El documento firmado
+ha cambiado**. Pulsa el aviso para ver la opción de corrección disponible.
+Las correcciones requieren **Iniciar una revisión nueva para corregir…**
+y hay que asignar y revisar de nuevo todos los puestos. Las firmas y los
+registros públicos de confianza permanecen fuera del documento editable, en un
+almacenamiento local protegido; cambiar o quitar la cabecera no permite saltar
+una revisión existente. Si Leonardo puede recuperar la revisión sellada tras
+un cambio externo, inicia la revisión nueva y elige **Guardar copia…** antes
+de volver a firmar. Así se conserva el archivo externo. Si Leonardo no puede
+determinar el origen sellado, restaura el documento y los recursos originales
+desde una copia de confianza. Comprueba las huellas de las claves desconocidas
+por un canal de confianza independiente.
+
 ## 5. Exportar y compartir
 
 ![Elegir una exportación según el destinatario](assets/exportar.png)
@@ -599,17 +683,39 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
-![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](assets/sync-sharing-v14.png)
+![Compartir en las preferencias de Sincronización](assets/sync-sharing-v125.png)
 
-*Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.*
+Little Leonardo es un **compañero de solo lectura para la fuente compartida**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
-Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
+Para un documento MDLF v2 con firma guiada, Little Leonardo también puede crear
+una copia explícita de firma desde la vista del documento. **Firmar copia** abre
+el flujo local sin editar ni sincronizar la fuente compartida. Asigna cada puesto
+declarado a un perfil local o a un nombre completo, tipo y número de documento
+nuevos; guardar los datos de identidad y guardar una rúbrica de perfil son
+decisiones separadas. Inscribe y autoriza una credencial personal, lee la copia
+completa en el lector integrado de solo lectura, usa **Ver ubicación** para
+saltar a cada aparición exacta en el orden de la fuente, dibuja una rúbrica o
+confirma expresamente su reutilización, y pausa o reanuda cuando sea necesario.
+El lector nunca edita la copia; solo una firma final separada y verificada de
+forma independiente pinta la rúbrica en su aparición exacta. La revisión
+parcial sigue visible como pendiente. Antes de confirmar ubicaciones, usa el lector completo si hay rúbricas ordinarias, imágenes incrustadas u objetos de página, como una rúbrica insertada en la página.
+Después de verificar una copia más reciente, Little Leonardo conserva ese progreso
+cuando vuelves a abrir una copia anterior de la misma sesión de firma.
+Confirma las ubicaciones una a una en esta instalación antes de finalizar la
+firma. Una copia separada transfiere firmas verificadas y puedes continuar aquí
+la revisión pendiente que hayas guardado en este dispositivo.
+**Exportar copia firmada** muestra las identidades declaradas y las rúbricas que
+saldrán del dispositivo. No incluye claves privadas, rutas locales ni perfiles no
+asignados. Importa el JSON en el Mac solo después de comprobar la fuente local,
+la instantánea congelada, el prefijo de la cadena y las huellas de las claves
+públicas mediante un canal independiente; la importación usa compare-and-swap y
+nunca sobrescribe progreso más reciente.
 
 1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador verde confirma que el asistente funciona; un fallo real lo muestra en rojo con un mensaje breve. Durante la comprobación conserva el estado anterior: no aparece un estado gris temporal ni la línea «Servicio de sincronización en ejecución».
-   Pulsa **Ver diagnóstico…** encima del selector para consultar el estado del servicio, la última comprobación, la versión de LeonardoMD y los eventos recientes del servicio en esta sesión. **Copiar diagnóstico** lleva ese informe al portapapeles. El informe excluye invitaciones, códigos de emparejamiento, nombres de dispositivos, direcciones de red y rutas de archivos. **Enviar diagnóstico por correo…** abre un borrador en tu aplicación de correo predeterminada, con el mismo informe en el cuerpo y `leonardo@pinedatec.eu` como destinatario. Revisa el borrador y envíalo desde tu aplicación de correo. Si se abre la aplicación predeterminada pero no aparece el borrador, vuelve a la hoja, pulsa **Copiar diagnóstico** y pega el informe en un correo nuevo a `leonardo@pinedatec.eu`. Puedes usar tu aplicación de correo habitual o el correo web.
+   Pulsa **Ver diagnóstico…** encima del selector para consultar el estado del servicio, la última comprobación, la versión de LeonardoMD y los eventos recientes del servicio en esta sesión. **Copiar diagnóstico** lleva el informe completo al portapapeles. Para copiar solo una parte, arrastra sobre el texto, haz clic derecho en la selección y elige **Copiar**. Puedes pegar el texto copiado en otra aplicación. El informe excluye invitaciones, códigos de emparejamiento, nombres de dispositivos, direcciones de red y rutas de archivos. **Enviar diagnóstico por correo…** abre un borrador en tu aplicación de correo predeterminada, con el mismo informe en el cuerpo y `leonardo@pinedatec.eu` como destinatario. Revisa el borrador y envíalo desde tu aplicación de correo. Si se abre la aplicación predeterminada pero no aparece el borrador, vuelve a la hoja, pulsa **Copiar diagnóstico** y pega el informe en un correo nuevo a `leonardo@pinedatec.eu`. Puedes usar tu aplicación de correo habitual o el correo web.
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
-4. Crea una invitación. Si cambia la red, el QR y el enlace anteriores pueden desaparecer; cuando la dirección local vuelva a estar disponible, crea y comparte una invitación nueva. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Si Little Leonardo rechaza un QR escaneado no válido o caducado, el aviso breve incluye un código de referencia; abre **Ajustes de sincronización → Ver log** para encontrar la entrada correspondiente. Si ha caducado, pide al Mac de origen que cree una invitación nueva. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
+4. Crea una invitación. Si cambia la red, el QR y el enlace anteriores pueden desaparecer; cuando la dirección local vuelva a estar disponible, crea y comparte una invitación nueva. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Remoto** en otro Mac. Si Little Leonardo rechaza un QR escaneado no válido o caducado, el aviso breve incluye un código de referencia; abre **Ajustes de sincronización → Ver log** para encontrar la entrada correspondiente. Si ha caducado, pide al Mac de origen que cree una invitación nueva. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
 
 **Revisar cambios** requiere que el servicio de uso compartido local esté disponible. **Permitir la conexión**, **Rechazar** y **Revocar** requieren que el asistente de sincronización esté en buen estado. La acción afectada permanece desactivada mientras falte ese requisito. Los dispositivos emparejados siguen en la lista aunque compartir desde este Mac esté desactivado.
@@ -806,11 +912,11 @@ Si no se puede confirmar la parada segura, se aplaza la instalación en vez de t
 
 ## 15. Conectarme a otros equipos y copias sin conexión
 
-![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](assets/sync-connections-v14.png)
+![Remoto en las preferencias de Sincronización](assets/sync-connections-v125.png)
 
-*Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.*
+Los botones ilustrados **Compartir** y **Remoto** cambian de vista. En **Remoto**, despliega un Mac para revisar sus proyectos y archivos nuevos, o abre su menú para cambiarle el nombre.
 
-Usa **Preferencias → Sincronización → Conectarme a otros equipos** en la instancia principal. Activa **Leonardo Sync** con el control común en ambos Macs. En el de origen, abre **Compartir desde este Mac**, activa compartir y selecciona el contenido. En este Mac receptor, pulsa **Conectarme a otro Mac** y pega la invitación o dirección HTTPS del origen junto con un nombre para este dispositivo. Compara los códigos y aprueba en el origen antes de consultar sus proyectos. La conexión aparece con el nombre del host de origen; usa su menú para guardar un nombre más claro en este Mac. Puedes mantener desactivado **Compartir archivos guardados de este Mac**: acceder al contenido de otro no publica el tuyo. Ninguna función es un modo global de máster o cliente.
+Usa **Preferencias → Sincronización → Remoto** en la instancia principal. Activa **Leonardo Sync** con el control común en ambos Macs. En el de origen, abre **Compartir**, activa compartir y selecciona el contenido. En este Mac receptor, pulsa **Conectarme a otro Mac** y pega la invitación o dirección HTTPS del origen junto con un nombre para este dispositivo. Compara los códigos y aprueba en el origen antes de consultar sus proyectos. La conexión aparece con el nombre del host de origen; usa su menú para guardar un nombre más claro en este Mac. Puedes mantener desactivado **Compartir archivos guardados de este Mac**: acceder al contenido de otro no publica el tuyo. Ninguna función es un modo global de máster o cliente.
 
 Pulsa **Actualizar lista** para buscar proyectos o archivos nuevos, o deja elegido el intervalo de sincronización. En macOS, los proyectos nuevos aparecen en **Nuevos proyectos para revisar** junto al equipo que los comparte. **Añadir proyecto** guarda una referencia remota; no descarga sus archivos. **Ignorar** descarta ese aviso en este Mac sin cambiar el permiso de origen. El proyecto sigue descartado hasta que el Mac de origen lo retire o cambie el ámbito o la selección autorizados; al actualizarse ese cambio, vuelve a aparecer para revisión. Los proyectos que ya estaban disponibles antes de incorporar esta revisión se conservan al actualizar.
 
@@ -887,7 +993,7 @@ La disponibilidad depende del documento y estado actuales. Los campos de texto c
 
 ## 18. Disponibilidad, privacidad y límites
 
-Esta guía describe la aplicación macOS. El papel de solo lectura de Little Leonardo es distinto del escritorio. No deduzcas disponibilidad en Windows ni un diseñador visual de formularios a partir del formato abierto. Las definiciones y el diseño avanzado se escriben en metadatos/fuente o con un agente equipado para ello. Una fórmula visible no calcula valores de campos.
+Esta guía describe la aplicación macOS. El papel de solo lectura de Little Leonardo sobre la fuente compartida es distinto del escritorio, aunque su intercambio explícito de copias de firma puede recoger pruebas separadas sin conexión. No deduzcas disponibilidad en Windows ni un diseñador visual de formularios a partir del formato abierto. Las definiciones y el diseño avanzado se escriben en metadatos/fuente o con un agente equipado para ello. Una fórmula visible no calcula valores de campos.
 
 La lectura local, las imágenes empaquetadas y los motores incluidos funcionan sin conexión. Imágenes remotas, enlaces externos, actualizaciones y transferencias tienen sus propios requisitos de red. Los ajustes de proyecto son configuración portable, no un lugar para contraseñas. Emparejar, compartir, hacer Push o enviar documentos a un proveedor de IA son decisiones de divulgación distintas. Revisa destino y contenido cada vez.
 

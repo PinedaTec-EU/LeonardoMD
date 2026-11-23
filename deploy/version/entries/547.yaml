@@ -1,4 +1,0 @@
-{
-  "summary": "Run the iOS read-only document rendering check independently in CI and allow time for a cold WebKit start.",
-  "build": 1
-}

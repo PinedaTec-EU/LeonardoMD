@@ -174,6 +174,8 @@ def _validate_field(definition: object, path: str) -> None:
         _fail(path, "rubricSize is only supported for rubric fields")
     if "appearance" in definition and definition.get("type") != "checkbox":
         _fail(f"{path}.appearance", "appearance is only supported for checkbox fields")
+    if "signerPosition" in definition and definition.get("type") != "rubric":
+        _fail(f"{path}.signerPosition", "signerPosition is only supported for rubric fields")
     minimum_length = definition.get("minLength")
     maximum_length = definition.get("maxLength")
     if isinstance(minimum_length, int) and isinstance(maximum_length, int) and minimum_length > maximum_length:
@@ -295,11 +297,62 @@ def _validate_layout(layout: object) -> None:
                     _validate_dimension(column.get("maximumWidth"), f"{column_path}.maximumWidth", positive=True)
 
 
+def _validate_signing(metadata: dict[str, object]) -> None:
+    if metadata.get("formatVersion") != 2:
+        return
+    fields = metadata.get("fields")
+    document = metadata.get("document")
+    signing = document.get("signing") if isinstance(document, dict) else None
+    assigned_positions: set[str] = set()
+    if isinstance(fields, dict):
+        for field_id, definition in fields.items():
+            if not isinstance(definition, dict) or "signerPosition" not in definition:
+                continue
+            position_id = definition["signerPosition"]
+            if not isinstance(position_id, str):
+                _fail(f"fields.{field_id}.signerPosition", "signerPosition must be a string")
+            assigned_positions.add(position_id)
+            if not isinstance(signing, dict):
+                _fail(f"fields.{field_id}.signerPosition", "a signing declaration is required")
+    if not isinstance(signing, dict):
+        return
+    document_id = document.get("id") if isinstance(document, dict) else None
+    revision = document.get("revision") if isinstance(document, dict) else None
+    if not isinstance(document_id, str) or not document_id.strip():
+        _fail("document.id", "signing documents must declare a stable document ID")
+    if isinstance(revision, bool) or not isinstance(revision, int) or revision < 1:
+        _fail("document.revision", "signing documents must declare a positive revision")
+    positions = signing.get("positions")
+    if not isinstance(positions, list) or not positions:
+        _fail("document.signing.positions", "at least one signer position is required")
+    position_ids: list[str] = []
+    for index, position in enumerate(positions):
+        path = f"document.signing.positions[{index}]"
+        if not isinstance(position, dict):
+            _fail(path, "signer positions must be objects")
+        position_id = position.get("id")
+        label = position.get("label")
+        if not isinstance(position_id, str) or re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]{0,63}", position_id) is None:
+            _fail(f"{path}.id", "signer position identifiers are invalid")
+        if not isinstance(label, str) or not label.strip() or len(label) > 120:
+            _fail(f"{path}.label", "signer position labels are invalid")
+        if position_id in position_ids:
+            _fail(f"{path}.id", "signer position identifiers must be unique")
+        position_ids.append(position_id)
+    unknown = sorted(assigned_positions - set(position_ids))
+    if unknown:
+        _fail("document.signing.positions", f"unknown signer position(s): {', '.join(unknown)}")
+    missing = sorted(set(position_ids) - assigned_positions)
+    if missing:
+        _fail("document.signing.positions", f"positions without rubric fields: {', '.join(missing)}")
+
+
 def validate_metadata_semantics(metadata: dict[str, object]) -> None:
-    """Validate definition/layout policy while leaving current values opaque."""
+    """Validate definition/layout and guided-signing policy while leaving values opaque."""
 
     fields = metadata.get("fields")
     if isinstance(fields, dict):
         for field_id, definition in fields.items():
             _validate_field(definition, f"fields.{field_id}")
+    _validate_signing(metadata)
     _validate_layout(metadata.get("layout"))

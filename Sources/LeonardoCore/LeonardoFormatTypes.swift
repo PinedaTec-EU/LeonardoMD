@@ -3,7 +3,13 @@ import Foundation
 /// The canonical identifier embedded in an MDLF/MDLR document.
 public enum LeonardoFormat {
     public static let identifier = "mdlf"
-    public static let currentVersion = 1
+    /// Version 1 remains the default for ordinary documents and forms. Version
+    /// 2 is opt-in and reserves the signing vocabulary; legacy readers reject
+    /// it instead of opening a signed form as editable content.
+    public static let legacyVersion = 1
+    public static let signingVersion = 2
+    public static let currentVersion = signingVersion
+    public static let supportedVersions: Set<Int> = [legacyVersion, signingVersion]
     public static let fieldTokenPrefix = "{{field:"
     public static let fieldTokenSuffix = "}}"
 }
@@ -22,23 +28,28 @@ public struct LeonardoDocumentDescriptor: Codable, Equatable, Sendable {
     /// a later revision of the same form.
     public var revision: Int?
     public var locale: String?
+    /// A signed form declares its signer positions in the document header.
+    /// Detached signatures and trust records are intentionally not stored here.
+    public var signing: LeonardoSigningDeclaration?
 
     public init(
         id: String? = nil,
         title: String? = nil,
         kind: LeonardoDocumentKind = .document,
         revision: Int? = nil,
-        locale: String? = nil
+        locale: String? = nil,
+        signing: LeonardoSigningDeclaration? = nil
     ) {
         self.id = id
         self.title = title
         self.kind = kind
         self.revision = revision
         self.locale = locale
+        self.signing = signing
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, kind, revision, locale
+        case id, title, kind, revision, locale, signing
     }
 
     public init(from decoder: Decoder) throws {
@@ -48,6 +59,7 @@ public struct LeonardoDocumentDescriptor: Codable, Equatable, Sendable {
         kind = try container.decodeIfPresent(LeonardoDocumentKind.self, forKey: .kind) ?? .document
         revision = try container.decodeIfPresent(Int.self, forKey: .revision)
         locale = try container.decodeIfPresent(String.self, forKey: .locale)
+        signing = try container.decodeIfPresent(LeonardoSigningDeclaration.self, forKey: .signing)
     }
 }
 
@@ -158,6 +170,9 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
     public var type: LeonardoFieldType
     public var appearance: LeonardoFieldAppearance?
     public var rubricSize: LeonardoRubricSize?
+    /// The signer position responsible for this rubric field. It is only
+    /// legal for rubric fields and is unavailable in legacy format v1.
+    public var signerPosition: String?
 
     public var resolvedAppearance: LeonardoFieldAppearance { appearance ?? .checkbox }
     public var label: String?
@@ -191,11 +206,13 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
         placeholder: String? = nil,
         helpText: String? = nil,
         validationMessage: String? = nil,
-        defaultValue: LeonardoJSONValue? = nil
+        defaultValue: LeonardoJSONValue? = nil,
+        signerPosition: String? = nil
     ) {
         self.type = type
         self.appearance = appearance
         self.rubricSize = rubricSize
+        self.signerPosition = signerPosition
         self.label = label
         self.required = required
         self.readOnly = readOnly
@@ -212,7 +229,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case type, appearance, rubricSize, label, required, readOnly, minLength, maxLength, pattern
+        case type, appearance, rubricSize, signerPosition, label, required, readOnly, minLength, maxLength, pattern
         case minimum, maximum, options, placeholder, helpText, validationMessage, defaultValue
     }
 
@@ -221,6 +238,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
         type = try container.decodeIfPresent(LeonardoFieldType.self, forKey: .type) ?? .text
         appearance = try container.decodeIfPresent(LeonardoFieldAppearance.self, forKey: .appearance)
         rubricSize = try container.decodeIfPresent(LeonardoRubricSize.self, forKey: .rubricSize)
+        signerPosition = try container.decodeIfPresent(String.self, forKey: .signerPosition)
         label = try container.decodeIfPresent(String.self, forKey: .label)
         required = try container.decodeIfPresent(Bool.self, forKey: .required) ?? false
         readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? false
@@ -247,7 +265,7 @@ public struct LeonardoMetadata: Codable, Equatable, Sendable {
 
     public init(
         format: String = LeonardoFormat.identifier,
-        formatVersion: Int = LeonardoFormat.currentVersion,
+        formatVersion: Int = LeonardoFormat.legacyVersion,
         document: LeonardoDocumentDescriptor = LeonardoDocumentDescriptor(),
         fields: [String: LeonardoFieldDefinition] = [:],
         values: [String: LeonardoJSONValue] = [:],
@@ -284,7 +302,7 @@ public struct LeonardoMetadata: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         format = try container.decodeIfPresent(String.self, forKey: .format) ?? LeonardoFormat.identifier
-        formatVersion = try container.decodeIfPresent(Int.self, forKey: .formatVersion) ?? LeonardoFormat.currentVersion
+        formatVersion = try container.decodeIfPresent(Int.self, forKey: .formatVersion) ?? LeonardoFormat.legacyVersion
         document = try container.decodeIfPresent(LeonardoDocumentDescriptor.self, forKey: .document) ?? LeonardoDocumentDescriptor()
         fields = try container.decodeIfPresent([String: LeonardoFieldDefinition].self, forKey: .fields) ?? [:]
         values = try container.decodeIfPresent([String: LeonardoJSONValue].self, forKey: .values) ?? [:]
@@ -292,7 +310,7 @@ public struct LeonardoMetadata: Codable, Equatable, Sendable {
     }
 }
 
-public struct LeonardoDocument: Equatable, Sendable {
+public struct LeonardoDocument: Codable, Equatable, Sendable {
     public var body: String
     public var metadata: LeonardoMetadata
 

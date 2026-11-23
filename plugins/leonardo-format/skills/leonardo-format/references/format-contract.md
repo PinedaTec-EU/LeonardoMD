@@ -1,8 +1,9 @@
 # Leonardo format contract
 
 The canonical contract lives in the repository's `doc/format/` directory and
-is versioned with the application. The machine-readable v1 schema is
-`doc/format/mdlf-v1.schema.json`. These files are the only source of truth for
+is versioned with the application. The machine-readable schemas are
+`doc/format/mdlf-v1.schema.json` and `doc/format/mdlf-v2.schema.json`. These
+files are the only source of truth for
 the front-matter keys, field/value types, layout vocabulary, rendering
 semantics, and migration rules. The plugin must be released with the same
 contract revision that its skill describes.
@@ -74,6 +75,21 @@ including its filename. Directory records are validated for safe paths but are
 nonsemantic transport noise: packers omit them and readers ignore them. Readers
 also apply the versioned definition and layout safety rules; current `values`
 are draft data and are not rejected merely because an answer is invalid.
+
+Format version 2 is opt-in and adds only the guided-signing public header:
+`document.signing.positions` declares required signer positions and rubric
+fields may set `signerPosition` to one of those positions. A signing document
+must also declare a stable `document.id` and positive `document.revision`.
+Profiles, identity
+details, credentials, trust records, resources and detached signatures stay in
+protected local progress. The first confirmed location freezes the document
+revision, referenced resources and links for positions already started; a still
+pending position may receive its first assignment afterwards. Exact repeated
+placeholder occurrences are confirmed in source order. A correction must use a
+new semantic revision and collect fresh signatures. A declared profile is not
+independent identity verification, and a key or credential identifier found in
+the document is never trust. Legacy v1 readers reject v2 rather than opening a
+guided form as ordinary editable content.
 
 When the canonical contract changes, update `doc/format/`, examples, the
 application parser, and this plugin's bundled references together. Do not copy

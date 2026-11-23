@@ -1,5 +1,12 @@
 # Desktop peer synchronization
 
+Preferences separates local publishing (**Share**) from incoming connections
+(**Remote**) with illustrated role buttons. Remote expands one Mac inline across
+the pane; project discovery, new-file notices and added-project actions remain
+under that device. The visible room is controlled by `PreferencesView` and
+`SyncRoleSelector`; the disclosure itself lives in
+`DesktopPeerRemoteProjectsView`. See [#575](https://github.com/PinedaTec-EU/LeonardoMD/issues/575).
+
 `DesktopPeerLibrary` refreshes device authorization before reading or changing a
 linked project. A source Mac revoking the **device** durably revokes the local
 connection, purges its managed copies/outbox and removes its stored credential;

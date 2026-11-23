@@ -1,15 +1,78 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v107-en.mdlz` and `Guide-v107-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v126-en.mdlz` and `Guide-v126-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v107/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v126/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v107 explains how to copy the Sync diagnostic report and send it manually
-when the default mail handler does not show a draft.
-Guide v107 EN SHA-256: `c23325b22fa41f825a2ac49d99545b6f78110bfab8185bedcd2a96acbe67a9e1`
-and ES SHA-256: `de2b3b03923026aa1b534f7dc6581122ebcd8b84d8d929ddd5fbb977c3889d33`.
+Guide v126 explains how to authorize desktop peer synchronization from **Update list**.
+Guide v126 EN SHA-256: `998d973d42c7f70ebe795d68da38534c1132948120d3936028b77f5a08c4fc59`
+and ES SHA-256: `179c0210320f689f1ed1e05bfcf6c0c2e6ca86dfdee4aad309c2f17a0b3fd968`.
+
+Guide v125 documents the illustrated Preferences and the Share / Remote workflows.
+
+Guide v120 retains the guided-signing content from v119 and explains mouse selection
+in the Sync diagnostic report. Package SHA-256: EN `1ffb6a548c4c5687254bfe69edb962a8a7eee836ad43032868814a262cc14e19`, ES `79e27f4d0501574ce0ff8719d652afcf05484084d1fb2278ae9eb88dbc2abeeb`.
+
+Guide v119 explains which review decisions carry over in a signing copy and
+how to reference images with portable paths. The panel illustration shows
+verification for each signer in both languages.
+Guide v119 EN SHA-256: `b590b705b55ed5259157dfcc7da6cb11139f05d38d7e75472e75fc64a0b35c90`
+Guide v119 ES SHA-256: `686e487b5509d2e3dd8b282fd4a0189b4fda1089440fc770a7fb97ccbeb35b69`
+
+Guide v117 explains how to correct missing images in an unsigned draft and read
+per-signer verification indicators.
+Guide v117 EN SHA-256: `b10833121c1af021aba392de1dd329fb1f1789696cd340780ffd0b9460ec2d25`
+Guide v117 ES SHA-256: `d20b599442a2f9ccd9970ff09dc5fc510ba1e82575463471672ffa9b22b381b6`
+
+Guide v116 explains explicit identity entry when reusing an ink-only profile
+and the toolbar warning when the sealed document or its resources change. It also
+explains that reopening an older copy keeps the newer verified progress.
+Guide v116 EN SHA-256: `a2508eff65347fa10d33c48906f0d245063b81fd0a4d80cc61094b620881146b`
+Guide v116 ES SHA-256: `a37577fb4e1e40b8a28e6a44658a2a61d9a816396cccbd1def6b7de99b4041bf`
+
+Guide v115 explains the fixed local image requirement and verified-only ink for
+guided signing positions. Packaged Help validation remains pending.
+Guide v115 EN SHA-256: `ea25e6ba373ae13a0662e414ded7e2aacfebf3f1c190e9f7ca0b1743a2ddaab1`
+Guide v115 ES SHA-256: `79d2412523e5c40e7b700169b090c37e86ee3d63cd8f0e3697d592f58d93ea6c`
+
+Guide v114 explains saving the form before the first confirmation or exchange, recovering a
+trusted sealed revision through Save Copy, and blocked confirmation when a local
+image cannot be displayed on Little Leonardo. Packaged Help validation remains pending.
+Guide v114 EN SHA-256: `3d54e605b0a79c06ac9f18bae4712d13081a1fcbbbe5d8a1a9eb1d41af3d643f`
+Guide v114 ES SHA-256: `590f551f99685255b9102cd8a68ff0e30b49a46a774e848709a8ceb3c83dd30f`
+
+Guide v113 describes the redesigned linked-device rubric panel and its
+three actions in the guided signing chapter. Both guides passed packaged Help
+validation, including rendering with extensions enabled, the literal math fallback,
+and filling, saving and reopening each practice form.
+See the [macOS validation record](https://github.com/PinedaTec-EU/LeonardoMD/issues/517#issuecomment-7072628756).
+Guide v113 EN SHA-256: `5a7ef62b1618bba62ced3c14dc0e8fe0864eb5cfe7c09e98e02a692dc7c30670`
+Guide v113 ES SHA-256: `5533118ca68988561d063e20c3d722236d2cc1b9638ac4e5a2ca91a1d1b17f7d`
+
+Guide v111 adds linked Little Leonardo rubric capture to the Mac signing flow.
+It carries the MDLF v2 guided-signing workflow and clarifies that its
+signing-only rubric canvas never writes the shared rubric library unless the
+profile-save choice is explicit. It also explains the pre-seal notice for
+optional fields that remain blank. Exact repeated-field review, credential and
+trust boundaries, pause/resume and new-revision recovery remain in both locales.
+Its Help/practice acceptance remains pending for this change; the package is
+generated from the same bilingual bodies.
+Guide v111 EN SHA-256: `889ceecfc357f8a5de2eeace177284d5f9a9ba78829a6ac89102d405471e8d02`
+and ES SHA-256: `2a2882a05fb17acb9d474b84005576a6678a4bf8e206a340ac3e0526662aeda0`.
+
+Guide v109 remains historical: EN `f6dbd7c7b2cb0a45846e371dbcd63b15a7da844bb5dc5533d8a8ba8424fe7cc7`
+and ES `14bb6b47763d36b5dbd72766fd517e28e191292e228841b9038b1cd5795fe84d`.
+
+Guide v108 remains historical: EN `2bd2ec9690dfdeb0fcd716e490c4e7e35b9f86a4d0a46ad4f3550e7aea1f2ef7`
+and ES `ed74906417c65a736ac103e025772da6e7e24fe8325851a10311ccf1e3632e58`.
+
+Guide v107 (the previous current package) explained how to copy the Sync
+diagnostic report and send it manually when the default mail handler did not
+show a draft. Its historical hashes remain here:
+EN `c23325b22fa41f825a2ac49d99545b6f78110bfab8185bedcd2a96acbe67a9e1` and
+ES `de2b3b03923026aa1b534f7dc6581122ebcd8b84d8d929ddd5fbb977c3889d33`.
 
 Guide v105 documents opening a prefilled support draft from desktop Sync diagnostics.
 Guide v105 EN SHA-256: `1b308105cbcd8619d64af78228b3fe75c1706f8978be460bfdd5b25e6556e9b6`
@@ -60,7 +123,7 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v103 with a new
+historical review record. The current app resources use Guide v113 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
