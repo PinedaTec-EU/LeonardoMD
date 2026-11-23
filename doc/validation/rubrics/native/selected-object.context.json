@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-11-04T22:58:42.915Z",
+  "route": "/native/rubrics/document",
+  "screen": "Packaged LeonardoMD QA: selected page rubric",
+  "browser_name": "Native AppKit/SwiftUI with embedded WKWebView",
+  "browser_version": "Not exposed by Computer Use",
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Unlocked synthetic MDLF; mode dropdown and floating X/Y/Z controls; selected object border. Native point dimensions and browser viewport unavailable through capture API.",
+  "built_source_commit": "59b6b148fdae5b0f6789e119c0d6c965462846d7",
+  "pid": 56028,
+  "image": {
+    "sha256": "87958bacf2ef86f0eaefc0dd2f70511e2c95d20d8b944714d785b7994268e64f",
+    "width_px": 2520,
+    "height_px": 1700
+  }
+}

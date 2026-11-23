@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-06T20:38:25.832000+00:00",
+  "route": "/LittleLeonardo/native-ios-rubric-drawing-before-preview",
+  "screen": "Native iOS rubric drawing before preview",
+  "browser_name": "Native iOS Simulator, SwiftUI/UIKit; no browser",
+  "browser_version": "iOS 27.0 (24A434); SDK 27.1",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "capture_mode": "viewport",
+  "state": "Leonardo Classic; Spanish UI; synthetic loopback TLS fixture; native points represented in viewport_css schema field",
+  "data_provenance": "synthetic"
+}

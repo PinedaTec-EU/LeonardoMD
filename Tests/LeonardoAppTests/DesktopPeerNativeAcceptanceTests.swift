@@ -1,0 +1,374 @@
+import XCTest
+import AppKit
+import SwiftUI
+import ServiceManagement
+import LeonardoCore
+import LeonardoSync
+import LeonardoSyncTransport
+import LeonardoDesktopSync
+@testable import LeonardoApp
+
+/// Exercises both native controller/editor compositions through real pinned HTTPS.
+/// It does not launch another packaged process or claim physical VPN coverage.
+@MainActor
+final class DesktopPeerNativeAcceptanceTests: XCTestCase {
+    func testStaleAddProjectDisplaysLocalizedAuthorizationRecovery() async throws {
+        let fixture = try NativePeerAcceptanceFixture()
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+        LanguageSettings.shared.language = .english
+
+        await fixture.owner.initialize()
+        await fixture.owner.update(fixture.enabledSettings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+        await fixture.peer.initialize()
+        let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
+        XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
+        let connection = try XCTUnwrap(fixture.peer.connections.first)
+        await fixture.owner.refreshConsent()
+        let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+        await fixture.owner.approve(request, projects: [fixture.shared.id])
+        await fixture.peer.refresh(connection.id)
+        XCTAssertEqual(fixture.peer.available[connection.id]?.map(\.id), [fixture.shared.id])
+
+        var noProjects = fixture.enabledSettings
+        noProjects.port = UInt16(try XCTUnwrap(running.endpoint.port))
+        noProjects.projects = []
+        await fixture.owner.update(noProjects)
+        XCTAssertEqual(fixture.peer.available[connection.id]?.map(\.id), [fixture.shared.id], "Keep the stale row to exercise its Add action")
+
+        await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
+        let message = try XCTUnwrap(fixture.peer.error)
+        XCTAssertTrue(message.contains("no longer shares this project"), message)
+        XCTAssertFalse(message.localizedCaseInsensitiveContains("unauthorizedproject"), message)
+        XCTAssertFalse(message.localizedCaseInsensitiveContains("error 4"), message)
+    }
+
+    func testRemoteProjectsReviewScreenShowsHostProjectAndNewFile() async throws {
+        let fixture = try NativePeerAcceptanceFixture(peerHelperFactory: { preferences in
+            SyncHelperController(preferencesURL: preferences, configurations: ConfigurationStore(),
+                service: NativeReviewCaptureRegistration(), client: NativeReviewCaptureControl(),
+                expectedBuildIdentity: nil, startup: .init(attempts: 0), hasExecutable: { true }, verifyPackage: {})
+        })
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
+        fixture.peer.updateInterval(0)
+        try await ConfigurationStore().setSyncHelperEnabled(true, at: fixture.peerPreferences)
+        await fixture.peer.helper.refresh()
+        XCTAssertTrue(fixture.peer.helper.online)
+
+        let incomingRoot = fixture.root.appendingPathComponent("Incoming", isDirectory: true)
+        try FileManager.default.createDirectory(at: incomingRoot, withIntermediateDirectories: true)
+        let incoming = MobileSharedProject(rootURL: incomingRoot, name: "Incoming Research", folders: ["docs"])
+        try fixture.write(incomingRoot, "docs/brief.md", "newly shared project")
+        var settings = fixture.enabledSettings
+        settings.projects.append(incoming)
+        await fixture.owner.initialize()
+        await fixture.owner.update(settings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+
+        await fixture.peer.initialize()
+        let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
+        XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
+        let connection = try XCTUnwrap(fixture.peer.connections.first)
+        fixture.peer.setConnectionName("Synthetic MacBook", connectionID: connection.id)
+        await fixture.owner.refreshConsent()
+        let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+        await fixture.owner.approve(request, projects: [fixture.shared.id, incoming.id])
+        await fixture.peer.refresh(connection.id)
+        XCTAssertEqual(fixture.peer.reviewStore.hostName(for: connection), "Synthetic MacBook")
+        XCTAssertEqual(Set(fixture.peer.available[connection.id, default: []].map(\.id)), [fixture.shared.id, incoming.id])
+
+        await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
+        try fixture.write(fixture.source, "docs/future.md", "newly shared file")
+        try fixture.write(fixture.source, "docs/logo.png", "synthetic image bytes")
+        await fixture.peer.refresh(connection.id)
+        XCTAssertTrue(fixture.peer.reviewStore.acceptsProject(connectionID: connection.id, projectID: fixture.shared.id))
+        XCTAssertFalse(fixture.peer.reviewStore.acceptsProject(connectionID: connection.id, projectID: incoming.id))
+        let pendingPaths = fixture.peer.reviewStore.pendingFilePaths(connectionID: connection.id, projectID: fixture.shared.id)
+        XCTAssertTrue(pendingPaths.contains("docs/future.md"))
+        XCTAssertTrue(pendingPaths.contains("docs/logo.png"))
+        let hiddenNotices = DesktopPeerRemoteProjectsView(controller: fixture.peer)
+            .fileNotices(for: connection).map { $0.entry.path }
+        XCTAssertEqual(hiddenNotices, ["docs/future.md"])
+        let visibleNotices = DesktopPeerRemoteProjectsView(controller: fixture.peer, showNonDocumentFiles: true)
+            .fileNotices(for: connection).map { $0.entry.path }
+        XCTAssertEqual(visibleNotices, ["docs/future.md", "docs/logo.png"])
+
+        guard let evidenceRoot = ProcessInfo.processInfo.environment["LEONARDO_REMOTE_PROJECTS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: evidenceRoot, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+        LanguageSettings.shared.language = .english
+        let view = DesktopPeerRemoteProjectsView(controller: fixture.peer)
+            .frame(width: 920, height: 620, alignment: .topLeading)
+            .padding(16)
+            .background(Color(nsColor: .windowBackgroundColor))
+        let host = NSHostingView(rootView: view)
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 952, height: 652),
+            to: destination.appendingPathComponent("remote-project-review.png"), language: "en",
+            state: "Synthetic MacBook; Incoming Research awaits Add or Ignore; docs/future.md awaits review; accepted project remains browseable",
+            route: "/native/remote-projects", screen: "Remote projects grouped by connected Mac")
+    }
+
+    func testAcceptedRemoteProjectCatalogueRemainsBrowseableAfterOfflineRestart() async throws {
+        let fixture = try NativePeerAcceptanceFixture()
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
+        await fixture.owner.initialize()
+        await fixture.owner.update(fixture.enabledSettings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+        do {
+            await fixture.peer.initialize()
+            let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
+            XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
+            let connection = try XCTUnwrap(fixture.peer.connections.first)
+            await fixture.owner.refreshConsent()
+            let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+            await fixture.owner.approve(request, projects: [fixture.shared.id])
+            await fixture.peer.refresh(connection.id)
+            await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
+            let downloadID = DesktopPeerController.downloadID(connectionID: connection.id, projectID: fixture.shared.id)
+            await fixture.peer.downloads.retain(id: downloadID, path: "docs/note.md", isFolder: false, keep: true)
+            let retained = try XCTUnwrap(fixture.peer.downloads.projects.first(where: { $0.id == downloadID }))
+            let cachedRevision = try XCTUnwrap(retained.downloads["docs/note.md"]?.revision)
+            let catalogueRevision = try XCTUnwrap(retained.catalogue.files.first(where: { $0.path == "docs/note.md" })?.revision)
+            XCTAssertEqual(cachedRevision, catalogueRevision)
+
+            fixture.peer.updateInterval(0)
+            fixture.peer.stop()
+            var disabled = fixture.enabledSettings
+            disabled.enabled = false
+            await fixture.owner.update(disabled)
+
+            let restarted = DesktopPeerController(preferencesURL: fixture.peerPreferences, library: fixture.peerLibrary,
+                                                   revoker: fixture.peerRevoker, defaults: fixture.defaults,
+                                                   helper: fixture.peer.helper)
+            await restarted.initialize()
+            defer { restarted.stop() }
+            let restoredConnection = try XCTUnwrap(restarted.connections.first)
+            XCTAssertNil(restarted.available[restoredConnection.id], "Offline startup must not imply a fresh remote response")
+            XCTAssertEqual(restarted.acceptedProjectDescriptors(for: restoredConnection).map(\.id), [fixture.shared.id])
+            let cached = try XCTUnwrap(restarted.downloads.projects.first(where: { $0.id == downloadID }))
+            XCTAssertEqual(cached.descriptor.name, fixture.shared.name)
+            let opened = try await restarted.downloads.open(id: downloadID, path: "docs/note.md")
+            XCTAssertEqual(opened.content, Data("baseline".utf8))
+            XCTAssertNil(restarted.error)
+        } catch {
+            await fixture.owner.stop()
+            throw error
+        }
+    }
+
+    func testNativeControllersReconcileOfflineCopiesAndRevokeOpenEditors() async throws {
+        let fixture = try NativePeerAcceptanceFixture()
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
+        await fixture.owner.initialize()
+        await fixture.owner.update(fixture.enabledSettings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+        do {
+            await fixture.peer.initialize()
+            let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
+            XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
+            let connection = try XCTUnwrap(fixture.peer.connections.first)
+            await fixture.owner.refreshConsent()
+            let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+            XCTAssertEqual(request.kind, .desktopPeer)
+            XCTAssertEqual(connection.comparisonCode, request.comparisonCode)
+            await fixture.owner.approve(request, projects: [fixture.shared.id])
+            await fixture.peer.refresh(connection.id)
+            XCTAssertEqual(fixture.peer.available[connection.id]?.map(\.id), [fixture.shared.id])
+            await fixture.peer.importProject(connectionID: connection.id, projectID: fixture.shared.id)
+            let copy = try XCTUnwrap(fixture.peer.copies.first)
+            let opened = await fixture.peer.open(copy.id)
+            let directory = try XCTUnwrap(opened)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent("code/private.md").path))
+            XCTAssertEqual(try fixture.read(directory, "loose.md"), "individual document")
+            await fixture.ownerEditor.openDocument(fixture.source.appendingPathComponent("docs/note.md"))
+            let peerEditor = fixture.peerTabs.activeSession
+            await peerEditor.openDocument(directory.appendingPathComponent("docs/note.md"))
+
+            // Service loss retains the actual working directory and pending editor bytes.
+            var disabled = fixture.enabledSettings
+            disabled.enabled = false
+            await fixture.owner.update(disabled)
+            try fixture.write(directory, "docs/note.md", "offline saved")
+            try fixture.write(directory, "docs/new.md", "offline addition")
+            try FileManager.default.removeItem(at: directory.appendingPathComponent("docs/delete.md"))
+            peerEditor.content = "offline peer draft"
+            fixture.ownerEditor.content = "owner conflicting draft"
+            await fixture.peer.compare(copy.id)
+            XCTAssertNotNil(fixture.peer.error)
+            XCTAssertEqual(peerEditor.content, "offline peer draft")
+            XCTAssertEqual(try fixture.read(directory, "docs/new.md"), "offline addition")
+            XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent("docs/delete.md").path))
+            XCTAssertEqual(fixture.peer.copies.first?.files.first(where: { $0.path == "docs/note.md" })?.content,
+                           Data("offline peer draft".utf8))
+
+            // Reconnect to the same persisted TLS identity, send and review on the owner.
+            var resumed = fixture.enabledSettings
+            resumed.port = try XCTUnwrap(UInt16(exactly: try XCTUnwrap(running.endpoint.port)))
+            await fixture.owner.update(resumed)
+            XCTAssertEqual(fixture.owner.running?.certificateFingerprint, running.certificateFingerprint)
+            await fixture.peer.compare(copy.id)
+            XCTAssertNil(fixture.peer.error)
+            let comparison = try XCTUnwrap(fixture.peer.comparisons[copy.id])
+            XCTAssertTrue(comparison.comparison.differences.contains(where: { $0.path == "docs/note.md" && $0.hasConflict }))
+            await fixture.peer.send(copy.id)
+            XCTAssertNil(fixture.peer.error)
+            XCTAssertTrue(fixture.peer.submitted.contains(copy.id))
+            await fixture.owner.refreshConsent()
+            let incoming = try XCTUnwrap(fixture.owner.incoming.first)
+            await fixture.owner.reviewProposal(incoming)
+            let review = try XCTUnwrap(fixture.owner.reviewing)
+            XCTAssertTrue(review.review.comparison.differences.contains(where: { $0.path == "docs/note.md" && $0.hasConflict }))
+            XCTAssertEqual(try fixture.read(fixture.source, "docs/note.md"), "baseline")
+            let applied = await fixture.owner.applyReview(review, decisions: [
+                "docs/note.md": .content(Data("manual resolution".utf8)),
+                "docs/new.md": .local,
+                "docs/delete.md": .local
+            ])
+            XCTAssertTrue(applied, fixture.owner.error ?? "Reconciliation failed")
+            XCTAssertEqual(fixture.ownerEditor.content, "manual resolution")
+            XCTAssertFalse(fixture.ownerEditor.isDirty)
+            XCTAssertEqual(try fixture.read(fixture.source, "docs/new.md"), "offline addition")
+            XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.source.appendingPathComponent("docs/delete.md").path))
+            XCTAssertEqual(try fixture.read(fixture.source, "code/private.md"), "unshared sentinel")
+
+            // Receipt application must retain edits made after the immutable send.
+            peerEditor.content = "later peer draft"
+            try fixture.write(directory, "docs/later.md", "later addition")
+            await fixture.peer.send(copy.id)
+            XCTAssertNil(fixture.peer.error)
+            XCTAssertEqual(peerEditor.content, "later peer draft")
+            XCTAssertTrue(peerEditor.isDirty)
+            XCTAssertEqual(fixture.peer.copies.first?.base.files.first(where: { $0.path == "docs/note.md" })?.content,
+                           Data("manual resolution".utf8))
+            await fixture.owner.refreshConsent()
+            XCTAssertEqual(fixture.owner.incoming.count, 1)
+            XCTAssertNotEqual(fixture.owner.incoming.first?.upload.proposalID, incoming.upload.proposalID)
+
+            // The native tab revoker closes access before the library removes files.
+            await fixture.owner.revoke(connection.remoteDeviceID)
+            await fixture.peer.refresh(connection.id)
+            XCTAssertTrue(fixture.peer.copies.isEmpty)
+            XCTAssertTrue(fixture.peer.connections.first?.revoked == true)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+            XCTAssertTrue(peerEditor.stopped)
+            XCTAssertNil(peerEditor.documentURL)
+            XCTAssertEqual(peerEditor.content, "")
+            XCTAssertEqual(fixture.ownerEditor.content, "manual resolution")
+            await fixture.owner.stop()
+        } catch {
+            await fixture.owner.stop()
+            throw error
+        }
+    }
+
+}
+
+@MainActor
+private final class NativePeerAcceptanceFixture {
+    let root: URL
+    let source: URL
+    let peerPreferences: URL
+    let shared: MobileSharedProject
+    let owner: DesktopSyncController
+    let peer: DesktopPeerController
+    let peerLibrary: DesktopPeerLibrary
+    let peerRevoker: DesktopPeerEditorRevoker
+    let ownerEditor: AppSession
+    let peerTabs: DocumentTabs
+    let defaults: UserDefaults
+    private let defaultsSuite: String
+    private let oldSessions: @MainActor () -> [AppSession]
+    var enabledSettings: MobileSyncPreferences {
+        MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0, projects: [shared])
+    }
+
+    init(peerHelperFactory: (@MainActor (URL) -> SyncHelperController)? = nil) throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defaultsSuite = "NativePeerAcceptance." + root.lastPathComponent
+        defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsSuite))
+        source = root.appendingPathComponent("Source")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        shared = MobileSharedProject(rootURL: source, name: "Synthetic Studio", folders: ["docs"], documents: ["loose.md"])
+        let ownerPreferences = root.appendingPathComponent("Owner/preferences.json")
+        peerPreferences = root.appendingPathComponent("Peer/preferences.json")
+        ownerEditor = AppSession(preferencesURL: ownerPreferences)
+        peerTabs = DocumentTabs(preferencesURL: peerPreferences)
+        let credentials = NativePeerAcceptanceCredentials()
+        let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Service"), credentials: credentials, now: { Date() })
+        owner = DesktopSyncController(preferencesURL: ownerPreferences, configurations: ConfigurationStore(), runtime: runtime)
+        let peerRoot = peerPreferences.deletingLastPathComponent().appendingPathComponent("DesktopPeers")
+        let working = peerRoot.appendingPathComponent("Working")
+        let copies = FileDesktopPeerCopyStore(root: peerRoot.appendingPathComponent("Copies"))
+        peerRevoker = DesktopPeerEditorRevoker()
+        peerLibrary = DesktopPeerLibrary(
+            connections: FileDesktopPeerConnectionStore(root: peerRoot.appendingPathComponent("Connections")),
+            copies: copies, workspace: DesktopPeerWorkspace(root: working, copies: copies),
+            credentials: credentials, remote: DesktopPeerHTTPSRemote(), revoker: peerRevoker,
+            outbox: FileDesktopPeerOutboxStore(root: peerRoot.appendingPathComponent("Outbox")),
+            receiptApplier: DesktopPeerReceiptApplier(workingRoot: working, copies: copies,
+                intents: FileDesktopPeerReceiptIntentStore(root: peerRoot.appendingPathComponent("ReceiptIntents"))))
+        peer = DesktopPeerController(preferencesURL: peerPreferences, library: peerLibrary, revoker: peerRevoker,
+                                     defaults: defaults, helper: peerHelperFactory?(peerPreferences))
+        oldSessions = NativeReconciliationLease.shared.sessions
+        let editor = ownerEditor, tabs = peerTabs
+        NativeReconciliationLease.shared.sessions = { [editor] + tabs.tabs.map(\.session) }
+        owner.buffers = { _ in editor.documentURL == nil ? [] : [OpenDocumentBuffer(path: "docs/note.md", text: editor.content)] }
+        peer.buffers = { _ in
+            tabs.tabs.compactMap { tab in
+                guard tab.session.documentURL != nil else { return nil }
+                return OpenDocumentBuffer(path: "docs/note.md", text: tab.session.content)
+            }
+        }
+        peerRevoker.close = { ids in
+            let directories = ids.map { working.appendingPathComponent($0.uuidString) }
+            await NativeReconciliationLease.shared.waitUntilReleased(directories)
+            await tabs.revokeWorkspaces(directories)
+        }
+        try write(source, "docs/note.md", "baseline")
+        try write(source, "docs/delete.md", "delete baseline")
+        try write(source, "loose.md", "individual document")
+        try write(source, "code/private.md", "unshared sentinel")
+    }
+
+    func write(_ directory: URL, _ path: String, _ text: String) throws {
+        let file = directory.appendingPathComponent(path)
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(text.utf8).write(to: file)
+    }
+
+    func read(_ directory: URL, _ path: String) throws -> String {
+        try String(contentsOf: directory.appendingPathComponent(path), encoding: .utf8)
+    }
+
+    func cleanup() async {
+        await owner.stop()
+        ownerEditor.stop(); peerTabs.stop(); peer.stop()
+        NativeReconciliationLease.shared.sessions = oldSessions
+        defaults.removePersistentDomain(forName: defaultsSuite)
+        try? FileManager.default.removeItem(at: root)
+    }
+}
+
+@MainActor
+private final class NativeReviewCaptureRegistration: SyncHelperRegistration {
+    var status: SMAppService.Status = .enabled
+    func register() throws {}
+    func unregister() async throws {}
+    func openApprovalSettings() {}
+}
+
+private struct NativeReviewCaptureControl: SyncHelperControlAccess {
+    func status() async throws -> SyncHelperStatus { SyncHelperStatus(enabled: true, sharing: nil) }
+    func reload() async throws -> SyncHelperStatus { SyncHelperStatus(enabled: true, sharing: nil) }
+}
+
+private actor NativePeerAcceptanceCredentials: DeviceCredentialStore {
+    private var values: [UUID: String] = [:]
+    func credential(deviceID: UUID) -> String? { values[deviceID] }
+    func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }
+    func remove(deviceID: UUID) { values.removeValue(forKey: deviceID) }
+}

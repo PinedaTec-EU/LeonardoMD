@@ -1,0 +1,36 @@
+{
+  "source": "2ac7b7c5fb0566fea95b1652d3cd4766f3694cf8",
+  "integrated_main": "54c00e421adcaaadaba3de56a8e3d6465ad73ad3",
+  "xctest": {
+    "executed": 779,
+    "skipped": 41,
+    "failures": 0
+  },
+  "swift_testing": {
+    "passed": 72
+  },
+  "packaging_determinism": {
+    "passed": 3
+  },
+  "ios_generic_simulator": "BUILD SUCCEEDED",
+  "ledger_delta": 24,
+  "logs": {
+    "focused": {
+      "path": "/tmp/leonardo413-guide45-focused.log",
+      "sha256": "45f05a673dec727991b9576c10022e0466473f252eca3e0d5a7c91332d523b07"
+    },
+    "full": {
+      "path": "/tmp/leonardo413-guide45-full.log",
+      "sha256": "f69e83350c25d3cd7c040baa8ca7ae305d22f79ba68bcb9e8a96963b45bd465a"
+    },
+    "ios": {
+      "path": "/tmp/leonardo413-guide45-ios.log",
+      "sha256": "e4ffa6b36b900bf0e23a23f36ceec1c21356a5edb29b78831c8e42d064670867"
+    },
+    "qa": {
+      "path": "/tmp/leonardo413-guide45-qa.log",
+      "sha256": "af83a7d3b59b63de42b909c6ae60940c2c1bce2bc38271e1c8dc813f64ba6db3"
+    }
+  },
+  "scope": "New source integrates #400 and advances bilingual guide to45; previous helper lifecycle corrections unchanged."
+}

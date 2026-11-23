@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T13:31:35.730Z",
+  "route": "/native/help-en-enabled",
+  "screen": "help-en-enabled",
+  "browser_name": "Native AppKit/WKWebView",
+  "browser_version": "Not exposed by CUA",
+  "viewport_css": {
+    "width": 5120,
+    "height": 2880
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Mermaid Math ON inline single-line multiline underbrace radical tagged box-counting1 chart literal code inspected; screenshot-pixel equivalent dimensions; source b24087574b32eadb1c14f55d9a467dc1507d340f; baseline0.3.1113; Guide26; ad-hoc QA helper unavailable expected, external helper untouched"
+}

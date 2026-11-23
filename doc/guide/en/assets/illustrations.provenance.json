@@ -1,0 +1,49 @@
+{
+  "kind": "AI-generated illustrative artwork, not a UI screenshot",
+  "generator": "built-in image_gen",
+  "created_on": "2026-11-06",
+  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/375",
+  "palette": {
+    "heading": "#7A1114",
+    "accent": "#8C3F22",
+    "border": "#9C8052",
+    "paper": "#E7D6AD",
+    "ink": "#11100D"
+  },
+  "prompt": "Regenerate reference as Leonardo Classic paper-relief illustration, true transparent alpha background, no panels, no title or localized captions; keep only format badges and original diagram subjects/order.",
+  "packaging": "Aspect-preserving sips resize to 1200\u00d7400; alpha retained. Shared artwork across locales; explanatory captions remain localized document text.",
+  "images": {
+    "journey.png": {
+      "original_image_id": "exec-a8d09d8e-cfb9-4e0d-85a8-cddcc3fc4677.png",
+      "original_sha256": "7dbd4e8e2ca03ac119cbe87fe4435f8e23a9fff11ae089c86b9cb288438834a0",
+      "asset_sha256": "168ec2a62e8faf0ddeb3e895a25bd024b9fc8ec826a53dc9c91b19b38addc090",
+      "width": 1200,
+      "height": 400,
+      "transparent": true
+    },
+    "package.png": {
+      "original_image_id": "exec-5effd05a-e727-431e-ba44-02fd401dab8a.png",
+      "original_sha256": "979267d2be2e5764f566123ae872baf1f21b4feb1ce11381ad5fd142ea166acc",
+      "asset_sha256": "ea5b4ceffa5f31cdfea32e600b853bd306cb27546a7fbd2efa567374e9e3725d",
+      "width": 1200,
+      "height": 400,
+      "transparent": true
+    },
+    "export.png": {
+      "original_image_id": "exec-431028bd-e446-4419-92fb-93c8da527da4.png",
+      "original_sha256": "83a2466c238a699a7b3f6bdee4a5464803e044eae86700c5b1aca01a021de989",
+      "asset_sha256": "3f3dd29eed987a57be5fd0c88e0277e4662846984045698ffa8387b976a6beb3",
+      "width": 1200,
+      "height": 400,
+      "transparent": true
+    },
+    "import.png": {
+      "original_image_id": "exec-e32732cb-6049-4f86-a0e4-1794259284d2.png",
+      "original_sha256": "31040e8d263076a4c0cd1f96d999e644d42ead7067adf1fe535916aae7f36399",
+      "asset_sha256": "2b48d463017c39ad718c84f05a95919d9eff31a56bd1e61769b41edf90f8a949",
+      "width": 1200,
+      "height": 400,
+      "transparent": true
+    }
+  }
+}

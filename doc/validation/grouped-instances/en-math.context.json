@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-13T08:31:46.001Z",
+  "screen": "Bundled English Help: complete display equations",
+  "route": "Help/Guide-v69-en/Math",
+  "browser_name": "Native AppKit WKWebView",
+  "browser_version": "Not exposed by CUA; packaged LeonardoMD 0.3.1371",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "state": "English Math enabled; original candidate 66320a93; native screenshot pixels used in compatibility viewport fields (CSS viewport unavailable)",
+  "data_provenance": "synthetic"
+}

@@ -1,0 +1,16 @@
+{
+  "browser_name" : "Little Leonardo native SwiftUI\/WKWebView · iOS Simulator 27.0",
+  "browser_version" : "WKWebView engine version not exposed by XCTest",
+  "capture_mode" : "viewport",
+  "captured_at" : "2026-11-15T17:36:06Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 956,
+    "width" : 440
+  },
+  "route" : "\/native\/ios\/on-demand\/display-name-singular-count-es",
+  "screen" : "display-name-singular-count-es",
+  "source_sha" : "324636affe92f10ab4eaaa77f49a63924e4bf9d7",
+  "state" : "Synthetic connected host uses its saved local Mac QA name, hides the endpoint and shows one project pending review; native points measured from app.frame; Spanish; Classic appearance",
+  "viewport_css" : null
+}

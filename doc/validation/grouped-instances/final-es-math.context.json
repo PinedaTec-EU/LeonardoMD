@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-13T08:52:51.666Z",
+  "screen": "Guide v70 Spanish and native instance controls",
+  "route": "Help/Guide-v70-es/Math",
+  "browser_name": "Native AppKit WKWebView",
+  "browser_version": "Not exposed by CUA; packaged LeonardoMD 0.3.1371",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "state": "Source 34c132755081857f534c5ff862f09e4319a81e71; Math enabled; native screenshot pixels used in compatibility viewport fields; CSS viewport not applicable",
+  "data_provenance": "synthetic"
+}

@@ -1,0 +1,176 @@
+[
+  {
+    "name": "spanish-welcome",
+    "screen": "Spanish welcome",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "spanish-welcome.png"
+  },
+  {
+    "name": "english-saved-practice",
+    "screen": "English saved practice",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "english-saved-practice.png"
+  },
+  {
+    "name": "english-gallery-3",
+    "screen": "English gallery 3",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "english-gallery-3.png"
+  },
+  {
+    "name": "english-gallery-2",
+    "screen": "English gallery 2",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "english-gallery-2.png"
+  },
+  {
+    "name": "english-gallery-1",
+    "screen": "English gallery 1",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "english-gallery-1.png"
+  },
+  {
+    "name": "english-gallery-0",
+    "screen": "English gallery 0",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "english-gallery-0.png"
+  },
+  {
+    "name": "english-welcome",
+    "screen": "English welcome",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "english-welcome.png"
+  },
+  {
+    "name": "spanish-persisted-practice-after-source",
+    "screen": "Spanish persisted practice after source",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "spanish-persisted-practice-after-source.png"
+  },
+  {
+    "name": "spanish-source-with-saved-values",
+    "screen": "Spanish source with saved values",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "spanish-source-with-saved-values.png"
+  },
+  {
+    "name": "classic-manual-pairing",
+    "screen": "Classic manual pairing",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-manual-pairing.png"
+  },
+  {
+    "name": "classic-qr-pairing",
+    "screen": "Classic QR pairing",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-qr-pairing.png"
+  },
+  {
+    "name": "classic-about-installed-application",
+    "screen": "Classic About installed application",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-about-installed-application.png"
+  },
+  {
+    "name": "classic-offline-help",
+    "screen": "Classic offline help",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-offline-help.png"
+  },
+  {
+    "name": "classic-synchronization-settings",
+    "screen": "Classic synchronization settings",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-synchronization-settings.png"
+  },
+  {
+    "name": "classic-library",
+    "screen": "Classic library",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-library.png"
+  },
+  {
+    "name": "native-ios-mac-requested-rubric-sent-over-pinned-https",
+    "screen": "Native iOS Mac-requested rubric sent over pinned HTTPS",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "native-ios-mac-requested-rubric-sent-over-pinned-https.png"
+  },
+  {
+    "name": "native-ios-rubric-preview-before-send",
+    "screen": "Native iOS rubric preview before send",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "native-ios-rubric-preview-before-send.png"
+  },
+  {
+    "name": "native-ios-rubric-drawing-before-preview",
+    "screen": "Native iOS rubric drawing before preview",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "native-ios-rubric-drawing-before-preview.png"
+  },
+  {
+    "name": "classic-rubric-restored-portrait-with-preserved-ink",
+    "screen": "Classic rubric restored portrait with preserved ink",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-rubric-restored-portrait-with-preserved-ink.png"
+  },
+  {
+    "name": "native-ios-rubric-approval-card-before-acceptance",
+    "screen": "Native iOS rubric approval card before acceptance",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "native-ios-rubric-approval-card-before-acceptance.png"
+  },
+  {
+    "name": "enrolled-direct-project-purged-after-confirmed-revocation",
+    "screen": "Enrolled direct project purged after confirmed revocation",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "enrolled-direct-project-purged-after-confirmed-revocation.png"
+  },
+  {
+    "name": "little-leonardo-synchronization-failure-diagnostic",
+    "screen": "Little Leonardo synchronization failure diagnostic",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "little-leonardo-synchronization-failure-diagnostic.png"
+  },
+  {
+    "name": "classic-document-source",
+    "screen": "Classic document source",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-document-source.png"
+  },
+  {
+    "name": "classic-markdown-document",
+    "screen": "Classic Markdown document",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-markdown-document.png"
+  },
+  {
+    "name": "classic-project-documents",
+    "screen": "Classic project documents",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-project-documents.png"
+  },
+  {
+    "name": "classic-enrolled-library",
+    "screen": "Classic enrolled library",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "classic-enrolled-library.png"
+  },
+  {
+    "name": "offline-demo-available-during-pending-rubric-recovery",
+    "screen": "Offline demo available during pending rubric recovery",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "offline-demo-available-during-pending-rubric-recovery.png"
+  },
+  {
+    "name": "cold-launch-while-rubric-recovery-is-suspended",
+    "screen": "Cold launch while rubric recovery is suspended",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "cold-launch-while-rubric-recovery-is-suspended.png"
+  },
+  {
+    "name": "rubric-landscape",
+    "screen": "Landscape full-window live canvas; one synthetic ink stroke",
+    "source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "capture": "rubric-landscape.png"
+  }
+]

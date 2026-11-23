@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-11-04T22:58:51.838Z",
+  "route": "/native/rubrics/document-mode",
+  "screen": "Packaged QA mode dropdown",
+  "browser_name": "Native AppKit/SwiftUI",
+  "browser_version": "Not applicable",
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Mode dropdown open: Preview / Edit / Split; native point dimensions unavailable via capture API",
+  "built_source_commit": "59b6b148fdae5b0f6789e119c0d6c965462846d7",
+  "pid": 56028,
+  "image": {
+    "sha256": "d098558e43a39c08dd4922e590d22c6b15c45829e8a04c55713ee22499996358",
+    "width_px": 2520,
+    "height_px": 1700
+  }
+}

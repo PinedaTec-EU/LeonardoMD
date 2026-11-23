@@ -1,0 +1,52 @@
+{
+  "producer_sha": "d986f417fd263180219b3b55dfe65d026d5853c5",
+  "instance": {
+    "CFBundleIdentifier": "eu.pinedatec.LeonardoMD.qa.5a2ddebcfa6247a2a6c1413356668f0f",
+    "CFBundleExecutable": "LeonardoMD",
+    "CFBundleShortVersionString": "0.3.1215",
+    "CFBundleVersion": "1215"
+  },
+  "pid": 56776,
+  "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-kxxts9g8/LeonardoMDQA.app",
+  "executable_sha256": "b65c0881fd03eb705046a669afc90052ab91dea62b4add3ff012c96ffc290d2f",
+  "xctest_linkage": false,
+  "help_hashes": {
+    "en": {
+      "source": "a65fce89ea053fc5bbdd0dfa3fe71afa6084b42ae506350d27a3dd4565668347",
+      "packaged": "a65fce89ea053fc5bbdd0dfa3fe71afa6084b42ae506350d27a3dd4565668347",
+      "personal": "a65fce89ea053fc5bbdd0dfa3fe71afa6084b42ae506350d27a3dd4565668347"
+    },
+    "es": {
+      "source": "755836d24c931e30e8f8e476b94fecb8416834be19ec5072d5900c1ed389fd6e",
+      "packaged": "755836d24c931e30e8f8e476b94fecb8416834be19ec5072d5900c1ed389fd6e",
+      "personal": "755836d24c931e30e8f8e476b94fecb8416834be19ec5072d5900c1ed389fd6e"
+    }
+  },
+  "fresh_process_and_first_window_observed": true,
+  "both_locales_opened_through_help": true,
+  "live_examples": [
+    "Mermaid",
+    "inline and one-line/multiline display math",
+    "underbraces/radicals/arrows/cancellation",
+    "tagged box-counting equation (1)",
+    "charts",
+    "local images",
+    "tables",
+    "literal code",
+    "Math-disabled fallback"
+  ],
+  "practice_both_locales": "Filled fictional name, saved, closed, reopened and verified; original bytes restored after QA quit.",
+  "owner_authorized_additional_instance": true,
+  "launch_arguments": [
+    "--new-instance"
+  ],
+  "principal_pid_preserved": 41520,
+  "allow_multiple_instances_initial": false,
+  "allow_multiple_instances_restored": false,
+  "qa_normal_quit_observed": true,
+  "locale_restored": "en",
+  "math_restored": true,
+  "principal_preferences_restored": "Synchronization",
+  "accepted_original_captures": 11,
+  "release_claim": false
+}

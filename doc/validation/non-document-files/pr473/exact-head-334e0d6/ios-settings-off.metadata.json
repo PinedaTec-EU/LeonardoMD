@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-19T08:36:10.968548+00:00",
+  "capture": {
+    "captured_at": "2026-11-19T08:27:39.734247+00:00",
+    "route": "Little Leonardo > Biblioteca > Sync settings > Project files",
+    "screen": "ios-settings-off",
+    "browser_name": "Native iOS Simulator UI (XcodeBuildMCP; no browser)",
+    "browser_version": "iOS 27.0 simulator runtime",
+    "state": "Show non-document files switch is off by default; helper text says Markdown-linked images still load when hidden.",
+    "viewport_css": {
+      "width": 368,
+      "height": 800
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic empty synced library; bundled Demo remains local",
+    "instance": {
+      "device": "iPhone 17",
+      "udid": "691F22BD-BD95-40DC-8744-352846B25B84",
+      "app_bundle_id": "eu.pinedatec.LittleLeonardo",
+      "app_process_id": 66575,
+      "app_version": "0.3.1889",
+      "preference_show_non_document_files": false
+    }
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 368,
+    "height_px": 800,
+    "sha256": "b0f15b171945ba8f6899e6a6eb7df2a055980155f77ff0106e891ae4b6f9e5db"
+  },
+  "source": {
+    "revision_at_collection": "334e0d6d55518a827ead653bfcbe72b4f3e451e6",
+    "tracked_changes_present": false,
+    "untracked_files_present": false,
+    "pr": 473,
+    "pr_build_delta": 38
+  }
+}

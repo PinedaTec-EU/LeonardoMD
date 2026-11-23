@@ -1,0 +1,29 @@
+{
+  "capture": {
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "capture_mode": "element",
+    "captured_at": "2026-11-12T13:21:55.032Z",
+    "data_provenance": "synthetic",
+    "route": "/native/preferences/synchronization",
+    "screen": "Pairing invitation recovery",
+    "state": "invalidated-qr-removed-after-restart; invalidated invitation removed; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "height": 300,
+      "width": 640
+    }
+  },
+  "collected_at": "2026-11-12T13:23:21.071Z",
+  "image": {
+    "format": "png",
+    "height_px": 600,
+    "sha256": "6ea8ab8e3b516d40b7a0f06847daf35cbd536a8cd035dc78fbb6cabd478a4437",
+    "width_px": 1280
+  },
+  "schema_version": 1,
+  "source": {
+    "revision_at_collection": "639ae581d97a946d3f34507a0995200f20a700c6",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

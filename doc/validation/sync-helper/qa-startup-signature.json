@@ -1,0 +1,16 @@
+{
+  "bundle_identifier": "eu.pinedatec.LeonardoMD",
+  "version": "0.1.783",
+  "executable": "LeonardoMD",
+  "launch_method": "native app launch from local QA bundle",
+  "incident_time": "2026-11-05 09:00:53.4699 +0100",
+  "exception": "EXC_CRASH / SIGABRT",
+  "termination": "DYLD / Library missing / @rpath/Sparkle.framework/Versions/B/Sparkle",
+  "cause": "Developer ID hardened main with unresigned embedded Sparkle; expected rpath and library existed",
+  "remedy": "Existing inside-out release signing order; QA verifier now rejects mismatched nested teams",
+  "issues": [
+    324,
+    325
+  ],
+  "installed_product_affected": false
+}

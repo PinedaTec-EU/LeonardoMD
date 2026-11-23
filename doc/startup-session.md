@@ -1,9 +1,9 @@
 # Startup session
 
-Preferences → On startup is a global choice, including when editing project preferences:
+Preferences → General → On this Mac → Reopen documents and projects on startup is a global choice, including when editing project preferences:
 
-- **Restore previous session** (default): reopen the projects and documents in the previous windows, retaining tab order and selected tabs.
-- **Start clean**: show an empty viewer, retaining recent items and other preferences.
+- **On** (default): reopen the projects and documents in the previous windows, retaining tab order and selected tabs.
+- **Off**: show an empty viewer, retaining recent items and other preferences.
 
 The choice applies on the next fresh application launch. Opening files explicitly (Finder or command line) takes priority over restoration. New windows and tabs open empty. Reopening an application that is still running brings its existing windows forward.
 

@@ -100,6 +100,64 @@ public actor DocumentStore {
         return try read(fileURL)
     }
 
+    /// Creates a new document without ever replacing an existing destination.
+    ///
+    /// The destination is claimed with an exclusive write, so a caller cannot
+    /// lose a race with another creator between an existence check and the
+    /// write. When a source snapshot is supplied, its fingerprint is checked
+    /// immediately before that exclusive write.
+    @discardableResult
+    public func createNew(
+        _ content: String,
+        to url: URL,
+        preserving source: DocumentSnapshot? = nil
+    ) throws -> DocumentSnapshot {
+        let fileURL = url.standardizedFileURL
+        let parent = fileURL.deletingLastPathComponent()
+        var parentIsDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: parent.path, isDirectory: &parentIsDirectory), parentIsDirectory.boolValue else {
+            throw DocumentStoreError.invalidDestination(fileURL)
+        }
+        guard let data = content.data(using: .utf8) else {
+            throw DocumentStoreError.unsupportedEncoding(fileURL)
+        }
+        if fileManager.fileExists(atPath: fileURL.path) {
+            throw FileSystemRepositoryError.itemAlreadyExists(fileURL)
+        }
+
+        if let source {
+            let current: DocumentSnapshot?
+            do {
+                current = try read(source.url)
+            } catch DocumentStoreError.fileNotFound {
+                current = nil
+            }
+            guard current?.fingerprint == source.fingerprint else {
+                throw DocumentStoreError.conflict(expected: source.fingerprint, current: current)
+            }
+        }
+
+        do {
+            // `withoutOverwriting` is deliberately used without `.atomic`:
+            // the former is the exclusive create primitive and the latter can
+            // replace the destination through a temporary-file rename.
+            try data.write(to: fileURL, options: [.withoutOverwriting])
+        } catch {
+            // A competing creator may have won after the caller-side check.
+            // Only translate the OS exclusive-exists result. A different
+            // failure (for example, a full external volume) must remain
+            // visible instead of being misreported as a race; never remove a
+            // path here because it may belong to the competing creator.
+            let nsError = error as NSError
+            if nsError.domain == NSCocoaErrorDomain,
+               nsError.code == NSFileWriteFileExistsError {
+                throw FileSystemRepositoryError.itemAlreadyExists(fileURL)
+            }
+            throw error
+        }
+        return try read(fileURL)
+    }
+
     private func fingerprint(data: Data, at url: URL) -> FileFingerprint {
         let attributes = try? fileManager.attributesOfItem(atPath: url.path)
         let date = attributes?[.modificationDate] as? Date

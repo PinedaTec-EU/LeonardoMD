@@ -97,7 +97,7 @@ public actor LocalProjectRepository {
 
     public func deleteProject(_ project: ProjectDescriptor) throws {
         let root = try validateProjectRoot(project.rootURL)
-        try fileManager.removeItem(at: root)
+        try moveToTrash(root)
     }
 
     public func children(
@@ -266,14 +266,42 @@ public actor LocalProjectRepository {
         return makeNode(url: destination, projectRoot: root)
     }
 
-    public func delete(_ relativePath: String, in project: ProjectDescriptor) throws {
+    public func trashAvailability(_ relativePath: String, in project: ProjectDescriptor) throws -> TrashAvailability {
+        let target = try deletionTarget(relativePath, in: project)
+        return TrashSupport.availability(at: target, fileManager: fileManager)
+    }
+
+    public func delete(_ relativePath: String, in project: ProjectDescriptor,
+                       mode: FileDeletionMode = .trash) throws {
+        let target = try deletionTarget(relativePath, in: project)
+        switch mode {
+        case .trash: try moveToTrash(target)
+        case .permanentlyConfirmed: try fileManager.removeItem(at: target)
+        }
+    }
+
+    private func deletionTarget(_ relativePath: String, in project: ProjectDescriptor) throws -> URL {
         let root = try validateProjectRoot(project.rootURL)
         let target = try resolve(relativePath, under: root)
         guard target != root else { throw FileSystemRepositoryError.cannotDeleteProjectRoot }
         guard fileManager.fileExists(atPath: target.path) else {
             throw FileSystemRepositoryError.projectDoesNotExist(target)
         }
-        try fileManager.removeItem(at: target)
+        return target
+    }
+
+    private func moveToTrash(_ url: URL) throws {
+        #if os(macOS)
+        do {
+            try fileManager.trashItem(at: url, resultingItemURL: nil)
+        } catch {
+            if TrashSupport.isUnavailable(error) { throw FileDeletionError.trashUnavailable }
+            throw error
+        }
+        #else
+        // Platforms without Trash must never silently destroy user files.
+        throw CocoaError(.featureUnsupported)
+        #endif
     }
 
     public func search(
@@ -314,7 +342,8 @@ public actor LocalProjectRepository {
     public func searchStream(
         in project: ProjectDescriptor,
         query: String,
-        showHidden: Bool = false
+        showHidden: Bool = false,
+        include: @escaping @Sendable (URL, Bool) -> Bool = { _, _ in true }
     ) -> AsyncThrowingStream<[SearchMatch], Error> {
         AsyncThrowingStream<[SearchMatch], Error> { continuation in
             let task = Task { [self] in
@@ -336,6 +365,11 @@ public actor LocalProjectRepository {
 
                     while let url = enumerator.nextObject() as? URL {
                         try Task.checkCancellation()
+                        let directory = isDirectory(url)
+                        guard include(url, directory) else {
+                            if directory { enumerator.skipDescendants() }
+                            continue
+                        }
                         let result = try scanSearchEntry(
                             url,
                             root: root,
@@ -590,7 +624,7 @@ public actor LocalProjectRepository {
         "png", "jpg", "jpeg", "gif", "webp", "heic", "tif", "tiff", "svg", "bmp", "ico"
     ]
 
-    private static let markdownExtensions: Set<String> = ["md", "markdown"]
+    private static let markdownExtensions: Set<String> = ["md", "markdown", "mdlf", "mdlr"]
 
     private static let alwaysIgnoredDirectoryNames: Set<String> = [".git", ".build", ".worktrees"]
 }

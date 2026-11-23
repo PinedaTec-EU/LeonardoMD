@@ -1,0 +1,47 @@
+Test Suite 'Selected tests' started at 2026-11-07 13:44:34.201.
+Test Suite 'LeonardoSyncTransportTests.xctest' started at 2026-11-07 13:44:34.205.
+Test Suite 'LeonardoSyncTransportTests.xctest' passed at 2026-11-07 13:44:34.205.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:44:34.205.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.005) seconds
+Test Suite 'Selected tests' started at 2026-11-07 13:44:34.275.
+Test Suite 'LeonardoSyncTests.xctest' started at 2026-11-07 13:44:34.280.
+Test Suite 'LeonardoSyncTests.xctest' passed at 2026-11-07 13:44:34.280.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:44:34.280.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.005) seconds
+Test Suite 'Selected tests' started at 2026-11-07 13:44:34.356.
+Test Suite 'LeonardoRenderTests.xctest' started at 2026-11-07 13:44:34.361.
+Test Suite 'LeonardoRenderTests.xctest' passed at 2026-11-07 13:44:34.362.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:44:34.362.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.006) seconds
+Test Suite 'Selected tests' started at 2026-11-07 13:44:34.435.
+Test Suite 'LeonardoIntegrationTests.xctest' started at 2026-11-07 13:44:34.440.
+Test Suite 'LeonardoIntegrationTests.xctest' passed at 2026-11-07 13:44:34.440.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:44:34.440.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.005) seconds
+Test Suite 'Selected tests' started at 2026-11-07 13:44:34.496.
+Test Suite 'LeonardoDesktopSyncTests.xctest' started at 2026-11-07 13:44:34.501.
+Test Suite 'MobileDirectAcceptanceFixtureTests' started at 2026-11-07 13:44:34.501.
+Test Case '-[LeonardoDesktopSyncTests.MobileDirectAcceptanceFixtureTests testServeNativeMobileAcceptanceFixture]' started.
+Test Case '-[LeonardoDesktopSyncTests.MobileDirectAcceptanceFixtureTests testServeNativeMobileAcceptanceFixture]' passed (45.877 seconds).
+Test Suite 'MobileDirectAcceptanceFixtureTests' passed at 2026-11-07 13:45:20.379.
+	 Executed 1 test, with 0 failures (0 unexpected) in 45.877 (45.878) seconds
+Test Suite 'LeonardoDesktopSyncTests.xctest' passed at 2026-11-07 13:45:20.379.
+	 Executed 1 test, with 0 failures (0 unexpected) in 45.877 (45.878) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:45:20.379.
+	 Executed 1 test, with 0 failures (0 unexpected) in 45.877 (45.883) seconds
+Test Suite 'Selected tests' started at 2026-11-07 13:45:20.475.
+Test Suite 'LeonardoCoreTests.xctest' started at 2026-11-07 13:45:20.480.
+Test Suite 'LeonardoCoreTests.xctest' passed at 2026-11-07 13:45:20.480.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:45:20.480.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.005) seconds
+Test Suite 'Selected tests' started at 2026-11-07 13:45:20.575.
+Test Suite 'LeonardoAppTests.xctest' started at 2026-11-07 13:45:20.581.
+Test Suite 'LeonardoAppTests.xctest' passed at 2026-11-07 13:45:20.581.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:45:20.581.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.006) seconds

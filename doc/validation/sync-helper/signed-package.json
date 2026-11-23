@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "source_sha": "5858c47a9762ba6567a7589721bfba71afbbfdb1",
+  "build_configuration": "release",
+  "distribution": "local QA, Developer ID signed; not published or notarized as a release",
+  "app_executable_sha256": "a51eb7539f5493e011fd70d8992f5cc4b644f0d59991872e0591b036612fac40",
+  "helper_executable_sha256": "f1a059faa289fd82edad18bb2ef6c21fdf423a8be1c9217498c769897e372330",
+  "mutual_developer_id_requirement_tests": "Previously passed; real mutually authenticated app/helper XPC consent and health also pass",
+  "strict_deep_codesign_verification": true,
+  "helper_dependency_inspection": "No XCTest or Sparkle dependency",
+  "fresh_app_process_validated": true,
+  "service_registration_tested": true,
+  "service_registered_after_cleanup": false,
+  "original_app_closed_normally_after_save": true,
+  "installed_app_unchanged": true
+}

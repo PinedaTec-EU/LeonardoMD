@@ -1,0 +1,18 @@
+{
+  "browser" : "N\/A",
+  "capture_mode" : "native AppKit\/SwiftUI component bitmap",
+  "captured_at" : "2026-11-10T13:31:51Z",
+  "head" : "33650e806efc05cfe462118da3e0b08c44b8f69f",
+  "language" : "en",
+  "limitations" : "Synthetic fixture; no fresh packaged-process startup or installation claim",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "pixel_dimensions" : [
+    1080,
+    680
+  ],
+  "surface" : "Production project identity rows; local, outbound, received, recovery and child folder",
+  "viewport_points" : [
+    540,
+    340
+  ]
+}

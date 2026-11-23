@@ -1,0 +1,38 @@
+{
+  "source_sha": "4ba13fe895a80cfe9dc3a791deab321b56003d67",
+  "process_id": 11832,
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.40910d2bc387470bbc5c425649220132",
+  "executable": "LeonardoMD",
+  "executable_sha256": "ad3d7c3fbd77b92598f1e2298bd62ab11032bfae1c595ecabcddfbf78d2f4c53",
+  "application_version": "0.3.1010 (unmaterialized baseline)",
+  "guide_revision": 18,
+  "launch_method": "LEONARDO_SOURCE_PR=377 ./launch.sh --qa; prior QA quit normally, then new PID and actual first window verified",
+  "guide_content_identity": {
+    "en": {
+      "candidate_archive_sha256": "46407265539b2c308d7a58b4a0eaf931f2a3089d39c30d42e449e3fd3f60a820",
+      "bundled_archive_sha256": "46407265539b2c308d7a58b4a0eaf931f2a3089d39c30d42e449e3fd3f60a820",
+      "working_archive_sha256": "46407265539b2c308d7a58b4a0eaf931f2a3089d39c30d42e449e3fd3f60a820",
+      "matches": true
+    },
+    "es": {
+      "candidate_archive_sha256": "94760be388f0740285c37655abcc8cd0bfa13095a1052991c17e8aac2334b78c",
+      "bundled_archive_sha256": "94760be388f0740285c37655abcc8cd0bfa13095a1052991c17e8aac2334b78c",
+      "working_archive_sha256": "94760be388f0740285c37655abcc8cd0bfa13095a1052991c17e8aac2334b78c",
+      "matches": true
+    }
+  },
+  "observed": [
+    "Real executable with packaged resources/dependencies; no XCTest linkage",
+    "Both guides opened through native Help menu; candidate/bundled/personal archive identities match",
+    "Complete underbrace, radical, extensible arrow, cancellation stroke and equation tag in both locales",
+    "Outline selects the actual heading; repeated selection returns after scrolling; Split preview retains destination",
+    "Math disabled in each locale preserves literal source; enable recommendation dismissed without persistent suppression; original Math=true restored",
+    "Both practices filled with fictitious data, saved, closed, reopened and verified; original blank names restored and saved",
+    "Original English interface restored; Leonardo Classic/Parchment and other preferences left as observed"
+  ],
+  "practice_names_blank_after_cleanup": true,
+  "separate_findings": {
+    "378": "Concurrent QA working-copy collision; guide18 and content-identity verification are a bounded workaround; general isolation remains open",
+    "379": "Long tagged formula overlap in a narrow Split pane; Preview/wider window workaround; no layout stylesheet change in this PR"
+  }
+}

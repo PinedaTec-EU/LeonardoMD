@@ -2,6 +2,878 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2189
+
+- #518 Updated: style Sync diagnostics and support pointer selection ([#519](https://github.com/PinedaTec-EU/LeonardoMD/pull/519))
+
+<p>The Sync diagnostics sheet uses the suite controls and a tinted report where you can select and copy text with the mouse.</p>
+
+Source: `60f1adbbb17e2e3145e485b0fa2b5d71cc0e28ad`. Delta: `{"build": 3}`.
+
+## 0.3.2186
+
+- #517 Added: guided signing for Leonardo documents ([#520](https://github.com/PinedaTec-EU/LeonardoMD/pull/520))
+
+<p>Adds guided multi-signer forms with per-location rubric review, resume, tamper detection and exchange of signed copies between LeonardoMD and Little Leonardo.</p>
+
+Source: `9f5b3a14e0ca011fabb17aebed7ebb6d62698ee8`. Delta: `{"build": 217}`.
+
+## 0.3.1969
+
+- #507 Fixed: isolate hosted iOS reader validation ([#547](https://github.com/PinedaTec-EU/LeonardoMD/pull/547))
+
+<p>Run the iOS read-only document rendering check independently in CI and allow time for a cold WebKit start.</p>
+
+Source: `9f795c042debf9876d7c40dde869c800c010532c`. Delta: `{"build": 1}`.
+
+## 0.3.1968
+
+- #513 Fixed: explain how to send Sync diagnostics manually ([#515](https://github.com/PinedaTec-EU/LeonardoMD/pull/515))
+
+<p>Sync diagnostics explains how to copy the report and email it manually when the default mail app does not show a draft.</p>
+
+Source: `4d2959506178e5496eb9f20b34b68fafe45f6412`. Delta: `{"build": 3}`.
+
+## 0.3.1965
+
+- #510 Added: compact Sync preferences and safe diagnostics ([#511](https://github.com/PinedaTec-EU/LeonardoMD/pull/511))
+
+<p>Synchronization preferences use less space and offer recent Leonardo Sync diagnostics you can copy or review in an email draft.</p>
+
+Source: `089c5d7a7eb65592923d48280953ffb40310bd4f`. Delta: `{"build": 4}`.
+
+## 0.3.1961
+
+- #505 Added: select PR validation suites by affected surface ([#506](https://github.com/PinedaTec-EU/LeonardoMD/pull/506))
+
+<p>Pull-request CI selects macOS, iOS, packaging and plugin checks from the changed files. PR labels can request extra checks, and pushes to main run the full suite.</p>
+
+Source: `4d3f09de9f2735632cde825ee6576a1395dcbe20`. Delta: `{"build": 1}`.
+
+## 0.3.1960
+
+- #502 Refactored: parallelize CI and reuse iOS test builds ([#503](https://github.com/PinedaTec-EU/LeonardoMD/pull/503))
+
+<p>Pull-request CI runs macOS tests, Little Leonardo simulator tests and packaging checks concurrently. Little Leonardo installs and seeds one build before running all selected unit and UI tests in one session.</p>
+
+Source: `2be8bad65e91963c30df7e2a69b1bd1631b91924`. Delta: `{"build": 1}`.
+
+## 0.3.1959
+
+- #472 Added: show non-document files on demand ([#473](https://github.com/PinedaTec-EU/LeonardoMD/pull/473))
+
+<p>Adds default-off non-document visibility on macOS and Little Leonardo; reads .mdlf/.mdlr read-only in Little; preserves pinned proposals across grant expansion/restart; hardens legacy journals/tombstones; blocks peer writes to read-only formats; localizes archive guidance.</p>
+
+Source: `f1de4a8918c0a60ad0f35b387b146e86f7ced845`. Delta: `{"build": 63}`.
+
+## 0.3.1896
+
+- #487 Fixed: bound the full Swift CI suite and retain diagnostics ([#488](https://github.com/PinedaTec-EU/LeonardoMD/pull/488))
+
+<p>CI bounds the Swift test suite, retains timeout diagnostics, and synchronizes the Preview close regression test with WebKit readiness.</p>
+
+Source: `c07cd8d53665dda4a9305d8f788f29ce7c396e80`. Delta: `{"build": 2}`.
+
+## 0.3.1894
+
+- #484 Added: delete project files from the keyboard ([#485](https://github.com/PinedaTec-EU/LeonardoMD/pull/485))
+
+<p>Project files can be sent to Trash with Delete or Forward Delete from the sidebar.</p>
+
+Source: `31bd534cfa242cb9dba3f64b6cebe2e6444be810`. Delta: `{"build": 5}`.
+
+## 0.3.1889
+
+- #481 Added: show historical PR summaries in both apps ([#482](https://github.com/PinedaTec-EU/LeonardoMD/pull/482))
+
+<p>Read offline summaries of the 59 merged pull requests through #207 in macOS Release notes and in Little Leonardo under About.</p>
+
+Source: `1d1ccad82ce71e6ac27b63da2bdc6f306b8ae0bc`. Delta: `{"build": 5}`.
+
+## 0.3.1884
+
+- #447 Fixed: unblock closing after preview sync failure ([#448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448))
+
+<p>Preview sync failures use one native alert. When closing, the alert identifies the affected document; users can keep its tab open to retry or discard its unapplied Preview edits. Both guides explain the choice.</p>
+
+Source: `76740ee0f0017609978557241115a81872d2ad71`. Delta: `{"build": 38}`.
+
+## 0.3.1846
+
+- #442 Added: editable names for remote Macs in Little Leonardo ([#445](https://github.com/PinedaTec-EU/LeonardoMD/pull/445))
+
+<p>Little Leonardo lets you name each paired Mac locally, keeps its address as supporting detail, hides the empty local-project section, and labels a single shared project correctly.</p>
+
+Source: `3cf0b950481cdecd8f4d9d17d45744752fd19c27`. Delta: `{"build": 28}`.
+
+## 0.3.1818
+
+- #368 Fixed: explain project import failures and transfer limits ([#369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369))
+
+<p>Remote imports explain source-read failures and size limits; 401/403 denials recheck grants and block stale caches and remote edits until authorization returns, preserving local work.</p>
+
+Source: `5c711e1ae98785aa4650f75f3cae9833c435aeb4`. Delta: `{"build": 84}`.
+
+## 0.3.1734
+
+- #380 Updated: localize sync diagnostics and preserve rubric retries ([#435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435))
+
+<p>Little Leonardo adds concise localized sync errors with private references and a bounded log, keeps invitation codes out of diagnostics, clarifies offline retention, preserves rubric drafts for manual retry after explicit HTTP rejection, and fixes the simulator sync fixture.</p>
+
+Source: `abfab9e9ee47328c89c6a4a82ae5ef44e90b85e1`. Delta: `{"build": 132}`.
+
+## 0.3.1602
+
+- #378 Fixed: give corrected Help a distinct personal-copy revision ([#446](https://github.com/PinedaTec-EU/LeonardoMD/pull/446))
+
+<p>Existing LeonardoMD installations now receive the corrected synchronization guidance in a new Help copy while saved guide copies and practice answers remain intact.</p>
+
+Source: `ed1795164972948b8792557d9c0f87ea41d67a5a`. Delta: `{"build": 6}`.
+
+## 0.3.1596
+
+- #440 Added: optional grouped instance presentation ([#441](https://github.com/PinedaTec-EU/LeonardoMD/pull/441))
+
+<p>Optionally group independent LeonardoMD processes under one Dock and app-switcher entry, with an instance selector in every window and automatic replacement of the visible representative when it exits.</p>
+
+Source: `6f512c2e8f80e8cbdf33f090814790a742a7fb8c`. Delta: `{"build": 9}`.
+
+## 0.3.1587
+
+- #421 Fixed: Keep synchronization status stable and quiet ([#428](https://github.com/PinedaTec-EU/LeonardoMD/pull/428))
+
+<p>Synchronization keeps status steady during checks, refreshes linked devices on open or on demand, preserves invitations and review drafts during recovery, and gates peer actions on live helper health.</p>
+
+Source: `970c903ef1175920c0bc1cf6511c9433c188c575`. Delta: `{"build": 216}`.
+
+## 0.3.1371
+
+- #429 Added: review remote projects and files by host ([#430](https://github.com/PinedaTec-EU/LeonardoMD/pull/430))
+
+<p>Little Leonardo groups remote projects by linked Mac, lets users review new projects and files and manage offline copies; macOS restores accepted catalogues after offline restart, ignored grants return only when the host changes them, and sync status stays stable.</p>
+
+Source: `cd662ca817e698fe37058eae9ab6b002bc0c4c36`. Delta: `{"build": 32}`.
+
+## 0.3.1339
+
+- #434 Added: in-editor search and premium controls ([#40](https://github.com/PinedaTec-EU/LeonardoMD/pull/40))
+
+<p>Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs.</p>
+
+Source: `90869224491fd202c573bc882dba01e16e094da8`. Delta: `{"build": 6}`.
+
+## 0.3.1333
+
+- #417 Updated: select extensions from recommendations ([#418](https://github.com/PinedaTec-EU/LeonardoMD/pull/418))
+
+<p>Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.</p>
+
+Source: `c897e37f43b3f301d24844d017aa07a4666e5ddb`. Delta: `{"build": 17}`.
+
+## 0.3.1316
+
+- #421 Fixed: stabilize synchronization status refresh ([#422](https://github.com/PinedaTec-EU/LeonardoMD/pull/422))
+
+<p>Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch.</p>
+
+Source: `0e8b4c3e408478741edd3848e8b33c3bb328acbe`. Delta: `{"build": 36}`.
+
+## 0.3.1280
+
+- #425 Added: declare iOS export compliance ([#426](https://github.com/PinedaTec-EU/LeonardoMD/pull/426))
+
+<p>Include the encryption compliance declaration in Little Leonardo builds.</p>
+
+Source: `b257f584ad22dfcce226373b99a6d8e8f3a69c3d`. Delta: `{"build": 1}`.
+
+## 0.3.1279
+
+- #423 Fixed: make synchronized folders navigable ([#424](https://github.com/PinedaTec-EU/LeonardoMD/pull/424))
+
+<p>Navigate synchronized folders and see only the files and folders in the current location.</p>
+
+Source: `d93a51fa7e8bd457e5616b75d44d9cf431034016`. Delta: `{"build": 3}`.
+
+## 0.3.1276
+
+- #412 Fixed: prepare sync helper before signed application replacement ([#420](https://github.com/PinedaTec-EU/LeonardoMD/pull/420))
+
+<p>Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed.</p>
+
+Source: `094d373804134c785eacfa316381f7eddbb4dc2d`. Delta: `{"build": 6}`.
+
+## 0.3.1270
+
+- #412 Fixed: renew outdated sync helper after app updates ([#413](https://github.com/PinedaTec-EU/LeonardoMD/pull/413))
+
+<p>Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.</p>
+
+Source: `20498060ed7009be164a72913c11aacb838a18ef`. Delta: `{"build": 24}`.
+
+## 0.3.1246
+
+- #399 Added: identify local shared and received projects on macOS and iOS ([#400](https://github.com/PinedaTec-EU/LeonardoMD/pull/400))
+
+<p>Projects now show a common icon and distinguish local content, sharing from this device and content received from another device on Mac, iPhone and iPad.</p>
+
+Source: `54c00e421adcaaadaba3de56a8e3d6465ad73ad3`. Delta: `{"build": 13}`.
+
+## 0.3.1233
+
+- #407 Added: unify mobile projects and persistent deletion ([#408](https://github.com/PinedaTec-EU/LeonardoMD/pull/408))
+
+<p>Little Leonardo lists Demo alongside other projects, supports swipe-and-tap local project removal, and restores Demo from Settings while retaining practice answers.</p>
+
+Source: `050aed806bb3733918a64b839d7034b73f07b8d5`. Delta: `{"build": 18}`.
+
+## 0.3.1215
+
+- #384 Added: on-demand synchronization and offline retention ([#385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385))
+
+<p>Browse shared projects without bulk downloads, open files on demand, and manage temporary cache separately from files and folders kept offline.</p>
+
+Source: `7e9af9c5f02bc5874bffac7bf4f15951a0abb385`. Delta: `{"build": 68}`.
+
+## 0.3.1147
+
+- #397 Fixed: compact iOS Classic reader heading spacing ([#405](https://github.com/PinedaTec-EU/LeonardoMD/pull/405))
+
+<p>Reduces excess space before the first heading in Little Leonardo&#x27;s synchronized Markdown reader. Desktop and later headings keep their spacing. Adds native iOS layout checks and updates both bundled guides.</p>
+
+Source: `cd6b08f0b9851fd5510880bc3c0696c979ae0fee`. Delta: `{"build": 11}`.
+
+## 0.3.1136
+
+- #394 Fixed: recover rubric queries during helper configuration ([#398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398))
+
+<p>Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts.</p>
+
+Source: `f69ad38b5d28501b8bb35c45a5dbd7296d5551fe`. Delta: `{"build": 9}`.
+
+## 0.3.1127
+
+- #380 Updated: complete TLS shutdown and trace response termination ([#392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392))
+
+<p>Shared-project HTTPS responses finish the TLS write stream before teardown, with bounded cleanup and privacy-safe server completion diagnostics.</p>
+
+Source: `955919459b13b2f9fd8c14eefd95e7de53254668`. Delta: `{"build": 14}`.
+
+## 0.3.1113
+
+- #386 Updated: apply Classic mobile design and rotating rubric canvas ([#387](https://github.com/PinedaTec-EU/LeonardoMD/pull/387))
+
+<p>Little Leonardo uses Classic colors and branded startup, adds offline About, help, privacy and license pages, and expands rubric drawing in landscape while restoring portrait controls without changing the drawing.</p>
+
+Source: `6e9f40a5fe94ae76b316023b3a8983a6dc35da5c`. Delta: `{"build": 31}`.
+
+## 0.3.1082
+
+- #380 Added: expose bounded HTTPS failure diagnostics ([#382](https://github.com/PinedaTec-EU/LeonardoMD/pull/382))
+
+<p>Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.</p>
+
+Source: `203bd697b21421006b23fae70b30245ef77e15fa`. Delta: `{"build": 25}`.
+
+## 0.3.1057
+
+- #381 Added: bundle offline Little Leonardo demo and practice ([#383](https://github.com/PinedaTec-EU/LeonardoMD/pull/383))
+
+<p>Little Leonardo includes an offline bilingual demo with format examples and a locally saved practice form.</p>
+
+Source: `99ac3204d49f25210e74ea7d93211b695b96f186`. Delta: `{"build": 12}`.
+
+## 0.3.1045
+
+- #274 Fixed: render extensible math and navigate outline headings precisely ([#377](https://github.com/PinedaTec-EU/LeonardoMD/pull/377))
+
+<p>Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.</p>
+
+Source: `d4ca398e85f949c83d623bdf3b2bee0bacb94909`. Delta: `{"build": 23}`.
+
+## 0.3.1022
+
+- #375 Update: blend help illustrations into Leonardo Classic ([#376](https://github.com/PinedaTec-EU/LeonardoMD/pull/376))
+
+<p>Help illustrations now blend into the document background with transparent Leonardo Classic artwork and localized captions, while new guide revisions preserve existing personal copies.</p>
+
+Source: `1fd3c3410a812d8043800fce325aa21404a21100`. Delta: `{"build": 5}`.
+
+## 0.3.1017
+
+- #343 Added: package owner-only iOS distribution ([#371](https://github.com/PinedaTec-EU/LeonardoMD/pull/371))
+
+<p>Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367&#x27;s immutable rubric request identity, and keeps keychain signing process-scoped.</p>
+
+Source: `b9a6e57a16133ef286fce4e6f60fc061f855a0b2`. Delta: `{"build": 7}`.
+
+## 0.3.1010
+
+- #272 Fixed: preserve display math and require native help QA ([#363](https://github.com/PinedaTec-EU/LeonardoMD/pull/363))
+
+<p>Display formulas retain their TeX syntax, and both user guides include recurring math regression examples with mandatory help checks in tested app instances.</p>
+
+Source: `63ff472f527ac5f552897726a61ec2cf2ecee735`. Delta: `{"build": 10}`.
+
+## 0.3.1000
+
+- #342 Added: iOS rubric capture flow ([#352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352))
+
+<p>iOS captures rubrics requested by a linked Mac with explicit consent, durable drafts, preview and HTTPS retry. Interrupted acceptance recovers safely and revoked links stay blocked after restart. Guides and Mac consent are available in English and Spanish.</p>
+
+Source: `1b905bad76a3a7ecbbdf3a33c9fc33874142bd03`. Delta: `{"build": 102}`.
+
+## 0.3.898
+
+- #341 Added: request and save a Little Leonardo rubric from macOS ([#349](https://github.com/PinedaTec-EU/LeonardoMD/pull/349))
+
+<p>macOS targets one explicitly capable linked read-only peer, recovers requests by stable ID, reviews returned rubrics, and saves or inserts them safely. Legacy peers remain unsupported until #342.</p>
+
+Source: `42132c256c5d56d307141218e440c60749fc6b2b`. Delta: `{"build": 37}`.
+
+## 0.3.861
+
+- #337 Updated: organize synchronization by sharing and connecting roles ([#338](https://github.com/PinedaTec-EU/LeonardoMD/pull/338))
+
+<p>Find sharing, device permissions and remote copies together in Synchronization, with separate pages for sharing from this Mac and connecting to other computers.</p>
+
+Source: `d76d49d86b99934ac4c6131614ab0c1e9ab4fed5`. Delta: `{"build": 17, "feature": 1}`.
+
+## 0.2.844
+
+- #340 Added: authorize rubric requests and responses ([#344](https://github.com/PinedaTec-EU/LeonardoMD/pull/344))
+
+<p>Adds protocol foundations for targeted Mac-to-iOS rubric requests without granting document editing. Capability negotiation, durable retries and pinned transport are ready; production UI/enrollment wiring remains deferred to #342.</p>
+
+Source: `f4b3ddd57ec4c5476c03a872cac84a6a4a516015`. Delta: `{"build": 7}`.
+
+## 0.2.837
+
+- #202 Fixed: install updates directly from Preferences ([#336](https://github.com/PinedaTec-EU/LeonardoMD/pull/336))
+
+<p>Install and relaunch updates directly from Preferences, preserving unsaved-document and Git safety checks.</p>
+
+Source: `a46785d1d7199b08ee7e75b06f7db0e4be1320ac`. Delta: `{"build": 5}`.
+
+## 0.2.832
+
+- #324 Fixed: validate Sparkle dependencies and share QA signing ([#328](https://github.com/PinedaTec-EU/LeonardoMD/pull/328))
+
+<p>Local app launches now check bundled dependencies and signing consistency before opening; disposable QA copies share the distribution signing order to prevent Sparkle loading failures.</p>
+
+Source: `a8c244af76449ca4542fa646dd97c5a957b15b9e`. Delta: `{"build": 3}`.
+
+## 0.2.829
+
+- #334 Updated: add premium bilingual help illustrations ([#335](https://github.com/PinedaTec-EU/LeonardoMD/pull/335))
+
+<p>Refresh the English and Spanish help with premium illustrations for document workflows, packages, export choices and agent-assisted import, while preserving the live Mermaid demonstrations.</p>
+
+Source: `6348e1b3e0d1bd96fbd7b889dc8452b5b7deac6d`. Delta: `{"build": 3}`.
+
+## 0.2.826
+
+- #319 Added: independent macOS sync helper ([#320](https://github.com/PinedaTec-EU/LeonardoMD/pull/320))
+
+<p>Keep selected saved documents available after closing LeonardoMD; manage the required background sync service from either device-sharing preferences screen.</p>
+
+Source: `739fc27885b2766b8ea0dfcc1ba9dcd1df56774f`. Delta: `{"build": 29, "feature": 1}`.
+
+## 0.1.797
+
+- #329 Added: guide PDF import through the user’s own agent ([#330](https://github.com/PinedaTec-EU/LeonardoMD/pull/330))
+
+<p>Open a bilingual guide from File → Import with your agent to convert PDFs into editable Leonardo documents with your own agent, with the same workflow included in the main help.</p>
+
+Source: `421ef001b88153a422b9babceac1d19b8752b22c`. Delta: `{"build": 2}`.
+
+## 0.1.795
+
+- #323 Added: native graphic inspector and reliable deselection ([#326](https://github.com/PinedaTec-EU/LeonardoMD/pull/326))
+
+<p>Inspect placed images and rubrics in a native side panel, recolor inserted ink and dismiss object selection when returning to document text.</p>
+
+Source: `26b6eca69f5814c2674e1cc06163677ffe4da4f9`. Delta: `{"build": 12}`.
+
+## 0.1.783
+
+- #193 Added: images and reusable drawn rubrics ([#316](https://github.com/PinedaTec-EU/LeonardoMD/pull/316))
+
+<p>Insert images and reusable drawn rubrics with page placement, layer controls and a compact document toolbar.</p>
+
+Source: `00fdf05f9a5bbaf9113b51f1809e32c5985ffc16`. Delta: `{"build": 18}`.
+
+## 0.1.765
+
+- #314 Fixed: persist Leonardo file selection and improve dark contrast ([#315](https://github.com/PinedaTec-EU/LeonardoMD/pull/315))
+
+<p>Keep the active Leonardo file visibly selected and improve filename readability in dark appearance.</p>
+
+Source: `5cdebd372ffa784dfde07981ade079192dd478f4`. Delta: `{"build": 3}`.
+
+## 0.1.762
+
+- #312 Added: open a separate ready-to-fill practice form from help ([#313](https://github.com/PinedaTec-EU/LeonardoMD/pull/313))
+
+<p>Open a separate practice form from the English or Spanish user guide, ready to fill and save, while keeping help readable and previous answers intact.</p>
+
+Source: `df93afdc7d096d706bf9a5f1ee20e553348c01ee`. Delta: `{"build": 3}`.
+
+## 0.1.759
+
+- #310 Updated: illustrated bilingual help and extension recommendations ([#311](https://github.com/PinedaTec-EU/LeonardoMD/pull/311))
+
+<p>Adds detailed illustrated English and Spanish help with a feature coverage inventory and a feature-PR help maintenance convention, plus consent-based recommendations for disabled built-in extensions and resettable warnings.</p>
+
+Source: `5969b89e5b9917f56acaae74cd72f6c3c5b492dd`. Delta: `{"build": 20}`.
+
+## 0.1.739
+
+- #308 Fixed: preserve resources in MDLZ conflict copies ([#309](https://github.com/PinedaTec-EU/LeonardoMD/pull/309))
+
+<p>Saving a copy of a conflicted MDLZ preserves its form answers and local resources in a complete package.</p>
+
+Source: `2beb2cd1c427b72d156567b93c5d39473b3dd694`. Delta: `{"build": 4}`.
+
+## 0.1.735
+
+- #290 Added: bundle illustrated user guide and fix sync suspension ([#291](https://github.com/PinedaTec-EU/LeonardoMD/pull/291))
+
+<p>Open an illustrated offline Leonardo guide in the interface language from Help or Welcome, with practice fields and agent setup. Synchronization now rejects suspended path operations before acquiring instance ownership.</p>
+
+Source: `14aa14b5f68a386fa47f04d6c06d33ac2f2a0ac7`. Delta: `{"build": 9}`.
+
+## 0.1.726
+
+- #305 Updated: simplify project navigation and open files in tabs ([#306](https://github.com/PinedaTec-EU/LeonardoMD/pull/306))
+
+<p>Open project files in another tab from their context menu or with a double-click, retaining the project sidebar, and simplify navigation by removing workspace grouping.</p>
+
+Source: `e1e40c920ff4e0ea68001f235daa6978b156b488`. Delta: `{"build": 9}`.
+
+## 0.1.717
+
+- #300 Added: favorite themes with isolated appearance (#303, #304) ([#301](https://github.com/PinedaTec-EU/LeonardoMD/pull/301))
+
+<p>Project and workspace favorites can select their own theme, also applied when opening the same item from Recents, without changing other sessions or shared project settings.</p>
+
+Source: `9374098fa7c5cb9c07eea7a8773d1b8aefeb4166`. Delta: `{"build": 11}`.
+
+## 0.1.706
+
+- #298 Updated: organize welcome favorites with horizontal tabs ([#299](https://github.com/PinedaTec-EU/LeonardoMD/pull/299))
+
+<p>Browse welcome favorites by category with horizontal tabs and scroll lists that show up to five items at once.</p>
+
+Source: `f1ba28c36a498662e5744911c1072eae6dc19adb`. Delta: `{"build": 5}`.
+
+## 0.1.701
+
+- #293 Fixed: include Leonardo formats in document associations ([#294](https://github.com/PinedaTec-EU/LeonardoMD/pull/294))
+
+<p>Recognize MDLZ packages in Finder and configure default opening for all Markdown and Leonardo formats.</p>
+
+Source: `9266a030cbad95cee8930a2d4a3049afd0049630`. Delta: `{"build": 9}`.
+
+## 0.1.692
+
+- #288 Added: follow active document in project sidebar ([#289](https://github.com/PinedaTec-EU/LeonardoMD/pull/289))
+
+<p>The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.</p>
+
+Source: `651cfc3d9158a126893c942d83da93db482a9412`. Delta: `{"build": 14}`.
+
+## 0.1.678
+
+- #295 Fixed: wire local image context actions ([#296](https://github.com/PinedaTec-EU/LeonardoMD/pull/296))
+
+<p>Open embedded document images in a native window and save their original bytes from the image context menu.</p>
+
+Source: `57bd457033d982ec0c389a9bdf5991f7f69a0d68`. Delta: `{"build": 6}`.
+
+## 0.1.672
+
+- #285 Removed: redundant extension state captions ([#286](https://github.com/PinedaTec-EU/LeonardoMD/pull/286))
+
+<p>Extension preferences show their state through the switch without a redundant caption.</p>
+
+Source: `721e134721c4d4fd4594688c9e137c03a617ddae`. Delta: `{"build": 1}`.
+
+## 0.1.671
+
+- #282 Added: validate evidence compilation counts ([#283](https://github.com/PinedaTec-EU/LeonardoMD/pull/283))
+
+<p>PR evidence compilation counts are generated from the ledger and automatically checked for stale or inconsistent declarations.</p>
+
+Source: `9fc34be8a2516ce171baa259f4d341c20315ed01`. Delta: `{"build": 1}`.
+
+## 0.1.670
+
+- #277 Added: extend document rendering and scoped preferences ([#278](https://github.com/PinedaTec-EU/LeonardoMD/pull/278))
+
+<p>Documents gain optional offline charts, citations and richer Markdown structures, with controls for global and project preferences.</p>
+
+Source: `b6efccf1c322003772f287d3ebbbb63ed80278c5`. Delta: `{"build": 9}`.
+
+## 0.1.661
+
+- #275 Fixed: monitor external MDLZ source changes ([#276](https://github.com/PinedaTec-EU/LeonardoMD/pull/276))
+
+<p>Open MDLZ documents refresh after external changes; unsaved edits are protected with a choice to reload the disk version or save a copy.</p>
+
+Source: `484f6ce0d011b9a67aeebfe5148eb25c613836d6`. Delta: `{"build": 9}`.
+
+## 0.1.652
+
+- #212 Fixed: preserve PDF export across preview mode transitions ([#271](https://github.com/PinedaTec-EU/LeonardoMD/pull/271))
+
+<p>PDF export keeps working after switching between Preview and Split, including portable documents with local images and Mermaid diagrams.</p>
+
+Source: `bab08eded742d50d3f486f1fdcac08f9f47fd190`. Delta: `{"build": 6}`.
+
+## 0.1.646
+
+- #202 Fixed: coordinate normal instance closure before updates ([#270](https://github.com/PinedaTec-EU/LeonardoMD/pull/270))
+
+<p>Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval.</p>
+
+Source: `1d6dc51ca4430bb4826a94eedea0ae2579ccfac0`. Delta: `{"build": 16}`.
+
+## 0.1.630
+
+- #268 Fixed: confirm permanent deletion when Trash is unavailable ([#269](https://github.com/PinedaTec-EU/LeonardoMD/pull/269))
+
+<p>Files and folders on locations without Trash can be permanently deleted after an explicit warning, while ordinary Trash errors continue to preserve the original item.</p>
+
+Source: `ed42b9d11b215b42d1f743201a99b3bbe1cc1c07`. Delta: `{"build": 2}`.
+
+## 0.1.628
+
+- #266 Fixed: prevent startup crash when preferences suite is unavailable ([#267](https://github.com/PinedaTec-EU/LeonardoMD/pull/267))
+
+<p>Fix a crash before the first window when macOS cannot open the instance preferences suite.</p>
+
+Source: `cd7ae22a3fe461f65d825cc09af772d5e3bc8475`. Delta: `{"build": 3}`.
+
+## 0.1.625
+
+- #263 Added: configurable explicit application instances ([#264](https://github.com/PinedaTec-EU/LeonardoMD/pull/264))
+
+<p>Opt into independent editor instances while Finder opens stay with the principal; document reservations and coordinated preference writes protect shared data.</p>
+
+Source: `db4e98628100f17ea4e71d2b54d4b29d2af6d8de`. Delta: `{"build": 11}`.
+
+## 0.1.614
+
+- #261 Added: highlight file and folder rows on hover ([#262](https://github.com/PinedaTec-EU/LeonardoMD/pull/262))
+
+<p>File and folder rows now highlight with the active accent color on hover in the project navigator, search results, and welcome favorites and recents.</p>
+
+Source: `785cf1a5917b8a78851a4af2802a24809020d766`. Delta: `{"build": 2}`.
+
+## 0.1.612
+
+- #259 Fixed: restore document window geometry ([#260](https://github.com/PinedaTec-EU/LeonardoMD/pull/260))
+
+<p>Reopened document windows keep their size, position and monitor, and remain reachable when a display is disconnected.</p>
+
+Source: `3c46fc7efd5be799068188d8dc6565038630847c`. Delta: `{"build": 6}`.
+
+## 0.1.606
+
+- #257 Fixed: recognize stable promotion without changing subscription ([#258](https://github.com/PinedaTec-EU/LeonardoMD/pull/258))
+
+<p>Installed betas recognize a verified promotion to stable in About, the footer and Preferences while preserving the selected update subscription, including offline recognition after verification.</p>
+
+Source: `f4af1cbd8932a49c204e202f389fd7e5196e35d4`. Delta: `{"build": 6}`.
+
+## 0.1.600
+
+- #254 Added: reopen release notes from About ([#255](https://github.com/PinedaTec-EU/LeonardoMD/pull/255))
+
+<p>You can reopen hidden release notes from About, as well as from the macOS application menu.</p>
+
+Source: `959dfb3a8ccf52de2f9118979094f516b178f9a2`. Delta: `{"build": 5}`.
+
+## 0.1.595
+
+- #243 Fixed: bound document image loading and raster resolution ([#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245))
+
+<p>Local document images use bounded loading and preview resolution, while PDF export requests higher resolution without modifying original assets.</p>
+
+Source: `c7b6c39210bf094126bd19de0e4e62cd736b2d4d`. Delta: `{"build": 21}`.
+
+## 0.1.574
+
+- #252 Fixed: theme release notes with the owning document ([#253](https://github.com/PinedaTec-EU/LeonardoMD/pull/253))
+
+<p>Release notes follow the active document theme and use the shared application button style.</p>
+
+Source: `1e083eebf3fa4d22db61818410f67c56b63486d1`. Delta: `{"build": 3}`.
+
+## 0.1.571
+
+- #247 Fixed: attach auxiliary windows and document dialogs as modal sheets ([#248](https://github.com/PinedaTec-EU/LeonardoMD/pull/248))
+
+<p>About, Release notes, confirmations and file selection attach as modal sheets; file actions reject changes to the active project or workspace.</p>
+
+Source: `5ba81b9826dccb11ef3ac6ba5ec25c4e382f58cb`. Delta: `{"build": 13}`.
+
+## 0.1.558
+
+- #249 Refactored: retire proprietary mobile Git ([#250](https://github.com/PinedaTec-EU/LeonardoMD/pull/250))
+
+<p>Little Leonardo becomes read-only, preserves older work against cache overwrites and exports it for recovery; proprietary Git is retired while desktop synchronization and system Git remain available.</p>
+
+Source: `0b366528be0f199facd52eff45a5cd4d5af0d9d7`. Delta: `{"build": 11}`.
+
+## 0.1.547
+
+- #241 Fixed: move user deletions to Trash ([#242](https://github.com/PinedaTec-EU/LeonardoMD/pull/242))
+
+<p>Deleted files, folders and projects now move to Trash so they can be recovered.</p>
+
+Source: `dd7a3de66b62e6621b7e2c07030a1334948e5cf5`. Delta: `{"build": 12}`.
+
+## 0.1.535
+
+- #216 Added: export Leonardo reading copies as Markdown ([#217](https://github.com/PinedaTec-EU/LeonardoMD/pull/217))
+
+<p>Export Leonardo documents and form answers as Markdown with a loss warning and portable image handling.</p>
+
+Source: `c0bb701166c155c77b9a73aa52659107436a51b3`. Delta: `{"build": 14}`.
+
+## 0.1.521
+
+- #232 Fixed: enlarge form calendars and follow document themes ([#233](https://github.com/PinedaTec-EU/LeonardoMD/pull/233))
+
+<p>Form date fields offer a larger calendar in the active theme, with localized labels, keyboard navigation and a safe fallback for malformed locales, while preserving editable drafts.</p>
+
+Source: `0ba65a49d3777c3aca2ca72df4b461d6b72c6903`. Delta: `{"build": 12}`.
+
+## 0.1.509
+
+- #236 Added: promote an exact beta without changing its version ([#237](https://github.com/PinedaTec-EU/LeonardoMD/pull/237))
+
+<p>Promote a chosen validated beta to stable while preserving its version and exact signed artifact, even when newer betas exist.</p>
+
+Source: `5bfd788e6efba9c28f344fbf9011898eaff7e659`. Delta: `{"build": 2}`.
+
+## 0.1.507
+
+- #234 Fixed: preserve form presentation in Preview and Split ([#235](https://github.com/PinedaTec-EU/LeonardoMD/pull/235))
+
+<p>Preview and Split preserve the field presentation shown in Fill form.</p>
+
+Source: `4fa8f5b8244edba348550858c14b428d4cbc3c36`. Delta: `{"build": 5}`.
+
+## 0.1.502
+
+- #230 Added: document undo and redo history ([#231](https://github.com/PinedaTec-EU/LeonardoMD/pull/231))
+
+<p>Undo and redo document edits from the toolbar or keyboard, with separate history for each document and support for source, preview and form editing.</p>
+
+Source: `5572d4b2cb0888e028a9e2b4a5c2b0eec5d86fa5`. Delta: `{"build": 4}`.
+
+## 0.1.498
+
+- #228 Added: file list colors filtering and sorting ([#229](https://github.com/PinedaTec-EU/LeonardoMD/pull/229))
+
+<p>Distinguish Leonardo files in wine, configure file colors globally or per project, and filter and sort the project file list.</p>
+
+Source: `a572fd54377cc9cb36c2e5837b8053d229684ecb`. Delta: `{"build": 4}`.
+
+## 0.1.494
+
+- #220 Fixed: improve light-theme document indicator contrast ([#221](https://github.com/PinedaTec-EU/LeonardoMD/pull/221))
+
+<p>Improve document format and storage indicator contrast in light themes using the palette heading color.</p>
+
+Source: `4ece950ef7c3c181340450074ab27ef18c2437c5`. Delta: `{"build": 3}`.
+
+## 0.1.491
+
+- #208 Added: resize preview tables with persisted MDLF geometry ([#213](https://github.com/PinedaTec-EU/LeonardoMD/pull/213))
+
+<p>Resize columns, rows and whole tables in Preview with the mouse or keyboard. Markdown documents migrate safely to MDLF to preserve table dimensions.</p>
+
+Source: `ca0e3686c45ad580a5a399562501142aec7cbddf`. Delta: `{"build": 9}`.
+
+## 0.1.482
+
+- #209 Added: per-PR summaries and native startup release notes ([#210](https://github.com/PinedaTec-EU/LeonardoMD/pull/210))
+
+<p>LeonardoMD shows the changes included in each new version at startup. You can hide the notice for that version or reopen it from the application menu.</p>
+
+Source: `45fcdebc654eb7f944dbc734081824d37350b699`. Delta: `{"build": 6}`.
+
+## 0.1.476
+
+- #206 Added: inline form controls and contextual field help ([#207](https://github.com/PinedaTec-EU/LeonardoMD/pull/207))
+
+Source: `32ebcb6fe30cbdec3d13e5a6ea1a8557a63936e9`. Delta: `{"build": 10}`.
+
+## 0.1.466
+
+- #204 Fixed: omit empty optional Leonardo metadata ([#205](https://github.com/PinedaTec-EU/LeonardoMD/pull/205))
+
+Source: `b40aaeb95389dbf952d58f2b80908c5e737d46cc`. Delta: `{"build": 2}`.
+
+## 0.1.464
+
+- #198 Added: checkbox and switch form appearances ([#199](https://github.com/PinedaTec-EU/LeonardoMD/pull/199))
+
+Source: `e098a85483aed9da0e6c1ec3e85af12deda9c69a`. Delta: `{"build": 3}`.
+
+## 0.1.461
+
+- #191 Fixed: preserve Markdown metadata during MDLF migration ([#192](https://github.com/PinedaTec-EU/LeonardoMD/pull/192))
+
+Source: `78b37c0b83b3299ea7c29b54b2434b1c657fba38`. Delta: `{"build": 6}`.
+
+## 0.1.455
+
+- #196 Fixed: keep MDLF JSON metadata out of invoice preview ([#197](https://github.com/PinedaTec-EU/LeonardoMD/pull/197))
+
+Source: `ab9bc550ca56295e7e2bceb6dfc4a2c43597216d`. Delta: `{"build": 10}`.
+
+## 0.1.445
+
+- #189 Fixed: Open MDLF and MDLZ documents in preview by default ([#190](https://github.com/PinedaTec-EU/LeonardoMD/pull/190))
+
+Source: `4f330d747986bce95c1398f4b9322f3be20024c2`. Delta: `{"build": 4}`.
+
+## 0.1.441
+
+- #183 Fixed: Refresh format preferences and shorten package choices ([#184](https://github.com/PinedaTec-EU/LeonardoMD/pull/184))
+
+Source: `0f11f8b1a6b79b1c5b3d43f35bf01379c0500575`. Delta: `{"build": 4}`.
+
+## 0.1.437
+
+- #185 Added: preferences gear beside new tab ([#186](https://github.com/PinedaTec-EU/LeonardoMD/pull/186))
+
+Source: `c1b2f894fcb0fbec87da682f2a9ca53ad5dbe53a`. Delta: `{"build": 2}`.
+
+## 0.1.435
+
+- #167 Added: open Leonardo documents, forms and agent plugins ([#168](https://github.com/PinedaTec-EU/LeonardoMD/pull/168))
+
+Source: `11f699c64f9bba03789871d08db5782e005c038b`. Delta: `{"build": 28}`.
+
+## 0.1.407
+
+- #173 Fixed: keep preference scope inside its tab ([#174](https://github.com/PinedaTec-EU/LeonardoMD/pull/174))
+
+Source: `37ac8fe0ed61318611a1c7bf4ccfaea7245e22a7`. Delta: `{"build": 2}`.
+
+## 0.1.405
+
+- #15 Updated: promote validated beta 0.1.404 to stable ([#162](https://github.com/PinedaTec-EU/LeonardoMD/pull/162))
+
+Source: `2dfa983b9e4e92578e595b197ddfd863a7a407a2`. Delta: `{"build": 1}`.
+
+## 0.1.404
+
+- #160 Fixed: deduplicate recent project and workspace paths ([#161](https://github.com/PinedaTec-EU/LeonardoMD/pull/161))
+
+Source: `42a57f14c8f1429adde18ac67c5373e8dc0c5f95`. Delta: `{"build": 2}`.
+
+## 0.1.402
+
+- #158 Fixed: restore large Leonardo background beneath scrolling Home ([#159](https://github.com/PinedaTec-EU/LeonardoMD/pull/159))
+
+Source: `08b15075af45b22f81d5602d01c41be3e46d3d03`. Delta: `{"build": 3}`.
+
+## 0.1.399
+
+- #156 Updated: compact Home recents and adapt Leonardo background ([#157](https://github.com/PinedaTec-EU/LeonardoMD/pull/157))
+
+Source: `a62e099bc740851ba615049b358b8a2805a8e31e`. Delta: `{"build": 3}`.
+
+## 0.1.396
+
+- #15 Added: promote accepted beta 395 to stable ([#155](https://github.com/PinedaTec-EU/LeonardoMD/pull/155))
+
+Source: `d522b9aadc1b992fd659d52c01dc7504823631b7`. Delta: `{"build": 1}`.
+
+## 0.1.395
+
+- #144 Added: protected preview editing and manual saving ([#145](https://github.com/PinedaTec-EU/LeonardoMD/pull/145))
+
+Source: `350cc9b5e09d111e689284cd30eb44a49f1742c1`. Delta: `{"build": 20}`.
+
+## 0.1.375
+
+- #146 Added: heading-colored border to document metadata ([#147](https://github.com/PinedaTec-EU/LeonardoMD/pull/147))
+
+Source: `4747278c9984fef3847feed6a1f09d1576404b47`. Delta: `{"build": 2}`.
+
+## 0.1.373
+
+- #142 Fixed: show installed channel beside application version ([#143](https://github.com/PinedaTec-EU/LeonardoMD/pull/143))
+
+Source: `90a336482a322642140b3f040c8743b03933a550`. Delta: `{"build": 3}`.
+
+## 0.1.370
+
+- #15 Added: promote validated beta 369 to stable ([#141](https://github.com/PinedaTec-EU/LeonardoMD/pull/141))
+
+Source: `48b477871f74a285b9ff5be96bb6925a581db11e`. Delta: `{"build": 1}`.
+
+## 0.1.369
+
+- #137 Added: persist favorites and show welcome item lists ([#138](https://github.com/PinedaTec-EU/LeonardoMD/pull/138))
+
+Source: `754cfe63dd715e06ba70885a68170f8587e1f8f6`. Delta: `{"build": 8}`.
+
+## 0.1.361
+
+- #136 Fixed: isolate sidebar context menu button styling ([#139](https://github.com/PinedaTec-EU/LeonardoMD/pull/139))
+
+Source: `ae5af291fa0fadd63c573c8f76fd2f42969e632f`. Delta: `{"build": 3}`.
+
+## 0.1.358
+
+- #133 Added: offer default Markdown application choice ([#134](https://github.com/PinedaTec-EU/LeonardoMD/pull/134))
+
+Source: `dba651f58275b1714678eb0a06aa0af9944c43d7`. Delta: `{"build": 5}`.
+
+## 0.1.353
+
+- #130 Fixed: support Markdown table width comments ([#131](https://github.com/PinedaTec-EU/LeonardoMD/pull/131))
+
+Source: `cc3be97d99542efc216ca694ea7144629593c274`. Delta: `{"build": 3}`.
+
+## 0.1.350
+
+- #128 Updated: Move language into General preferences ([#129](https://github.com/PinedaTec-EU/LeonardoMD/pull/129))
+
+Source: `6611285bbe8d240e7a29c079a9e0b17a6900bc8a`. Delta: `{"build": 1}`.
+
+## 0.1.349
+
+- #15 Added: allocate builds for validated stable promotions ([#127](https://github.com/PinedaTec-EU/LeonardoMD/pull/127))
+
+Source: `b660146e1220cf383a04bcfa33d71ab01e77ec33`. Delta: `{"build": 1}`.
+
+## 0.1.348
+
+- #123 Added: user-selected beta channel and update preferences ([#124](https://github.com/PinedaTec-EU/LeonardoMD/pull/124))
+
+Source: `04eaaeb524882ed1859412f6c55ba6d3cd25c641`. Delta: `{"build": 11}`.
+
+## 0.1.337
+
+- #92 Added: implement Little Leonardo and desktop peer synchronization ([#93](https://github.com/PinedaTec-EU/LeonardoMD/pull/93))
+
+Source: `a2ff7c96e36f55d8eca39f96f55ae221ebb82497`. Delta: `{"build": 193}`.
+
+## 0.1.144
+
+- #88 Removed: redundant Preferences button from document outline ([#89](https://github.com/PinedaTec-EU/LeonardoMD/pull/89))
+
+Source: `d4b4dc511d22e6cd431b4e8eb58e235fab458f0d`. Delta: `{"build": 4}`.
+
 ## 0.1.140
 
 - #86 Added: resizable project sidebar ([#87](https://github.com/PinedaTec-EU/LeonardoMD/pull/87))

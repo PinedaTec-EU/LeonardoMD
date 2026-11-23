@@ -1,0 +1,20 @@
+{
+  "captured_at": "2026-11-10T12:14:07.560Z",
+  "route": "/native/helper-upgrade/help33/es-table",
+  "screen": "Actual installed1215 recovery Help33",
+  "browser_name": "Native macOS SwiftUI WKWebView",
+  "browser_version": "WK engine not exposed",
+  "viewport_css": null,
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "945d05aa71f71790b75497f81d3493a708c7ab8e",
+  "state": "Spanish table and local image; original owner PID41520; installed1215; native image-pixel equivalent viewport CSS N/A",
+  "native_viewport_points": null,
+  "capture_surface": "native",
+  "viewport_measurement": "CUA exposes screenshot bytes but no native viewport dimensions; image pixels are recorded only under image",
+  "metadata_correction": {
+    "at": "2026-11-10T15:49:41.144480+00:00",
+    "source_revision": "b1feaf1994f036428d9564a3ad74dd7018ed4752",
+    "reason": "Remove bitmap/native-point equivalents from the browser-only viewport_css field; preserve original capture timestamps, source identity and image bytes."
+  }
+}

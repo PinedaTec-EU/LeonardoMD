@@ -1,0 +1,184 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /tmp/leonardo-386-derived/Build/Products/Classic393Before.xctestrun -destination "platform=iOS Simulator,id=926C886F-52D8-4766-B84D-1A5D8C218080" "-only-testing:LittleLeonardoUITests/PairingUITests/testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch" -resultBundlePath /tmp/ll393-before.xcresult
+
+Writing result bundle at path:
+	/tmp/ll393-before.xcresult
+
+2026-11-07 13:35:17.325 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:21.917104+0100 LittleLeonardoUITests-Runner[61932:105132919] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-11-07 13:35:26.142.
+Test Suite 'LittleLeonardoUITests.xctest' started at 2026-11-07 13:35:26.142.
+Test Suite 'PairingUITests' started at 2026-11-07 13:35:26.142.
+Test Case '-[LittleLeonardoUITests.PairingUITests testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch]' started.
+    t =     0.00s Start Test at 2026-11-07 13:35:26.147
+    t =     0.06s Set Up
+    t =     0.06s Open eu.pinedatec.LittleLeonardo
+    t =     0.06s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 13:35:26.412 xcodebuild[61855:105132378] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:35:26.412 xcodebuild[61855:105132378] [MT] IDELaunchParametersSnapshot: no debugger version
+objc[61932]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x1040f8398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x107e98310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-11-07 13:35:26.418 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     0.70s         Setting up automation session
+    t =     2.95s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.41s Tap "open-pairing" Button
+    t =     4.41s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.41s     Find the "open-pairing" Button
+    t =     4.57s     Check for interrupting elements affecting "open-pairing" Button
+    t =     4.63s     Synthesize event
+    t =     4.98s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     5.57s Tap "IP y puerto" Button
+    t =     5.57s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     5.57s     Find the "IP y puerto" Button
+    t =     5.64s     Check for interrupting elements affecting "IP y puerto" Button
+    t =     5.69s     Synthesize event
+    t =     5.98s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.61s Tap "pairing-host" TextField
+    t =     7.61s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.61s     Find the "pairing-host" TextField
+    t =     7.66s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     7.70s     Synthesize event
+    t =     7.99s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.69s Find the "pairing-host" TextField
+    t =     8.79s Type '' into "pairing-host" TextField
+    t =     8.79s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.07s     Find the "pairing-host" TextField
+    t =     9.13s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     9.19s     Synthesize event
+    t =     9.66s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.66s Type '127.0.0.1' into "pairing-host" TextField
+    t =     9.66s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.66s     Find the "pairing-host" TextField
+    t =     9.72s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     9.77s     Synthesize event
+    t =    10.12s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.12s Tap "pairing-port" TextField
+    t =    10.12s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.13s     Find the "pairing-port" TextField
+    t =    10.19s     Check for interrupting elements affecting "pairing-port" TextField
+    t =    10.24s     Synthesize event
+    t =    10.53s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.00s Find the "pairing-port" TextField
+    t =    11.05s Type '' into "pairing-port" TextField
+    t =    11.05s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.05s     Find the "pairing-port" TextField
+    t =    11.10s     Check for interrupting elements affecting "pairing-port" TextField
+    t =    11.15s     Synthesize event
+    t =    11.43s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.58s Type '46987' into "pairing-port" TextField
+    t =    11.58s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.58s     Find the "pairing-port" TextField
+    t =    11.63s     Check for interrupting elements affecting "pairing-port" TextField
+    t =    11.68s     Synthesize event
+    t =    11.96s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.97s Tap "Solicitar conexión" Button
+    t =    11.97s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.97s     Find the "Solicitar conexión" Button
+    t =    12.02s     Check for interrupting elements affecting "Solicitar conexión" Button
+    t =    12.07s     Synthesize event
+    t =    12.36s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    12.87s Waiting 15.0s for StaticText (First Match) to exist
+    t =    13.90s     Checking `Expect predicate `existsNoRetry == 1` for object StaticText (First Match)`
+    t =    13.90s         Checking existence of `StaticText (First Match)`
+    t =    14.05s Tap "Sincronizar" Button
+    t =    14.05s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.06s     Find the "Sincronizar" Button
+    t =    14.08s     Check for interrupting elements affecting "Sincronizar" Button
+    t =    14.11s     Synthesize event
+    t =    14.41s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    15.58s Waiting 30.0s for "rubric-request-sheet" Other to exist
+    t =    16.61s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    16.61s         Checking existence of `"rubric-request-sheet" Other`
+    t =    16.68s Waiting 10.0s for "rubric-accept" Button to exist
+    t =    17.72s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-accept" Button`
+    t =    17.72s         Checking existence of `"rubric-accept" Button`
+    t =    17.90s Tap "rubric-accept" Button
+    t =    17.90s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.90s     Find the "rubric-accept" Button
+    t =    17.96s     Check for interrupting elements affecting "rubric-accept" Button
+    t =    18.00s     Synthesize event
+    t =    18.29s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    18.30s Checking existence of `"rubric-canvas" Other`
+    t =    18.34s Waiting 10.0s for "rubric-accept" Button to exist
+    t =    19.37s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-accept" Button`
+    t =    19.37s         Checking existence of `"rubric-accept" Button`
+    t =    19.53s Terminate eu.pinedatec.LittleLeonardo:62016
+2026-11-07 13:35:45.681 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:45.681 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:45.681 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    20.58s Open eu.pinedatec.LittleLeonardo
+    t =    20.59s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 13:35:46.730 xcodebuild[61855:105132378] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:35:46.730 xcodebuild[61855:105132378] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:35:46.736 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    20.80s         Setting up automation session
+    t =    22.71s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    23.84s Waiting 2.0s for "No se pudo completar la operación" Alert to exist
+    t =    24.87s     Checking `Expect predicate `existsNoRetry == 1` for object "No se pudo completar la operación" Alert`
+    t =    24.88s         Checking existence of `"No se pudo completar la operación" Alert`
+    t =    24.92s         Capturing element debug description
+    t =    25.84s     Checking `Expect predicate `existsNoRetry == 1` for object "No se pudo completar la operación" Alert`
+    t =    25.84s         Checking existence of `"No se pudo completar la operación" Alert`
+    t =    25.86s         Capturing element debug description
+    t =    25.86s     Checking existence of `"No se pudo completar la operación" Alert`
+    t =    25.87s Collecting debug information to assist test failure triage
+    t =    25.87s     Requesting snapshot of accessibility hierarchy for app with pid 62368
+    t =    25.88s Waiting 2.0s for "Cerrar" Button to exist
+    t =    26.91s     Checking `Expect predicate `existsNoRetry == 1` for object "Cerrar" Button`
+    t =    26.91s         Checking existence of `"Cerrar" Button`
+    t =    26.92s         Capturing element debug description
+    t =    27.88s     Checking `Expect predicate `existsNoRetry == 1` for object "Cerrar" Button`
+    t =    27.88s         Checking existence of `"Cerrar" Button`
+    t =    27.90s         Capturing element debug description
+    t =    27.90s     Checking existence of `"Cerrar" Button`
+    t =    27.91s Collecting debug information to assist test failure triage
+    t =    27.91s     Requesting snapshot of accessibility hierarchy for app with pid 62368
+    t =    27.92s Waiting 5.0s for "Biblioteca" NavigationBar to exist
+    t =    28.95s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =    28.95s         Checking existence of `"Biblioteca" NavigationBar`
+    t =    28.96s         Capturing element debug description
+    t =    30.00s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =    30.00s         Checking existence of `"Biblioteca" NavigationBar`
+    t =    30.01s         Capturing element debug description
+    t =    30.94s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =    30.94s         Checking existence of `"Biblioteca" NavigationBar`
+    t =    30.96s         Capturing element debug description
+    t =    31.98s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =    31.98s         Checking existence of `"Biblioteca" NavigationBar`
+    t =    31.99s         Capturing element debug description
+    t =    32.92s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =    32.92s         Checking existence of `"Biblioteca" NavigationBar`
+    t =    32.94s         Capturing element debug description
+    t =    32.94s     Checking existence of `"Biblioteca" NavigationBar`
+    t =    32.94s Collecting debug information to assist test failure triage
+    t =    32.94s     Requesting snapshot of accessibility hierarchy for app with pid 62368
+    t =    32.95s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    33.03s Added attachment named 'Cold launch while rubric recovery is suspended'
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Mobile/LittleLeonardoUITests/PairingUITests.swift:472: error: -[LittleLeonardoUITests.PairingUITests testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch] : failed - Local library and demos must be usable before pending network recovery returns
+    t =    33.35s Tear Down
+Test Case '-[LittleLeonardoUITests.PairingUITests testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch]' failed (33.618 seconds).
+Test Suite 'PairingUITests' failed at 2026-11-07 13:35:59.765.
+	 Executed 1 test, with 1 failure (0 unexpected) in 33.618 (33.622) seconds
+Test Suite 'LittleLeonardoUITests.xctest' failed at 2026-11-07 13:35:59.767.
+	 Executed 1 test, with 1 failure (0 unexpected) in 33.618 (33.624) seconds
+Test Suite 'Selected tests' failed at 2026-11-07 13:35:59.767.
+	 Executed 1 test, with 1 failure (0 unexpected) in 33.618 (33.625) seconds
+2026-11-07 13:35:59.785 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:59.785 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:59.785 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:59.795 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:59.795 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:35:59.795 xcodebuild[61855:105132378] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:36:12.679 xcodebuild[61855:105132378] [MT] IDETestOperationsObserverDebug: 55.801 elapsed -- Testing started completed.
+2026-11-07 13:36:12.679 xcodebuild[61855:105132378] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-07 13:36:12.679 xcodebuild[61855:105132378] [MT] IDETestOperationsObserverDebug: 55.801 sec, +55.801 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/ll393-before.xcresult
+
+Failing tests:
+	PairingUITests.testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch()
+
+** TEST EXECUTE FAILED **
+
+Testing started

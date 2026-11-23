@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-15T11:49:05.042304Z",
+  "route": "/native/ios/library/error-alert",
+  "screen": "Little Leonardo — concise synchronization error alert",
+  "browser_name": "Little Leonardo native SwiftUI app on iPhone 18 Pro Max Simulator",
+  "browser_version": "N/A — native SwiftUI app; iOS 27.0",
+  "viewport_css": { "width": 368, "height": 800 },
+  "capture_mode": "viewport",
+  "state": "Synthetic local connection failure. Alert shows one short recovery message, reference LL-D877D72DF95E and one OK action. No transport domain, URL, path, byte count or raw platform description is displayed.",
+  "data_provenance": "synthetic"
+}

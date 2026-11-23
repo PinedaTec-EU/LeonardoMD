@@ -1,0 +1,13 @@
+{
+  "before_source": "01aea36a18c358f5385a8ddc3b166f16deaa5cbc",
+  "after_product_source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+  "before_ui": "startup-before-ui.log",
+  "after_ui": "startup-after-ui.log",
+  "after_server": "startup-after-server.log",
+  "before_result": "Expected failure: local library unavailable while response suspended;33.618s",
+  "after_result": "Pass1/1,75.384s; fixture1/1,94.326s; demo accessed while accept response still suspended, then same acceptance and explicit Send complete.",
+  "entry_file_hashes": {
+    "01aea36a18c358f5385a8ddc3b166f16deaa5cbc": "44497957316e6bed8a3b6c7e3d07c1599bbe74030d435fc9fa4772d741331ce9",
+    "99cdd46d74f2a34d698a2e158104a9f2e129c7d4": "c65fe014d619a63b4642f7c07a8f6c70508bf124516a77ec58325f55b4b141fe"
+  }
+}

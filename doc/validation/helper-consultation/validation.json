@@ -1,0 +1,106 @@
+{
+  "source_commit": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+  "focused_tests": 8,
+  "xctest_checks": 717,
+  "skipped": 35,
+  "swift_testing": 71,
+  "before_fix": {
+    "method": "Restore the previous immediate-busy reload guard while retaining the suspended-preferences regression",
+    "result": "FAIL: queued status finished before barrier release and threw DesktopRuntimeError.busy",
+    "log": "/tmp/leonardo398-contention-before.log"
+  },
+  "after_fix": "PASS: FIFO fresh-consent; cooperative queued cancellation tested while predecessor remains suspended, then no read and next live command progress; read-only polling suppresses cancelled delivery and recovers the same UUID.",
+  "full_log": "/tmp/leonardo398-guide29-full.log",
+  "physical_acceptance": "Pending combined signed accepted-main candidate with #392/#398; #385 deferred by owner; installed helper unchanged",
+  "swift_testing_targets": {
+    "LeonardoCoreTests": 28,
+    "LeonardoRenderTests": 43
+  },
+  "accepted_main": "8e2af213c6208d471adf019a3c0d9869ed24505f",
+  "canonical_base_version": "0.3.1127",
+  "failures": 0,
+  "xctest_by_executable": [
+    {
+      "executable": "LeonardoSyncTransportTests.xctest",
+      "tests": 24,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoSyncTests.xctest",
+      "tests": 81,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoRenderTests.xctest",
+      "tests": 23,
+      "skips": 1,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoIntegrationTests.xctest",
+      "tests": 46,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoDesktopSyncTests.xctest",
+      "tests": 58,
+      "skips": 4,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoCoreTests.xctest",
+      "tests": 115,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoAppTests.xctest",
+      "tests": 370,
+      "skips": 30,
+      "failures": 0
+    }
+  ],
+  "full_log_sha256": "2142b5f2e331c8199ca604fa9888f2e2fb3b894d958617c9f044dd24891f9086",
+  "compilation_delta": 9,
+  "help_acceptance": "Guide29 EN/ES updated, regenerated, personal/bundle hashes identical; actual packaged QA PID81719 Help/Ayuda both locales, Mermaid/MathON-tag1/MathOFF/literal/Charts/images/tables and practice fill-save-close-reopen PASS. Normal quit; three original files restored exactly. Final signed accepted-main Help still required.",
+  "ci_dependency_recovery": {
+    "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/403",
+    "sparkle_version": "2.9.6",
+    "sparkle_revision": "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
+    "official_asset_api": "repos/sparkle-project/Sparkle/releases/assets/517328210",
+    "size": 11577555,
+    "sha256": "8d5fb41d960b43f4a68aa14126bf62b098544ec8d191cdcc73eb14e63a8e7606",
+    "new_security_regressions": 6,
+    "python_suite_tests": 118,
+    "python_suite_skips": 7,
+    "python_suite_failures": 0,
+    "fresh_resolution": "PASS: official API download verified then fresh SwiftPM cache/scratch resolution fetched the pinned binary from cache",
+    "prime_log": "/tmp/leonardo403-cache-prime.log",
+    "resolve_log": "/tmp/leonardo403-cache-resolve.log",
+    "python_log": "/tmp/leonardo398-python-ci-recovery.log",
+    "swift_inputs_unchanged_from_ci_recovery": "The Sparkle recovery remains unchanged; current additional Help/test/comment inputs are validated by the new complete build-source suite."
+  },
+  "native_visual_test": {
+    "result": "PASS native1/1 within focused8/8, repeated in full717/35/71",
+    "captures": 12,
+    "scenarios": 6,
+    "locales": [
+      "en",
+      "es"
+    ],
+    "test_process_id": 78513,
+    "source": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+    "focused_log": "/tmp/leonardo398-guide29-focused.log",
+    "full_command": "swift test --skip-build with native capture opt-in; no additional compilation",
+    "data": "synthetic isolated runtime/store, real production editor/controller",
+    "packaged_or_physical_acceptance": false,
+    "capture_breakdown": {
+      "review_originals_1392x1640": 8,
+      "guide_originals_696x820": 4
+    }
+  },
+  "packaged_help_record": "packaged-help29/validation.json"
+}

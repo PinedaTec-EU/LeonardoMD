@@ -1,0 +1,16 @@
+{
+  "browser_name" : "Native AppKit NSHostingView",
+  "browser_version" : "N\/A native component",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-08T11:49:57Z",
+  "data_provenance" : "synthetic",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/rubric-recovery\/en\/waiting-after-first-failure",
+  "screen" : "Production RubricEditor",
+  "source_sha" : "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+  "state" : "Production RubricEditor waiting after one synthetic failed status read; no Retry action; language en",
+  "viewport_css" : {
+    "height" : 820,
+    "width" : 696
+  }
+}

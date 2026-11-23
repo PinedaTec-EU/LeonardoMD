@@ -1,0 +1,14 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "document": { "kind": "form" },
+  "fields": {
+    "date": { "type": "date", "required": true },
+    "name": { "type": "text", "required": true, "pattern": "^[A-Z]+$" }
+  },
+  "values": { "date": "2023-02-29", "name": "lowercase" }
+}
+---
+Date: {{field:date}}
+Name: {{field:name}}

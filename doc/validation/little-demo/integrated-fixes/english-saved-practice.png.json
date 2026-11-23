@@ -1,0 +1,17 @@
+{
+  "capture_type": "native XCTest screenshot of running LittleLeonardo.app",
+  "captured_at": "2026-11-06T20:57:42.476000+00:00",
+  "screen": "English saved practice",
+  "bundle_identifier": "eu.pinedatec.LittleLeonardo",
+  "build_source": "68b077e47beb3cc5aecb4d901db264a9ac0e280f",
+  "device": "LittleLeonardo381 Demo QA",
+  "runtime": "iOS 27.0 (24A434), iPhone 17 Pro simulator",
+  "locale": "English demo",
+  "state": "Bundled offline demo; no paired Mac; fictional answers; Mermaid/Math/Vega/Leonardo enabled",
+  "image": {
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "4c37058e50f465f12dac77f58a64a2c7c2da7f479705991d5b9de55088a67320"
+  },
+  "missing_context": "Native XCTest exposes no browser version or CSS viewport. Simulator Debug app has no injected distribution version/build; full source SHA identifies the build."
+}

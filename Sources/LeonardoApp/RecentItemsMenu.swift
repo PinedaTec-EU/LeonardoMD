@@ -4,12 +4,11 @@ import AppKit
 @MainActor
 final class RecentItemsMenu: NSObject, NSMenuDelegate {
     enum Category: Int, CaseIterable {
-        case documents, projects, workspaces
+        case documents, projects
         var title: String {
             switch self {
             case .documents: "Recent documents"
             case .projects: "Recent projects"
-            case .workspaces: "Recent workspaces"
             }
         }
     }
@@ -46,7 +45,6 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         switch category {
         case .documents: NSDocumentController.shared.recentDocumentURLs
         case .projects: session()?.globalPreferences.recentProjectPaths ?? []
-        case .workspaces: session()?.globalPreferences.recentWorkspacePaths ?? []
         }
     }
 
@@ -65,6 +63,13 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
             item.tag = category.rawValue
             item.representedObject = url
             item.toolTip = url.path
+            if category == .projects {
+                let presentation = DesktopProjectPresentation.resolve(url, session: session())
+                let role = presentation.identity.title(languageCode: LanguageSettings.shared.language.rawValue)
+                item.image = ProjectIdentityIcon.menuImage(for: presentation.identity)
+                item.title = url.lastPathComponent + " — " + role + " — " + url.deletingLastPathComponent().path
+                item.toolTip = [role, presentation.detail, url.path].compactMap { $0 }.joined(separator: "\n")
+            }
             var directory: ObjCBool = false
             let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &directory)
             item.isEnabled = exists && directory.boolValue == (category != .documents)
@@ -85,9 +90,6 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         case .projects:
             let active = session()
             Task { await active?.openProject(url) }
-        case .workspaces:
-            let active = session()
-            Task { await active?.openWorkspace(url) }
         }
     }
 
@@ -97,9 +99,6 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         case .documents: NSDocumentController.shared.clearRecentDocuments(nil)
         case .projects:
             session()?.globalPreferences.recentProjectPaths = []
-            session()?.persistSettings()
-        case .workspaces:
-            session()?.globalPreferences.recentWorkspacePaths = []
             session()?.persistSettings()
         }
     }

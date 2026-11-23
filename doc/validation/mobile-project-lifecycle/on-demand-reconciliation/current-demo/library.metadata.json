@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "generator": "Shared capture_metadata.py image_dimensions/git_source; native unavailable-context fallback",
+  "collected_at": "2026-11-10T12:18:27.285862+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T12:15:52.949000+00:00",
+    "route": "/native/ios/library",
+    "screen": "Ordinary project library",
+    "browser_name": "XCUITest native screenshot (no browser)",
+    "browser_version": "Not applicable; iOS Simulator 27.0 (24A434)",
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "state": "Unified mobile library with Demo visible; Classic light; synthetic data.",
+    "source_sha": "de24b150fd3cb97ad40986d3945875e58a04791c",
+    "collector_head": "d3a98ba012f500289de4b168ae227ae561783b2b",
+    "device": {
+      "platform": "iOS Simulator",
+      "device_id": "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+      "device_name": "LittleLeonardo407 Project Lifecycle",
+      "model_name": "iPhone 17 Pro",
+      "os_version": "27.0",
+      "os_build": "24A434",
+      "architecture": "arm64"
+    },
+    "native_geometry_limitation": "XCTest attachment export exposes original bitmap and simulator identity, but not browser engine details or CSS/native-point viewport geometry; viewport_css and native_viewport_points are explicitly null rather than inferred from pixels.",
+    "source_mapping_note": "Test screenshot producer is de24b150fd3cb97ad40986d3945875e58a04791c; metadata collector HEAD is d3a98ba012f500289de4b168ae227ae561783b2b after notes-only merges. Equality of requested production inputs is owned by the root on-demand source-inputs manifest."
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "b017f35a31b9b2658aeb20937e521d94c16ad6e3b12a7d9dda7b0b6e1d6ffb1c"
+  },
+  "source": {
+    "revision_at_collection": "d3a98ba012f500289de4b168ae227ae561783b2b",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  },
+  "original_attachment": {
+    "test_identifier": "MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored()",
+    "test_identifier_url": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored",
+    "attachment_uuid": "14103E56-ED17-4D2B-8743-FC45053AAB87",
+    "exported_file_name": "14103E56-ED17-4D2B-8743-FC45053AAB87.png",
+    "suggested_human_readable_name": "Ordinary project library_0_79FD6F36-4587-462E-8BC0-BEFADA979B8F.png",
+    "timestamp_epoch_seconds": 1794312952.949,
+    "is_associated_with_failure": false,
+    "device_id": "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+    "device_name": "LittleLeonardo407 Project Lifecycle"
+  },
+  "schema_limitation": "XCTest attachment export exposes original bitmap and simulator identity, but not browser engine details or CSS/native-point viewport geometry; viewport_css and native_viewport_points are explicitly null rather than inferred from pixels. The shared helper image_dimensions/git_source collectors were reused; no browser/CSS geometry was fabricated.",
+  "producer_collector_note": "Test screenshot producer is de24b150fd3cb97ad40986d3945875e58a04791c; metadata collector HEAD is d3a98ba012f500289de4b168ae227ae561783b2b after notes-only merges. Equality of requested production inputs is owned by the root on-demand source-inputs manifest."
+}

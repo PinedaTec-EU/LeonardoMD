@@ -1,0 +1,15 @@
+{
+  "installed_mac_version": "0.3.1215",
+  "old_helper_pid": 67032,
+  "old_helper_bundle": "connection-beta-0.3.1136-6a0c6b4/LeonardoMD.app",
+  "normal_master_disable_stop_verified": true,
+  "new_helper_pid": 48295,
+  "new_helper_executable": "/Applications/LeonardoMD.app/Contents/MacOS/LeonardoSyncHelper",
+  "new_helper_version": "0.3.1215",
+  "TLS_identity_hash_unchanged": true,
+  "existing_named_accesses_verified_before_and_after": 3,
+  "device_store_bytes_identical": false,
+  "device_store_note": "Runtime metadata changed; exact byte identity is not claimed. All three access rows and TLS identity remained and owner confirmed existing iPhone works without pairing.",
+  "owner_confirmation": "S\u00ed, ya funciona",
+  "confirmation_scope": "Owner opened paired project and a file after one refresh; no new pairing, trust reset, forced kill or app replacement"
+}

@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "pr": 408,
+  "issue": 407,
+  "correction": "#410",
+  "producer_revision": "8bc2122cf52c05c316b762bbb565c322dd5b6e67",
+  "ios": {
+    "result": "Passed",
+    "result_bundle": "/tmp/leonardo-408-ios-verified-final.xcresult",
+    "summary_file": "ios-test-summary.json",
+    "device": {
+      "architecture": "arm64",
+      "deviceId": "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+      "deviceName": "LittleLeonardo407 Project Lifecycle",
+      "modelName": "iPhone 17 Pro",
+      "osBuildNumber": "24A434",
+      "osVersion": "27.0",
+      "platform": "iOS Simulator"
+    },
+    "passed_tests": 23,
+    "failed_tests": 0,
+    "skipped_tests": 0,
+    "expected_failures": 0,
+    "total_tests": 23,
+    "unit_test_count": 20,
+    "ui_test_count": 3,
+    "tests": [
+      {
+        "suite_path": [
+          "LittleLeonardoUITests",
+          "MobileDemoUITests"
+        ],
+        "name": "testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored()",
+        "node_identifier": "MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored()",
+        "result": "Passed",
+        "duration_seconds": 22.10686695575714
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoUITests",
+          "MobileDemoUITests"
+        ],
+        "name": "testOfflineDemoRendersAndRetainsPracticeAcrossRelaunch()",
+        "node_identifier": "MobileDemoUITests/testOfflineDemoRendersAndRetainsPracticeAcrossRelaunch()",
+        "result": "Passed",
+        "duration_seconds": 64.853266954422
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoUITests",
+          "MobileDemoUITests"
+        ],
+        "name": "testSpanishSourceRoundTripKeepsFormEditableAndAnswersSeparate()",
+        "node_identifier": "MobileDemoUITests/testSpanishSourceRoundTripKeepsFormEditableAndAnswersSeparate()",
+        "result": "Passed",
+        "duration_seconds": 84.12692403793335
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testBootstrapPreservesAnswersAndResetOnlyAffectsSelectedLocale()",
+        "node_identifier": "MobileDemoStoreTests/testBootstrapPreservesAnswersAndResetOnlyAffectsSelectedLocale()",
+        "result": "Passed",
+        "duration_seconds": 0.02909409999847412
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testBothBundledTemplatesHaveRealFieldsAndOfflineExamples()",
+        "node_identifier": "MobileDemoStoreTests/testBothBundledTemplatesHaveRealFieldsAndOfflineExamples()",
+        "result": "Passed",
+        "duration_seconds": 0.005987048149108887
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testDemoRecoveryPreservesSavedAnswers()",
+        "node_identifier": "MobileDemoStoreTests/testDemoRecoveryPreservesSavedAnswers()",
+        "result": "Passed",
+        "duration_seconds": 0.010934948921203613
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testFailedDeletionDoesNotChangeVisibility()",
+        "node_identifier": "MobileDemoStoreTests/testFailedDeletionDoesNotChangeVisibility()",
+        "result": "Passed",
+        "duration_seconds": 0.001987934112548828
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testMalformedPersonalCopyIsNotOverwrittenAtBootstrap()",
+        "node_identifier": "MobileDemoStoreTests/testMalformedPersonalCopyIsNotOverwrittenAtBootstrap()",
+        "result": "Passed",
+        "duration_seconds": 0.0053310394287109375
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testNewDemoContentRevisionUsesFreshCopiesAndPreservesOlderAnswers()",
+        "node_identifier": "MobileDemoStoreTests/testNewDemoContentRevisionUsesFreshCopiesAndPreservesOlderAnswers()",
+        "result": "Passed",
+        "duration_seconds": 0.01725292205810547
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testProjectDeletionSurvivesRestartAndOnlyNewDemoRevisionRestoresVisibility()",
+        "node_identifier": "MobileDemoStoreTests/testProjectDeletionSurvivesRestartAndOnlyNewDemoRevisionRestoresVisibility()",
+        "result": "Passed",
+        "duration_seconds": 0.0020530223846435547
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileDemoStoreTests"
+        ],
+        "name": "testRemovingDownloadedProjectDeletesBytesAndSuppressesRecreatedCache()",
+        "node_identifier": "MobileDemoStoreTests/testRemovingDownloadedProjectDeletesBytesAndSuppressesRecreatedCache()",
+        "result": "Passed",
+        "duration_seconds": 0.01616692543029785
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileReaderSpacingTests"
+        ],
+        "name": "testCompactReaderKeepsFirstHeadingNearContentTopAndLaterSectionsSpaced()",
+        "node_identifier": "MobileReaderSpacingTests/testCompactReaderKeepsFirstHeadingNearContentTopAndLaterSectionsSpaced()",
+        "result": "Passed",
+        "duration_seconds": 1.6919710636138916
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileReaderSpacingTests"
+        ],
+        "name": "testSynchronizedDocumentViewUsesCompactReaderSpacing()",
+        "node_identifier": "MobileReaderSpacingTests/testSynchronizedDocumentViewUsesCompactReaderSpacing()",
+        "result": "Passed",
+        "duration_seconds": 1.1941609382629395
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testCrashMarkerSurvivesTransientRestartAndClearsOnlyAfterAuthorizedStatus()",
+        "node_identifier": "MobileRevocationTests/testCrashMarkerSurvivesTransientRestartAndClearsOnlyAfterAuthorizedStatus()",
+        "result": "Passed",
+        "duration_seconds": 0.005035042762756348
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testDeletedMalformedCacheIsSkippedBeforeAuthorizationFilteringAndRecoveryLoad()",
+        "node_identifier": "MobileRevocationTests/testDeletedMalformedCacheIsSkippedBeforeAuthorizationFilteringAndRecoveryLoad()",
+        "result": "Passed",
+        "duration_seconds": 0.01991593837738037
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testDeniedMarkerHidesOnlyItsConnectionAndLateAuthorizationCannotClearIt()",
+        "node_identifier": "MobileRevocationTests/testDeniedMarkerHidesOnlyItsConnectionAndLateAuthorizationCannotClearIt()",
+        "result": "Passed",
+        "duration_seconds": 0.0020530223846435547
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny()",
+        "node_identifier": "MobileRevocationTests/testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny()",
+        "result": "Passed",
+        "duration_seconds": 0.003696918487548828
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testLiveOperationReloadRetainsOfflineCacheButNewSessionQuarantinesIt()",
+        "node_identifier": "MobileRevocationTests/testLiveOperationReloadRetainsOfflineCacheButNewSessionQuarantinesIt()",
+        "result": "Passed",
+        "duration_seconds": 0.012395977973937988
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testPreflightPersistenceFailureMakesZeroNetworkCalls()",
+        "node_identifier": "MobileRevocationTests/testPreflightPersistenceFailureMakesZeroNetworkCalls()",
+        "result": "Passed",
+        "duration_seconds": 0.0004949569702148438
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testTransientCompletionDoesNotDenyConnection()",
+        "node_identifier": "MobileRevocationTests/testTransientCompletionDoesNotDenyConnection()",
+        "result": "Passed",
+        "duration_seconds": 0.0025969743728637695
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRevocationTests"
+        ],
+        "name": "testWriteAheadMarkerSurvivesNormalPersistenceFailuresOnReload()",
+        "node_identifier": "MobileRevocationTests/testWriteAheadMarkerSurvivesNormalPersistenceFailuresOnReload()",
+        "result": "Passed",
+        "duration_seconds": 0.017220020294189453
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRubricIdentityTests"
+        ],
+        "name": "testSameUUIDDifferentPeerDoesNotProjectOrTouchNetwork()",
+        "node_identifier": "MobileRubricIdentityTests/testSameUUIDDifferentPeerDoesNotProjectOrTouchNetwork()",
+        "result": "Passed",
+        "duration_seconds": 0.005479931831359863
+      },
+      {
+        "suite_path": [
+          "LittleLeonardoTests",
+          "MobileRubricIdentityTests"
+        ],
+        "name": "testSubmissionGateSharesOnlyExactImmutableOperation()",
+        "node_identifier": "MobileRubricIdentityTests/testSubmissionGateSharesOnlyExactImmutableOperation()",
+        "result": "Passed",
+        "duration_seconds": 0.0025490522384643555
+      }
+    ],
+    "attachments_test": "MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored()",
+    "attachments_original_passed_nonfailure_count": 4,
+    "attachment_manifest": "attachment-manifest.json",
+    "focused_cache_regressions": {
+      "test_suites": [
+        "MobileDemoStoreTests",
+        "MobileRevocationTests"
+      ],
+      "passed_tests": 16,
+      "failed_tests": 0,
+      "skipped_tests": 0,
+      "basis": "Eight tests in each suite, all passed in the final iOS result bundle."
+    },
+    "evidence_notes": [
+      "document.png is opening/navigation evidence only; it does not claim rendered document content.",
+      "The separate testOfflineDemoRendersAndRetainsPracticeAcrossRelaunch() UI test covers rendering and practice retention."
+    ]
+  },
+  "swift_test_log": {
+    "log": "/tmp/leonardo-408-swift-verified-final.log",
+    "xctest_aggregate": {
+      "executed": 694,
+      "skipped": 35,
+      "failed": 0,
+      "passed": 659
+    },
+    "swift_testing_aggregates": [
+      {
+        "tests": 44,
+        "suites": 7,
+        "result": "Passed"
+      },
+      {
+        "tests": 28,
+        "suites": 2,
+        "result": "Passed"
+      }
+    ],
+    "note": "Counts are recorded by the per-executable and Swift Testing aggregates requested from the supplied concurrent log; no compiler or test command was rerun for this evidence task.",
+    "xctest_executables": [
+      {
+        "executable": "LeonardoSyncTransportTests.xctest",
+        "executed": 24,
+        "skipped": 0,
+        "failed": 0,
+        "passed": 24
+      },
+      {
+        "executable": "LeonardoSyncTests.xctest",
+        "executed": 81,
+        "skipped": 0,
+        "failed": 0,
+        "passed": 81
+      },
+      {
+        "executable": "LeonardoIntegrationTests.xctest",
+        "executed": 46,
+        "skipped": 0,
+        "failed": 0,
+        "passed": 46
+      },
+      {
+        "executable": "LeonardoDesktopSyncTests.xctest",
+        "executed": 58,
+        "skipped": 4,
+        "failed": 0,
+        "passed": 54
+      },
+      {
+        "executable": "LeonardoCoreTests.xctest",
+        "executed": 115,
+        "skipped": 0,
+        "failed": 0,
+        "passed": 115
+      },
+      {
+        "executable": "LeonardoAppTests.xctest",
+        "executed": 370,
+        "skipped": 31,
+        "failed": 0,
+        "passed": 339
+      }
+    ],
+    "swift_testing_aggregate": {
+      "tests": 72,
+      "suites": 9,
+      "failed": 0,
+      "passed": 72
+    }
+  },
+  "source_mapping": "production-inputs.json",
+  "final_bundle": "final-ios-bundle.json",
+  "evidence_limitations": [
+    "Native XCTest exposes no CSS or native-point viewport geometry; viewport_css and native_viewport_points remain explicit null in every context and metadata sidecar.",
+    "Read-only simctl get_app_container lookup could not return an installed path because the simulator was shutdown; installed executable digest matching is therefore unavailable.",
+    "Validation is simulator-only and does not establish physical-device, distribution, or TestFlight acceptance."
+  ],
+  "non_fatal_runtime_notes": [
+    "The iOS log contains Xcode IDESchemeActionSDKRecord invalidDigitCount(94232) diagnostics; the final result remained TEST SUCCEEDED."
+  ],
+  "logs": {
+    "ios_log": {
+      "path": "/tmp/leonardo-408-ios-verified-final.log",
+      "sha256": "77f53a47c0b5f6993fe9f9129088a2029237c26cdf40215442e03bc39210e27d"
+    },
+    "swift_log": {
+      "path": "/tmp/leonardo-408-swift-verified-final.log",
+      "sha256": "f99bb96b34c0f6dc3fa74e1c34481603996fbb3825a25d29e93f244b2d877a74"
+    }
+  }
+}

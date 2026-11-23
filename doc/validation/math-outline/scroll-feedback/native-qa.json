@@ -1,0 +1,41 @@
+{
+  "source_sha": "347dd5ae46e93137741afb050500b003b607cff2",
+  "process_id": 85364,
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.93514a3c680447929117044a73e1489e",
+  "executable": "LeonardoMD",
+  "executable_sha256": "1b27e5993e5c1d864088b98b8c2b2bc3aa21c08bdd4e0560a96e8946f2708b6e",
+  "application_version": "0.3.1022 (unmaterialized baseline)",
+  "guide_revision": 20,
+  "launch_method": "LEONARDO_SOURCE_PR=377 ./launch.sh --qa; prior QA quit normally, then new PID and actual first window verified",
+  "guide_content_identity": {
+    "en": {
+      "candidate_archive_sha256": "37e188aac1a5781be2109c07fb8146b7643ea978deab4b77a240bdaec546f04f",
+      "bundled_archive_sha256": "37e188aac1a5781be2109c07fb8146b7643ea978deab4b77a240bdaec546f04f",
+      "working_archive_sha256": "37e188aac1a5781be2109c07fb8146b7643ea978deab4b77a240bdaec546f04f",
+      "matches": true
+    },
+    "es": {
+      "candidate_archive_sha256": "4ecc7f8617252ff04ab1f94b3678fa738189be4275383249f17713ceb7c3f1cd",
+      "bundled_archive_sha256": "4ecc7f8617252ff04ab1f94b3678fa738189be4275383249f17713ceb7c3f1cd",
+      "working_archive_sha256": "4ecc7f8617252ff04ab1f94b3678fa738189be4275383249f17713ceb7c3f1cd",
+      "matches": true
+    }
+  },
+  "observed": [
+    "Real executable with packaged resources/dependencies; no XCTest linkage",
+    "Both guides opened through native Help menu; candidate/bundled/personal archive identities match",
+    "Complete underbrace, radical, extensible arrow, cancellation stroke and equation tag in both locales",
+    "Outline selects the actual heading; repeated selection and Split preview retain destination; after-scroll repetition is covered by the exact-source native regression test",
+    "Math disabled in each locale preserves literal source; enable recommendation dismissed without persistent suppression; original Math=true restored",
+    "Both practices filled with fictitious data, saved, closed, reopened and verified; original blank names restored and saved",
+    "Original English interface restored; Leonardo Classic/Parchment and other preferences left as observed"
+  ],
+  "practice_names_blank_after_cleanup": true,
+  "separate_findings": {
+    "378": "Concurrent QA working-copy collision; guide18 and content-identity verification are a bounded workaround; general isolation remains open",
+    "379": "Long tagged formula overlap in a narrow Split pane; Preview/wider window workaround; no layout stylesheet change in this PR"
+  },
+  "validation_limits": [
+    "Native wheel injection returned windowNotFoundAtPosition; no manual wheel acceptance is claimed."
+  ]
+}

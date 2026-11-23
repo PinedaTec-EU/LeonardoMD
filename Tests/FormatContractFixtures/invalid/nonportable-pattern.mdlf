@@ -1,0 +1,15 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "fields": {
+    "name": {
+      "type": "text",
+      "pattern": "\\p{L}+"
+    }
+  }
+}
+---
+# Name
+
+{{field:name}}

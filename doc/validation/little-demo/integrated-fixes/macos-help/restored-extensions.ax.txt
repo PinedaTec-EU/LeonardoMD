@@ -1,0 +1,40 @@
+Window: "", App: LeonardoMD QA.
+0 sheet ID: LeonardoMD.preferences, Secondary Actions: Raise
+	1 container
+		2 text Preferences
+		3 button Done
+		4 tab group
+			5 tab Description: General, Value: 0, ID: gearshape
+			6 tab Description: Extensions, Value: 1, ID: puzzlepiece.extension
+			7 tab Description: Synchronization, Value: 0, ID: arrow.triangle.2.circlepath.circle
+			8 tab Description: Updates, Value: 0, ID: arrow.triangle.2.circlepath
+			9 container
+				10 text Extensions Global preferences apply to the standalone viewer and projects that inherit them.
+				11 scroll area Secondary Actions: Scroll Up, Scroll Down
+					12 toggle button Description: Mermaid, Value: on, ID: mermaid-toggle
+					13 text Diagrams inside your documents
+					14 toggle button Description: Math, Value: on, ID: math-toggle
+					15 text Formulas with KaTeX
+					16 toggle button Description: Charts (Vega-Lite), Value: on, ID: vega-lite-toggle
+					17 text Inline data visualizations inside your documents
+					18 toggle button Description: Citations, Value: off, ID: citations-toggle
+					19 text Bibliographies and references with Citation.js
+					20 toggle button Description: Markdown extras, Value: on, ID: markdown-extensions-toggle
+					21 text Footnotes and GitHub-style callouts
+					22 button Description: Reset extension warnings, ID: reset-extension-warnings
+					23 text Ask again about disabled extensions in documents. This does not change enabled extensions. Charts and bibliography engines load only when used. Disabling an extension preserves the document source.
+					24 scroll bar (settable, float) 0
+						25 value indicator (settable, float) 0
+						26 increment arrow button
+						27 decrement arrow button
+						28 increment page button
+						29 decrement page button
+30 menu bar
+	31 LeonardoMD QA
+	32 File
+	33 Edit
+	34 View
+	35 Window
+	36 Help
+
+The focused UI element is 0 sheet ID: LeonardoMD.preferences, Secondary Actions: Raise

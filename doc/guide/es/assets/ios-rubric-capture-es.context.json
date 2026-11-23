@@ -1,0 +1,27 @@
+{
+  "source": "Native Little Leonardo UI test with an owned Mac HTTPS fixture",
+  "source_sha": "c8e52592e6325746237ef9d99f88ea41363d6262",
+  "captured_at": "2026-11-06T10:47:54.439+01:00",
+  "locale": "es",
+  "state": "Accepted Mac request, native finger drawing, undo/clear/preview, restart restore, explicit send and Mac receipt; guide image is the resized sent-state derivative, with full drawing and preview states retained in validation",
+  "simulator": "LittleLeonardo Rubric342 QA 20261105 / iPhone18Pro / iOS 27.0 / A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+  "viewport_points": {
+    "width": 402,
+    "height": 874
+  },
+  "browser": null,
+  "asset_mapping": {
+    "guide_asset": "doc/guide/es/assets/ios-rubric-capture-es.png",
+    "guide_asset_sha256": "d463b8881487bdc0e1bd5f81c6e469e06f724ee20c7cb266793f5c23e999bf25",
+    "validation_sent": "doc/validation/little-leonardo/ios-rubric-capture-es.png",
+    "validation_sent_sha256": "e50dd0385cabe233597c9ca163bd18e0dd87b94baa4f5f3c2ea2b8439bfd62df",
+    "validation_drawing": "doc/validation/little-leonardo/ios-rubric-capture-es-drawing.png",
+    "validation_drawing_sha256": "b6d623c3e42eedc74f153e58088da78949969baaac72493d78752cb6c3d6f0fa",
+    "validation_preview": "doc/validation/little-leonardo/ios-rubric-capture-es-preview.png",
+    "validation_preview_sha256": "8cc1cfc0da0643861a2f3b0950876f6f7fb6ab4f37609328708bc42084d2c2d9",
+    "immutable_capture_sidecar": "doc/validation/little-leonardo/ios-rubric-capture-final-20261106-c8e5259.json"
+  },
+  "metadata_helper_limit": "The shared capture_metadata.py helper is browser-only and requires CSS/browser fields; native evidence uses observed viewport points instead.",
+  "limitations": "Capture-only synthetic fixture; no physical device, production network, App Store/TestFlight or document grant",
+  "source_mapping": "The raw captures and ten native modes use source c8e52592e6325746237ef9d99f88ea41363d6262; subsequent help/assets/ledger updates do not change Swift product/test/config inputs."
+}

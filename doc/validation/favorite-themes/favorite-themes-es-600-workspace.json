@@ -1,0 +1,20 @@
+{
+  "browser" : "N\/A; AppKit\/SwiftUI",
+  "capture_mode" : "native component bitmap",
+  "captured_at" : "2026-10-30T13:46:02Z",
+  "favorite_category" : "workspace",
+  "head" : "unavailable; local source manifest required",
+  "language" : "es",
+  "limitations" : "Component evidence; no packaged startup or new-process claim",
+  "native_host_appearance" : "Aqua (including the dark session fixture)",
+  "palette" : "graphite-glass",
+  "pixel_dimensions" : [
+    1200,
+    1240
+  ],
+  "surface" : "Native NSHostingView SavedItemsView; synthetic workspace favorites and starred recent items",
+  "viewport_points" : [
+    600,
+    620
+  ]
+}

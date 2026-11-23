@@ -1,0 +1,87 @@
+{
+  "purpose": "Fresh packaged macOS Help v92 acceptance for PR #445, including English and Spanish guides and practice-form persistence.",
+  "recorded_at": "2026-11-17",
+  "repository_head_at_help_build": "5d33e34afd3680cbac6451cd3c9181272c6dc27b",
+  "launch": {
+    "command": "LEONARDO_SOURCE_PR=445 ./launch.sh --qa",
+    "fresh_process": true,
+    "first_window_ready": true
+  },
+  "application": {
+    "product": "LeonardoMD QA",
+    "version": "0.3.1818",
+    "build": "1818",
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.ecd55c1a5c184760a75ee07f9af30c88",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-n8p_ijej/LeonardoMDQA.app",
+    "executable_is_product_executable": true,
+    "xctest_linked": false,
+    "process_pid": 94978,
+    "started_at": "2026-11-17T10:26:02+01:00"
+  },
+  "guides": {
+    "opened_through": "Help menu > Leonardo user guide",
+    "english": {
+      "revision": "v92",
+      "bundled_resource": "Sources/LeonardoApp/Resources/Guide-v92-en.mdlz",
+      "bundled_sha256": "5c5b9c88c97172304c35d13bf7174257d240e524be491a198b35506e1e9a02d5",
+      "opened_copy": "Application Support/LeonardoMD/User Guides/v92/en/Guide-v92-en.mdlz",
+      "opened_copy_sha256": "5c5b9c88c97172304c35d13bf7174257d240e524be491a198b35506e1e9a02d5",
+      "matches_bundle": true
+    },
+    "spanish": {
+      "revision": "v92",
+      "bundled_resource": "Sources/LeonardoApp/Resources/Guide-v92-es.mdlz",
+      "bundled_sha256": "87c3e6c607cfa699f82c71ff11cf14bd4d111d766bd3b04ba20922a30b0a121b",
+      "opened_copy": "Application Support/LeonardoMD/User Guides/v92/es/Guide-v92-es.mdlz",
+      "opened_copy_sha256": "87c3e6c607cfa699f82c71ff11cf14bd4d111d766bd3b04ba20922a30b0a121b",
+      "matches_bundle": true
+    },
+    "rendering_checks": [
+      "Opened the v92 guide in both locales and inspected Mermaid, local images, tables and charts.",
+      "With Math enabled, inline math, one-line and multiline display math, Markdown-sensitive TeX (including underscores and underbraces), and the tagged box-counting equation rendered; tag (1) was visible without literal display delimiters or KaTeX errors.",
+      "With Math disabled, formula source remained readable as the extension fallback; code examples stayed literal."
+    ],
+    "extensions_during_rendering": {
+      "Mermaid": true,
+      "Math": true,
+      "Charts": true,
+      "Citations": false,
+      "MarkdownExtras": true
+    },
+    "fallback_check": {
+      "Math": false,
+      "display_formula_delimiters_remained_literal": true,
+      "code_examples_remained_literal": true
+    }
+  },
+  "practice_forms": [
+    {
+      "locale": "English",
+      "opened_filled_saved_closed_reopened": true,
+      "synthetic_value": "QA v92 English",
+      "value_present_after_reopen": true
+    },
+    {
+      "locale": "Spanish",
+      "opened_filled_saved_closed_reopened": true,
+      "synthetic_value": "QA v92 Español",
+      "value_present_after_reopen": true
+    }
+  ],
+  "restored_preferences": {
+    "interface_language": "English",
+    "Mermaid": true,
+    "Math": true,
+    "Charts": true,
+    "Citations": false,
+    "MarkdownExtras": true
+  },
+  "visual_evidence": "Inspected in the live packaged application; this run did not save a separate macOS screenshot.",
+  "teardown": {
+    "quit_requested_through_app": true,
+    "process_absent_after_quit": true,
+    "verified_pid": 94978,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.ecd55c1a5c184760a75ee07f9af30c88",
+    "task_owned_bundle_directory_removed": true
+  }
+}

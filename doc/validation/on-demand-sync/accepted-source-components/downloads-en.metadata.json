@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T15:19:10.346538+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T15:07:30.443000+00:00",
+    "route": "/native/synchronization/downloads/en",
+    "screen": "Shared production catalogue and storage controls",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Remote-only, cached, retained, partially retained folder and interrupted pending download; independent temporary/offline usage; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 1180,
+      "height": 640
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2360,
+    "height_px": 1280,
+    "sha256": "8d5b28a06cdd5bc60896c06e1daad80dd0982c5d90174b01f489bebcc0ec1b59"
+  },
+  "source": {
+    "revision_at_collection": "66c9e644a3203e1725f466973e1940acff61e61f",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

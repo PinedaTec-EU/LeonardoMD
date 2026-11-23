@@ -1,0 +1,43 @@
+{
+  "full_source": "5d19e71c264feb9db8ea146e373996f192ecf473",
+  "pid": 17838,
+  "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-uknwt4vp/LeonardoMDQA.app",
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.4c8a5134244740e3b879d722db8e0a91",
+  "version": "0.3.1045",
+  "build": "1045",
+  "hashes": {
+    "en": {
+      "bundle": "a375aab44a52aff47202f2f988b66b54517d1a2f9bee1e57ddba9287110c38e4",
+      "working_copy": "a375aab44a52aff47202f2f988b66b54517d1a2f9bee1e57ddba9287110c38e4"
+    },
+    "es": {
+      "bundle": "2d071856b0d655d58155e64a6380b188bddfa78e558203172dd14039691eca9f",
+      "working_copy": "2d071856b0d655d58155e64a6380b188bddfa78e558203172dd14039691eca9f"
+    }
+  },
+  "launch_method": "LEONARDO_SOURCE_PR=383 ./launch.sh --qa",
+  "fresh_process_verified": true,
+  "quit_normally": true,
+  "no_process_after_quit": true,
+  "extensions_original_and_restored": {
+    "Mermaid": true,
+    "Math": true,
+    "Charts": true,
+    "Markdown extras": true,
+    "Citations": false
+  },
+  "interface_language_original_and_restored": "English",
+  "support_restored": true,
+  "restoration_hash_checks": [
+    {
+      "directory": "Library/Application Support/LeonardoMD/User Guides/v22",
+      "originally_existed": false,
+      "restored_hashes_match": true
+    },
+    {
+      "directory": "Library/Application Support/LeonardoMD/Practice Forms/v1",
+      "originally_existed": true,
+      "restored_hashes_match": true
+    }
+  ]
+}

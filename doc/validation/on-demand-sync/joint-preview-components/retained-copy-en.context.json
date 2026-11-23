@@ -1,0 +1,15 @@
+{
+  "browser_name" : "Native AppKit NSHostingView",
+  "browser_version" : "N\/A native component",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-10T10:01:25Z",
+  "data_provenance" : "synthetic",
+  "route" : "\/native\/synchronization\/preview\/retained-copy-en",
+  "screen" : "Production RemoteDocumentPreview",
+  "source_sha" : "ff20ce0a4bbf4041f45a99e8412ed8e5613e3341",
+  "state" : "retained-copy-en; real DownloadLibrary and OnDemandCache; synthetic failed update; native-point viewport; XCTest component, not packaged-process acceptance",
+  "viewport_css" : {
+    "height" : 600,
+    "width" : 900
+  }
+}

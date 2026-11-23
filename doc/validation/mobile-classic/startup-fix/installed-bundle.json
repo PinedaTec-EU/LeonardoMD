@@ -1,0 +1,10 @@
+{
+  "CFBundleIdentifier": "eu.pinedatec.LittleLeonardo",
+  "CFBundleShortVersionString": "0.3.1082",
+  "CFBundleVersion": "1082",
+  "CFBundleExecutable": "LittleLeonardo",
+  "configuration": "Debug build-for-testing with canonical metadata overrides",
+  "actual_product_source": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+  "executable_sha256": "48bdd00118b6ff7600c0978db8a989c02dc2ea99a9a47768294f2b835ecdf4ae",
+  "note": "Owned simulator acceptance, not TestFlight delivery. About original shows these installed fields. Final publisher uses new accepted materialized version."
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-15T12:34:32.280342+00:00",
+  "capture": {
+    "captured_at": "2026-11-15T12:32:20.507148+00:00",
+    "route": "LeonardoMD / Preview editing / Preview synchronization recovery alert",
+    "screen": "ES native Preview synchronization close alert",
+    "browser_name": "Native macOS AppKit (no browser)",
+    "browser_version": "Not applicable; production LeonardoMD NSAlert builder, app 0.3.1602 build 1602",
+    "state": "Dark appearance; Spanish close alert names sample.md; destructive Preview-only discard and Mantener abierto are visible. Synthetic sample.md content.",
+    "viewport_css": {
+      "width": 314,
+      "height": 362
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 628,
+    "height_px": 724,
+    "sha256": "e74f2d3569cac43c8bd06b1e0059ec8d63b7da03f57e45e9852210a413912cc6"
+  },
+  "source": {
+    "revision_at_collection": "45b5cd7f7a92a86f3f4cd0a745e005c921d71ebd",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

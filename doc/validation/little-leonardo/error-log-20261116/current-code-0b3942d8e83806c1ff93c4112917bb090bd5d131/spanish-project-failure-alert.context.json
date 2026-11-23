@@ -1,0 +1,29 @@
+{
+  "captured_at": "2026-11-16T10:01:42.929000Z",
+  "route": "/native/ios/on-demand/spanish-project-download-alert",
+  "screen": "Spanish project-level download failure behind the concise alert",
+  "capture_tool": "XCUITest native application screenshot attachment",
+  "capture_mode": "native app viewport",
+  "state": "Spanish (es_ES), Classic appearance; synthetic loopback fixture. Spanish project-level download failure behind the concise alert.",
+  "data_provenance": "synthetic",
+  "source_sha": "3f4622791ba3912d5d4f4f520acd5dccf5ab9722",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "simulator": {
+    "name": "LittleLeonardo PR435 Exact Spanish QA 20261116",
+    "device_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "os_build": "23F77"
+  },
+  "native_viewport_points": {
+    "width": 402,
+    "height": 874
+  },
+  "image_pixels": {
+    "width": 1206,
+    "height": 2622
+  },
+  "browser_name": "Native Little Leonardo app on iOS Simulator",
+  "browser_version": "Not applicable; native screen capture, no browser used",
+  "viewport_css": null
+}

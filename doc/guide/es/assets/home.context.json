@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-10-31T10:22:59.968Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 800,
+    "width" : 1000
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/user-guide\/es",
+  "screen" : "Leonardo guide: Home; isolated empty favorites and recent items",
+  "source_sha" : "e457e86eccade662825253d4f94dc3a20999edf9",
+  "state" : "Home; isolated empty favorites and recent items; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 800,
+    "width" : 1000
+  }
+}

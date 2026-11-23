@@ -20,6 +20,9 @@ class CompileAndRecordTests(unittest.TestCase):
         swift = binary / "swift"
         swift.write_text('#!/bin/sh\nexit "${SWIFT_FIXTURE_EXIT:-0}"\n')
         swift.chmod(0o755)
+        xcode = binary / "xcodebuild"
+        xcode.write_text(swift.read_text())
+        xcode.chmod(0o755)
         self.env = dict(os.environ, PATH=str(binary) + os.pathsep + os.environ["PATH"])
         self.entry = self.root / "deploy/version/entries/42.yaml"
 
@@ -55,6 +58,16 @@ class CompileAndRecordTests(unittest.TestCase):
                 self.assertNotEqual(self.record(command).returncode, 0)
                 self.assertFalse(self.entry.exists())
 
+    def test_xcode_builds_and_tests_count_but_failed_or_metadata_commands_do_not(self):
+        for action in ["build", "build-for-testing", "test"]:
+            result = self.record(["xcodebuild", "-project", "Mobile.xcodeproj", action])
+            self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.entry.read_text()), {"build": 3})
+        self.assertNotEqual(self.record(["xcodebuild", "build"], failed=True).returncode, 0)
+        for args in [["-list"], ["test-without-building"], ["build", "-showBuildSettings"]]:
+            self.assertNotEqual(self.record(["xcodebuild", *args]).returncode, 0)
+        self.assertEqual(json.loads(self.entry.read_text()), {"build": 3})
+
     def test_parallel_commands_do_not_lose_build_increments(self):
         processes = [subprocess.Popen(self.arguments(), env=self.env,
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -69,6 +82,19 @@ class CompileAndRecordTests(unittest.TestCase):
         self.entry.write_text('{"build":true}')
         self.assertNotEqual(self.record().returncode, 0)
         self.assertEqual(self.entry.read_text(), '{"build":true}')
+
+    def test_success_preserves_author_summary_and_rejects_malformed_metadata(self):
+        self.entry.parent.mkdir(parents=True)
+        summary = "Documents retain their metadata when saved."
+        self.entry.write_text(json.dumps({"summary": summary, "build": 1}))
+        result = self.record()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.entry.read_text()), {"summary": summary, "build": 2})
+        for invalid in ["", "line\nbreak", " leading", "bad\ud800text", "x" * 281]:
+            content = json.dumps({"summary": invalid, "build": 2})
+            self.entry.write_text(content)
+            self.assertNotEqual(self.record().returncode, 0)
+            self.assertEqual(self.entry.read_text(), content)
 
 
 if __name__ == "__main__":

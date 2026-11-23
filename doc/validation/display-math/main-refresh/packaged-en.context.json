@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-11-06T15:31:34.024Z",
+  "route": "/native/packaged-user-guide/en",
+  "screen": "Help \u2192 Leonardo user guide \u2192 math regression examples",
+  "browser_name": "Native macOS application window containing WKWebView, via CUA",
+  "browser_version": null,
+  "viewport_css": null,
+  "capture_mode": "element",
+  "state": "Guide v16 en; Math/Mermaid/Charts enabled; equation (1); known missing brace SVG under #274",
+  "data_provenance": "synthetic",
+  "unavailable_context": "Native CUA does not expose the WKWebView browser version or CSS viewport; image dimensions are not substituted."
+}

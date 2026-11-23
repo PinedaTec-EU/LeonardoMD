@@ -1,0 +1,29 @@
+{
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-16T09:58:07Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "width": 402,
+    "height": 874
+  },
+  "image_pixels": {
+    "width": 1206,
+    "height": 2622
+  },
+  "route": "/native/ios/on-demand/english-diagnostic-log-reference",
+  "screen": "english-diagnostic-log-reference",
+  "source_sha": "3f4622791ba3912d5d4f4f520acd5dccf5ab9722",
+  "state": "English inline reference matches the local download diagnostic; native points measured from app.frame; English; Classic appearance",
+  "viewport_css": null,
+  "capture_tool": "XCUITest native app viewport screenshot",
+  "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+  "simulator": {
+    "name": "LittleLeonardo PR435 Exact English QA 20261116",
+    "device_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "os_build": "23F77"
+  }
+}

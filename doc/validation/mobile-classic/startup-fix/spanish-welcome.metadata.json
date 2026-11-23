@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T12:46:42.745450+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T12:40:51.925000+00:00",
+    "route": "/LittleLeonardo/spanish-welcome",
+    "screen": "Spanish welcome",
+    "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+    "browser_version": "iOS 27.0 (24A434); SDK27.1",
+    "state": "Spanish welcome; synthetic QA; native points in viewport_css; source 99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "de09077b9d41c07191e3283f5c00dc8ffdcb829709e87ac6390f0d73faa9bcdb"
+  },
+  "source": {
+    "revision_at_collection": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

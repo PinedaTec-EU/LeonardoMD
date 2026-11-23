@@ -1,0 +1,849 @@
+import Foundation
+import Observation
+import LeonardoCore
+import LeonardoSync
+import LeonardoSyncTransport
+import LeonardoDesktopSync
+
+enum RubricCaptureAvailability: Equatable {
+    case ready
+    case helperOffline
+    case helperUnsupported
+    case serviceOffline
+    case noSupportedDevice
+
+    var messageKey: String {
+        switch self {
+        case .ready: "A linked Little Leonardo is ready."
+        case .helperOffline: "Leonardo Sync helper is offline. Enable it in Preferences and try again."
+        case .helperUnsupported: "Disable and re-enable Leonardo Sync in Preferences to update its helper before requesting a rubric."
+        case .serviceOffline: "The linked-device service is offline. Start sharing in Preferences and try again."
+        case .noSupportedDevice: "No linked read-only Little Leonardo supports rubric capture yet."
+        }
+    }
+}
+enum DesktopConsentActionOutcome: Equatable {
+    case completed
+    case unavailable
+    case failed
+}
+
+enum RubricCaptureError: LocalizedError {
+    case unavailable(RubricCaptureAvailability)
+    case missingRequest
+    case requestConflict
+    case requestRequiresNewID
+
+    var errorDescription: String? {
+        switch self {
+        case .unavailable(let availability): availability.messageKey
+        case .missingRequest: "The saved rubric request is no longer available."
+        case .requestConflict: "The saved rubric request belongs to a different device or document."
+        case .requestRequiresNewID: "This saved rubric request has expired or is no longer available. Request a new rubric."
+        }
+    }
+}
+
+@MainActor @Observable
+final class DesktopSyncController {
+    static let shared = DesktopSyncController()
+    let helper: SyncHelperController
+    private(set) var settings = MobileSyncPreferences()
+    private(set) var projectSettingsLoaded = false
+    private(set) var running: RunningDirectService?
+    private(set) var consent = PairingRegistry()
+    private(set) var busy = false
+    private(set) var incoming: [DesktopPeerIncomingProposal] = []
+    var reviewing: DesktopSourceReview?
+    private let lease = NativeReconciliationLease.shared
+    private let pollingDiagnostics = DesktopSyncPollingDiagnostics()
+    var error: String? {
+        get { pollingDiagnostics.error }
+        set { pollingDiagnostics.setActionError(newValue) }
+    }
+    func acknowledgeDisplayedError() {
+        pollingDiagnostics.acknowledgeDisplayedError()
+    }
+    private(set) var invitationURL: URL?
+    var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
+    private let configurations: ConfigurationStore
+    private let preferencesURL: URL
+    private let runtime: any DesktopSyncRuntimeAccess
+    private let usesHelper: Bool
+    private let storageRoot: URL
+    private let rubricCaptures: RubricCaptureStore
+    private let now: RubricClock
+    private var initialized = false
+    private var lastNetworkAddresses: Set<String>?
+    private var lastEndpointAvailable: Bool?
+    private var networkRefreshPending = false
+    private var nextNetworkRefresh = Date.distantPast
+    private var invitationNetworkAddresses: Set<String>?
+    private var nextHelperRecovery = Date.distantPast
+    private var consentRefreshRevision = 0
+    var networkAddresses: @MainActor (Bool) -> [String] = { LocalNetworkInterfaces.addresses(allowPrivateOverlay: $0) }
+    var isLocalAddress: @MainActor (String) -> Bool = { LocalNetworkInterfaces.containsLocalAddress($0) }
+    private static var rubricRequesterName: String {
+        let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let name, !name.isEmpty else { return "LeonardoMD" }
+        return String(name.prefix(100))
+    }
+
+    init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
+         runtime: (any DesktopSyncRuntimeAccess)? = nil, helper: SyncHelperController? = nil,
+         usesHelper: Bool? = nil, now: @escaping RubricClock = Date.init) {
+        self.preferencesURL = preferencesURL
+        self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
+        self.configurations = configurations
+        let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
+        storageRoot = root
+        self.now = now
+        rubricCaptures = RubricCaptureStore(url: root.appendingPathComponent("RubricCaptures/captures.json"), now: now)
+        self.runtime = runtime ?? SyncHelperClient()
+        self.usesHelper = usesHelper ?? (runtime == nil)
+    }
+
+    var rubricCaptureRecords: [RubricCaptureRecord] { rubricCaptures.records }
+
+    var sharingAvailable: Bool {
+        settings.enabled && (usesHelper ? helper.online && helper.sharing != nil : running != nil)
+    }
+
+    var pairingInvitationAvailable: Bool {
+        usesHelper ? helper.online && helper.sharing != nil : running != nil
+    }
+
+    var consentActionsAvailable: Bool {
+        usesHelper ? helper.online : running != nil
+    }
+
+    var sharingPresentationAvailable: Bool {
+        settings.enabled && (usesHelper ? helper.displayedSharing != nil : running != nil)
+    }
+
+    func rubricCapture(id: UUID) -> RubricCaptureRecord? { rubricCaptures.record(id: id) }
+
+    func canRetryRubricCapture(_ record: RubricCaptureRecord) -> Bool {
+        record.canRetryCreate(at: now())
+    }
+
+    /// Only an explicitly enrolled read-only peer advertising the exchange
+    /// capability appears here. Legacy peers remain visible in Preferences but
+    /// are never presented as capture targets.
+    var supportedRubricDevices: [PairedDevice] {
+        consent.devices.filter {
+            !$0.revoked && $0.kind == .readOnly && $0.capabilities.contains(.rubricExchangeV1)
+        }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    var rubricCaptureAvailability: RubricCaptureAvailability {
+        if usesHelper {
+            guard helper.online else { return .helperOffline }
+            guard helper.supportsRubricExchange else { return .helperUnsupported }
+            guard helper.sharing != nil else { return .serviceOffline }
+        } else if running == nil {
+            return .serviceOffline
+        }
+        return supportedRubricDevices.isEmpty ? .noSupportedDevice : .ready
+    }
+
+    /// LAN addresses are listed first. Overlay addresses appear only after the
+    /// user explicitly enables the private-overlay preference.
+    var addresses: [String] {
+        networkAddresses(settings.privateOverlayEnabled)
+    }
+
+    func initialize() async {
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        if initialized {
+            if usesHelper { await helper.refresh() }
+            return
+        }
+        busy = true
+        defer { busy = false }
+        do {
+            try InstancePathOwnership.shared.claim(storageRoot)
+            settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+            projectSettingsLoaded = true
+            if usesHelper { await helper.refresh() }
+            if settings.enabled && (!usesHelper || helper.online) { try await start() }
+            if !usesHelper || helper.online {
+                do {
+                    consent = try await runtime.consentState()
+                    clearAutomaticConsentFailure()
+                } catch {
+                    await recordAutomaticConsentFailure(error, helperAlreadyChecked: usesHelper)
+                }
+            }
+            rubricCaptures.refresh()
+            await recoverRubricCaptures()
+            initialized = true
+        } catch { self.error = error.localizedDescription }
+    }
+
+    func refreshPreferencesOnOpen() async {
+        let alreadyInitialized = initialized
+        await initialize()
+        if alreadyInitialized {
+            // Initialization reads consent on first open. On later visits,
+            // refresh the list without repeating the helper health check.
+            await refreshConsent(refreshHelper: false)
+        }
+    }
+
+    func update(_ updated: MobileSyncPreferences) async {
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            try InstancePathOwnership.shared.claim(storageRoot)
+            var updated = updated
+            if !updated.privateOverlayEnabled,
+               let host = updated.host,
+               LocalNetworkAddress.isPrivateOverlay(host) {
+                updated.host = nil
+            }
+            for project in updated.projects {
+                _ = try CorpusSelection(folders: project.folders, documents: project.documents)
+                try InstancePathOwnership.shared.claim(project.rootURL)
+            }
+            let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
+            // The helper switch is owned by its lifecycle controller, not a stale sharing form.
+            updated.helperEnabled = previous.mobileSync.helperEnabled
+            var next = previous
+            next.mobileSync = updated
+            settings = try await configurations.mergeGlobalPreferences(updated: next, baseline: previous, at: preferencesURL).mobileSync
+            projectSettingsLoaded = true
+            running = nil; invitationURL = nil
+            if usesHelper { await helper.refresh() }
+            if !usesHelper || helper.online {
+                try await runtime.stop()
+                if settings.enabled { try await start() }
+                consent = try await runtime.consentState()
+            }
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func start() async throws {
+        let host: String
+        if let configured = settings.host {
+            guard LocalNetworkAddress.isAllowed(configured,
+                                                allowPrivateOverlay: settings.privateOverlayEnabled) else {
+                throw TransportError.invalidEndpoint
+            }
+            host = configured
+        } else {
+            guard let automatic = addresses.first else { throw TransportError.invalidEndpoint }
+            host = automatic
+        }
+        let sources = try settings.projects.map {
+            try InstancePathOwnership.shared.claim($0.rootURL)
+            return try DesktopSharedCorpus(buffers: buffers).source($0)
+        }
+        running = try await runtime.start(host: host, port: settings.port, projects: sources,
+            allowPrivateOverlay: settings.privateOverlayEnabled)
+    }
+
+    func share(_ root: URL, selection: CorpusSelection? = nil) async {
+        var updated = settings
+        let root = root.standardizedFileURL.resolvingSymlinksInPath()
+        guard !updated.projects.contains(where: { $0.rootURL == root }) else { return }
+        updated.projects.append(MobileSharedProject(rootURL: root, name: root.lastPathComponent,
+            folders: selection?.folders ?? [""], documents: selection?.documents ?? []))
+        await update(updated)
+    }
+
+    func unshare(_ id: UUID) async {
+        var updated = settings
+        updated.projects.removeAll { $0.id == id }
+        await update(updated)
+    }
+
+    private func updateRunningFromHelper() {
+        let advertised = helperSharingForPresentation
+        let current: RunningDirectService?
+        if networkRefreshPending, let host = advertised?.endpoint.host,
+           !isCurrentHost(host, addresses: Set(addresses)) { current = nil }
+        else { current = advertised }
+        if running?.endpoint != current?.endpoint || running?.certificateFingerprint != current?.certificateFingerprint {
+            invitationURL = nil
+        }
+        running = current
+    }
+
+    func refreshConsent(refreshHelper: Bool = true) async {
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        consentRefreshRevision &+= 1
+        let refreshRevision = consentRefreshRevision
+        let currentAddresses = Set(addresses)
+        if invitationURL != nil && invitationNetworkAddresses != currentAddresses {
+            invitationURL = nil; invitationNetworkAddresses = nil
+        }
+        let endpointAvailable = helperSharingForPresentation?.endpoint.host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true
+        if usesHelper && !endpointAvailable {
+            running = nil; invitationURL = nil; invitationNetworkAddresses = nil
+        }
+        var checkedHelper = false
+        if usesHelper {
+            let networkChanged = (lastNetworkAddresses.map { $0 != currentAddresses } ?? true) ||
+                (lastEndpointAvailable.map { $0 != endpointAvailable } ?? false)
+            lastNetworkAddresses = currentAddresses
+            lastEndpointAvailable = endpointAvailable
+            if networkChanged {
+                networkRefreshPending = true; nextNetworkRefresh = .distantPast
+                updateRunningFromHelper()
+            }
+            let recoveryDue = helper.needsAutomaticRecovery && now() >= nextHelperRecovery
+            let networkDue = networkRefreshPending && now() >= nextNetworkRefresh
+            if refreshHelper || networkDue || recoveryDue {
+                checkedHelper = true
+                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+                if networkDue || (refreshHelper && networkRefreshPending) {
+                    nextNetworkRefresh = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+                    let confirmed = await helper.refreshForInvitation()
+                    guard refreshRevision == consentRefreshRevision else { return }
+                    let host = helper.sharing?.endpoint.host
+                    if Set(addresses) != currentAddresses {
+                        nextNetworkRefresh = .distantPast
+                    } else if confirmed && (host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true) {
+                        networkRefreshPending = false
+                    }
+                } else {
+                    await helper.refresh()
+                    guard refreshRevision == consentRefreshRevision else { return }
+                }
+            }
+            updateRunningFromHelper()
+            guard helper.online else {
+                // Keep the last confirmed sharing state while a health check or
+                // scheduled recovery is still unresolved. Peer operations remain
+                // gated by live health; a published failure clears this snapshot.
+                if preservingConfirmedSharingPresentation { return }
+                clearSharingPresentationAfterTerminalFailure()
+                return
+            }
+        }
+        let displayedInvitationBeforeRead = invitationURL
+        let refreshedConsent: PairingRegistry
+        do {
+            refreshedConsent = try await runtime.consentState()
+        } catch {
+            guard refreshRevision == consentRefreshRevision else { return }
+            if usesHelper && !refreshHelper {
+                await recordAutomaticConsentFailure(error, helperAlreadyChecked: checkedHelper,
+                                                    refreshRevision: refreshRevision)
+            } else {
+                self.error = error.localizedDescription
+            }
+            return
+        }
+        guard refreshRevision == consentRefreshRevision else { return }
+        consent = refreshedConsent
+        clearDisplayedInvitationIfInvalid(in: refreshedConsent,
+            ifStillDisplaying: displayedInvitationBeforeRead)
+        clearAutomaticConsentFailure()
+
+        let refreshedIncoming: [DesktopPeerIncomingProposal]
+        do {
+            refreshedIncoming = running == nil ? [] : try await runtime.incomingProposals()
+        } catch {
+            guard refreshRevision == consentRefreshRevision else { return }
+            if usesHelper && !refreshHelper {
+                pollingDiagnostics.recordIncomingFailure(error)
+            } else {
+                self.error = error.localizedDescription
+            }
+            return
+        }
+        guard refreshRevision == consentRefreshRevision else { return }
+        incoming = refreshedIncoming
+        pollingDiagnostics.clearIncomingFailure()
+        rubricCaptures.refresh()
+        await recoverRubricCaptures()
+        guard refreshRevision == consentRefreshRevision else { return }
+    }
+
+    private func clearAutomaticConsentFailure() {
+        pollingDiagnostics.clearConsentFailure()
+    }
+
+    private func recordAutomaticConsentFailure(_ error: Error,
+                                               helperAlreadyChecked: Bool,
+                                               refreshRevision: Int? = nil) async {
+        if helperAlreadyChecked {
+            pollingDiagnostics.markConsentHealthCheckAttempted()
+            if now() >= nextHelperRecovery {
+                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+            }
+        }
+        pollingDiagnostics.beginConsentFailure()
+        if usesHelper && !helperAlreadyChecked &&
+            (!pollingDiagnostics.consentHealthCheckAttempted || now() >= nextHelperRecovery) {
+            pollingDiagnostics.markConsentHealthCheckAttempted()
+            nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+            await helper.refresh()
+            if let refreshRevision, refreshRevision != consentRefreshRevision { return }
+            updateRunningFromHelper()
+            if !helper.online && !preservingConfirmedSharingPresentation {
+                clearSharingPresentationAfterTerminalFailure()
+            }
+        }
+        // Let one failed two-second poll recover before presenting a modal.
+        pollingDiagnostics.reportConsentFailureIfPersistent(error)
+    }
+
+    private func clearSharingPresentationAfterTerminalFailure() {
+        running = nil
+        invitationURL = nil
+        invitationNetworkAddresses = nil
+        incoming = []
+        consent = PairingRegistry()
+    }
+
+    private func clearDisplayedInvitationIfInvalid(in registry: PairingRegistry,
+                                                   ifStillDisplaying observedURL: URL?) {
+        guard let observedURL, invitationURL == observedURL else { return }
+        let currentTime = now()
+        guard let qr = try? DirectPairingQR.decode(observedURL, now: currentTime),
+              registry.hasValidInvitation(qr.invitation, now: currentTime) else {
+            invitationURL = nil
+            invitationNetworkAddresses = nil
+            return
+        }
+    }
+
+    private var preservingConfirmedSharingPresentation: Bool {
+        helper.displayedState == .running &&
+            (helper.checkingStatus || helper.needsAutomaticRecovery)
+    }
+
+    private var helperSharingForPresentation: RunningDirectService? {
+        preservingConfirmedSharingPresentation ? helper.displayedSharing : helper.sharing
+    }
+
+    func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
+        guard !InstanceRuntime.isAdditional, !busy, sharingAvailable else { return }
+        busy = true; error = nil
+        defer { busy = false }
+        do {
+            let review = try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)
+            guard let project = settings.projects.first(where: { $0.id == item.upload.projectID }) else { throw SyncError.outsideScope }
+            if let itemView = item.view, review.view != itemView { throw ReconciliationError.staleComparison }
+            let drafts = try await buffers(project.rootURL)
+            let source = try await DesktopPeerProposalSourceCapture.source(root: project.rootURL,
+                view: review.view, buffers: drafts)
+            reviewing = DesktopSourceReview(item: item, review: try DesktopPeerProposalReview(
+                proposal: review.proposal, source: source, view: review.view))
+        }
+        catch { self.error = error.localizedDescription }
+    }
+
+    func applyReview(_ value: DesktopSourceReview, decisions: [String: ReconciliationChoice]) async -> Bool {
+        guard sharingAvailable, !busy,
+              let project = settings.projects.first(where: { $0.id == value.item.upload.projectID }) else { return false }
+        busy = true; error = nil
+        defer { busy = false }
+        do {
+            let grantSelection = try CorpusSelection(folders: project.folders, documents: project.documents)
+            let view = value.item.view ?? value.review.view
+            guard grantSelection.covers(view.grantSelection),
+                  grantSelection.covers(view.selection),
+                  view.selection == value.review.proposal.selection,
+                  value.review.view == view else { throw SyncError.outsideScope }
+            _ = try await lease.run(projectRoot: project.rootURL, selection: grantSelection) {
+                let drafts = try await buffers(project.rootURL)
+                let current = try await DesktopPeerProposalSourceCapture.current(root: project.rootURL,
+                    view: view, buffers: drafts)
+                return try await runtime.applyIncomingProposal(deviceID: value.item.deviceID, upload: value.item.upload,
+                    review: value.review, decisions: decisions, projectRoot: project.rootURL,
+                    currentSource: current.source, currentDisk: current.disk)
+            }
+            reviewing = nil
+            incoming = try await runtime.incomingProposals()
+            return true
+        } catch ReconciliationError.staleComparison {
+            error = L10n.text("The source changed. Reopen the review before applying decisions.")
+        } catch DesktopPeerProposalSourceCaptureError.ambiguousBuffers {
+            error = L10n.text("Multiple open editors contain different drafts of the same file. Close duplicate editors before reconciliation.")
+        } catch { self.error = error.localizedDescription }
+        return false
+    }
+
+    private func isCurrentHost(_ host: String, addresses: Set<String>) -> Bool {
+        if addresses.contains(host) { return true }
+        guard let configured = settings.host,
+              configured.trimmingCharacters(in: CharacterSet(charactersIn: "[]")) == host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")),
+              LocalNetworkAddress.isAllowed(host, allowPrivateOverlay: settings.privateOverlayEnabled) else { return false }
+        return isLocalAddress(host)
+    }
+
+    func createQR() async {
+        guard !busy else { return }
+        let invitationAddresses = Set(addresses)
+        if invitationURL != nil && invitationNetworkAddresses != invitationAddresses {
+            invitationURL = nil; invitationNetworkAddresses = nil
+        }
+        guard pairingInvitationAvailable else { return }
+        busy = true
+        defer { busy = false }
+        if usesHelper {
+            await helper.refresh()
+            updateRunningFromHelper()
+            guard helper.online else { return }
+        }
+        guard let running else {
+            invitationURL = nil; invitationNetworkAddresses = nil
+            return
+        }
+        invitationURL = nil
+        invitationNetworkAddresses = nil
+        do {
+            let invitation = try await runtime.createInvitation()
+            if usesHelper {
+                let confirmed = await helper.refreshForInvitation()
+                updateRunningFromHelper()
+                guard confirmed, let current = helper.sharing,
+                      current.endpoint == running.endpoint,
+                      current.certificateFingerprint == running.certificateFingerprint else { return }
+            }
+            guard Set(addresses) == invitationAddresses else { return }
+            if usesHelper {
+                guard let host = running.endpoint.host, isCurrentHost(host, addresses: invitationAddresses) else { return }
+            }
+            invitationURL = try DirectPairingQR(endpoint: running.endpoint,
+                certificateFingerprint: running.certificateFingerprint, invitation: invitation).encodedURL()
+            invitationNetworkAddresses = invitationAddresses
+        } catch { self.error = error.localizedDescription }
+    }
+
+    @discardableResult
+    func approve(_ request: PairingRequest, projects: Set<UUID>) async -> DesktopConsentActionOutcome {
+        await consentAction {
+            try await runtime.approve(requestID: request.id, code: request.comparisonCode, projectIDs: projects)
+        }
+    }
+    func reject(_ id: UUID) async { _ = await consentAction { try await runtime.reject(requestID: id) } }
+    func revoke(_ id: UUID) async { _ = await consentAction { try await runtime.revoke(deviceID: id) } }
+
+    private func consentAction(_ action: () async throws -> Void) async -> DesktopConsentActionOutcome {
+        guard !InstanceRuntime.isAdditional, !busy, consentActionsAvailable else { return .unavailable }
+        busy = true
+        error = nil
+        defer { busy = false }
+        do { try await action() }
+        catch {
+            self.error = error.localizedDescription
+            return .failed
+        }
+        do { consent = try await runtime.consentState() }
+        catch { self.error = error.localizedDescription }
+        return .completed
+    }
+
+    func stop() async {
+        guard !usesHelper else { return } // Editor exit must leave the registered helper running.
+        do { try await runtime.stop(); running = nil }
+        catch { self.error = error.localizedDescription }
+
+    }
+
+    func beginRubricCapture(requestID: UUID = UUID(), targetDeviceID: UUID,
+                            targetDeviceName: String, labelHint: String? = nil,
+                            documentURL: URL?, source: String, fieldID: String?) async throws -> RubricCaptureRecord {
+        let record = try prepareRubricCapture(requestID: requestID, targetDeviceID: targetDeviceID,
+                                               targetDeviceName: targetDeviceName, labelHint: labelHint,
+                                               documentURL: documentURL, source: source, fieldID: fieldID)
+        return try await beginRubricCapture(record: record)
+    }
+
+    /// Persists the caller's stable intent before any asynchronous helper call.
+    /// The editor can therefore keep showing the same request when an XPC create
+    /// reply is lost or the helper is briefly unavailable.
+    func prepareRubricCapture(requestID: UUID = UUID(), targetDeviceID: UUID,
+                              targetDeviceName: String, labelHint: String? = nil,
+                              documentURL: URL?, source: String, fieldID: String?) throws -> RubricCaptureRecord {
+        let availability = rubricCaptureAvailability
+        guard availability == .ready else { throw RubricCaptureError.unavailable(availability) }
+        let canonicalURL = documentURL.map(ProcessFileLock.canonicalURL)
+        if let existing = rubricCaptures.record(id: requestID) {
+            guard existing.targetDeviceID == targetDeviceID,
+                  existing.documentURL == canonicalURL,
+                  existing.fieldID == fieldID else { throw RubricCaptureError.requestConflict }
+            guard !existing.isTerminal else { throw RubricCaptureError.requestRequiresNewID }
+            // An unacknowledged record outside its bounded create window is
+            // still queryable by UUID. `beginRubricCapture` performs that
+            // read-only recovery; it never calls create in this state. This
+            // preserves a completed helper response whose Mac acknowledgement
+            // was lost while still requiring a fresh ID after notFound.
+            // A retry may happen after the open document changed. Keep the
+            // original digest and target metadata so insertion remains guarded
+            // by the context in which the request was first made.
+            return existing
+        }
+        let attemptedAt = now()
+        let record = RubricCaptureRecord(id: requestID, targetDeviceID: targetDeviceID,
+            targetDeviceName: targetDeviceName, documentURL: canonicalURL,
+            sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: fieldID,
+            labelHint: labelHint, updatedAt: attemptedAt,
+            creationAttemptedAt: attemptedAt,
+            retryDeadline: attemptedAt.addingTimeInterval(RubricCaptureRecord.lostAcknowledgementWindow))
+        return try rubricCaptures.upsert(record)
+    }
+
+    private func beginRubricCapture(record: RubricCaptureRecord) async throws -> RubricCaptureRecord {
+        guard !record.isCancellationRequested else {
+            throw RubricCaptureError.requestRequiresNewID
+        }
+        if record.request != nil {
+            guard !record.isTerminal else { throw RubricCaptureError.requestRequiresNewID }
+            // Once the helper has acknowledged a request, a retry is a status
+            // read only. Calling create again after the helper prunes the
+            // record could silently allocate a new prompt under the old ID.
+            return try await refreshRubricCapture(requestID: record.id)
+        }
+        guard record.canRetryCreate(at: now()) else {
+            return try await refreshRubricCapture(requestID: record.id)
+        }
+        var record = record
+        do {
+            let request = try await runtime.createRubricRequest(deviceID: record.targetDeviceID, requestID: record.id,
+                requesterName: Self.rubricRequesterName, labelHint: record.labelHint)
+            // Cancellation can be requested while the create call is still
+            // in flight. Re-read the durable intent before exposing the
+            // helper reply: explicit user intent wins and the old UUID must
+            // be cancelled remotely before any review/save path can see it.
+            if let latest = rubricCaptures.record(id: record.id), latest.isCancellationRequested {
+                return try await reconcileCancelledCreate(latest, createdRequest: request)
+            }
+            let acknowledgedAt = now()
+            record.request = request; record.updatedAt = acknowledgedAt
+            record.lastKnownRequestAt = acknowledgedAt
+            return try rubricCaptures.upsert(record)
+        } catch {
+            // Creation can be durable even when the XPC create reply is lost.
+            // The stable ID makes recovery safe only inside the persisted
+            // acknowledgement window.
+            do {
+                let status = try await runtime.rubricStatus(requestID: record.id)
+                let acknowledgedAt = now()
+                record.request = status.request; record.response = status.response
+                record.updatedAt = acknowledgedAt; record.lastKnownRequestAt = acknowledgedAt
+                if let latest = rubricCaptures.record(id: record.id), latest.isCancellationRequested {
+                    return try await reconcileCancelledCreate(latest, createdRequest: status.request)
+                }
+                return try rubricCaptures.upsert(record)
+            } catch let statusError {
+                if Self.isRubricNotFound(statusError), !record.canRetryCreate(at: now()) {
+                    _ = try? markRubricCaptureMissing(record)
+                    throw RubricCaptureError.requestRequiresNewID
+                }
+            }
+            throw error
+        }
+    }
+
+    func refreshRubricCapture(requestID: UUID) async throws -> RubricCaptureRecord {
+        guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
+        guard !current.isMissing else { return current }
+        do {
+            let status = try await runtime.rubricStatus(requestID: requestID)
+            if current.isCancellationRequested {
+                if status.request.state == .completed {
+                    return try markRubricCaptureCompletedBeforeCancellation(current)
+                }
+                if [.pending, .accepted].contains(status.request.state) {
+                    return try await reconcileCancelledCreate(current, createdRequest: status.request)
+                }
+            }
+            var updated = current
+            let acknowledgedAt = now()
+            updated.request = status.request; updated.response = status.response
+            updated.updatedAt = acknowledgedAt; updated.lastKnownRequestAt = acknowledgedAt
+            return try rubricCaptures.upsert(updated)
+        } catch let error {
+            guard Self.isRubricNotFound(error) else { throw error }
+            if current.isCancellationRequested {
+                // A cancellation acknowledgement may race a delayed create;
+                // keep the durable local intent so a later recovery can
+                // query/reconcile the same UUID instead of recreating it.
+                return current
+            }
+            if current.request == nil && current.canRetryCreate(at: now()) { throw error }
+            return try markRubricCaptureMissing(current)
+        }
+    }
+
+    func cancelRubricCapture(requestID: UUID) async throws -> RubricCaptureRecord {
+        guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
+        guard !current.isMissing, !current.isCancellationRequested, current.response == nil else { return current }
+        guard !current.isTerminal else { return current }
+        do {
+            let request = try await runtime.cancelRubricRequest(requestID: requestID)
+            var updated = current
+            let acknowledgedAt = now()
+            updated.request = request; updated.updatedAt = acknowledgedAt
+            updated.lastKnownRequestAt = acknowledgedAt
+            return try rubricCaptures.upsert(updated)
+        } catch let error {
+            guard Self.isRubricNotFound(error) else { throw error }
+            // The create may still be in flight. Do not call this a remote
+            // cancellation or mark the request missing: retain the UUID and
+            // a local cancellation intent so a late create is reconciled.
+            return try markRubricCaptureCancellationRequested(current)
+        }
+    }
+
+    @discardableResult
+    func markRubricCaptureSaved(requestID: UUID, libraryEntryID: String) throws -> RubricCaptureRecord {
+        try rubricCaptures.markSaved(id: requestID, libraryEntryID: libraryEntryID)
+    }
+
+    func rubricCapture(for documentURL: URL?, source: String) -> RubricCaptureRecord? {
+        let canonicalURL = documentURL.map(ProcessFileLock.canonicalURL)
+        let digest = RubricCaptureRecord.digest(source: source)
+        let sameDocument = rubricCaptures.records.filter {
+            $0.documentURL.map(ProcessFileLock.canonicalURL) == canonicalURL
+        }
+        // A returned drawing must remain reachable even after the user edits
+        // the document and creates a newer cancelled request for that digest.
+        // Prefer an unsaved response before matching the current source.
+        let recoverable = sameDocument.filter {
+            $0.savedLibraryEntryID == nil &&
+            !$0.isMissing &&
+            ($0.isCancellationRequested || $0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted
+                || ($0.request == nil && $0.canRetryCreate(at: now())))
+        }
+        let bySourceAndDate: (RubricCaptureRecord, RubricCaptureRecord) -> Bool = {
+            $0.updatedAt > $1.updatedAt
+        }
+        let responses = recoverable.filter { $0.response != nil }
+        return responses.filter { $0.sourceDigest == digest }.sorted(by: bySourceAndDate).first
+            ?? responses.sorted(by: bySourceAndDate).first
+            ?? recoverable.filter { $0.sourceDigest == digest }.sorted(by: bySourceAndDate).first
+            ?? recoverable.sorted(by: bySourceAndDate).first
+    }
+
+    private func recoverRubricCaptures() async {
+        guard rubricCaptureAvailability == .ready else { return }
+        let recoverable = rubricCaptures.records.filter {
+            !$0.isMissing && ($0.request == nil || $0.request?.state == .pending || $0.request?.state == .accepted)
+        }
+        for current in recoverable {
+            guard !Task.isCancelled else { return }
+            do {
+                let status = try await runtime.rubricStatus(requestID: current.id)
+                if current.isCancellationRequested, status.request.state == .completed {
+                    _ = try? markRubricCaptureCompletedBeforeCancellation(current)
+                    continue
+                }
+                if current.isCancellationRequested,
+                   [.pending, .accepted].contains(status.request.state) {
+                    do {
+                        let cancelled = try await runtime.cancelRubricRequest(requestID: current.id)
+                        var reconciled = current
+                        reconciled.request = cancelled
+                        reconciled.updatedAt = now()
+                        reconciled.lastKnownRequestAt = reconciled.lastKnownRequestAt ?? reconciled.updatedAt
+                        _ = try rubricCaptures.upsert(reconciled)
+                    } catch {
+                        // Keep the cancellation intent and request durable;
+                        // the next refresh can retry remote reconciliation.
+                    }
+                    continue
+                }
+                var updated = current
+                let acknowledgedAt = now()
+                updated.request = status.request; updated.response = status.response
+                updated.updatedAt = acknowledgedAt; updated.lastKnownRequestAt = acknowledgedAt
+                _ = try rubricCaptures.upsert(updated)
+            } catch let error {
+                if Self.isRubricNotFound(error), !current.isCancellationRequested,
+                   current.request != nil || !current.canRetryCreate(at: now()) {
+                    _ = try? markRubricCaptureMissing(current)
+                }
+                // Offline/helper failures remain retryable; a notFound after
+                // the bounded window becomes a local tombstone above.
+            }
+        }
+    }
+
+    private func markRubricCaptureMissing(_ current: RubricCaptureRecord) throws -> RubricCaptureRecord {
+        // A completed response is already the durable recovery result. A
+        // delayed notFound from another instance must never hide it behind a
+        // local tombstone.
+        guard current.response == nil, !current.isCancellationRequested else { return current }
+        var updated = current
+        if var request = updated.request,
+           ![.rejected, .cancelled, .expired, .completed].contains(request.state) {
+            request.state = .expired
+            updated.request = request
+        }
+        if updated.request != nil && updated.lastKnownRequestAt == nil {
+            updated.lastKnownRequestAt = updated.request?.createdAt
+        }
+        return try rubricCaptures.upsert(updated.markedMissing(at: now()))
+    }
+
+    private func markRubricCaptureCancellationRequested(_ current: RubricCaptureRecord) throws -> RubricCaptureRecord {
+        guard current.response == nil else { return current }
+        return try rubricCaptures.upsert(current.markedCancellationRequested(at: now()))
+    }
+
+    private func markRubricCaptureCompletedBeforeCancellation(_ current: RubricCaptureRecord) throws -> RubricCaptureRecord {
+        try rubricCaptures.upsert(current.markedCancellationCompletedBeforeCancellation(at: now()))
+    }
+
+    private func reconcileCancelledCreate(_ current: RubricCaptureRecord,
+                                          createdRequest: LeonardoSync.RubricRequest) async throws -> RubricCaptureRecord {
+        if createdRequest.state == .completed {
+            // The companion won the race immediately before cancellation was
+            // confirmed. Resolve locally as discarded rather than leaving the
+            // UI pending or exposing the late response for review/save.
+            return try markRubricCaptureCompletedBeforeCancellation(current)
+        }
+        do {
+            let cancelled = try await runtime.cancelRubricRequest(requestID: current.id)
+            var reconciled = current
+            reconciled.request = cancelled
+            reconciled.updatedAt = now()
+            reconciled.lastKnownRequestAt = reconciled.lastKnownRequestAt ?? reconciled.updatedAt
+            return try rubricCaptures.upsert(reconciled)
+        } catch {
+            // Preserve the returned request and local cancellation marker even
+            // when the compensating cancel is unavailable. This state cannot
+            // be reviewed or saved and remains queryable for a later retry.
+            var pending = current
+            pending.request = createdRequest
+            pending.updatedAt = now()
+            pending.lastKnownRequestAt = pending.lastKnownRequestAt ?? pending.updatedAt
+            _ = try? rubricCaptures.upsert(pending)
+            throw error
+        }
+    }
+
+    private static func isRubricNotFound(_ error: Error) -> Bool {
+        (error as? RubricExchangeError) == .notFound
+    }
+}
+
+@MainActor @Observable
+final class DesktopSourceReviewDraft {
+    var decisions: [String: ReconciliationChoice]
+
+    init(decisions: [String: ReconciliationChoice] = [:]) {
+        self.decisions = decisions
+    }
+}
+@MainActor struct DesktopSourceReview: Identifiable {
+    let item: DesktopPeerIncomingProposal
+    let review: DesktopPeerProposalReview
+    let draft: DesktopSourceReviewDraft
+    nonisolated var id: String { item.id }
+
+    init(item: DesktopPeerIncomingProposal, review: DesktopPeerProposalReview,
+         draft: DesktopSourceReviewDraft = DesktopSourceReviewDraft()) {
+        self.item = item
+        self.review = review
+        self.draft = draft
+    }
+}

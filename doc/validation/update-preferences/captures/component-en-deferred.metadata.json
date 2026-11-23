@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-05T13:34:17.873935+00:00",
+  "capture": {
+    "captured_at": "2026-11-05T13:32:56.758000+00:00",
+    "route": "/native/preferences/updates",
+    "screen": "Preferences → Updates",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Production Updates component; synthetic deferred; isolated defaults and fake updater; no network/install claim; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 532,
+      "height": 550
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1064,
+    "height_px": 1100,
+    "sha256": "02cb29d21cc7473e34237d4952c889a8ce602ed6c065781eb4ff08a8664ba38d"
+  },
+  "source": {
+    "revision_at_collection": "9be0db786a14b247e787585e917ede2dbe278d18",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

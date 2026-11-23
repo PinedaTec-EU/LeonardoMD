@@ -1,0 +1,9 @@
+{
+  "source_sha": "b24087574b32eadb1c14f55d9a467dc1507d340f",
+  "qa_bundle": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-wso79k6v/LeonardoMDQA.app",
+  "baseline_version": "0.3.1113",
+  "qa_identifier": "eu.pinedatec.LeonardoMD.qa.436aa7936fa24284949752f547efc6a1",
+  "launched": false,
+  "unsigned_executable_payload_equal": true,
+  "unsigned_payload_sha256": "c57171df39c0fe55d8c007bfdfbe793a7b8b4e2d9625d13c2d2645a7e3046539"
+}

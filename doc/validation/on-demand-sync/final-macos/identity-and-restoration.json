@@ -1,0 +1,21 @@
+{
+  "product_source": "66c9e644a3203e1725f466973e1940acff61e61f",
+  "guides": [
+    {
+      "locale": "en",
+      "bundled_sha256": "032a3c0068aba5bc5a7da9a33dff851e2e287369ee4da0b51cf42a34412c39f7",
+      "working_sha256": "032a3c0068aba5bc5a7da9a33dff851e2e287369ee4da0b51cf42a34412c39f7",
+      "matches": true
+    },
+    {
+      "locale": "es",
+      "bundled_sha256": "723b883fdef13c06d326fb38a6af0f0edeade61684485bf90381c62723219a69",
+      "working_sha256": "723b883fdef13c06d326fb38a6af0f0edeade61684485bf90381c62723219a69",
+      "matches": true
+    }
+  ],
+  "restored_latest_originals_exact": 3,
+  "version": "0.3.1113",
+  "build": "1113",
+  "helper_mutated": false
+}

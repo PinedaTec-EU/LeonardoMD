@@ -1,0 +1,12 @@
+Verbatim transcription from the live CUA AX result. Capture time was not exposed
+in that result; this is not a new screenshot. App: original presenter PID 94348.
+
+51 menu Secondary Actions: Cancel
+    52 Instance 94348 · Current, ID: menuAction:
+    53 Instance 95948, ID: menuAction:
+    54 New instance, ID: menuAction:
+    55 Preferences…, ID: menuAction:
+    56 Quit this instance, ID: menuAction:
+
+Item 53 was selected and the distinct B identity's foreground window inspected.
+The presentation records separately show real regular/accessory transitions.

@@ -1,0 +1,64 @@
+{
+  "source_log": "swift-tests.log",
+  "compiled_fixture_checkpoint": "01aea36",
+  "scope": "Full macOS SwiftPM suite; subsequent correction changes only iOS App entry, outside this package target build. Test and shared production source are unchanged.",
+  "bundles": [
+    {
+      "suite": "LeonardoSyncTransportTests.xctest",
+      "tests": 17,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 291
+    },
+    {
+      "suite": "LeonardoSyncTests.xctest",
+      "tests": 81,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 514
+    },
+    {
+      "suite": "LeonardoRenderTests.xctest",
+      "tests": 23,
+      "skips": 1,
+      "failures": 0,
+      "log_line": 591
+    },
+    {
+      "suite": "LeonardoIntegrationTests.xctest",
+      "tests": 46,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 704
+    },
+    {
+      "suite": "LeonardoDesktopSyncTests.xctest",
+      "tests": 56,
+      "skips": 4,
+      "failures": 0,
+      "log_line": 878
+    },
+    {
+      "suite": "LeonardoCoreTests.xctest",
+      "tests": 115,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 1168
+    },
+    {
+      "suite": "LeonardoAppTests.xctest",
+      "tests": 366,
+      "skips": 30,
+      "failures": 0,
+      "log_line": 2161
+    }
+  ],
+  "total_xctest": 704,
+  "total_skipped": 35,
+  "total_failures": 0,
+  "swift_testing_groups": [
+    43,
+    28
+  ],
+  "total_swift_testing": 71
+}

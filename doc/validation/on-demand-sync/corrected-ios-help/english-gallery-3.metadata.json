@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T21:01:08.516871+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T20:56:23.800000+00:00",
+    "route": "/native/ios/help/english-gallery-3",
+    "screen": "English gallery 3",
+    "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iPhone18Pro Simulator \u00b7 iOS27.0",
+    "browser_version": "Native; WKWebView engine not exposed by XCTest",
+    "state": "Version0.3.1113/build1113; legacy XCTest original pixel dimensions, image-pixel equivalent viewport; actual capture timestamp from xcresult manifest",
+    "viewport_css": {
+      "width": 1206,
+      "height": 2622
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "a2ee0dcf5aca309152991a85d108f809ea5b5bd06d874546b5b9ad1af3488f4a"
+  },
+  "source": {
+    "revision_at_collection": "5284cab69df3e59453a52d800e8066486939b722",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T13:16:23.117Z",
+  "route": "/native/help/en",
+  "screen": "canonical-en-live",
+  "browser_name": "Native AppKit/WKWebView",
+  "browser_version": "Not exposed by CUA",
+  "viewport_css": {
+    "width": 5120,
+    "height": 2880
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Canonical real Help Math ON Mermaid inline single multiline underbrace radical tag1 chart and literal code; screenshot-pixel equivalent dimensions; canonical cc6c43f7845c61a3fe24f8e862e8ab7f82fc50c5; Guide23 baseline0.3.1082; helper26651"
+}

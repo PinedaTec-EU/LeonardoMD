@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-11-10T10:35:34.446Z",
+  "route": "/native/ios/library",
+  "screen": "Ordinary project library",
+  "browser_name": "XCUITest native screenshot (no browser)",
+  "browser_version": "Not applicable; iOS Simulator 27.0 (24A434)",
+  "viewport_css": null,
+  "native_viewport_points": null,
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Unified mobile library with the Demo project visible; Classic light; synthetic data.",
+  "source_sha": "8bc2122cf52c05c316b762bbb565c322dd5b6e67",
+  "device": {
+    "platform": "iOS Simulator",
+    "device_id": "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+    "device_name": "LittleLeonardo407 Project Lifecycle",
+    "model_name": "iPhone 17 Pro",
+    "os_version": "27.0",
+    "os_build": "24A434",
+    "architecture": "arm64"
+  },
+  "native_geometry_limitation": "XCTest attachment export exposes the original bitmap and simulator identity, but not browser engine details or CSS/native-point viewport geometry; viewport_css and native_viewport_points are explicitly null rather than inferred from image pixels."
+}

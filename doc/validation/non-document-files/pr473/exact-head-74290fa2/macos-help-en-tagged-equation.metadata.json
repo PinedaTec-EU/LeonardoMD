@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-19T13:24:45+01:00",
+  "capture": {
+    "captured_at": "2026-11-19T10:28:45+01:00",
+    "route": "LeonardoMD QA > Help > User guide (EN)",
+    "screen": "macos-help-en-tagged-equation",
+    "browser_name": "Native macOS QA app window; no browser",
+    "browser_version": "LeonardoMD QA 0.3.1889 (build 1889), macOS 27.0.1 (26A434)",
+    "state": "Math is on: the display equations render, including the tagged box-counting equation (1).",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "native-window",
+    "data_provenance": "Synthetic QA project and bundled guides; no user document content in captures.",
+    "locale": "en-US",
+    "preference_show_non_document_files": false,
+    "math_extension": true
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "9a7f90ebd2ee252f23993a7344768a2b38b734169c198080d6a8a73ec55c7fbd"
+  },
+  "source": {
+    "revision_at_collection": "81a97478cc8abd2517841d07e46c176e71187b76",
+    "product_source_revision": "74290fa2e0006d4eb4bd38fd24bddf6b97a94e0b",
+    "tracked_changes_present": false,
+    "untracked_files_present": false,
+    "pr": 473,
+    "pr_build_delta": 39
+  },
+  "app_instance": {
+    "pid": 44300,
+    "started_at": "2026-11-19T10:06:38+01:00",
+    "bundle_id": "eu.pinedatec.LeonardoMD.qa.02a2dadba04745dfb261fc9c0ebaed61",
+    "version": "0.3.1889",
+    "build": "1889",
+    "executable_sha256": "7fe09c6e9125327504ca90720a0c4a03c89913edb5240d9a187a42798470edd5"
+  }
+}

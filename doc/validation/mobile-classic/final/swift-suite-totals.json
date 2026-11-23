@@ -1,0 +1,63 @@
+{
+  "source_log": "swift-tests.log",
+  "rule": "Each .xctest bundle summary counted once; nested suite/All tests repeats excluded. SwiftPM runs seven XCTest executables, not one aggregate executable.",
+  "bundles": [
+    {
+      "suite": "LeonardoSyncTransportTests.xctest",
+      "tests": 17,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 167
+    },
+    {
+      "suite": "LeonardoSyncTests.xctest",
+      "tests": 81,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 390
+    },
+    {
+      "suite": "LeonardoRenderTests.xctest",
+      "tests": 23,
+      "skips": 1,
+      "failures": 0,
+      "log_line": 467
+    },
+    {
+      "suite": "LeonardoIntegrationTests.xctest",
+      "tests": 46,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 580
+    },
+    {
+      "suite": "LeonardoDesktopSyncTests.xctest",
+      "tests": 56,
+      "skips": 4,
+      "failures": 0,
+      "log_line": 754
+    },
+    {
+      "suite": "LeonardoCoreTests.xctest",
+      "tests": 115,
+      "skips": 0,
+      "failures": 0,
+      "log_line": 1044
+    },
+    {
+      "suite": "LeonardoAppTests.xctest",
+      "tests": 366,
+      "skips": 30,
+      "failures": 0,
+      "log_line": 2038
+    }
+  ],
+  "total_xctest": 704,
+  "total_skipped": 35,
+  "total_failures": 0,
+  "swift_testing_groups": [
+    43,
+    28
+  ],
+  "total_swift_testing": 71
+}

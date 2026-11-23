@@ -36,7 +36,8 @@ final class CoreTypesTests: XCTestCase {
         let global = GlobalPreferences(
             palette: .leonardoClassic,
             paperEffect: .parchment,
-            markdown: MarkdownFeatures(mermaidEnabled: true, mathEnabled: true, defaultMode: .split),
+            markdown: MarkdownFeatures(mermaidEnabled: true, mathEnabled: true, vegaLiteEnabled: true,
+                                       citationsEnabled: true, markdownExtensionsEnabled: true, defaultMode: .split),
             showHiddenFiles: true
         )
         let project = ProjectConfiguration()
@@ -46,6 +47,9 @@ final class CoreTypesTests: XCTestCase {
         XCTAssertEqual(resolved.paperEffect, .parchment)
         XCTAssertTrue(resolved.markdown.mermaidEnabled)
         XCTAssertTrue(resolved.markdown.mathEnabled)
+        XCTAssertTrue(resolved.markdown.vegaLiteEnabled)
+        XCTAssertTrue(resolved.markdown.citationsEnabled)
+        XCTAssertTrue(resolved.markdown.markdownExtensionsEnabled)
         XCTAssertEqual(resolved.defaultMode, .split)
         XCTAssertTrue(resolved.showHiddenFiles)
     }
@@ -63,5 +67,18 @@ final class CoreTypesTests: XCTestCase {
         XCTAssertEqual(resolved.paperEffect, .grid)
         XCTAssertFalse(resolved.markdown.mermaidEnabled)
         XCTAssertTrue(resolved.markdown.mathEnabled)
+    }
+
+    func testLegacyMarkdownFeaturesDefaultNewExtensionsToDisabled() throws {
+        let legacy = try JSONDecoder().decode(
+            MarkdownFeatures.self,
+            from: Data(#"{"mermaidEnabled":true,"mathEnabled":true,"defaultMode":"preview"}"#.utf8)
+        )
+
+        XCTAssertTrue(legacy.mermaidEnabled)
+        XCTAssertTrue(legacy.mathEnabled)
+        XCTAssertFalse(legacy.vegaLiteEnabled)
+        XCTAssertFalse(legacy.citationsEnabled)
+        XCTAssertFalse(legacy.markdownExtensionsEnabled)
     }
 }

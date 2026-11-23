@@ -25,7 +25,7 @@ class UpdateMetadataTests(unittest.TestCase):
             path = Path(directory) / "Info.plist"
             path.write_bytes((ROOT / "scripts/Info.plist").read_bytes())
             before = plistlib.loads(path.read_bytes())
-            key = base64.b64encode(bytes(32)).decode()
+            key = before["LeonardoUpdatePublicKey"]
             configure(path, {"LEONARDO_DISTRIBUTION": "1", "SPARKLE_PUBLIC_KEY": key,
                              "LEONARDO_VERSION": "1.2.3", "LEONARDO_BUILD": "42"})
             after = plistlib.loads(path.read_bytes())
@@ -62,7 +62,8 @@ class UpdateMetadataTests(unittest.TestCase):
             metadata = plistlib.loads(path.read_bytes())
             self.assertEqual(metadata["CFBundleShortVersionString"], "0.1.1")
             self.assertEqual(metadata["LeonardoUpdateChannel"], "beta")
-            self.assertIn("/beta/appcast.xml", metadata["SUFeedURL"])
+            self.assertIn("/beta/appcast.xml", metadata["LeonardoBetaFeedURL"])
+            self.assertEqual(metadata["SUFeedURL"], metadata["LeonardoStableFeedURL"])
             self.assertEqual(metadata["UTImportedTypeDeclarations"],
                              plistlib.loads(original)["UTImportedTypeDeclarations"])
             for version, channel, feed in (("0.1.1-beta.1", "stable", "https://example.com/feed"),

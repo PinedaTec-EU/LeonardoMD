@@ -1,0 +1,28 @@
+{
+  "captured_at": "2026-11-16T00:14:45.856000Z",
+  "route": "Emparejamiento > dirección manual > error de conexión",
+  "screen": "Aviso breve en español con referencia única y una acción Aceptar.",
+  "capture_tool": "XCTest attachment exported from Xcode result bundle",
+  "capture_mode": "native app viewport",
+  "state": "Little Leonardo iOS simulator; synthetic connection and log data; original screenshot unedited.",
+  "data_provenance": "synthetic",
+  "test": "PairingUITests/testManualConnectionFailureShowsReferenceAndMatchingLocalLog()",
+  "source_sha": "8ebd53798bcd71543894ad4a88c4f9c79f9715b5",
+  "result_bundle": ".build/ll435-current-ui-exact-20261116.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo PR435 Localization QA 20261115",
+    "device_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+    "model": "iPhone 18 Pro Max",
+    "os": "iOS 27.0",
+    "os_build": "24A434",
+    "viewport_points": {
+      "width": 440,
+      "height": 956
+    },
+    "image_pixels": {
+      "width": 1320,
+      "height": 2868
+    }
+  },
+  "image_sha256": "510655cc6f6dae600944f426d58dd577f7462a40ad79acd8f5300980d4f3f48d"
+}

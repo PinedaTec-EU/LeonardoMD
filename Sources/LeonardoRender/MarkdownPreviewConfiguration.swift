@@ -1,32 +1,69 @@
 import Foundation
+import LeonardoCore
 
 /// Controls the capabilities and visual treatment of a Markdown preview.
 public struct MarkdownPreviewConfiguration: Equatable, Sendable {
+    public var allowsEditing: Bool = false
+    public var allowsFormFilling: Bool = false
+    public var selectedGraphicID: String?
+    public var formLabels: [String: String] = [:]
+    /// Rubric fields assigned by an MDLF v2 guided-signing header are review
+    /// targets, not ordinary Fill-form insertion controls. The renderer
+    /// keeps these IDs in the payload so it can disable the bypass path while
+    /// leaving unrelated required fields fillable before the first seal.
+    public var guidedSigningFieldIDs: [String] = []
+    /// Verified sidecar rubrics keyed by the exact rendered occurrence
+    /// (`fieldID#occurrence`). These are presentation overlays only; they
+    /// never become Markdown form values or editable document bytes.
+    public var guidedSigningRubricOverlays: [String: LeonardoRubric] = [:]
+    /// Explicit opt-in: standard Markdown never activates Leonardo metadata.
+    public var allowsLeonardoFormat: Bool = false
     public var allowsMermaid: Bool
     public var allowsMath: Bool
+    public var allowsVegaLite: Bool
+    public var allowsCitations: Bool
+    public var allowsMarkdownExtensions: Bool
+    /// Opts a native reader into a smaller margin above its first heading.
+    /// The default preserves the desktop preview spacing.
+    public var compactFirstHeading: Bool = false
     public var frontMatter: FrontMatterVisibility
     public var externalLinkPolicy: ExternalLinkPolicy
     public var appearance: MarkdownAppearance
     public var renderDebounce: Duration
     /// Optional project boundary for relative local image assets.
     public var localAssetRoot: URL?
+    public var memoryAssets: MarkdownMemoryAssets?
+    public var allowsRemoteImages: Bool
+    /// An explicit file boundary for previews of content that will be signed.
+    /// Nil retains the normal document and project root policy.
+    public var allowedLocalImageFiles: Set<URL>? = nil
 
     public init(
         allowsMermaid: Bool = false,
         allowsMath: Bool = false,
+        allowsVegaLite: Bool = false,
+        allowsCitations: Bool = false,
+        allowsMarkdownExtensions: Bool = false,
         frontMatter: FrontMatterVisibility = .hidden,
         externalLinkPolicy: ExternalLinkPolicy = .systemBrowser,
         appearance: MarkdownAppearance = .default,
         renderDebounce: Duration = .milliseconds(80),
-        localAssetRoot: URL? = nil
+        localAssetRoot: URL? = nil,
+        memoryAssets: MarkdownMemoryAssets? = nil,
+        allowsRemoteImages: Bool = true
     ) {
         self.allowsMermaid = allowsMermaid
         self.allowsMath = allowsMath
+        self.allowsVegaLite = allowsVegaLite
+        self.allowsCitations = allowsCitations
+        self.allowsMarkdownExtensions = allowsMarkdownExtensions
         self.frontMatter = frontMatter
         self.externalLinkPolicy = externalLinkPolicy
         self.appearance = appearance
         self.renderDebounce = renderDebounce
         self.localAssetRoot = localAssetRoot
+        self.memoryAssets = memoryAssets
+        self.allowsRemoteImages = allowsRemoteImages
     }
 
     public static let `default` = MarkdownPreviewConfiguration()

@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-13T08:41:46.040Z",
+  "screen": "Bundled Spanish Help: display equations",
+  "route": "Help/Guide-v69-es/Math",
+  "browser_name": "Native AppKit WKWebView",
+  "browser_version": "Not exposed by CUA; packaged LeonardoMD 0.3.1371",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "state": "Spanish Help; Math enabled; screenshot pixel dimensions used in viewport compatibility fields (CSS viewport unavailable)",
+  "data_provenance": "synthetic"
+}

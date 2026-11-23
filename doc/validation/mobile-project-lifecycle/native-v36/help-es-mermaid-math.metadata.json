@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T12:07:27.556086+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T12:03:17.709Z",
+    "route": "/native/help/v36/es",
+    "screen": "help-es-mermaid-math",
+    "browser_name": "Native AppKit/WKWebView",
+    "browser_version": "Engine version not exposed by CUA",
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "state": "Spanish Mermaid, inline and display equations with complete underbraces/radical/arrow/cancel and tagged equation (1); Math restored on",
+    "source_sha": "d986f417fd263180219b3b55dfe65d026d5853c5"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 5120,
+    "height_px": 2880,
+    "sha256": "dec513a17d06c655c0da4b1d57817c6b6f52d096a9b74bdf62eae3899e201c13"
+  },
+  "source": {
+    "revision_at_collection": "b8a41806bdd17dbb17a86796e636fb6a1d15bf0a",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  },
+  "schema_limitation": "Native CUA captures expose pixels; CSS viewport, native point dimensions and engine version are not exposed."
+}

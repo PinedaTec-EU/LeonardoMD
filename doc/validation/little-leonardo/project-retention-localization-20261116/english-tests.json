@@ -1,0 +1,53 @@
+{
+  "devices" : [
+    {
+      "architecture" : "arm64",
+      "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+      "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+      "modelName" : "iPhone 17 Pro",
+      "osBuildNumber" : "23F77",
+      "osVersion" : "26.5",
+      "platform" : "iOS Simulator"
+    }
+  ],
+  "testNodes" : [
+    {
+      "children" : [
+        {
+          "children" : [
+            {
+              "children" : [
+                {
+                  "duration" : "57s",
+                  "durationInSeconds" : 57.82171189785004,
+                  "name" : "testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+                  "nodeIdentifier" : "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                }
+              ],
+              "name" : "OnDemandSyncUITests",
+              "nodeIdentifierURL" : "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/OnDemandSyncUITests",
+              "nodeType" : "Test Suite",
+              "result" : "Passed"
+            }
+          ],
+          "name" : "LittleLeonardoUITests",
+          "nodeIdentifierURL" : "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests",
+          "nodeType" : "UI test bundle",
+          "result" : "Passed"
+        }
+      ],
+      "name" : "LittleLeonardo",
+      "nodeType" : "Test Plan",
+      "result" : "Passed"
+    }
+  ],
+  "testPlanConfigurations" : [
+    {
+      "configurationId" : "1",
+      "configurationName" : "Test Scheme Action"
+    }
+  ]
+}

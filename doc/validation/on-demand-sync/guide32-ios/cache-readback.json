@@ -1,0 +1,94 @@
+{
+  "limitBytes": 134217728,
+  "sequence": 4,
+  "projects": [
+    {
+      "dependencies": {
+        "notes/future.md": [],
+        "notes/agenda.md": [],
+        "notes/decisions.md": [],
+        "reference/readme.md": []
+      },
+      "id": "6874C2ED-0762-4AA4-BA1D-AAE53D095A2F",
+      "catalogue": {
+        "files": [
+          {
+            "byteCount": 61,
+            "path": "notes/agenda.md",
+            "revision": "sha256:027d6a7da55700fd5476e08c4fb64f79829595a8bd5a128a78270d9f4344862d",
+            "isUnsavedBuffer": false
+          },
+          {
+            "byteCount": 51,
+            "path": "notes/decisions.md",
+            "revision": "sha256:9c24b19be800f4c776b09a71480b0382a38f75cf1ae4654523142ecec03e155d",
+            "isUnsavedBuffer": false
+          },
+          {
+            "byteCount": 54,
+            "path": "notes/future.md",
+            "revision": "sha256:1bbba03f8183d3f365b0b4e009ba744a1066e40bb8fef9e557cbacc5b7810419",
+            "isUnsavedBuffer": false
+          },
+          {
+            "path": "reference/readme.md",
+            "byteCount": 62,
+            "revision": "sha256:bf8426e5ddfae79e75e485a12ecdfd5ed11c44cca6b7771f0c6d19cb94331255",
+            "isUnsavedBuffer": false
+          },
+          {
+            "path": "reference/remote.md",
+            "byteCount": 51,
+            "revision": "sha256:903623eb958e39d771a81a8e95fb40e2729bf76e1794665df08fe743aae27229",
+            "isUnsavedBuffer": false
+          }
+        ],
+        "directories": [
+          "notes",
+          "reference"
+        ]
+      },
+      "downloads": {
+        "notes/future.md": {
+          "isUnsavedBuffer": false,
+          "revision": "sha256:1bbba03f8183d3f365b0b4e009ba744a1066e40bb8fef9e557cbacc5b7810419",
+          "byteCount": 54,
+          "lastAccess": 4
+        },
+        "notes/agenda.md": {
+          "isUnsavedBuffer": false,
+          "revision": "sha256:027d6a7da55700fd5476e08c4fb64f79829595a8bd5a128a78270d9f4344862d",
+          "byteCount": 61,
+          "lastAccess": 2
+        },
+        "notes/decisions.md": {
+          "isUnsavedBuffer": false,
+          "revision": "sha256:9c24b19be800f4c776b09a71480b0382a38f75cf1ae4654523142ecec03e155d",
+          "byteCount": 51,
+          "lastAccess": 3
+        }
+      },
+      "descriptor": {
+        "scope": {
+          "folder": ""
+        },
+        "id": "6874C2ED-0762-4AA4-BA1D-AAE53D095A2F",
+        "name": "QA \u00b7 On-demand",
+        "selection": {
+          "documents": [],
+          "folders": [
+            "notes",
+            "reference"
+          ]
+        }
+      },
+      "retention": [
+        {
+          "path": "notes",
+          "keep": true,
+          "isFolder": true
+        }
+      ]
+    }
+  ]
+}

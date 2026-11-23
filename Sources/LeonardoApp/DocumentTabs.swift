@@ -5,8 +5,8 @@ import Observation
 struct DocumentTab: Identifiable {
     let id = UUID()
     let session: AppSession
-    var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
-    var location: URL? { session.documentURL ?? session.projectURL }
+    var title: String { session.displayDocumentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
+    var location: URL? { session.displayDocumentURL ?? session.projectURL }
 }
 
 /// Each tab owns the existing editor session, including async saves and project operations.
@@ -15,17 +15,24 @@ final class DocumentTabs {
     private(set) var tabs: [DocumentTab] = []
     private(set) var activeID: UUID?
     private(set) var closing = false
+    weak var presentationWindow: NSWindow? {
+        didSet { tabs.forEach { $0.session.presentationWindow = presentationWindow } }
+    }
     var updateWindow: ((String, URL?, Bool) -> Void)?
+    var openingProjectDocuments: Set<URL> = []
     private var stopped = false
+    private var preparedForClose = false
     private let preferencesURL: URL
+    let search = DocumentSearch()
 
     init(preferencesURL: URL = AppSession.preferencesURL) {
         self.preferencesURL = preferencesURL
+        search.criteriaDidChangeHandler = { [weak self] in self?.refreshSearch() }
         addTab()
     }
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
-    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
+    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.busy || $0.session.fileOperationCount > 0 || $0.session.saving || $0.session.saveTask != nil || $0.session.settingsTask != nil || $0.session.gitBusy } }
     var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
@@ -33,7 +40,11 @@ final class DocumentTabs {
         guard !closing, !stopped else { return nil }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         let session = AppSession(preferencesURL: preferencesURL)
+        session.presentationWindow = presentationWindow
+        session.documentContentDidChange = { [weak self] in self?.refreshSearch() }
         let tab = DocumentTab(session: session)
+        session.openUserGuide = { [weak self] in await self?.openUserGuide() }
+        configureLeonardoTransport(for: session)
         session.activateExistingDocument = { [weak self] url, line in
             self?.activateDocument(url, line: line) ?? false
         }
@@ -41,16 +52,24 @@ final class DocumentTabs {
             guard let self else { return true }
             return await self.prepareFileOperation(source, excluding: session)
         }
+        session.hasRelatedFileOperation = { [weak self] in
+            self?.tabs.contains { $0.session.fileOperationCount > 0 } ?? false
+        }
         session.relatedPathMoved = { [weak self, weak session] source, destination in
             await self?.pathMoved(source, to: destination, excluding: session)
         }
         session.relatedPathDeleted = { [weak self, weak session] source in
             self?.pathDeleted(source, excluding: session)
         }
+        session.openProjectDocumentInTab = { [weak self, weak session] url, line in
+            guard let self, let session else { return }
+            await self.openProjectDocument(url, line: line, from: session)
+        }
         session.openDroppedDocuments = { [weak self] urls in await self?.openDroppedDocuments(urls) }
         session.updateWindow = { [weak self] _, _, _ in self?.updateTitle() }
         tabs.append(tab)
         activeID = tab.id
+        refreshSearch()
         updateTitle()
         return tab.id
     }
@@ -59,6 +78,7 @@ final class DocumentTabs {
         guard !closing, !stopped, tabs.contains(where: { $0.id == id }) else { return }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         activeID = id
+        refreshSearch()
         updateTitle()
     }
 
@@ -70,6 +90,7 @@ final class DocumentTabs {
               let destination = tabs.firstIndex(where: { $0.id == targetID }) else { return false }
         let tab = tabs.remove(at: source)
         tabs.insert(tab, at: destination)
+        refreshSearch()
         return true
     }
 
@@ -82,16 +103,18 @@ final class DocumentTabs {
 
     func activateDocument(_ url: URL, line: Int? = nil) -> Bool {
         guard !closing, let tab = tabs.first(where: {
-            $0.session.documentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
+            $0.session.displayDocumentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
         }) else { return false }
         select(tab.id)
-        if let line { tab.session.mode = .edit; tab.session.requestedLine = line }
+        if let line {
+            Task { await tab.session.setDocumentMode(.edit); tab.session.requestedLine = line }
+        }
         return true
     }
 
     static func acceptsDrop(_ urls: [URL]) -> Bool {
         !urls.isEmpty && urls.allSatisfy { url in
-            guard url.isFileURL, ["md", "markdown"].contains(url.pathExtension.lowercased()) else { return false }
+            guard url.isFileURL, AppDocumentKind.isSupportedDropExtension(url.pathExtension) else { return false }
             var directory: ObjCBool = false
             return FileManager.default.fileExists(atPath: url.path, isDirectory: &directory) && !directory.boolValue
         }
@@ -102,7 +125,7 @@ final class DocumentTabs {
         await openExternalDocuments(urls)
     }
 
-    func openExternalDocuments(_ urls: [URL]) async {
+    func openExternalDocuments(_ urls: [URL], packagePreference: LeonardoPackageOpenPreference? = nil) async {
         guard !closing, !stopped else { return }
         for url in urls where url.isFileURL {
             if activateDocument(url) {
@@ -110,7 +133,7 @@ final class DocumentTabs {
                 continue
             }
             guard let id = addTab(), let tab = tabs.first(where: { $0.id == id }) else { return }
-            await tab.session.open(url)
+            await tab.session.open(url, packagePreference: packagePreference)
         }
     }
 
@@ -120,12 +143,29 @@ final class DocumentTabs {
         closing = true
         defer { closing = false }
         let session = tabs[index].session
-        guard await session.prepareNavigation() else {
+        session.closePreviewActionFailed = false
+        session.isClosing = true
+        session.isClosePreviewSyncPending = true
+        defer {
+            session.isClosePreviewSyncPending = false
+            session.closePreviewActionFailed = false
+            if !session.stopped { session.isClosing = false }
+        }
+        guard await session.waitForCloseOperations() else { return }
+        let previewResolution = await session.resolvePreviewEditsBeforeClose(documentName: tabs[index].title) {
+            selectForCloseRecovery(id)
+        }
+        guard previewResolution != .keepOpen else { return }
+        let previewPolicy: PendingPreviewEditsPolicy = previewResolution == .discardPreviewEdits
+            ? .discardAfterExplicitCloseConfirmation
+            : .alreadyResolved
+        guard await session.prepareNavigation(pendingPreviewEdits: previewPolicy) else {
             activeID = id
             updateTitle()
             return
         }
         session.stop()
+        await session.waitForPackageWorkspaceDisposal()
         tabs.remove(at: index)
         if tabs.isEmpty {
             closing = false
@@ -133,6 +173,7 @@ final class DocumentTabs {
         } else if activeID == id {
             activeID = tabs[min(index, tabs.count - 1)].id
         }
+        refreshSearch()
         updateTitle()
     }
 
@@ -140,20 +181,101 @@ final class DocumentTabs {
         guard !closing else { return false }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         closing = true
-        defer { closing = false }
+        var approved = false
+        defer { if !approved { releaseClosePreparation() } }
         for tab in tabs {
-            guard await tab.session.prepareNavigation() else {
+            tab.session.closePreviewActionFailed = false
+            tab.session.isClosing = true
+            tab.session.isClosePreviewSyncPending = true
+            guard await tab.session.waitForCloseOperations() else { return false }
+            let previewResolution = await tab.session.resolvePreviewEditsBeforeClose(documentName: tab.title) {
+                selectForCloseRecovery(tab.id)
+            }
+            guard previewResolution != .keepOpen else { return false }
+            let previewPolicy: PendingPreviewEditsPolicy = previewResolution == .discardPreviewEdits
+                ? .discardAfterExplicitCloseConfirmation
+                : .alreadyResolved
+            guard await tab.session.prepareNavigation(pendingPreviewEdits: previewPolicy) else {
                 activeID = tab.id
                 updateTitle()
                 return false
             }
+            tab.session.isClosing = true
         }
-        return !hasPendingWork
+        guard !hasPendingWork else { return false }
+        approved = true
+        preparedForClose = true
+        return true
+    }
+
+    /// Finalize only after every window has accepted close preparation.
+    func finishPreparedClose() async {
+        guard preparedForClose, !stopped else { return }
+        stop()
+        for tab in tabs { await tab.session.waitForPackageWorkspaceDisposal() }
+    }
+
+    func cancelPreparedClose() {
+        guard preparedForClose, !stopped else { return }
+        releaseClosePreparation()
+    }
+
+    private func releaseClosePreparation() {
+        tabs.forEach {
+            $0.session.isClosePreviewSyncPending = false
+            $0.session.closePreviewActionFailed = false
+            $0.session.isClosing = false
+        }
+        preparedForClose = false
+        closing = false
+    }
+
+    private func selectForCloseRecovery(_ id: UUID) {
+        guard activeID != id, tabs.contains(where: { $0.id == id }) else { return }
+        activeID = id
+        refreshSearch()
+        updateTitle()
     }
 
     func reveal(_ id: UUID) {
         guard let url = tabs.first(where: { $0.id == id })?.location else { return }
         NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    /// Revocation discards access to these copies; it never saves their drafts.
+    /// Wait for existing I/O before the library removes the working directories.
+    func revokeWorkspaces(_ roots: [URL]) async {
+        let paths = roots.map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
+        let pending = tabs.compactMap { tab -> (AppSession, Set<UUID>)? in
+            let ids = tab.session.revokeDocumentAccesses(under: paths)
+            return ids.isEmpty ? nil : (tab.session, ids)
+        }
+        let affected = tabs.filter { tab in
+            tab.session.workspaceIdentityURLs.contains { url in
+                let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+                return paths.contains { path == $0 || path.hasPrefix($0 + "/") }
+            }
+        }
+        guard !affected.isEmpty || !pending.isEmpty else { return }
+        for tab in affected {
+            tab.session.stop()
+            tab.session.clearRevokedContent()
+        }
+        // Active close iterations own indices; completed preparation no longer does.
+        while closing && !preparedForClose { try? await Task.sleep(for: .milliseconds(20)) }
+        let ids = Set(affected.map(\.id))
+        tabs.removeAll { ids.contains($0.id) }
+        if tabs.isEmpty {
+            // Keep the active-session invariant even while a window is terminating.
+            if addTab() == nil {
+                tabs = [DocumentTab(session: AppSession(preferencesURL: preferencesURL))]
+                activeID = tabs[0].id
+            }
+        } else if activeID.map(ids.contains) == true { activeID = tabs[0].id }
+        refreshSearch()
+        updateTitle()
+        for tab in affected { await tab.session.finishRevocation() }
+        for (session, ids) in pending { await session.waitForDocumentAccesses(ids) }
     }
 
     func stop() {
@@ -162,6 +284,6 @@ final class DocumentTabs {
     }
     func updateTitle() {
         let session = activeSession
-        updateWindow?(session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "LeonardoMD", session.documentURL, tabs.contains { $0.session.isDirty })
+        updateWindow?(session.displayDocumentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "LeonardoMD", session.displayDocumentURL, tabs.contains { $0.session.isDirty })
     }
 }

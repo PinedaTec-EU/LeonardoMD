@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-11-16T02:57:53Z",
+  "route": "Project file list > notes/decisions.md retained-download alert",
+  "screen": "Spanish concise retained-download failure alert",
+  "capture_tool": "XCUITest native app screenshot attachment",
+  "capture_mode": "native app viewport",
+  "state": "Short recovery text, one opaque reference, and one Aceptar action; raw NSURLErrorDomain details are absent.",
+  "data_provenance": "synthetic",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "source_sha": "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
+  "result_bundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T02-56-26-137Z_pid52605_14045943.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo PR435 Spanish QA 20261116",
+    "device_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "os_build": "23F77",
+    "host": "macOS 27.0.1",
+    "viewport_points": {"width": 402, "height": 874},
+    "image_pixels": {"width": 1206, "height": 2622}
+  },
+  "alert_reference": "LL-21D29F48CB0A",
+  "image_sha256": "067ec5cb0974040a3425a5e7661a2959b19cf69408083e383635db8d0c7bab42"
+}

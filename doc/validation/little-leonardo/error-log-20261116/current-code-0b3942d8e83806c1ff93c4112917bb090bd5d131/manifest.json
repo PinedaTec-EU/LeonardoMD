@@ -1,0 +1,224 @@
+{
+  "purpose": "Exact-code-source bilingual Little Leonardo download-failure, preview and local-log evidence for PR #435.",
+  "recorded_at": "2026-11-16",
+  "capture_code_source_sha": "3f4622791ba3912d5d4f4f520acd5dccf5ab9722",
+  "current_product_code_source_sha": "0b3942d8e83806c1ff93c4112917bb090bd5d131",
+  "capture_to_current_code_source": {
+    "same_git_tree": true,
+    "tree_sha": "aa6134bfae1aa1041d76adbf693ec8624aa4979e",
+    "reason": "The issue-linked commit subject was amended to the repository convention; no file content changed between the tested capture source and current product-code source."
+  },
+  "platform": "Native iOS app on iOS Simulator; no browser or CSS viewport applies. Logical viewport dimensions are native points.",
+  "test_results": {
+    "english": {
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "result": "Passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "device": "iPhone 17 Pro",
+      "simulator_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+      "os": "iOS 26.5",
+      "os_build": "23F77",
+      "result_bundle": "test_sim_2026-11-16T09-57-19-567Z_pid23125_67697f02.xcresult"
+    },
+    "spanish": {
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "result": "Passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "device": "iPhone 17 Pro",
+      "simulator_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+      "os": "iOS 26.5",
+      "os_build": "23F77",
+      "result_bundle": "test_sim_2026-11-16T10-00-34-001Z_pid23125_4585d675.xcresult"
+    },
+    "spanish_on_demand_host_fixture": {
+      "test": "OnDemandMobileAcceptanceFixtureTests/testServeOnDemandMobileFixture",
+      "result": "Passed",
+      "passed": 1,
+      "failed": 0,
+      "duration_seconds": 129.664,
+      "snapshots": 0,
+      "metadata_only": "fixture-metadata-only.json",
+      "single_file_fetch": "fixture-single-file.json",
+      "aggregate_audit": "fixture-completed.json"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "english-project-failure.png",
+      "context_file": "english-project-failure.context.json",
+      "locale": "English",
+      "route": "/native/ios/on-demand/english-file-failure",
+      "screen": "English project-level download failure and file retry guidance",
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "simulator_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+      "captured_at": "2026-11-16T09:57:54Z",
+      "native_viewport_points": {
+        "width": 402,
+        "height": 874
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "sha256": "6fd01324e13522c929738dd5f0724543969cc1e155eac661192f546204ca1182",
+      "attachment_name": null,
+      "test_identifier": null
+    },
+    {
+      "file": "english-document-error.png",
+      "context_file": "english-document-error.context.json",
+      "locale": "English",
+      "route": "/native/ios/on-demand/english-document-error",
+      "screen": "English inline document download error and reference",
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "simulator_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+      "captured_at": "2026-11-16T09:57:59Z",
+      "native_viewport_points": {
+        "width": 402,
+        "height": 874
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "sha256": "f473b322735e5d62d06abdf99ce26fa3814031c2ee6077dba0fbf26fc4543095",
+      "attachment_name": null,
+      "test_identifier": null
+    },
+    {
+      "file": "english-diagnostic-log.png",
+      "context_file": "english-diagnostic-log.context.json",
+      "locale": "English",
+      "route": "/native/ios/on-demand/english-diagnostic-log-reference",
+      "screen": "The English preview reference matches the local diagnostic entry",
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "simulator_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+      "captured_at": "2026-11-16T09:58:07Z",
+      "native_viewport_points": {
+        "width": 402,
+        "height": 874
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "sha256": "53227946536fc30ccdd16ca087cc9a81f9b845c446dcdd4633560c2e93591a57",
+      "attachment_name": null,
+      "test_identifier": null
+    },
+    {
+      "file": "spanish-project-failure-alert.png",
+      "context_file": "spanish-project-failure-alert.context.json",
+      "locale": "Spanish",
+      "route": "/native/ios/on-demand/spanish-project-download-alert",
+      "screen": "Spanish project-level download failure behind the concise alert",
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "simulator_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+      "captured_at": "2026-11-16T10:01:42.929000Z",
+      "native_viewport_points": {
+        "width": 402,
+        "height": 874
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "sha256": "5cb926154e510fb52fa0258f14e01006663d7abd6206c72f70ba38d12ba21614",
+      "attachment_name": "Spanish Little Leonardo concise download alert_0_688B5B60-BE7C-474E-B60B-599C0BED7B0D.png",
+      "test_identifier": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()"
+    },
+    {
+      "file": "spanish-document-error.png",
+      "context_file": "spanish-document-error.context.json",
+      "locale": "Spanish",
+      "route": "/native/ios/on-demand/spanish-document-error",
+      "screen": "Spanish inline document download error and reference",
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "simulator_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+      "captured_at": "2026-11-16T10:01:50.429000Z",
+      "native_viewport_points": {
+        "width": 402,
+        "height": 874
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "sha256": "49a7c6ee41187ee07139ab1ed4ac5c5cd96be22b5c1e304bb31e5e337d3197ca",
+      "attachment_name": "Spanish Little Leonardo document download error_0_CB0F0FF9-9470-4EC5-A7BB-1E35334AE0AB.png",
+      "test_identifier": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()"
+    },
+    {
+      "file": "spanish-diagnostic-log.png",
+      "context_file": "spanish-diagnostic-log.context.json",
+      "locale": "Spanish",
+      "route": "/native/ios/on-demand/diagnostic-log-latest",
+      "screen": "The matching newest Spanish error reference appears in the local diagnostic log",
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "simulator_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+      "captured_at": "2026-11-16T10:01:59.468000Z",
+      "native_viewport_points": {
+        "width": 402,
+        "height": 874
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "sha256": "ac15ab6ed9a77c71a0878ce43694ad91f2058b67d0034f8afc4a871068c18fea",
+      "attachment_name": "diagnostic-log-latest_0_3D01DF24-E675-4FB7-A694-4F02AB42F146.png",
+      "test_identifier": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()"
+    }
+  ],
+  "fixture_audit": {
+    "catalogue_metadata_only": {
+      "catalogues": 1,
+      "files": {},
+      "snapshots": 0
+    },
+    "single_explicit_file_fetch": {
+      "catalogues": 1,
+      "files": {
+        "reference/readme.md": 1
+      },
+      "snapshots": 0
+    },
+    "aggregate": {
+      "catalogues": 2,
+      "files": {
+        "notes/agenda.md": 1,
+        "notes/decisions.md": 3,
+        "notes/future.md": 1,
+        "reference/readme.md": 1,
+        "reference/remote.md": 1
+      },
+      "snapshots": 0
+    }
+  },
+  "teardown": {
+    "app_bundle_id": "eu.pinedatec.LittleLeonardo",
+    "task_owned_simulators": [
+      {
+        "simulator_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "name": "LittleLeonardo PR435 Exact English QA 20261116",
+        "state_after_validation": "Shutdown"
+      },
+      {
+        "simulator_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+        "name": "LittleLeonardo PR435 Exact Spanish QA 20261116",
+        "state_after_validation": "Shutdown"
+      }
+    ],
+    "verification": "XcodeBuildMCP list_sims showed both task-owned simulators Shutdown. A process inspection found no LittleLeonardo process under either simulator device path. XcodeBuildMCP did not expose the simulator app PID or start time. The separate pre-existing iPhone 17 Pro simulator E2045815-8A83-4B25-AFD4-1CC7C573BE7E and its LittleLeonardo process were preserved.",
+    "observed_at": "2026-11-16T11:41:09+01:00"
+  },
+  "limits": [
+    "All simulator content and errors are synthetic loopback fixtures.",
+    "No physical camera scan was performed.",
+    "No physical-device or large-image transfer acceptance is claimed; issue #380 remains open."
+  ]
+}

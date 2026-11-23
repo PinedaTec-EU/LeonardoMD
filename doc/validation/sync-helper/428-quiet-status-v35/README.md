@@ -1,0 +1,27 @@
+# Synchronization status evidence — v35
+
+The native AppKit/SwiftUI captures and tests were produced from clean product and test source commit `f456c49671e1bed27c367010816355f866413580`. The metadata sidecars were collected from that same clean revision. Captures use synthetic state, English locale and a 532×260-point native view (1064×520 pixels); browser/CSS rendering does not apply. They are component evidence and do not establish fresh packaged-app startup, bundled Help/practice acceptance, or beta installation/update/relaunch.
+
+The controller test run passed 123 tests with one opt-in capture skipped. The full suite passed 502 XCTest cases, 44 Swift Testing cases and 28 package tests, with 35 opt-in tests skipped and no failures. The existing Guide v59 EN/ES sources already describe the last-confirmed status behavior; the full suite includes the bundled guide checks.
+
+The stable checking, online and pending-renewal images are byte-identical (SHA-256 `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f`). The pending-renewal test confirms the controller is internally `.starting`, peer readiness stays denied, no new health call is made, and the prior healthy presentation remains green. The shutdown error and denied-preflight images are byte-identical (SHA-256 `5ec0b24f838574d61ecbad117818077d57afe16af32e1c72b16baa0bc4106e2e`); the regression asserts the error and automatic recovery remain available without another helper status/reload call, then asserts the diagnostic clears only after stop is confirmed. The recovery error and held-retry images are byte-identical (SHA-256 `4d968c17e71ad4f90e59892af0649e432d260eaeaca276988df175ac31094d8c`); successful health restores the same green image as the healthy state. Approval remains visible as text/action without a red failure indicator.
+
+| State | Capture and provenance | Viewport; image | Captured (UTC) | SHA-256 |
+| --- | --- | --- | --- | --- |
+| Healthy before approval is revoked | [PNG](./status-approval-before.png) · [context](./status-approval-before.context.json) · [metadata](./status-approval-before.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:34.753000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
+| Approval required; instruction remains visible | [PNG](./status-approval-required.png) · [context](./status-approval-required.context.json) · [metadata](./status-approval-required.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:35.088000+00:00 | `c493c9ac5877884f70b65b0fb118581713d99509c1eba8f25cb36050d9141574` |
+| Healthy status during held health check | [PNG](./status-checking.png) · [context](./status-checking.context.json) · [metadata](./status-checking.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:42.657000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
+| Failed shutdown before peer preflight | [PNG](./status-disabled-failure.png) · [context](./status-disabled-failure.context.json) · [metadata](./status-disabled-failure.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:55:46.076000+00:00 | `5ec0b24f838574d61ecbad117818077d57afe16af32e1c72b16baa0bc4106e2e` |
+| Same failure during denied peer preflight | [PNG](./status-disabled-failure-preflight.png) · [context](./status-disabled-failure-preflight.context.json) · [metadata](./status-disabled-failure-preflight.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:55:46.417000+00:00 | `5ec0b24f838574d61ecbad117818077d57afe16af32e1c72b16baa0bc4106e2e` |
+| Confirmed healthy status | [PNG](./status-online.png) · [context](./status-online.context.json) · [metadata](./status-online.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:42.988000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
+| Red diagnostic retained during retry | [PNG](./status-recovery-checking.png) · [context](./status-recovery-checking.context.json) · [metadata](./status-recovery-checking.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:38.081000+00:00 | `4d968c17e71ad4f90e59892af0649e432d260eaeaca276988df175ac31094d8c` |
+| Confirmed helper health error | [PNG](./status-recovery-error.png) · [context](./status-recovery-error.context.json) · [metadata](./status-recovery-error.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:37.739000+00:00 | `4d968c17e71ad4f90e59892af0649e432d260eaeaca276988df175ac31094d8c` |
+| Green after successful recovery | [PNG](./status-recovery-online.png) · [context](./status-recovery-online.context.json) · [metadata](./status-recovery-online.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:38.398000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
+| Last healthy presentation during pending renewal | [PNG](./status-renewal-pending.png) · [context](./status-renewal-pending.context.json) · [metadata](./status-renewal-pending.metadata.json) | 532×260 pt; 1064×520 px | 2026-11-12T06:53:37.368000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
+
+Reproduce from the already-built test executable for `f456c49671e1bed27c367010816355f866413580`. Keep captures outside the checkout until metadata collection so the source cleanliness record remains accurate:
+
+```sh
+env EVIDENCE_SHA=f456c49671e1bed27c367010816355f866413580 LEONARDO_SYNC_STATUS_EVIDENCE=/path/to/output \
+  swift test --skip-build --filter SyncHelperControllerTests
+```

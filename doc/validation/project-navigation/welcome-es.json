@@ -1,0 +1,18 @@
+{
+  "browser" : "N\/A",
+  "capture_mode" : "native AppKit\/SwiftUI component bitmap",
+  "captured_at" : "2026-10-30T14:22:55Z",
+  "head" : "30f00049ca22ea88b1faef94cc45e2eb98635579",
+  "language" : "es",
+  "limitations" : "Synthetic fixture; no fresh packaged-process startup or installation claim",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "pixel_dimensions" : [
+    2200,
+    2300
+  ],
+  "surface" : "Home; Favorites and Recents show Projects and Documents only",
+  "viewport_points" : [
+    1100,
+    1150
+  ]
+}

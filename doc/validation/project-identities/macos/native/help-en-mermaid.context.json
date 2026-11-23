@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-11-07T21:09:42.784Z",
+  "screen": "Final fresh instance: Help EN, Mermaid, local image, mean display and inline math enabled",
+  "route": "/native/project-identities/help-en-mermaid",
+  "capture_mode": "element",
+  "browser_name": "Native packaged AppKit/WKWebView",
+  "browser_version": null,
+  "viewport_css": null,
+  "native_viewport_points": null,
+  "data_provenance": "synthetic",
+  "source_sha": "490086a6829f30cab3e5a7c6fe6e03a75f90e22d",
+  "limitations": "CUA exposes native screenshot pixels and accessibility; CSS viewport, native point geometry and engine version unavailable."
+}

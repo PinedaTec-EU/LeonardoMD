@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T11:16:14.597709+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T11:15:17.554000+00:00",
+    "route": "/LittleLeonardo/classic-project-documents",
+    "screen": "Classic project documents",
+    "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+    "browser_version": "iOS 27.0 (24A434); SDK27.1",
+    "state": "Classic project documents; synthetic QA; native points in viewport_css; source 11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "d189d2a1e2d6dcab694c89b80170c0a642dac5a77a34f452a5e8ac2ea521507a"
+  },
+  "source": {
+    "revision_at_collection": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

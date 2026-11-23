@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-10T08:47:51.812000+00:00",
+  "route": "/native/ios/reader-spacing",
+  "screen": "Synchronized document reader",
+  "browser_name": "Native WKWebView in iOS Simulator",
+  "browser_version": "Unavailable: native XCTest did not query the User-Agent",
+  "viewport_css": {
+    "width": 402,
+    "height": 724
+  },
+  "capture_mode": "element",
+  "state": "Classic appearance; synthetic Spanish Markdown; portrait; native window 402x874 points; actual iPhone18Pro simulator iOS27.0; MobileReaderSpacingTests/testSynchronizedDocumentViewUsesCompactReaderSpacing()",
+  "data_provenance": "synthetic"
+}

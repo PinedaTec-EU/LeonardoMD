@@ -1,0 +1,44 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+        "deviceName" : "LittleLeonardo407 Project Lifecycle",
+        "exportedFileName" : "ED0D49A9-4C7C-4C11-9681-F315DCB3D2AC.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Demo language document_0_C9580502-3CD0-430F-910E-403C82FE8A53.png",
+        "timestamp" : 1794312966.884
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+        "deviceName" : "LittleLeonardo407 Project Lifecycle",
+        "exportedFileName" : "CC02ABE2-BAC9-4B08-8FD5-6B81EBD24129.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Restored ordinary Demo project_0_224D4029-9E5C-4D5F-819A-32884DC1327B.png",
+        "timestamp" : 1794312963.369
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+        "deviceName" : "LittleLeonardo407 Project Lifecycle",
+        "exportedFileName" : "23BB095A-2F10-4883-B6EB-900E2625874A.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Swipe reveals explicit Delete_0_818B79BB-3D22-480D-826E-69CFFAA870B0.png",
+        "timestamp" : 1794312954.158
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+        "deviceName" : "LittleLeonardo407 Project Lifecycle",
+        "exportedFileName" : "14103E56-ED17-4D2B-8743-FC45053AAB87.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Ordinary project library_0_79FD6F36-4587-462E-8BC0-BEFADA979B8F.png",
+        "timestamp" : 1794312952.949
+      }
+    ],
+    "testIdentifier" : "MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored()",
+    "testIdentifierURL" : "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+        "deviceName": "LittleLeonardo Rubric342 QA 20261105",
+        "exportedFileName": "81EC9209-A59D-4BFE-B735-FA88C3873423.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Measured reader spacing_0_96502D08-5874-4548-9ADD-85202791DC6A.json",
+        "timestamp": 1794300470.475
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+        "deviceName": "LittleLeonardo Rubric342 QA 20261105",
+        "exportedFileName": "C8C571FE-DC22-4B22-BA61-8D4E4D4BB560.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Compact reader spacing_0_3772866C-027E-47C9-95B6-5029FF114CF1.png",
+        "timestamp": 1794300470.474
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+        "deviceName": "LittleLeonardo Rubric342 QA 20261105",
+        "exportedFileName": "8BA8DBD2-656B-49BC-B3B4-45168B57A4EA.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Default reader spacing_0_A2EE5367-A9ED-4419-A0CF-A789698B1F1F.png",
+        "timestamp": 1794300470.121
+      }
+    ],
+    "testIdentifier": "MobileReaderSpacingTests/testCompactReaderKeepsFirstHeadingNearContentTopAndLaterSectionsSpaced()",
+    "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoTests/MobileReaderSpacingTests/testCompactReaderKeepsFirstHeadingNearContentTopAndLaterSectionsSpaced"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+        "deviceName": "LittleLeonardo Rubric342 QA 20261105",
+        "exportedFileName": "FD3A00F1-916C-4270-9523-70FCABEA464B.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Synchronized document reader_0_7F352FE7-A1AB-4EE4-9C93-4D32AFDF70E7.png",
+        "timestamp": 1794300471.812
+      }
+    ],
+    "testIdentifier": "MobileReaderSpacingTests/testSynchronizedDocumentViewUsesCompactReaderSpacing()",
+    "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoTests/MobileReaderSpacingTests/testSynchronizedDocumentViewUsesCompactReaderSpacing"
+  }
+]

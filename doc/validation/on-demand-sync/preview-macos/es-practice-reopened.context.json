@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-08T07:12:14.549Z",
+  "route": "/native/help/guide27/es-practice-reopened",
+  "screen": "es-practice-reopened",
+  "browser_name": "LeonardoMD native AppKit/SwiftUI/WKWebView",
+  "browser_version": "Native; WKWebView engine version not exposed by CUA",
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "861f579d2e3707008475e2e7dd5c95e1d791b597",
+  "state": "Spanish separate practice fictional name/goal saved, closed and reopened; checkbox ON persisted; original native screenshot; viewport image-pixel equivalent (native-point viewport unavailable)",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  }
+}

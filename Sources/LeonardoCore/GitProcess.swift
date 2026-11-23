@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 
 struct GitCommandResult: Sendable {
@@ -90,3 +91,5 @@ private final class OutputCollector: @unchecked Sendable {
         lock.unlock()
     }
 }
+
+#endif

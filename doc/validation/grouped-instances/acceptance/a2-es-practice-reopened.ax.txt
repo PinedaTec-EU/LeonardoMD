@@ -1,0 +1,71 @@
+Window: "Practice-v1-es.mdlr", App: LeonardoMD QA 441 A2.
+0 standard window Practice-v1-es.mdlr, Secondary Actions: Raise, URL: file:///var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/es/Practice-v1-es.mdlr
+	1 container
+		2 scroll area
+			3 button Description: Nueva pestaña, Help: Abre un documento o proyecto en esta pestaña
+			4 button Description: Cerrar pestaña Nueva pestaña, ID: xmark
+			5 unknown Description: Reordenar pestaña Guide-v71-en.mdlz, Help: Arrastra para reordenar la pestaña
+			6 button Description: Guide-v71-en.mdlz, Help: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application Support/LeonardoMD/User Guides/v71/en/Guide-v71-en.mdlz
+			7 button Description: Cerrar pestaña Guide-v71-en.mdlz, ID: xmark
+			8 unknown Description: Reordenar pestaña Guide-v71-es.mdlz, Help: Arrastra para reordenar la pestaña
+			9 button Description: Guide-v71-es.mdlz, Help: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application Support/LeonardoMD/User Guides/v71/es/Guide-v71-es.mdlz
+			10 button Description: Cerrar pestaña Guide-v71-es.mdlz, ID: xmark
+			11 unknown Description: Reordenar pestaña Practice-v1-es.mdlr, Help: Arrastra para reordenar la pestaña
+			12 button (selected) Description: Practice-v1-es.mdlr, Help: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application Support/LeonardoMD/Practice Forms/v1/es/Practice-v1-es.mdlr
+			13 button Description: Cerrar pestaña Practice-v1-es.mdlr, ID: xmark
+		14 button Description: Buscar, Help: Buscar en documentos abiertos (⌘F), ID: document-find
+		15 button Description: Nueva pestaña, Help: Nueva pestaña (⌘T), ID: new-document-tab
+		16 button Description: Preferencias, Help: Preferencias…, ID: tab-bar-preferences
+		17 text Practice-v1-es.mdlr
+		18 menu button Move, ID: folder
+		19 image Description: Search Document, ID: doc.text.magnifyingglass
+		20 text Respuesta de formulario Leonardo ·
+		21 image Description: Move, ID: folder
+		22 text Archivo local
+		23 menu button Hdr, Description: hdr, Help: Instancias, ID: instance-switcher
+		24 menu button Description: Menú de la aplicación, ID: instance-application-menu
+		25 button Description: Protección del documento, Help: Protegido · pulsa para permitir la edición, Value: Solo lectura, ID: document-protection
+		26 button (disabled) Description: Undo, Help: Deshacer (⌘Z), ID: document-undo
+		27 button (disabled) Description: Redo, Help: Rehacer (⇧⌘Z), ID: document-redo
+		28 button (disabled) Description: Guardar, Help: Guardar (⌘S)
+		29 menu button Modo, Value: Fill, ID: document-mode
+		30 menu button Insertar, ID: document-insert
+		31 menu button Exportar, ID: document-export
+		32 menu button Más
+		33 scroll area
+			34 HTML content leonardo-document://local/es/
+				35 container
+					36 heading Tu formulario de práctica, Value: 1
+						37 text Tu formulario de práctica
+					38 text Escribe en los campos y guarda con ⌘S. Este documento se abre en Rellenar formulario. Si cambias de modo, vuelve con ⌘4. No necesitas abrir el candado: sirve para editar la estructura. Tu nombre:  Nombre de prueba
+					39 button Ayuda de Nombre de prueba
+					40 text field (settable) Nombre de prueba, Value: QA441 A2 ES
+					41 text ¿Qué quieres crear con Leonardo? Tu objetivo
+					42 button Ayuda de Tu objetivo
+					43 text entry area (settable) Tu objetivo, Value: [text entry area]
+					44 text He revisado el destino antes de compartir: Listo para compartir
+					45 button Ayuda de Listo para compartir
+					46 checkbox Listo para compartir, Value: 0
+					47 text Guarda, cierra esta pestaña y usa el botón del punto 4 de la ayuda para volver a tu copia. Las respuestas se conservan por separado. El botón selecciona esta pestaña si ya estaba abierta. Para compartir, usa Exportar respuesta Leonardo y elige un archivo MDLR nuevo. Conserva tu copia original. Usa datos ficticios para practicar.
+			48 scroll bar (settable, float) 0
+		49 text Value: Versión 0.3.1587 · stable Guardado · archivo local, ID: status-version
+		50 image (selected) Description: Selected, ID: checkmark.circle
+		51 text Documento individual Respuesta de formulario Leonardo
+		52 image Description: Search Document, ID: doc.text.magnifyingglass
+		53 text Archivo local
+		54 image Description: Move, ID: folder
+		55 text UTF-8 222 palabras
+	56 close button
+	57 zoom button
+	58 minimize button
+	59 image Practice-v1-es.mdlr
+	60 text Practice-v1-es.mdlr
+61 menu bar
+	62 LeonardoMD QA 441 A2
+	63 Archivo
+	64 Edición
+	65 Vista
+	66 Ventana
+	67 Ayuda
+
+The focused UI element is 0 standard window Practice-v1-es.mdlr, Secondary Actions: Raise, URL: file:///var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/es/Practice-v1-es.mdlr

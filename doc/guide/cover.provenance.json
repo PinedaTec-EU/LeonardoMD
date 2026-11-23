@@ -1,0 +1,9 @@
+{
+  "kind": "Aspect-preserving packaging derivative of existing approved decorative artwork; not a UI screenshot",
+  "source": "Sources/LeonardoApp/Resources/AboutBanner.png",
+  "source_sha256": "4e18e81ea0efc43f0421bc6187c014b132e5d0864111df04de4d4c0f3524a91a",
+  "asset_sha256": "a8587ffa9adcf86b328b63cf720504ba00c7037563ac3d8fb61d4ed4825b7c44",
+  "width": 768,
+  "height": 512,
+  "processing": "sips resampleWidth 768; original content and source file unchanged"
+}

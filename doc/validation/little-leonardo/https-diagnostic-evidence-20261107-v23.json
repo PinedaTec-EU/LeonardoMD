@@ -1,0 +1,508 @@
+{
+  "buildDelta": 25,
+  "captureSha256": {
+    "guide-v23/component-native/practice-form-en.context.json": "1e8b34377a090c1fb4809a342c2ff0f04a78b91539de8b242d91acaf24f51a2b",
+    "guide-v23/component-native/practice-form-en.png": "1994a408cbc0e85458c97428c7106fa289812cc6eada7be0a762a4d4ff032260",
+    "guide-v23/component-native/practice-form-es.context.json": "204821003336693d4cd31a0e1101f67bb948111e97a990427910b6ab4c8a30dc",
+    "guide-v23/component-native/practice-form-es.png": "c391daae849b88f4b4bf39d1f1b8b850e73fd7a4c4000314610b96524c4285a8",
+    "guide-v23/component-native/transport-diagnostic-en.context.json": "adef7ca7ff1ae660cc7550f95f3cb9da7b7db69c6769585802dc64951ac7a96d",
+    "guide-v23/component-native/transport-diagnostic-en.png": "c7444ffc86a41f0f3ff24df3da6473164ef7d010320f10a582b69613f4d1c79d",
+    "guide-v23/component-native/transport-diagnostic-es.context.json": "de98287fa2957f7dcb0eb8dafe3af3d1a7d19899760905310f3c65cec11f99b3",
+    "guide-v23/component-native/transport-diagnostic-es.png": "25a3987e543d2e31a6a7ef5d758801ba801d0b3c261abc0a1340ba63737bc808",
+    "guide-v23/ios-direct/status-error-alert-27.0.context.json": "fa57b35dc0acf3e2a2c8acedd5b270d4944e9700f53a851bb2fcf51365c47ca3",
+    "guide-v23/ios-direct/status-error-alert-27.0.png": "104a3941dc570cfcacd010c91665143f5c8fd94971519228fa0477700a97ae12",
+    "guide-v23/packaged-help/en-opening-images.jpg": "97ccfa660208aef87e8ac2a9d98d72ca5a60054dcf7c19b5250dbc607b26341c",
+    "guide-v23/packaged-help/en-opening-images.context.json": "b1292494baaa96ba293c605e8b0629dc1e9f5f5ca42d50f47f567c6ccf4144b8",
+    "guide-v23/packaged-help/es-diagnostic.context.json": "e02c6d95bedfa2ff13141fe1aec28facbac308e11b2e9398423fce6b95c61f96",
+    "guide-v23/packaged-help/en-table-image.jpg": "8d7aee41c4935db9a1eb0a19a14d2f4c9f57b43e86e003bb2e5bee7f06ebc1ce",
+    "guide-v23/packaged-help/es-help-opening.jpg": "952a82aa69ef4e7034c91150c43b354ffb5256130ed653dccdc5747f654a0923",
+    "guide-v23/packaged-help/en-math-chart.context.json": "83d362cd28416bff0c2f4b0947eb20f535abfb1d40ae15bd8e3704ae7343b4db",
+    "guide-v23/packaged-help/en-table-image.context.json": "2e5d14f03f9b3e3b961c4d1032e8689562a2fdc64caadc38b9459e4572042edb",
+    "guide-v23/packaged-help/es-table-image.jpg": "124af3bb0cac24b63afc997e3befcb10501ce2e9992bdddadaf86f40d4fcc067",
+    "guide-v23/packaged-help/en-diagnostic.context.json": "0ace07842227df671d1632d895478d32d9383de368180aa047cfc6712ed107e7",
+    "guide-v23/packaged-help/es-table-image.context.json": "0f293ac62f3dc10eda2a96241fbd413be6d4512c1a51373aa7a79193e84347de",
+    "guide-v23/packaged-help/en-diagnostic.jpg": "3b0b9240384362cfb4c83d587d3657b08f23de79a66c303f31f33e1374ee8545",
+    "guide-v23/packaged-help/en-math-disabled.jpg": "007ad9ff4c3b915c48971ec9e76ae9a576bda3de4a1fef5a59591dffe91e8cd0",
+    "guide-v23/packaged-help/en-practice-reopened.context.json": "9ba340c342f5ee297d631b3fd4b35a4d3be37094500856378de48a2758ab02de",
+    "guide-v23/packaged-help/en-practice-reopened.jpg": "f9eab1e131508eb5433a24e0cfe6765cf34bd4085130eda4312a5ea0fce6fae5",
+    "guide-v23/packaged-help/es-diagnostic.jpg": "5c8a25799e30ab66abff9e3278acea5aab59d61126a1efbf0726ab481ffb1179",
+    "guide-v23/packaged-help/es-math-disabled.context.json": "2949b7411ce39f4fbd4368b9ac26c2a16806bcf5a4ad3fb5dc63f498d464fc33",
+    "guide-v23/packaged-help/es-help-opening.context.json": "f6f876197f9c783fa87dc0d8f6475e4d47a83ba63c070ad72251a680d908fc97",
+    "guide-v23/packaged-help/es-practice-reopened.context.json": "71f8b9d2c73d332059c4151a86d0396773fe9698001c9fda27e24de15282ae57",
+    "guide-v23/packaged-help/en-math-chart.jpg": "8efd8ddf78f721f74f702ad53022d785c43ed7050a3f194aa117e0a30d864ea6",
+    "guide-v23/packaged-help/es-mermaid-math-chart.context.json": "0f63ce434e6a4afb38b3c1e0238ee99ae46eac19fc335e43fb71c2be62141e44",
+    "guide-v23/packaged-help/es-practice-reopened.jpg": "7d1cc9a65b582402d12b81681856a5add22856f3e837750d1662d7a440466180",
+    "guide-v23/packaged-help/en-math-disabled.context.json": "8a9fd391e0727daccd05e5fdb49943aeed2439003d0810c8848e15a61b0dd43e",
+    "guide-v23/packaged-help/es-mermaid-math-chart.jpg": "a496cb3004730adefe9bd5ad1b93a9c149aac5a2e48ff940f44c4abc2cdf90fe",
+    "guide-v23/packaged-help/es-math-disabled.jpg": "4a5f678030e77378b05635d806edaf38ca32ceda4f140dc0fc82835204b49d8e"
+  },
+  "guideRevision": 23,
+  "integratedMain": {
+    "demoCommit": "99ac3204d49f25210e74ea7d93211b695b96f186",
+    "materializedVersion": "0.3.1057",
+    "releaseMaterialization": "e9d73cd9a6da9ef91e51deac3483b7f5c2231124"
+  },
+  "issue": 380,
+  "physicalRetry": {
+    "assetBytes": 338658,
+    "result": "still failed on owner iPhone after ordinary Mac editor restart",
+    "rootCause": "unconfirmed",
+    "testFlightUploaded": false
+  },
+  "pullRequest": 382,
+  "releaseSummary": "Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.",
+  "releaseSummaryCharacters": 256,
+  "schemaVersion": 1,
+  "sourceBranch": "codex/380-transport",
+  "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+  "sourceCommitRole": "Producer checkpoint after integrating PR #383 and its release materialization. The separate issue-bound evidence checkpoint records the compilation count and validation artifacts; product source inputs remain unchanged.",
+  "sourceInputsSha256": {
+    "Mobile/LittleLeonardo.xcodeproj/project.pbxproj": "d23439dfced5ce1f72307c5929c12e2e691e19627556740728c26a49b1dff191",
+    "Mobile/LittleLeonardo/Demo/Demo-en.mdlr": "86a9cd6df8225e1a62dbdf46bc5b664eeb8fe304f26d6443465b963e8a869482",
+    "Mobile/LittleLeonardo/Demo/Demo-es.mdlr": "0f9614c108606d0cdd469206e74ccc1e964c99acca6a67a6b2278f3c9c0814f4",
+    "Mobile/LittleLeonardo/Demo/assets/demo.png": "a8587ffa9adcf86b328b63cf720504ba00c7037563ac3d8fb61d4ed4825b7c44",
+    "Mobile/LittleLeonardo/LittleLeonardoApp.swift": "5cfb13f8eb3f44ec87aecad012a13cc7f8053499f73494a32747e408f7edab17",
+    "Mobile/LittleLeonardo/MobileDemoStore.swift": "e03bac9f591d9504fccd015e616187f09d2bc66b2b77e15d407485e731702e03",
+    "Mobile/LittleLeonardo/MobileDemoView.swift": "4f31aa67fae89eafd769f5252c9a5f4dd0536d037efd2e819db41fb75e2dfe8a",
+    "Mobile/LittleLeonardo/MobileLibraryView.swift": "816408c54699df42b59b4a7fdcc82a3db54c3d1611556041d38d10f43ba011a9",
+    "Mobile/LittleLeonardoTests/MobileDemoStoreTests.swift": "5ffdc763ad6f7a44b44ba74d27af85b0485dfd4bbd2c62241594df63e2299c3a",
+    "Mobile/LittleLeonardoUITests/MobileDemoUITests.swift": "58d9a7452bf4c219de40a5abe3a62d172f1d979f429e90036d42a27ba4616ee9",
+    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "ab58b75ff812733f32bfd41b8e79f5f69cf09a9bfaa01bcccb9e8f1a9541ec73",
+    "Sources/LeonardoApp/BundledUserGuide.swift": "4100175cf4e43dccae42a5721a18c7039075e1d4ed7e9b96cf83d80c76cbc1bc",
+    "Sources/LeonardoApp/Resources/Guide-v23-en.mdlz": "44f0fc9e9529adaf661c1dbc7fdd84bfe6d77900de59b7304c369854b59fb37a",
+    "Sources/LeonardoApp/Resources/Guide-v23-es.mdlz": "5c9dffa9fb608d35275a0b94ecbc3c590e163e97a39e5a5e89611cbcf7d083cc",
+    "Sources/LeonardoRender/MarkdownPreviewController.swift": "e08e2f0acc7bf9fab3f62b3241a2cc18ad437dfa1c091d3cf129f4a09bba1dd2",
+    "Sources/LeonardoRender/Resources/renderer-runtime.js": "4393e03001c24ab5292a1936704781422ef981af2123bd56100c57c23e0b6aec",
+    "Sources/LeonardoRender/Resources/table-layout.js": "dc23a1117085f3b4927dcaa1bd362f5df1f11d9e3657731dc701e63d7ee9be18",
+    "Sources/LeonardoSyncTransport/HTTPSFailureDiagnostics.swift": "5550d88fa341e57a05da17c42361a0c3802bda0d60b6f8b0d957865240b4c4f4",
+    "Sources/LeonardoSyncTransport/PinnedHTTPSClient.swift": "949ab60189f091611831259781313913b45aa5429839eb341543756d15413382",
+    "Tests/LeonardoAppTests/BundledUserGuideTests.swift": "78a4b7abb430306d146addab3ac962ce0d795b541f5c3aa18c2292d3589a9817",
+    "Tests/LeonardoAppTests/GuideCaptureSupport.swift": "003aff2173b2e7ed3ced96cb8dfe573cc428ad168362c5f30771ca5b001b2ece",
+    "Tests/LeonardoAppTests/GuidePracticeNavigationTests.swift": "771dc2222ad3ba99699521d77c15225eadf3901378f01eaffbb2664f6229c6ba",
+    "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift": "4ed0e13fbf5d1dc304bcb72ca3781de26d250656fb6a824aaa42a6c17f4d0ca1",
+    "Tests/LeonardoSyncTransportTests/HTTPSRuntimeTests.swift": "3d4a2d9a1a4a38d0471645da1d8c7b8319854de66585baf00ec87f8c77bc1918",
+    "Tests/LeonardoSyncTransportTests/HTTPTransportTests.swift": "6b0733594a40f53810a6f554d276201dfd532e7dd5a30e0ea37660667451f4b5",
+    "Tests/LeonardoSyncTransportTests/TLSBackpressureProxy.swift": "aa2d7305f72ebf228ef044bb1f128b6725d5a7973c0edd259d5752e548fa306e",
+    "doc/guide/README.md": "d64a9141673dec6c73750e20b94c2ec1ed7dc291fa33c92382432c3966f63ecc",
+    "doc/guide/en/body.md": "0fd1c445f2fa6b143dd3d9f52355ba210e4ef4150f9436be4bd9ca682538c503",
+    "doc/guide/es/body.md": "0cdf43efcf5c9c451c42bad9705d349bfa1aa792e6ba6c2a5532dd63777891ad",
+    "doc/guide/feature-coverage.md": "80bc869ff8b22e3da5dc995cb8b3c7d22a491a9cba4afefedc15e0df1b5e799d",
+    "doc/user-guide-es.md": "73148ea49e3637108f909fd040ff9f5b55726d9d0bdadd53b582103fc8ccc6c1",
+    "doc/user-guide.md": "67b65a4d3b3a556aeea8e6bb2f4bef03726cfa19d22f3d2b06d1b2daf43e2858",
+    "scripts/package-user-guide.py": "20b89c9d5f2d18858452f4ddd372059c551cd58021fa2b4dbe6f7e00f945fb5c",
+    "scripts/tests/test_package_user_guide.py": "cd5223b9fed049f7f839cf6166c1461b0f639f9dd6668a8308ee75a4edbd9711"
+  },
+  "successfulBuilds": [
+    {
+      "command": "LEONARDO_SOURCE_PR=382 ./scripts/build-app.sh",
+      "log": "/private/tmp/leonardo-380-build23.log",
+      "logSha256": "bfb37fb9b3e862b3129f0a570c81b95b8c2ba9677ef496d76d3f1afa61d2452a",
+      "recordedDelta": 23,
+      "result": "passed"
+    },
+    {
+      "command": "EVIDENCE_SHA=0055c1640340235037b3c1ef56780cf9a95e4af6 LEONARDO_VISUAL_EVIDENCE=<owned-root>/native-component-0055 LEONARDO_GUIDE_PRACTICE_EVIDENCE=<owned-root>/practice-component-0055 python3 scripts/compile-and-record.py --pr-number 382 -- swift test --scratch-path /private/tmp/leonardo-380-transport-build --filter 'BundledUserGuideTests|GuidePracticeNavigationTests'",
+      "failed": 0,
+      "log": "/private/tmp/leonardo-380-guide23-native.log",
+      "logSha256": "dff902e1e435f4c0de494f0fe261aa529acceaf25d2ff5f12da976b1a4410874",
+      "passed": 7,
+      "recordedDelta": 24
+    },
+    {
+      "command": "python3 scripts/compile-and-record.py --pr-number 382 -- xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'platform=iOS Simulator,id=A5A73B11-EE27-40AC-ABAB-CADF1B85143B' -derivedDataPath /private/tmp/leonardo-380-ios-deriveddata CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- build-for-testing",
+      "log": "/private/tmp/leonardo-380-ios-v23-build.log",
+      "logSha256": "b997fc781282eeff90fa633da29e888617ad6af60545b3df7a848d513989b063",
+      "recordedDelta": 25,
+      "result": "passed"
+    }
+  ],
+  "validation": {
+    "ios": {
+      "appDataHandling": "Backed up the prior owned A5 test app container, then uninstalled only eu.pinedatec.LittleLeonardo before the run; other simulators/devices were not touched.",
+      "buildForTesting": {
+        "buildDelta": 25,
+        "log": "/private/tmp/leonardo-380-ios-v23-build.log",
+        "result": "passed",
+        "sdk": "iOS Simulator SDK 27.1"
+      },
+      "directUITest": {
+        "asserts": "Existing LL1 status alert visible; retry after listener restart succeeds; revoked project is purged.",
+        "durationSeconds": 34.728,
+        "failed": 0,
+        "log": "/private/tmp/leonardo-380-direct-v23-ui.log",
+        "logSha256": "340ab50631a35e33a4647a05324c40a2d6008dca01fedda5a4e7eaca5f963c96",
+        "passed": 1,
+        "resultBundle": "/private/tmp/leonardo-380-direct-v23.xcresult",
+        "test": "PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation",
+        "xctestrunSha256": "0f8dc104c9e2e483bfb46736606def95754fa4c6715f59c7ed9d0dd8cbd096cb"
+      },
+      "hostFixture": {
+        "buildCountIncrement": false,
+        "durationSeconds": 76.741,
+        "failed": 0,
+        "host": "127.0.0.1",
+        "log": "/private/tmp/leonardo-380-direct-v23-fixture.log",
+        "logSha256": "fb814045c1b0f896a746375826b705ca12dc44d9a97eb08ecda2a04a31b53cdd",
+        "passed": 1,
+        "port": 46993,
+        "rootMarker": "Exact bytes LittleLeonardoDirectQA\\n; fresh root; ready.json observed.",
+        "skipBuild": true,
+        "test": "MobileDirectAcceptanceFixtureTests.testServeNativeMobileAcceptanceFixture"
+      },
+      "runtime": "iOS 27.0 Simulator (24A434)",
+      "simulatorId": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B"
+    },
+    "nativeGuideAndPractice": {
+      "capturePaths": [
+        "guide-v23/component-native/transport-diagnostic-en.png",
+        "guide-v23/component-native/transport-diagnostic-es.png",
+        "guide-v23/component-native/practice-form-en.png",
+        "guide-v23/component-native/practice-form-es.png",
+        "guide-v23/ios-direct/status-error-alert-27.0.png"
+      ],
+      "failed": 0,
+      "log": "/private/tmp/leonardo-380-guide23-native.log",
+      "nativeRendering": "Both locales; all bundled images, Mermaid, Math/tag, chart, diagnostic section; separate practice save and close/reopen preservation.",
+      "passed": 7,
+      "testFilter": "BundledUserGuideTests|GuidePracticeNavigationTests"
+    },
+    "packagedGuiHelpAcceptance": {
+      "status": "passed",
+      "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+      "instance": {
+        "bundleId": "eu.pinedatec.LeonardoMD.qa.a4bd0239ae5644f593cab7025076f017",
+        "pid": 15291,
+        "version": "0.3.1057",
+        "build": "1057"
+      },
+      "workflow": "Actual Help menu opened EN Guide23; General language changed to Espa\u00f1ol and actual Ayuda menu opened ES Guide23 in same packaged process. Outline navigated live sections.",
+      "coverage": [
+        "Both locales: local images, Mermaid, charts, format tables",
+        "Math enabled: inline and one-line/multiline display, underscores, complete underbrace/radical/long arrow/cancellation, tagged box-counting equation (1), no KaTeX error or literal display delimiters",
+        "Math disabled: source fallback retained; code examples stay literal",
+        "Both separate practices: fictional text/multiline/checkbox filled, saved, tab closed, reopened through chapter4; all values retained and Save disabled",
+        "Both live diagnostic LL1 paragraphs inspected"
+      ],
+      "workingCopyIdentity": "Both Guide23 working copies SHA256 matched bundled resources after walkthrough.",
+      "restoration": "Original English language and Math on restored; Mermaid/Charts/extras on and Citations off unchanged. Original practice files retained before exercise and restored byte-identical after normal app quit; synthetic copies archived privately. No helper, pairing or grant mutation.",
+      "captures": [
+        {
+          "image": "guide-v23/packaged-help/en-math-chart.jpg",
+          "sha256": "8efd8ddf78f721f74f702ad53022d785c43ed7050a3f194aa117e0a30d864ea6",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Math enabled: one-line display, inline math, underbraces, radical, arrow, tagged box-counting (1), chart; literal inline source retained.",
+          "captureBegin": "2026-11-07T08:25:06.258Z",
+          "captureEnd": "2026-11-07T08:25:06.940Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-table-image.jpg",
+          "sha256": "8d7aee41c4935db9a1eb0a19a14d2f4c9f57b43e86e003bb2e5bee7f06ebc1ce",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Live format table and packaged local illustration rendered.",
+          "captureBegin": "2026-11-07T08:25:18.799Z",
+          "captureEnd": "2026-11-07T08:25:19.524Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-practice-reopened.jpg",
+          "sha256": "f9eab1e131508eb5433a24e0cfe6765cf34bd4085130eda4312a5ea0fce6fae5",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Synthetic answers saved, tab closed, reopened through chapter4; all three values retained; Save disabled and Fill mode.",
+          "captureBegin": "2026-11-07T08:26:14.489Z",
+          "captureEnd": "2026-11-07T08:26:14.729Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-math-disabled.jpg",
+          "sha256": "007ad9ff4c3b915c48971ec9e76ae9a576bda3de4a1fef5a59591dffe91e8cd0",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Math disabled fallback retains inline/display source, underscores underbraces/tag; inline code stays literal.",
+          "captureBegin": "2026-11-07T08:26:47.617Z",
+          "captureEnd": "2026-11-07T08:26:53.919Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-diagnostic.jpg",
+          "sha256": "3b0b9240384362cfb4c83d587d3657b08f23de79a66c303f31f33e1374ee8545",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Live chapter14 diagnostic paragraph LL1 fully visible.",
+          "captureBegin": "2026-11-07T08:27:13.827Z",
+          "captureEnd": "2026-11-07T08:27:14.538Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-help-opening.jpg",
+          "sha256": "952a82aa69ef4e7034c91150c43b354ffb5256130ed653dccdc5747f654a0923",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "es",
+          "state": "Spanish guide opened through actual Ayuda menu; local cover and journey images visible.",
+          "captureBegin": "2026-11-07T08:27:42.619Z",
+          "captureEnd": "2026-11-07T08:27:43.292Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-mermaid-math-chart.jpg",
+          "sha256": "a496cb3004730adefe9bd5ad1b93a9c149aac5a2e48ff940f44c4abc2cdf90fe",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "es",
+          "state": "Live Mermaid, chart, inline math, one-line and multiline display, underbraces, radical, arrow, tagged equation (1); no KaTeX errors; inline code literal.",
+          "captureBegin": "2026-11-07T08:27:56.420Z",
+          "captureEnd": "2026-11-07T08:27:57.188Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-table-image.jpg",
+          "sha256": "124af3bb0cac24b63afc997e3befcb10501ce2e9992bdddadaf86f40d4fcc067",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "es",
+          "state": "Spanish format table and local package illustration rendered.",
+          "captureBegin": "2026-11-07T08:28:10.435Z",
+          "captureEnd": "2026-11-07T08:28:11.156Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-practice-reopened.jpg",
+          "sha256": "7d1cc9a65b582402d12b81681856a5add22856f3e837750d1662d7a440466180",
+          "pixels": [
+            2520,
+            1700
+          ],
+          "locale": "es",
+          "state": "Synthetic name, multiline answer and checkbox persist after save, close, chapter4 reopen.",
+          "captureBegin": "2026-11-07T08:28:46.510Z",
+          "captureEnd": "2026-11-07T08:28:46.745Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-math-disabled.jpg",
+          "sha256": "4a5f678030e77378b05635d806edaf38ca32ceda4f140dc0fc82835204b49d8e",
+          "pixels": [
+            2520,
+            1700
+          ],
+          "locale": "es",
+          "state": "Spanish Math disabled fallback retains source, underscores, underbraces/tag and literal code.",
+          "captureBegin": "2026-11-07T08:29:14.488Z",
+          "captureEnd": "2026-11-07T08:29:15.296Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-diagnostic.jpg",
+          "sha256": "5c8a25799e30ab66abff9e3278acea5aab59d61126a1efbf0726ab481ffb1179",
+          "pixels": [
+            2520,
+            1700
+          ],
+          "locale": "es",
+          "state": "Live Spanish LL1 explanation visible and legible.",
+          "captureBegin": "2026-11-07T08:29:37.711Z",
+          "captureEnd": "2026-11-07T08:29:38.496Z"
+        }
+      ],
+      "limitations": "Native CUA does not expose CSS viewport/browser version. These are original window captures with measured pixels and producer identity. Does not establish physical iPhone transfer root cause or TestFlight delivery."
+    },
+    "packagedHelp": {
+      "appBuild": "1057",
+      "appVersion": "0.3.1057",
+      "executable": "LeonardoMD",
+      "freshProcessLaunchedByPackager": false,
+      "guideResources": {
+        "Guide-v23-en.mdlz": "44f0fc9e9529adaf661c1dbc7fdd84bfe6d77900de59b7304c369854b59fb37a",
+        "Guide-v23-es.mdlz": "5c9dffa9fb608d35275a0b94ecbc3c590e163e97a39e5a5e89611cbcf7d083cc",
+        "supersededGuideV22Bundles": "absent in real app and QA bundle"
+      },
+      "qaBundlePath": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-nwh0l7mm/LeonardoMDQA.app",
+      "report": "/private/tmp/leonardo-380-qa-report-v23.json",
+      "reportChangesSha256": "09ae1420a7f4f3bdfdb24def626f9c04d4890a167affa1e7eee0b3541d460285",
+      "reportSha256": "b24174389c899644670eba23e900701e7646115356ce2cf34bc6073e5fa6aef0",
+      "reportSourceSha": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+      "xctestDependency": false
+    },
+    "pythonGuidePackaging": {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_package_user_guide.py -v",
+      "failed": 0,
+      "passed": 3
+    },
+    "testFlightUploaded": false,
+    "transportRegression": {
+      "previousRun": "17/17 including interrupted pinned TLS body partial-byte test",
+      "rootCause": "The original physical 338,658-byte snapshot still fails; cause remains unconfirmed.",
+      "status": "Equivalent source/test inputs through PR #383; not rerun for the demo/help integration."
+    }
+  },
+  "packagedGuiHelpAcceptance": {
+    "status": "passed",
+    "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+    "instance": {
+      "bundleId": "eu.pinedatec.LeonardoMD.qa.a4bd0239ae5644f593cab7025076f017",
+      "pid": 15291,
+      "version": "0.3.1057",
+      "build": "1057"
+    },
+    "workflow": "Actual Help menu opened EN Guide23; General language changed to Espa\u00f1ol and actual Ayuda menu opened ES Guide23 in same packaged process. Outline navigated live sections.",
+    "coverage": [
+      "Both locales: local images, Mermaid, charts, format tables",
+      "Math enabled: inline and one-line/multiline display, underscores, complete underbrace/radical/long arrow/cancellation, tagged box-counting equation (1), no KaTeX error or literal display delimiters",
+      "Math disabled: source fallback retained; code examples stay literal",
+      "Both separate practices: fictional text/multiline/checkbox filled, saved, tab closed, reopened through chapter4; all values retained and Save disabled",
+      "Both live diagnostic LL1 paragraphs inspected"
+    ],
+    "workingCopyIdentity": "Both Guide23 working copies SHA256 matched bundled resources after walkthrough.",
+    "restoration": "Original English language and Math on restored; Mermaid/Charts/extras on and Citations off unchanged. Original practice files retained before exercise and restored byte-identical after normal app quit; synthetic copies archived privately. No helper, pairing or grant mutation.",
+    "captures": [
+      {
+        "image": "guide-v23/packaged-help/en-math-chart.jpg",
+        "sha256": "8efd8ddf78f721f74f702ad53022d785c43ed7050a3f194aa117e0a30d864ea6",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Math enabled: one-line display, inline math, underbraces, radical, arrow, tagged box-counting (1), chart; literal inline source retained.",
+        "captureBegin": "2026-11-07T08:25:06.258Z",
+        "captureEnd": "2026-11-07T08:25:06.940Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-table-image.jpg",
+        "sha256": "8d7aee41c4935db9a1eb0a19a14d2f4c9f57b43e86e003bb2e5bee7f06ebc1ce",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Live format table and packaged local illustration rendered.",
+        "captureBegin": "2026-11-07T08:25:18.799Z",
+        "captureEnd": "2026-11-07T08:25:19.524Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-practice-reopened.jpg",
+        "sha256": "f9eab1e131508eb5433a24e0cfe6765cf34bd4085130eda4312a5ea0fce6fae5",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Synthetic answers saved, tab closed, reopened through chapter4; all three values retained; Save disabled and Fill mode.",
+        "captureBegin": "2026-11-07T08:26:14.489Z",
+        "captureEnd": "2026-11-07T08:26:14.729Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-math-disabled.jpg",
+        "sha256": "007ad9ff4c3b915c48971ec9e76ae9a576bda3de4a1fef5a59591dffe91e8cd0",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Math disabled fallback retains inline/display source, underscores underbraces/tag; inline code stays literal.",
+        "captureBegin": "2026-11-07T08:26:47.617Z",
+        "captureEnd": "2026-11-07T08:26:53.919Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-diagnostic.jpg",
+        "sha256": "3b0b9240384362cfb4c83d587d3657b08f23de79a66c303f31f33e1374ee8545",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Live chapter14 diagnostic paragraph LL1 fully visible.",
+        "captureBegin": "2026-11-07T08:27:13.827Z",
+        "captureEnd": "2026-11-07T08:27:14.538Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-help-opening.jpg",
+        "sha256": "952a82aa69ef4e7034c91150c43b354ffb5256130ed653dccdc5747f654a0923",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "es",
+        "state": "Spanish guide opened through actual Ayuda menu; local cover and journey images visible.",
+        "captureBegin": "2026-11-07T08:27:42.619Z",
+        "captureEnd": "2026-11-07T08:27:43.292Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-mermaid-math-chart.jpg",
+        "sha256": "a496cb3004730adefe9bd5ad1b93a9c149aac5a2e48ff940f44c4abc2cdf90fe",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "es",
+        "state": "Live Mermaid, chart, inline math, one-line and multiline display, underbraces, radical, arrow, tagged equation (1); no KaTeX errors; inline code literal.",
+        "captureBegin": "2026-11-07T08:27:56.420Z",
+        "captureEnd": "2026-11-07T08:27:57.188Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-table-image.jpg",
+        "sha256": "124af3bb0cac24b63afc997e3befcb10501ce2e9992bdddadaf86f40d4fcc067",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "es",
+        "state": "Spanish format table and local package illustration rendered.",
+        "captureBegin": "2026-11-07T08:28:10.435Z",
+        "captureEnd": "2026-11-07T08:28:11.156Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-practice-reopened.jpg",
+        "sha256": "7d1cc9a65b582402d12b81681856a5add22856f3e837750d1662d7a440466180",
+        "pixels": [
+          2520,
+          1700
+        ],
+        "locale": "es",
+        "state": "Synthetic name, multiline answer and checkbox persist after save, close, chapter4 reopen.",
+        "captureBegin": "2026-11-07T08:28:46.510Z",
+        "captureEnd": "2026-11-07T08:28:46.745Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-math-disabled.jpg",
+        "sha256": "4a5f678030e77378b05635d806edaf38ca32ceda4f140dc0fc82835204b49d8e",
+        "pixels": [
+          2520,
+          1700
+        ],
+        "locale": "es",
+        "state": "Spanish Math disabled fallback retains source, underscores, underbraces/tag and literal code.",
+        "captureBegin": "2026-11-07T08:29:14.488Z",
+        "captureEnd": "2026-11-07T08:29:15.296Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-diagnostic.jpg",
+        "sha256": "5c8a25799e30ab66abff9e3278acea5aab59d61126a1efbf0726ab481ffb1179",
+        "pixels": [
+          2520,
+          1700
+        ],
+        "locale": "es",
+        "state": "Live Spanish LL1 explanation visible and legible.",
+        "captureBegin": "2026-11-07T08:29:37.711Z",
+        "captureEnd": "2026-11-07T08:29:38.496Z"
+      }
+    ],
+    "limitations": "Native CUA does not expose CSS viewport/browser version. These are original window captures with measured pixels and producer identity. Does not establish physical iPhone transfer root cause or TestFlight delivery."
+  }
+}

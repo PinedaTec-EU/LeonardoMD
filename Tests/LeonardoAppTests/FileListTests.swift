@@ -1,0 +1,191 @@
+import AppKit
+import SwiftUI
+import XCTest
+import LeonardoCore
+@testable import LeonardoApp
+
+@MainActor
+final class FileListTests: XCTestCase {
+    func testVisibilityAndSortingAcrossDirectories() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let folder = root.appendingPathComponent("middle")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        for name in ["a.md", "z.mdlf", "other.base", ".hidden.md"] {
+            try Data().write(to: root.appendingPathComponent(name))
+            try Data().write(to: folder.appendingPathComponent(name))
+        }
+        let session = AppSession(preferencesURL: root.appendingPathComponent("prefs.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        session.entryFilter = { _ in { _, _ in true } }
+        let opened = await session.openProject(root)
+        XCTAssertTrue(opened)
+        XCTAssertEqual(session.rootEntries.map(\.name), ["middle", "a.md", "z.mdlf"])
+        session.fileSortDescending = true
+        let descending = await session.children(of: root)
+        XCTAssertEqual(descending.map(\.name), ["middle", "z.mdlf", "a.md"])
+        let children = await session.children(of: folder)
+        XCTAssertEqual(children.map(\.name), ["z.mdlf", "a.md"])
+        session.foldersFirst = false
+        let mixed = await session.children(of: root)
+        XCTAssertEqual(mixed.map(\.name), ["z.mdlf", "middle", "a.md"])
+        session.showNonDocumentFiles = true
+        let all = await session.children(of: folder)
+        XCTAssertEqual(all.map(\.name), ["z.mdlf", "other.base", "a.md"])
+        session.showHidden = true
+        let hidden = await session.children(of: folder)
+        XCTAssertTrue(hidden.contains { $0.name == ".hidden.md" })
+        session.entryFilter = { _ in { url, _ in url.pathExtension != "base" } }
+        let authorized = await session.children(of: folder)
+        XCTAssertFalse(authorized.contains { $0.name == "other.base" })
+    }
+
+    func testNonDocumentRowsDefaultToHiddenAndFollowTheSavedPreference() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for name in ["Note.md", "Diagram.png", "Data.json"] {
+            try Data().write(to: root.appendingPathComponent(name))
+        }
+
+        let preferencesURL = root.deletingLastPathComponent()
+            .appendingPathComponent(UUID().uuidString + "-preferences.json")
+        let session = AppSession(preferencesURL: preferencesURL)
+        defer {
+            session.stop()
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: preferencesURL)
+        }
+        session.entryFilter = { _ in { _, _ in true } }
+
+        let opened = await session.openProject(root)
+        XCTAssertTrue(opened)
+        XCTAssertFalse(session.showNonDocumentFiles)
+        XCTAssertEqual(Set(session.rootEntries.map(\.name)), Set(["Note.md"]))
+
+        session.setShowNonDocumentFiles(true)
+        await session.settingsTask?.value
+        let visible = await session.children(of: root)
+        XCTAssertEqual(Set(visible.map(\.name)), Set(["Note.md", "Diagram.png", "Data.json"]))
+        let persisted = try await ConfigurationStore().loadGlobalPreferences(at: preferencesURL)
+        XCTAssertTrue(persisted.showNonDocumentFiles)
+
+        session.setShowNonDocumentFiles(false)
+        await session.settingsTask?.value
+        let hidden = await session.children(of: root)
+        XCTAssertEqual(Set(hidden.map(\.name)), Set(["Note.md"]))
+    }
+
+    func testSidebarAndPreferencesRendering() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_FILE_LIST_EVIDENCE"]
+            ?? ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"].map({ $0 + "/file-list" }) else {
+            throw XCTSkip("Set LEONARDO_FILE_LIST_EVIDENCE to export native sidebar captures")
+        }
+        let previousLanguage = LanguageSettings.shared.language
+        LanguageSettings.shared.language = .spanish
+        defer { LanguageSettings.shared.language = previousLanguage }
+        let root = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        let head = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local working tree"
+        try "Head: \(head)\nSurface: native NSHostingView sidebar and scoped file-color preferences\nViewports: sidebar 420x510; preferences 460x200 points\nLanguage: es\nStates: coloring enabled and disabled, project inheritance\nFixture: synthetic document names\nLimits: component rendering; no fresh packaged startup or menu-interaction claim\n"
+            .write(to: root.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
+        session.projectURL = root.appendingPathComponent("Sample project")
+        session.rootEntries = [
+            NavigationEntry(url: root.appendingPathComponent("Documents"), isDirectory: true),
+            NavigationEntry(url: root.appendingPathComponent("Article.md"), isDirectory: false),
+            NavigationEntry(url: root.appendingPathComponent("Request.mdlf"), isDirectory: false),
+            NavigationEntry(url: root.appendingPathComponent("Response.mdlr"), isDirectory: false),
+            NavigationEntry(url: root.appendingPathComponent("Package.mdlz"), isDirectory: false)
+        ]
+        try await capture(ProjectSidebar(session: session).modifier(SessionAppearance(session: session)),
+                          size: NSSize(width: 420, height: 510), root: root, name: "sidebar-wine")
+        session.globalPreferences.colorLeonardoFiles = false
+        try await capture(ProjectSidebar(session: session).modifier(SessionAppearance(session: session)),
+                          size: NSSize(width: 420, height: 510), root: root, name: "sidebar-uncolored")
+        session.globalPreferences.colorLeonardoFiles = true
+        try await capture(Form { FileColorPreferences(session: session, projectScope: true) }
+                            .formStyle(.grouped).toggleStyle(PremiumSwitchStyle())
+                            .modifier(SessionAppearance(session: session)),
+                          size: NSSize(width: 460, height: 200), root: root, name: "project-colors")
+    }
+
+    func testProjectSearchVisibilityCaptures() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_FILE_LIST_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_FILE_LIST_EVIDENCE to export native search captures")
+        }
+        let previousLanguage = LanguageSettings.shared.language
+        LanguageSettings.shared.language = .english
+        defer { LanguageSettings.shared.language = previousLanguage }
+
+        let root = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let project = root.appendingPathComponent("Search fixture", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        try Data("A visible Markdown document".utf8).write(to: project.appendingPathComponent("note.md"))
+        try Data([137, 80, 78, 71]).write(to: project.appendingPathComponent("logo.png"))
+        let head = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local working tree"
+        try "Head: \(head)\nSurface: native macOS project search\nFixture: synthetic note.md and logo.png\nStates: Show non-document files off, then on\nViewport: 420x510 points\n"
+            .write(to: root.appendingPathComponent("search-provenance.txt"), atomically: true, encoding: .utf8)
+
+        let preferences = root.appendingPathComponent("search-preferences.json")
+        let session = AppSession(preferencesURL: preferences)
+        defer {
+            session.stop()
+            try? FileManager.default.removeItem(at: project)
+            try? FileManager.default.removeItem(at: preferences)
+        }
+        session.entryFilter = { _ in { _, _ in true } }
+        let opened = await session.openProject(project)
+        XCTAssertTrue(opened)
+        session.searchQuery = "logo.png"
+        session.scheduleSearch()
+        await session.searchTask?.value
+        XCTAssertTrue(session.searchResults.isEmpty)
+        try await capture(ProjectSidebar(session: session).modifier(SessionAppearance(session: session)),
+                          size: NSSize(width: 420, height: 510), root: root, name: "project-search-hidden")
+
+        session.setShowNonDocumentFiles(true)
+        await session.settingsTask?.value
+        await session.searchTask?.value
+        XCTAssertEqual(session.searchResults.map { $0.url.lastPathComponent }, ["logo.png"])
+        try await capture(ProjectSidebar(session: session).modifier(SessionAppearance(session: session)),
+                          size: NSSize(width: 420, height: 510), root: root, name: "project-search-visible")
+    }
+
+    private func capture<V: View>(_ view: V, size: NSSize, root: URL, name: String) async throws {
+        let host = NSHostingView(rootView: view)
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(250))
+        host.layoutSubtreeIfNeeded()
+        host.displayIfNeeded()
+        let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            .write(to: root.appendingPathComponent(name + ".png"))
+    }
+
+    func testColorDefaultsRoundTripAndInheritance() throws {
+        var global = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))
+        var project = try JSONDecoder().decode(ProjectConfiguration.self, from: Data("{}".utf8))
+        XCTAssertTrue(global.colorLeonardoFiles)
+        XCTAssertNil(project.colorLeonardoFiles)
+        global.colorLeonardoFiles = false
+        project.colorLeonardoFiles = true
+        let encoded = try JSONEncoder().encode(project)
+        XCTAssertEqual(try JSONDecoder().decode(ProjectConfiguration.self, from: encoded).colorLeonardoFiles, true)
+        let session = AppSession()
+        defer { session.stop() }
+        session.globalPreferences = global
+        XCTAssertFalse(session.colorLeonardoFiles)
+        session.projectConfiguration = project
+        XCTAssertTrue(session.colorLeonardoFiles)
+        session.projectConfiguration.colorLeonardoFiles = nil
+        XCTAssertFalse(session.colorLeonardoFiles)
+    }
+}

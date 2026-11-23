@@ -1,0 +1,5 @@
+0 standard window Practice-v1-es.mdlr, Secondary Actions: Raise, URL: file:///USER/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/es/Practice-v1-es.mdlr
+		26 menu button Modo, Value: Fill, ID: document-mode
+					37 text field (settable) Nombre de prueba, Value: QA 377 Español
+		45 text Value: Versión 0.3.1010 · stable Guardado · archivo local, ID: status-version
+The focused UI element is 0 standard window Practice-v1-es.mdlr, Secondary Actions: Raise, URL: file:///USER/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/es/Practice-v1-es.mdlr

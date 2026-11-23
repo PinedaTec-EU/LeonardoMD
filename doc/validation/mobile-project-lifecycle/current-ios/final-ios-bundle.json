@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "source_revision": "8bc2122cf52c05c316b762bbb565c322dd5b6e67",
+  "derived_data_path": ".build/407-derived",
+  "bundle_path": ".build/407-derived/Build/Products/Debug-iphonesimulator/LittleLeonardo.app",
+  "built_product_observed_at": "2026-11-10T10:33:22.692+00:00",
+  "executable": {
+    "relative_path": "LittleLeonardo",
+    "size_bytes": 40160,
+    "sha256": "84974d0b3234aaed001ad648f4697cc21e88ac402a3cfef99167b1e1eed5efba",
+    "dependencies": [
+      "@rpath/LittleLeonardo.debug.dylib",
+      "/usr/lib/libSystem.B.dylib"
+    ]
+  },
+  "info_plist": {
+    "relative_path": "Info.plist",
+    "size_bytes": 1742,
+    "sha256": "c2de11d7b43588f30d3af05a0a0fc3a4308752897356a6f08e110a6b0a9f72e2",
+    "identity": {
+      "CFBundleIdentifier": "eu.pinedatec.LittleLeonardo",
+      "CFBundleExecutable": "LittleLeonardo",
+      "CFBundleName": "LittleLeonardo",
+      "CFBundleDisplayName": "Little Leonardo",
+      "CFBundlePackageType": "APPL",
+      "CFBundleSupportedPlatforms": [
+        "iPhoneSimulator"
+      ],
+      "DTPlatformName": "iphonesimulator",
+      "DTPlatformVersion": "27.1",
+      "DTSDKName": "iphonesimulator27.1",
+      "MinimumOSVersion": "17.0",
+      "UIDeviceFamily": [
+        1,
+        2
+      ],
+      "CFBundleDevelopmentRegion": "en"
+    },
+    "absent_identity_fields": [
+      "CFBundleShortVersionString",
+      "CFBundleVersion"
+    ]
+  },
+  "installed_executable_verification": {
+    "requested": true,
+    "method": "xcrun simctl get_app_container 1A969A0F-D7E2-4C62-B288-CC893C3CBEEF eu.pinedatec.LittleLeonardo app",
+    "status": "unavailable",
+    "installed_container_path": null,
+    "matching_sha256": null,
+    "reason": "The simulator was shutdown when the read-only container lookup ran; no installed executable path was returned and the app was not started."
+  },
+  "boundaries": {
+    "physical_device_validation": false,
+    "distribution_or_TestFlight_validation": false
+  },
+  "debug_dylib": {
+    "relative_path": "LittleLeonardo.debug.dylib",
+    "size_bytes": 10707040,
+    "sha256": "7d40c666a1dae02691e1eac3dc89ff0da5dcf0130931f7599e33cf636a75e404",
+    "dimensions": {
+      "size_bytes": 10707040,
+      "architecture": "arm64",
+      "file_type": "DYLIB"
+    },
+    "role": "Code-bearing debug image loaded by the thin LittleLeonardo launcher executable."
+  }
+}

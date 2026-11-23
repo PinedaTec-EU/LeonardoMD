@@ -1,0 +1,20 @@
+{
+  "source": "66c9e644a3203e1725f466973e1940acff61e61f",
+  "recorded_at": "2026-11-07T15:27:49.570357+00:00",
+  "simulator": "926C886F-52D8-4766-B84D-1A5D8C218080",
+  "bundle_identifier": "eu.pinedatec.LittleLeonardo",
+  "version": null,
+  "build": null,
+  "checkout_baseline": "0.3.1113",
+  "version_note": "Version keys absent in this first Debug test package; a versioned native repetition follows.",
+  "temporary_limit_bytes": 134217728,
+  "offline_paths": [
+    "notes/agenda.md",
+    "notes/decisions.md",
+    "notes/future.md"
+  ],
+  "offline_bytes": 166,
+  "temporary_paths": [],
+  "data_provenance": "synthetic",
+  "ui_test_result": "PASS; source fixture PASS; not physical acceptance"
+}

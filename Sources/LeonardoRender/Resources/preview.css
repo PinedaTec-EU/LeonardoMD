@@ -84,6 +84,15 @@ body[data-paper-effect="parchment"] {
   padding-bottom: 0.3em;
 }
 
+/* Native readers already provide intentional space below their navigation bar. */
+.markdown-body.compact-first-heading {
+  padding-top: 16px;
+}
+
+.markdown-body.compact-first-heading > :first-child:is(h1, h2, h3, h4, h5, h6) {
+  margin-top: 0;
+}
+
 .markdown-body h2 {
   border-bottom: 1px solid color-mix(in srgb, var(--ld-accent) 24%, transparent);
   font-size: 1.65em;
@@ -99,6 +108,10 @@ body[data-paper-effect="parchment"] {
   max-width: 100%;
 }
 
+.markdown-body img[data-leonardo-image-failed] {
+  display: none !important;
+}
+
 .markdown-body blockquote {
   border-left: 4px solid var(--ld-accent);
   margin-left: 0;
@@ -106,12 +119,28 @@ body[data-paper-effect="parchment"] {
   opacity: 0.9;
 }
 
-.markdown-body table {
-  border-collapse: collapse;
-  display: block;
+.table-viewport {
   max-width: 100%;
   overflow-x: auto;
-  width: max-content;
+  margin: 1em 0;
+}
+
+.table-viewport:focus-visible {
+  outline: 2px solid var(--ld-accent);
+  outline-offset: 2px;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: auto;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.markdown-body table.table-sized {
+  table-layout: fixed;
+  /* Emergency wrapping for a token wider than an explicitly chosen column. */
+  overflow-wrap: break-word;
 }
 
 .markdown-body th,
@@ -119,6 +148,7 @@ body[data-paper-effect="parchment"] {
   border: 1px solid color-mix(in srgb, var(--ld-text) 22%, transparent);
   padding: 0.45em 0.75em;
   text-align: left;
+  vertical-align: top;
 }
 
 .markdown-body th {
@@ -188,6 +218,7 @@ body[data-paper-effect="parchment"] {
   width: min(100%, 920px);
   margin: 22px auto -14px;
   padding: 0 42px;
+  border-left: 3px solid var(--ld-heading);
   color: color-mix(in srgb, var(--ld-text) 76%, transparent);
   font-size: 0.9em;
 }
@@ -213,7 +244,8 @@ body[data-paper-effect="parchment"] {
   margin: 0;
 }
 
-.mermaid-placeholder {
+.mermaid-placeholder,
+.vega-lite-placeholder {
   align-items: center;
   background: color-mix(in srgb, var(--ld-code-background) 70%, transparent);
   border: 1px solid color-mix(in srgb, var(--ld-accent) 20%, transparent);
@@ -225,8 +257,13 @@ body[data-paper-effect="parchment"] {
   padding: 16px;
 }
 
-.mermaid-placeholder svg {
+.mermaid-placeholder svg,
+.vega-lite-placeholder svg {
   max-width: 100%;
+}
+
+.vega-lite-placeholder svg {
+  height: auto;
 }
 
 .diagram-error {
@@ -262,3 +299,48 @@ body[data-paper-effect="parchment"] {
 
 .tag-pill:hover, .tag-pill:active { background: var(--ld-tag-hover); }
 .tag-pill:focus-visible { outline: 2px solid var(--ld-tag-focus); outline-offset: 3px; }
+
+/* An outlined focus ring identifies the rendered text currently being edited. */
+[data-leonardo-edit][contenteditable="plaintext-only"] { cursor: text; min-width: 0.25em; }
+[data-leonardo-edit][contenteditable="plaintext-only"]:focus { outline: 1px solid var(--ld-accent); outline-offset: 3px; }
+@media print { [data-leonardo-edit]:focus { outline: none; } }
+
+.preview-empty { display: block; min-height: 1.5em; }
+[data-leonardo-edit][contenteditable="false"] { display: contents; }
+.preview-empty[contenteditable="false"] { display: block; }
+
+/* Leonardo layout keeps document backgrounds behind content without swallowing input. */
+.markdown-body.leonardo-document { position: relative; isolation: isolate; }
+.leonardo-document-background { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.markdown-body .leonardo-document-background img { margin: 0; max-width: none; display: block; }
+.leonardo-field-value { border-bottom: 1px dotted var(--ld-accent); white-space: pre-wrap; }
+
+/* Page objects share physical point geometry in preview and PDF. Text is Z=0. */
+.leonardo-paginated { display: flex; flex-direction: column; align-items: center; gap: 16pt; }
+.leonardo-page { position: relative; isolation: isolate; box-sizing: border-box; flex: none; background: var(--ld-background); }
+.leonardo-page-text { position: relative; z-index: 0; pointer-events: none; display: flow-root; }
+.leonardo-page-text > * { pointer-events: auto; }
+.leonardo-page[data-overflow] { outline: 2px dashed var(--ld-accent); }
+.leonardo-object { position: absolute; touch-action: none; }
+.leonardo-object > img, .leonardo-object > svg { display: block; margin: 0; width: 100%; height: 100%; max-width: none; object-fit: contain; }
+.leonardo-object-selected { box-shadow: inset 0 0 0 1px var(--ld-accent); }
+.leonardo-object-resize { display: none; position: absolute; right: 0; bottom: 0; width: 10px; height: 10px; padding: 0; background: var(--ld-accent); cursor: nwse-resize; }
+.leonardo-object-selected .leonardo-object-resize { display: block; }
+.leonardo-object-toolbar { position: absolute; z-index: 20001; display: flex; gap: 5px; flex-wrap: wrap; max-width: min(calc(100% - 16pt), calc(100vw - 16px)); padding: 8px; border-radius: 10px; background: var(--ld-code-background); color: var(--ld-text); box-shadow: 0 4px 16px #0004; font: 12px system-ui; }
+.leonardo-object-toolbar span { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.leonardo-object-toolbar { align-items: center; gap: 10px; }
+.leonardo-object-toolbar button { padding: 3px 7px; border-radius: 5px; outline-offset: 2px; }
+.leonardo-object-toolbar button:hover { background: color-mix(in srgb, var(--ld-accent) 16%, transparent); }
+.leonardo-object-toolbar button { color: inherit; background: transparent; border: 0; cursor: pointer; }
+.leonardo-form-export .leonardo-object-toolbar, .leonardo-form-export .leonardo-object-resize { display: none !important; }
+.leonardo-form-export .leonardo-object-selected { box-shadow: none; }
+.leonardo-rubric-field { display: block; width: 240px; height: 80px; overflow: hidden; }
+.leonardo-rubric-field svg { width: 100%; height: 100%; }
+@media print { .leonardo-object-toolbar, .leonardo-object-resize { display: none !important; } .leonardo-page { break-after: page; } }
+
+
+.leonardo-form-export .leonardo-form-field > .leonardo-field-output.leonardo-rubric-field { display: inline-block; vertical-align: middle; }
+@media print { .leonardo-field-output.leonardo-rubric-field { display: inline-block !important; vertical-align: middle; } }
+
+.leonardo-legacy-images { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.leonardo-legacy-images img { pointer-events: auto; }

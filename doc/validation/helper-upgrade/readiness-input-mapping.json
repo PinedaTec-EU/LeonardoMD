@@ -1,0 +1,17 @@
+{
+  "source_sha": "355cd71af45694a4976687640b66be2eeb579417",
+  "help_capture_sha": "533ba927d191cf6248703b32bab84f87f15d1d45",
+  "changed_runtime_or_test_inputs": [
+    "Sources/LeonardoApp/DesktopPeerController.swift",
+    "Sources/LeonardoApp/HelperGatedPeerRemote.swift",
+    "Sources/LeonardoApp/SyncHelperController.swift",
+    "Tests/LeonardoAppTests/HelperGatedPeerRemoteTests.swift",
+    "Tests/LeonardoAppTests/SyncHelperControllerTests.swift"
+  ],
+  "changes": "Controlled retry clock; identity-aware activation for an enabled registration; peer gate injected from the actual shared helper controller. Gate rejects legacy identity, starting/upgrading state and pending/changed consent before sending any request. Tests cover positive current/newer cases and interrupted health.",
+  "current_components": "candidate-components-ready/",
+  "retained_packaged_help": "candidate-help40/",
+  "help_bundle_renderer_and_all_other_inputs_unchanged": true,
+  "limits": "Packaged Help executable remains source533ba927. The three changed app controllers/adapters do not own Help opening, rendering, practice or bundled content. Current lifecycle component captures use the new controller. Old process evidence is not relabeled.",
+  "input_tree_sha256": "39d8ade2cfa4a1c9ec413b616fdc3d8535c41b1af932ff50a00c9d95269cf2a6"
+}

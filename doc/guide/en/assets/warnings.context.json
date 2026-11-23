@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-10-31T09:39:59.526Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 820,
+    "width" : 560
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/extensions\/reset-en",
+  "screen" : "Extension preferences and warning reset",
+  "source_sha" : "b8900bf14f17aba18e4e89cb141c392048a5314f",
+  "state" : "Extension preferences and warning reset; language en; synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 820,
+    "width" : 560
+  }
+}

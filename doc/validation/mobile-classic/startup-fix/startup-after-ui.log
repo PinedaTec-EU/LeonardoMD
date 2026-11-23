@@ -1,0 +1,353 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /tmp/leonardo-386-derived/Build/Products/Classic393After.xctestrun -destination "platform=iOS Simulator,id=926C886F-52D8-4766-B84D-1A5D8C218080" "-only-testing:LittleLeonardoUITests/PairingUITests/testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch" -resultBundlePath /tmp/ll393-after.xcresult
+
+Writing result bundle at path:
+	/tmp/ll393-after.xcresult
+
+2026-11-07 13:38:05.550 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:38:09.073784+0100 LittleLeonardoUITests-Runner[65156:105152775] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-11-07 13:38:11.745.
+Test Suite 'LittleLeonardoUITests.xctest' started at 2026-11-07 13:38:11.746.
+Test Suite 'PairingUITests' started at 2026-11-07 13:38:11.746.
+Test Case '-[LittleLeonardoUITests.PairingUITests testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch]' started.
+    t =     0.00s Start Test at 2026-11-07 13:38:11.749
+    t =     0.02s Set Up
+    t =     0.03s Open eu.pinedatec.LittleLeonardo
+    t =     0.03s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 13:38:11.827 xcodebuild[65116:105152314] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:38:11.827 xcodebuild[65116:105152314] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:38:11.835 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+objc[65156]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x1041b4398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x107ee8310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     0.49s         Setting up automation session
+    t =     2.45s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.01s Tap "open-pairing" Button
+    t =     4.01s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.01s     Find the "open-pairing" Button
+    t =     4.10s     Check for interrupting elements affecting "open-pairing" Button
+    t =     4.13s     Synthesize event
+    t =     4.44s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.91s Tap "IP y puerto" Button
+    t =     4.91s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.91s     Find the "IP y puerto" Button
+    t =     4.99s     Check for interrupting elements affecting "IP y puerto" Button
+    t =     5.03s     Synthesize event
+    t =     5.32s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     6.95s Tap "pairing-host" TextField
+    t =     6.95s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     6.96s     Find the "pairing-host" TextField
+    t =     7.01s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     7.05s     Synthesize event
+    t =     7.34s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.42s Find the "pairing-host" TextField
+    t =     7.51s Type '' into "pairing-host" TextField
+    t =     7.51s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.78s     Find the "pairing-host" TextField
+    t =     7.85s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     7.89s     Synthesize event
+    t =     8.36s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.37s Type '127.0.0.1' into "pairing-host" TextField
+    t =     8.37s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.37s     Find the "pairing-host" TextField
+    t =     8.42s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     8.47s     Synthesize event
+    t =     8.82s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.83s Tap "pairing-port" TextField
+    t =     8.83s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.83s     Find the "pairing-port" TextField
+    t =     8.89s     Check for interrupting elements affecting "pairing-port" TextField
+    t =     8.94s     Synthesize event
+    t =     9.23s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.67s Find the "pairing-port" TextField
+    t =     9.73s Type '' into "pairing-port" TextField
+    t =     9.74s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.74s     Find the "pairing-port" TextField
+    t =     9.80s     Check for interrupting elements affecting "pairing-port" TextField
+    t =     9.89s     Synthesize event
+    t =    10.18s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.32s Type '46987' into "pairing-port" TextField
+    t =    10.32s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.33s     Find the "pairing-port" TextField
+    t =    10.39s     Check for interrupting elements affecting "pairing-port" TextField
+    t =    10.55s     Synthesize event
+    t =    10.84s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.85s Tap "Solicitar conexión" Button
+    t =    10.85s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.86s     Find the "Solicitar conexión" Button
+    t =    10.93s     Check for interrupting elements affecting "Solicitar conexión" Button
+    t =    11.02s     Synthesize event
+    t =    11.32s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.82s Waiting 15.0s for StaticText (First Match) to exist
+    t =    12.85s     Checking `Expect predicate `existsNoRetry == 1` for object StaticText (First Match)`
+    t =    12.85s         Checking existence of `StaticText (First Match)`
+    t =    13.01s Tap "Sincronizar" Button
+    t =    13.01s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    13.02s     Find the "Sincronizar" Button
+    t =    13.06s     Check for interrupting elements affecting "Sincronizar" Button
+    t =    13.10s     Synthesize event
+    t =    13.41s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.12s Waiting 30.0s for "rubric-request-sheet" Other to exist
+    t =    15.15s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    15.15s         Checking existence of `"rubric-request-sheet" Other`
+    t =    15.19s         Capturing element debug description
+    t =    16.12s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    16.12s         Checking existence of `"rubric-request-sheet" Other`
+    t =    16.18s Waiting 10.0s for "rubric-accept" Button to exist
+    t =    17.21s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-accept" Button`
+    t =    17.21s         Checking existence of `"rubric-accept" Button`
+    t =    17.37s Tap "rubric-accept" Button
+    t =    17.37s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.38s     Find the "rubric-accept" Button
+    t =    17.43s     Check for interrupting elements affecting "rubric-accept" Button
+    t =    17.48s     Synthesize event
+    t =    17.78s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.79s Checking existence of `"rubric-canvas" Other`
+    t =    17.83s Waiting 10.0s for "rubric-accept" Button to exist
+    t =    18.85s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-accept" Button`
+    t =    18.85s         Checking existence of `"rubric-accept" Button`
+    t =    19.74s Terminate eu.pinedatec.LittleLeonardo:65266
+2026-11-07 13:38:31.496 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:38:31.496 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:38:31.496 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    20.80s Open eu.pinedatec.LittleLeonardo
+    t =    20.80s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 13:38:32.549 xcodebuild[65116:105152314] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:38:32.549 xcodebuild[65116:105152314] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:38:32.551 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    21.01s         Setting up automation session
+    t =    22.84s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    24.12s Waiting 2.0s for "No se pudo completar la operación" Alert to exist
+    t =    25.15s     Checking `Expect predicate `existsNoRetry == 1` for object "No se pudo completar la operación" Alert`
+    t =    25.15s         Checking existence of `"No se pudo completar la operación" Alert`
+    t =    25.26s         Capturing element debug description
+    t =    26.12s     Checking `Expect predicate `existsNoRetry == 1` for object "No se pudo completar la operación" Alert`
+    t =    26.12s         Checking existence of `"No se pudo completar la operación" Alert`
+    t =    26.16s         Capturing element debug description
+    t =    26.16s     Checking existence of `"No se pudo completar la operación" Alert`
+    t =    26.19s Collecting debug information to assist test failure triage
+    t =    26.19s     Requesting snapshot of accessibility hierarchy for app with pid 71039
+    t =    26.25s Waiting 2.0s for "Cerrar" Button to exist
+    t =    27.28s     Checking `Expect predicate `existsNoRetry == 1` for object "Cerrar" Button`
+    t =    27.28s         Checking existence of `"Cerrar" Button`
+    t =    27.31s         Capturing element debug description
+    t =    28.26s     Checking `Expect predicate `existsNoRetry == 1` for object "Cerrar" Button`
+    t =    28.26s         Checking existence of `"Cerrar" Button`
+    t =    28.29s         Capturing element debug description
+    t =    28.29s     Checking existence of `"Cerrar" Button`
+    t =    28.32s Collecting debug information to assist test failure triage
+    t =    28.32s     Requesting snapshot of accessibility hierarchy for app with pid 71039
+    t =    28.37s Waiting 5.0s for "Biblioteca" NavigationBar to exist
+    t =    29.40s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =    29.40s         Checking existence of `"Biblioteca" NavigationBar`
+    t =    29.45s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    29.55s Added attachment named 'Cold launch while rubric recovery is suspended'
+    t =    29.55s Checking existence of `"startup-splash" Other`
+    t =    29.58s Tap "open-demo-en" Button
+    t =    29.58s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    29.59s     Find the "open-demo-en" Button
+    t =    29.62s     Check for interrupting elements affecting "open-demo-en" Button
+    t =    29.65s     Synthesize event
+    t =    29.96s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    30.20s Waiting 10.0s for "Welcome to Little Leonardo" StaticText to exist
+    t =    31.22s     Checking `Expect predicate `existsNoRetry == 1` for object "Welcome to Little Leonardo" StaticText`
+    t =    31.22s         Checking existence of `"Welcome to Little Leonardo" StaticText`
+    t =    31.25s         Capturing element debug description
+    t =    32.27s     Checking `Expect predicate `existsNoRetry == 1` for object "Welcome to Little Leonardo" StaticText`
+    t =    32.28s         Checking existence of `"Welcome to Little Leonardo" StaticText`
+    t =    32.29s         Capturing element debug description
+    t =    33.21s     Checking `Expect predicate `existsNoRetry == 1` for object "Welcome to Little Leonardo" StaticText`
+    t =    33.21s         Checking existence of `"Welcome to Little Leonardo" StaticText`
+    t =    33.24s         Capturing element debug description
+    t =    34.26s     Checking `Expect predicate `existsNoRetry == 1` for object "Welcome to Little Leonardo" StaticText`
+    t =    34.27s         Checking existence of `"Welcome to Little Leonardo" StaticText`
+    t =    34.60s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    34.74s Added attachment named 'Offline demo available during pending rubric recovery'
+    t =    34.74s Tap Button (Element at index 0)
+    t =    34.74s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    34.74s     Find the Button (Element at index 0)
+    t =    34.78s     Check for interrupting elements affecting "BackButton" Button
+    t =    34.82s     Synthesize event
+    t =    35.12s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    35.40s Waiting 12.0s for "rubric-request-sheet" Other to exist
+    t =    36.43s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    36.43s         Checking existence of `"rubric-request-sheet" Other`
+    t =    36.47s         Capturing element debug description
+    t =    37.49s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    37.50s         Checking existence of `"rubric-request-sheet" Other`
+    t =    37.53s         Capturing element debug description
+    t =    38.45s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    38.45s         Checking existence of `"rubric-request-sheet" Other`
+    t =    38.48s         Capturing element debug description
+    t =    39.50s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    39.50s         Checking existence of `"rubric-request-sheet" Other`
+    t =    39.54s         Capturing element debug description
+    t =    40.46s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    40.46s         Checking existence of `"rubric-request-sheet" Other`
+    t =    40.50s         Capturing element debug description
+    t =    41.40s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    41.40s         Checking existence of `"rubric-request-sheet" Other`
+    t =    41.45s         Capturing element debug description
+    t =    42.47s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    42.47s         Checking existence of `"rubric-request-sheet" Other`
+    t =    42.53s         Capturing element debug description
+    t =    43.45s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    43.45s         Checking existence of `"rubric-request-sheet" Other`
+    t =    43.50s         Capturing element debug description
+    t =    44.42s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    44.42s         Checking existence of `"rubric-request-sheet" Other`
+    t =    44.46s         Capturing element debug description
+    t =    45.50s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    45.50s         Checking existence of `"rubric-request-sheet" Other`
+    t =    45.54s         Capturing element debug description
+    t =    46.46s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    46.46s         Checking existence of `"rubric-request-sheet" Other`
+    t =    46.51s         Capturing element debug description
+    t =    47.41s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    47.41s         Checking existence of `"rubric-request-sheet" Other`
+    t =    47.45s         Capturing element debug description
+    t =    47.45s     Checking existence of `"rubric-request-sheet" Other`
+    t =    47.48s Collecting debug information to assist test failure triage
+    t =    47.48s     Requesting snapshot of accessibility hierarchy for app with pid 71039
+    t =    47.55s Waiting 12.0s for "rubric-draft-banner" Button to exist
+    t =    48.56s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-draft-banner" Button`
+    t =    48.57s         Checking existence of `"rubric-draft-banner" Button`
+    t =    48.63s Tap "rubric-draft-banner" Button
+    t =    48.63s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    48.63s     Find the "rubric-draft-banner" Button
+    t =    49.02s     Check for interrupting elements affecting "rubric-draft-banner" Button
+    t =    49.07s     Synthesize event
+    t =    49.37s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    49.79s Waiting 15.0s for "rubric-request-sheet" Other to exist
+    t =    50.81s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    50.81s         Checking existence of `"rubric-request-sheet" Other`
+    t =    50.88s Checking existence of `"rubric-accept" Button`
+    t =    50.92s Checking existence of `"rubric-canvas" Other`
+    t =    51.06s Tap "Cerrar" Button
+    t =    51.06s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    51.06s     Find the "Cerrar" Button
+    t =    51.11s     Check for interrupting elements affecting "Cerrar" Button
+    t =    51.17s     Synthesize event
+    t =    51.67s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    52.37s Tap "Sincronizar" Button
+    t =    52.37s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    52.38s     Find the "Sincronizar" Button
+    t =    52.40s     Check for interrupting elements affecting "Sincronizar" Button
+    t =    52.44s     Synthesize event
+    t =    52.75s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    53.80s Waiting 12.0s for "rubric-request-sheet" Other to exist
+    t =    54.83s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    54.83s         Checking existence of `"rubric-request-sheet" Other`
+    t =    54.89s Waiting 10.0s for "rubric-request-sheet" Other to exist
+    t =    55.92s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    55.92s         Checking existence of `"rubric-request-sheet" Other`
+    t =    55.99s Waiting 20.0s for "rubric-canvas" Other to exist
+    t =    57.01s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-canvas" Other`
+    t =    57.01s         Checking existence of `"rubric-canvas" Other`
+    t =    57.09s Checking existence of `"rubric-accept" Button`
+    t =    57.13s Waiting 5.0s for "rubric-label" TextField to exist
+    t =    58.17s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-label" TextField`
+    t =    58.17s         Checking existence of `"rubric-label" TextField`
+    t =    58.24s Tap "rubric-label" TextField
+    t =    58.24s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    58.24s     Find the "rubric-label" TextField
+    t =    58.29s     Check for interrupting elements affecting "rubric-label" TextField
+    t =    58.33s     Synthesize event
+    t =    58.62s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    58.86s Find the "rubric-label" TextField
+    t =    58.93s Type '' into "rubric-label" TextField
+    t =    58.93s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    59.24s     Find the "rubric-label" TextField
+    t =    59.30s     Check for interrupting elements affecting "rubric-label" TextField
+    t =    59.37s     Synthesize event
+    t =    59.66s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    59.83s Type 'Aceptación recuper...' into "rubric-label" TextField
+    t =    59.83s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    59.83s     Find the "rubric-label" TextField
+    t =    59.91s     Check for interrupting elements affecting "rubric-label" TextField
+    t =    59.97s     Synthesize event
+    t =    60.53s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    60.53s Press "rubric-canvas" Other[0.18, 0.52] for 0.1 seconds, then drag to "rubric-canvas" Other[0.82, 0.44] with velocity of 500.00 pixels per second, and then hold for 0.1 seconds 
+    t =    60.54s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    60.54s     Find the "rubric-canvas" Other
+    t =    60.62s     Check for interrupting elements affecting "rubric-canvas" Other
+    t =    60.73s     Synthesize event
+    t =    60.74s         Find the "rubric-canvas" Other
+    t =    60.83s         Find the "rubric-canvas" Other
+    t =    60.94s         Find the "rubric-canvas" Other
+    t =    61.01s         Find the "rubric-canvas" Other
+    t =    61.08s         Find the "rubric-canvas" Other
+    t =    62.06s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    63.10s Tap "Cerrar" Button
+    t =    63.10s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    63.11s     Find the "Cerrar" Button
+    t =    63.24s     Check for interrupting elements affecting "Cerrar" Button
+    t =    63.33s     Synthesize event
+    t =    63.64s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    64.35s Waiting 5.0s for "rubric-draft-banner" Button to exist
+    t =    65.36s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-draft-banner" Button`
+    t =    65.36s         Checking existence of `"rubric-draft-banner" Button`
+    t =    65.41s         Capturing element debug description
+    t =    66.44s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-draft-banner" Button`
+    t =    66.44s         Checking existence of `"rubric-draft-banner" Button`
+    t =    66.48s         Capturing element debug description
+    t =    67.40s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-draft-banner" Button`
+    t =    67.40s         Checking existence of `"rubric-draft-banner" Button`
+    t =    67.44s         Capturing element debug description
+    t =    68.36s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-draft-banner" Button`
+    t =    68.36s         Checking existence of `"rubric-draft-banner" Button`
+    t =    68.41s         Capturing element debug description
+    t =    69.36s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-draft-banner" Button`
+    t =    69.36s         Checking existence of `"rubric-draft-banner" Button`
+    t =    69.40s         Capturing element debug description
+    t =    69.40s     Checking existence of `"rubric-draft-banner" Button`
+    t =    69.44s Collecting debug information to assist test failure triage
+    t =    69.44s     Requesting snapshot of accessibility hierarchy for app with pid 71039
+    t =    69.50s Waiting 10.0s for "rubric-request-banner" Button to exist
+    t =    70.52s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-banner" Button`
+    t =    70.52s         Checking existence of `"rubric-request-banner" Button`
+    t =    70.56s Tap "rubric-request-banner" Button
+    t =    70.56s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    70.56s     Find the "rubric-request-banner" Button
+    t =    70.60s     Check for interrupting elements affecting "rubric-request-banner" Button
+    t =    70.64s     Synthesize event
+    t =    70.93s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    71.30s Waiting 10.0s for "rubric-request-sheet" Other to exist
+    t =    72.32s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-request-sheet" Other`
+    t =    72.32s         Checking existence of `"rubric-request-sheet" Other`
+    t =    72.39s Waiting 10.0s for "rubric-canvas" Other to exist
+    t =    73.41s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-canvas" Other`
+    t =    73.41s         Checking existence of `"rubric-canvas" Other`
+    t =    73.46s Find the "rubric-label" TextField
+    t =    73.51s Tap "rubric-send" Button
+    t =    73.51s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    73.51s     Find the "rubric-send" Button
+    t =    73.56s     Check for interrupting elements affecting "rubric-send" Button
+    t =    73.61s     Synthesize event
+    t =    73.91s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    73.91s Waiting 30.0s for "rubric-done" Button to exist
+    t =    74.94s     Checking `Expect predicate `existsNoRetry == 1` for object "rubric-done" Button`
+    t =    74.94s         Checking existence of `"rubric-done" Button`
+    t =    75.09s Tear Down
+Test Case '-[LittleLeonardoUITests.PairingUITests testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch]' passed (75.384 seconds).
+Test Suite 'PairingUITests' passed at 2026-11-07 13:39:27.134.
+	 Executed 1 test, with 0 failures (0 unexpected) in 75.384 (75.388) seconds
+Test Suite 'LittleLeonardoUITests.xctest' passed at 2026-11-07 13:39:27.134.
+	 Executed 1 test, with 0 failures (0 unexpected) in 75.384 (75.389) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:39:27.135.
+	 Executed 1 test, with 0 failures (0 unexpected) in 75.384 (75.390) seconds
+2026-11-07 13:39:27.159 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:39:27.159 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:39:27.159 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:39:27.168 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:39:27.168 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:39:27.169 xcodebuild[65116:105152314] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:39:27.426 xcodebuild[65116:105152314] [MT] IDETestOperationsObserverDebug: 82.064 elapsed -- Testing started completed.
+2026-11-07 13:39:27.426 xcodebuild[65116:105152314] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-07 13:39:27.426 xcodebuild[65116:105152314] [MT] IDETestOperationsObserverDebug: 82.064 sec, +82.064 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/ll393-after.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

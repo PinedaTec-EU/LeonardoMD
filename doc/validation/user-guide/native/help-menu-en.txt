@@ -1,0 +1,1 @@
+Help → Leonardo user guide… (AX action openUserGuide); observed in QA PID 80822 after setting Language to English.

@@ -1,0 +1,13 @@
+{
+  "source_sha": "a2a4c5ccd8fcce670561283731bf30941e49c6d3",
+  "help_capture_sha": "533ba927d191cf6248703b32bab84f87f15d1d45",
+  "changed_runtime_or_test_inputs": [
+    "Sources/LeonardoApp/SyncHelperController.swift",
+    "Tests/LeonardoAppTests/SyncHelperControllerTests.swift"
+  ],
+  "change": "Inject existing Date.init clock and name existing30-second retry interval; add deterministic29/30-second retry regression. No change to help, renderer, format, UI layout or strings.",
+  "current_components": "candidate-components-clock/",
+  "retained_packaged_help": "candidate-help40/",
+  "help_bundle_content_and_all_other_inputs_unchanged": true,
+  "limits": "Packaged Help acceptance process was source533ba927; not relabeled as a new executable. Current helper-control UI is recaptured with the clock refinement."
+}

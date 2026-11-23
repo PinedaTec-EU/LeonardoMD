@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-12T20:05:21.285Z",
+  "route": "/native/practice/en",
+  "screen": "LeonardoMD 0.3.1333 packaged QA window — en-practice-reopened",
+  "browser_name": "Native macOS app with embedded WKWebView",
+  "browser_version": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Practice form v1 reopened from Help in the same QA process; three synthetic answers present; local file saved.",
+  "data_provenance": "synthetic"
+}

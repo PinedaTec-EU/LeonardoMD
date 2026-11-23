@@ -4,13 +4,19 @@ import LeonardoCore
 
 @MainActor
 final class SessionRestorationTests: XCTestCase {
+    func testMissingPreferenceDefaultsToRestoringSession() throws {
+        XCTAssertTrue(GlobalPreferences.default.restorePreviousSession)
+        let preferences = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))
+        XCTAssertTrue(preferences.restorePreviousSession)
+    }
+
     func testStartupPolicyAndPersistenceKeepRecentItems() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let preferencesURL = root.appendingPathComponent("preferences.json")
         let store = SessionRestoration(preferencesURL: preferencesURL)
         let document = root.appendingPathComponent("notes.md")
-        let saved = SavedSession(windows: [.init(tabs: [.init(workspace: nil, project: root, document: document)], selectedTab: 0)])
+        let saved = SavedSession(windows: [.init(tabs: [.init(project: root, document: document)], selectedTab: 0)])
         try store.save(saved)
         XCTAssertEqual(try store.load(restorePreviousSession: true, explicitURLs: []), saved)
         XCTAssertNil(try store.load(restorePreviousSession: false, explicitURLs: []))
@@ -65,7 +71,7 @@ final class SessionRestorationTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let tabs = DocumentTabs(preferencesURL: preferencesURL)
         defer { tabs.stop() }
-        await tabs.restore(.init(tabs: [.init(workspace: root, project: root, document: root.appendingPathComponent("missing.md"))], selectedTab: 0))
+        await tabs.restore(.init(tabs: [.init(project: root, document: root.appendingPathComponent("missing.md"))], selectedTab: 0))
         XCTAssertNil(tabs.activeSession.projectURL)
         XCTAssertNil(tabs.activeSession.documentURL)
         XCTAssertNil(tabs.activeSession.errorMessage)

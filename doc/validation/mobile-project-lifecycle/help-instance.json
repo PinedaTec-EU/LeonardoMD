@@ -1,0 +1,21 @@
+{
+  "en": {
+    "packaged_sha256": "a43c541c47f0fad622aff43ae2ef512b95ba7db7dd911cfac53258f91971e01d",
+    "copy_sha256": "a43c541c47f0fad622aff43ae2ef512b95ba7db7dd911cfac53258f91971e01d",
+    "identical": true
+  },
+  "es": {
+    "packaged_sha256": "4cdb609e54a9da9458d3edca895b4b184e5332f161c1cb0c4f1dc4552bebfde1",
+    "copy_sha256": "4cdb609e54a9da9458d3edca895b4b184e5332f161c1cb0c4f1dc4552bebfde1",
+    "identical": true
+  },
+  "instance": {
+    "CFBundleIdentifier": "eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087",
+    "CFBundleExecutable": "LeonardoMD",
+    "CFBundleShortVersionString": "0.3.1136",
+    "CFBundleVersion": "1136"
+  },
+  "source_revision": "fa95ce6ce991336f3523c4cd5d5dba5e0455f8ab",
+  "native_screenshot_limitation": "cua.getAXStateAndScreenshot failed: -10005 stageManagerProcessNotRunning. Semantic AX checks do not establish visual appearance.",
+  "acceptance": "Both locales opened through Help; equations including tag (1), disabled Math fallback, tables, local-image and chart nodes inspected semantically; separate practice filled, saved, closed and reopened in both locales, then restored to initial empty names. English and enabled Math restored. Screenshot-dependent visual acceptance remains pending."
+}

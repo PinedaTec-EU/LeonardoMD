@@ -3,7 +3,6 @@ import Foundation
 /// Locations only: document contents remain owned by the normal save workflow.
 struct SavedSession: Codable, Equatable {
     struct Tab: Codable, Equatable {
-        var workspace: URL?
         var project: URL?
         var document: URL?
     }
@@ -38,7 +37,7 @@ struct SessionRestoration {
 extension DocumentTabs {
     var savedWindow: SavedSession.Window {
         SavedSession.Window(tabs: tabs.map {
-            SavedSession.Tab(workspace: $0.session.workspaceURL, project: $0.session.projectURL, document: $0.session.documentURL)
+            SavedSession.Tab(project: $0.session.projectURL, document: $0.session.displayDocumentURL)
         }, selectedTab: tabs.firstIndex { $0.id == activeID } ?? 0)
     }
 
@@ -50,17 +49,13 @@ extension DocumentTabs {
             // Preserve empty tabs and selection, while skipping unavailable locations.
             if index > 0 { _ = addTab() }
             let session = activeSession
-            if let workspace = saved.workspace, Self.available(workspace, directory: true) {
-                await session.openWorkspace(workspace)
-                session.showWorkspace = false
-            }
-            guard acceptsExternalDrops else { return }
             if let project = saved.project, Self.available(project, directory: true) {
                 await session.openProject(project)
             }
             guard acceptsExternalDrops else { return }
-            if let document = saved.document, Self.available(document, directory: false) {
-                await session.openDocument(document)
+            if let document = saved.document, Self.available(document, directory: false),
+               AppSession.supportedDocumentExtensions.contains(document.pathExtension.lowercased()) {
+                await session.openDocument(document, packagePreference: .package)
             }
             if index == window.selectedTab { selectedID = activeID }
         }

@@ -3,6 +3,7 @@
 import base64
 import sys
 import re
+import posixpath
 from urllib.parse import urlparse, unquote
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -38,6 +39,20 @@ def bind_channel(path, channel):
     tree.write(path, encoding="utf-8", xml_declaration=True)
 
 
+def release_tag(url):
+    """One canonical parser shared by validation and cross-feed identity checks."""
+    parsed = urlparse(url)
+    if (not url.startswith(PREFIX) or parsed.scheme != "https" or parsed.netloc != "github.com"
+            or parsed.query or parsed.fragment or "\\" in url
+            or any(character.isspace() for character in url)
+            or unquote(parsed.path) != parsed.path or posixpath.normpath(parsed.path) != parsed.path):
+        raise ValueError("Update archive URL must be a canonical, unescaped repository HTTPS asset")
+    tag = parsed.path.split("/download/", 1)[1].split("/", 1)[0]
+    if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+        raise ValueError("Release tag must use the numeric canonical version")
+    return tag
+
+
 def verify(path, channel="stable"):
     if channel not in ("stable", "beta"):
         raise ValueError("Unknown release channel")
@@ -54,15 +69,9 @@ def verify(path, channel="stable"):
         signature = enclosure.get(SPARKLE + "edSignature", "")
         if len(base64.b64decode(signature, validate=True)) != 64:
             raise ValueError("Missing or malformed EdDSA signature")
-        if not enclosure.get("url", "").startswith(PREFIX):
-            raise ValueError("Update must reference this repository's HTTPS release assets")
-        release_path = unquote(urlparse(enclosure.get("url")).path)
-        release_tag = release_path.split("/download/", 1)[1].split("/", 1)[0]
-        pattern = r"v[0-9]+\.[0-9]+\.[0-9]+"
-        if not re.fullmatch(pattern, release_tag):
-            raise ValueError("Release tag must use the numeric canonical version")
+        release_tag_value = release_tag(enclosure.get("url", ""))
         displayed_version = item.find(SPARKLE + "shortVersionString")
-        if displayed_version is not None and displayed_version.text != release_tag[1:]:
+        if displayed_version is not None and displayed_version.text != release_tag_value[1:]:
             raise ValueError("Displayed update version must match the numeric release tag")
         if int(enclosure.get("length", "0")) <= 0:
             raise ValueError("Empty update archive")

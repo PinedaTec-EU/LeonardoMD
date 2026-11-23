@@ -1,0 +1,572 @@
+[
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.579581+0100",
+    "machTimestamp": 15329721925478,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":0.005417,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"process_started\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.579642+0100",
+    "machTimestamp": 15329721926953,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":1.234708,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_initializing\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.636770+0100",
+    "machTimestamp": 15329723298015,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":58.359333,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_initialized\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.640506+0100",
+    "machTimestamp": 15329723387682,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":62.08225,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"delegate_installed\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.640812+0100",
+    "machTimestamp": 15329723395026,
+    "personaName": "",
+    "eventMessage": "{\"activationPolicy\":{\"actualPolicy\":0,\"switchSucceeded\":false},\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":62.395208,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"activation_policy_requested\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.640827+0100",
+    "machTimestamp": 15329723395390,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":62.461333,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"event_loop_starting\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.641777+0100",
+    "machTimestamp": 15329723418191,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":63.384958,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_will_finish_launching\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.730883+0100",
+    "machTimestamp": 15329725556739,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":152.478875,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_did_finish_launching\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.730977+0100",
+    "machTimestamp": 15329725558995,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":152.608375,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"menu_configuring\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.740075+0100",
+    "machTimestamp": 15329725777338,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":161.684458,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"menu_configured\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.740088+0100",
+    "machTimestamp": 15329725777646,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":161.724625,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"first_window_creating\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.794864+0100",
+    "machTimestamp": 15329727092287,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":216.470667,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"first_window_created\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.802132+0100",
+    "machTimestamp": 15329727266698,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":223.747083,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"first_window_shown\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 0,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:13:58.802911+0100",
+    "machTimestamp": 15329727285407,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":224.534208,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_ready\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862405124,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 0
+  },
+  {
+    "timezoneName": "",
+    "messageType": "Default",
+    "eventType": "logEvent",
+    "source": null,
+    "launchPersonaName": "",
+    "formatString": "%{public}s",
+    "userID": 501,
+    "activityIdentifier": 207624863,
+    "subsystem": "eu.pinedatec.LeonardoMD",
+    "category": "startup",
+    "personaType": -1,
+    "threadID": 74614842,
+    "launchPersonaType": -1,
+    "senderImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "launchPersonaID": 4294967295,
+    "backtrace": {
+      "frames": [
+        {
+          "imageOffset": 2202808,
+          "imageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293"
+        }
+      ]
+    },
+    "bootUUID": "BFBEBDCE-0504-4002-B0A9-C4AD94F7206E",
+    "processImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "senderImagePath": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r58ao26/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+    "personaID": 4294967295,
+    "timestamp": "2026-11-05 00:14:57.110750+0100",
+    "machTimestamp": 15331126673546,
+    "personaName": "",
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"765\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.18a81fc284af4b7b9ef05a477857d2ed\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":76850,\"startedAt\":1793834038.5790858,\"version\":\"0.1.765\"},\"elapsedMilliseconds\":58532.354292,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_will_terminate\"}",
+    "processImageUUID": "42076AAE-F7D5-3BCC-9C7F-72F3ED814293",
+    "traceID": 20174195862470660,
+    "processID": 76850,
+    "senderProgramCounter": 2202808,
+    "parentActivityIdentifier": 207624861
+  }
+]

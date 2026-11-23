@@ -1,0 +1,22 @@
+{
+  "source_sha": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+  "source_note": "Captured from the PR #435 working tree before commit; application sources and Xcode build inputs are identical to source_sha. The later commit changed the build-count ledger and documentation inventory only.",
+  "result_bundle": "test_sim_2026-11-15T15-52-24-668Z_pid55093_f4ea963e.xcresult",
+  "test": "PairingUITests/testSpanishErrorLogRouteAndScreenAreLocalized",
+  "test_result": "passed",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max; LittleLeonardo PR435 Localization QA 20261115",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Biblioteca > Sincronización > Diagnóstico > Ver log",
+  "locale": "Español (es_ES)",
+  "viewport_points": {"width": 440, "height": 956},
+  "screenshot_pixels": {"width": 1320, "height": 2868},
+  "capture_mode": "XCTest viewport screenshot attachment; exported with xcresulttool; original PNG, unmodified",
+  "captured_at": "2026-11-15T15:52:54.976Z",
+  "browser": "No aplica: app nativa de iOS; sin navegador",
+  "css_viewport": "No aplica: el diseño nativo usa puntos UIKit, indicados arriba",
+  "state": "La pantalla de sincronización está desplazada hasta la sección Diagnóstico; Ver log está visible.",
+  "data_provenance": "Simulador QA aislado con datos sintéticos; sin documentos ni credenciales del propietario.",
+  "image_bytes": 267539,
+  "image_sha256": "376a17a849cb01931eff09e2d339a65aae011381f4e0d83a8a09a401f9e0089c"
+}

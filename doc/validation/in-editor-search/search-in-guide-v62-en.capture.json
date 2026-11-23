@@ -1,0 +1,47 @@
+{
+  "schema": "leonardomd-native-window-capture-v1",
+  "captured_at_utc": "2026-11-12T18:31:07Z",
+  "screen": "Find in Guide-v62-en.mdlz",
+  "capture_mode": "single-window",
+  "host_app": {
+    "name": "LeonardoMD",
+    "version": "0.3.1333 stable",
+    "build": "1333",
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.5a8aa4a28bbf4fc3ad5d2584633f108b",
+    "process_id": 38064
+  },
+  "browser": {
+    "applicable": false,
+    "reason": "Native macOS application window; browser name/version are not exposed by the host."
+  },
+  "viewport_css": null,
+  "native_window": {
+    "window_id": 107804,
+    "title": "Guide-v62-en.mdlz",
+    "bounds_points": { "width": 1280, "height": 1409 },
+    "content_scroll_area_points": { "width": 1280, "height": 1208 },
+    "dimensions_source": "CoreGraphics window bounds and Accessibility AXScrollArea size"
+  },
+  "state": {
+    "query": "Leonardo",
+    "scope": "This document",
+    "case_sensitive": false,
+    "regular_expression": false,
+    "active_result": 1,
+    "total_results": 117,
+    "document": "Guide-v62-en.mdlz",
+    "visible_occurrence_highlight": "yellow"
+  },
+  "data_provenance": "Bundled product-authored help; no user-authored or private document content.",
+  "image": {
+    "file": "search-in-guide-v62-en.png",
+    "format": "png",
+    "width_px": 2784,
+    "height_px": 3042,
+    "sha256": "1de58cc3c577ed461584221ee229ff67b5b39b5a478bf22fe706c2bbdc4b474d"
+  },
+  "source": {
+    "repository_revision_at_capture": "a18fe1ebc974401d2f137e8ffa3d0a77944d2d42",
+    "search_implementation_revision": "c38d821f"
+  }
+}

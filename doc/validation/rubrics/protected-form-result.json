@@ -1,0 +1,11 @@
+{
+  "body_preserved": true,
+  "definition_semantics_preserved": true,
+  "canonical_defaults_explicitly_encoded": [
+    "options: []",
+    "readOnly: false"
+  ],
+  "rubric_answer_has_strokes": true,
+  "library_entries_after_opt_out": 0,
+  "data": "synthetic"
+}

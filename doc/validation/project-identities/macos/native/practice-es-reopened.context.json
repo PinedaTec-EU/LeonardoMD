@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-11-07T21:11:13.288Z",
+  "screen": "Final instance: Help practice es filled, saved, closed and reopened; fictional answer persisted",
+  "route": "/native/project-identities/practice-es-reopened",
+  "capture_mode": "element",
+  "browser_name": "Native packaged AppKit/WKWebView",
+  "browser_version": null,
+  "viewport_css": null,
+  "native_viewport_points": null,
+  "data_provenance": "synthetic",
+  "source_sha": "490086a6829f30cab3e5a7c6fe6e03a75f90e22d",
+  "limitations": "CUA exposes native screenshot pixels and accessibility; CSS viewport, native point geometry and engine version unavailable."
+}

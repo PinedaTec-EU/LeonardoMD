@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-11-10T12:03:17.709Z",
+  "route": "/native/help/v36/es",
+  "screen": "help-es-mermaid-math",
+  "browser_name": "Native AppKit/WKWebView",
+  "browser_version": "Engine version not exposed by CUA",
+  "viewport_css": null,
+  "native_viewport_points": null,
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Spanish Mermaid, inline and display equations with complete underbraces/radical/arrow/cancel and tagged equation (1); Math restored on",
+  "source_sha": "d986f417fd263180219b3b55dfe65d026d5853c5"
+}

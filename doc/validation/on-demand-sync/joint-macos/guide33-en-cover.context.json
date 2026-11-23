@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-10T10:01:40.177Z",
+  "route": "/native/help33/en-cover",
+  "screen": "Actual packaged LeonardoMD QA Help33",
+  "browser_name": "Native macOS SwiftUI/WKWebView",
+  "browser_version": "WKWebView engine not exposed",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "25723d6587d902477edffbf2f3b66c94f5e6def3",
+  "state": "English actual Help opens new personal Guide33; packaged local cover; fresh PID77534; baseline0.3.1147/build1147; Guide33; native bitmap-equivalent viewport, CSS not applicable"
+}

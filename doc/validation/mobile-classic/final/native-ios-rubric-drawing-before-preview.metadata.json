@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T11:16:14.160733+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T11:03:31.672000+00:00",
+    "route": "/LittleLeonardo/native-ios-rubric-drawing-before-preview",
+    "screen": "Native iOS rubric drawing before preview",
+    "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+    "browser_version": "iOS 27.0 (24A434); SDK27.1",
+    "state": "Native iOS rubric drawing before preview; synthetic QA; native points in viewport_css; source 11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "7a66fe2220d341d76028fd3a0e75cc2751cd3e4769b0c3f4a8821792b4e8f58a"
+  },
+  "source": {
+    "revision_at_collection": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

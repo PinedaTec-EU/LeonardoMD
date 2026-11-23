@@ -1,0 +1,18 @@
+{
+  "source_sha": "654a9f45f49070dfbc4998cd6145a3b3b9994712",
+  "help_capture_sha": "533ba927d191cf6248703b32bab84f87f15d1d45",
+  "changed_runtime_or_test_inputs": [
+    "Sources/LeonardoApp/DesktopPeerController.swift",
+    "Sources/LeonardoApp/HelperGatedPeerRemote.swift",
+    "Sources/LeonardoApp/SyncHelperController.swift",
+    "Sources/LeonardoApp/SyncHelperStartupPolicy.swift",
+    "Tests/LeonardoAppTests/HelperGatedPeerRemoteTests.swift",
+    "Tests/LeonardoAppTests/SyncHelperControllerTests.swift"
+  ],
+  "changes": "Identity-aware activation and shared peer gate; bounded controller-owned post-registration readiness confirmation; controlled retry clock; delayed health responses retain newer verified metadata. Startup tests mount no Preferences view and make one lifecycle refresh.",
+  "current_components": "candidate-components-autonomous/",
+  "retained_packaged_help": "candidate-help40/",
+  "help_bundle_renderer_and_all_other_inputs_unchanged": true,
+  "limits": "Packaged Help executable remains source533ba927. Changed lifecycle controllers, adapter and startup policy do not own Help opening, rendering, practice or bundled content. The earlier packaged process is not relabeled. Current native controller components use this source. Signed installed automatic renewal remains a post-publication check.",
+  "input_tree_sha256": "4dbce4328ffb76acaba05fc665b0e64bdfe8a4067a72812f808044d6c0e4824e"
+}

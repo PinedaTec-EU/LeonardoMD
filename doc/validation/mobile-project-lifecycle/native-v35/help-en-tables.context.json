@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-10T10:17:56.366Z",
+  "route": "/native/help/v35/en",
+  "screen": "Guide v35 en",
+  "browser_name": "Native AppKit/WKWebView",
+  "browser_version": "Engine version not exposed by CUA",
+  "viewport_css": null,
+  "native_viewport_points": null,
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Format table, local package image and practice instructions opened through native Help",
+  "source_sha": "782154361512b31ea3837616c30303cf2a013743",
+  "native_geometry_limitation": "CUA exposes screenshot bytes but no native-point or CSS geometry"
+}

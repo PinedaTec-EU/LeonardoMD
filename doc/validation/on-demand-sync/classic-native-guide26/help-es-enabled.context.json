@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T13:32:56.619Z",
+  "route": "/native/help-es-enabled",
+  "screen": "help-es-enabled",
+  "browser_name": "Native AppKit/WKWebView",
+  "browser_version": "Not exposed by CUA",
+  "viewport_css": {
+    "width": 5120,
+    "height": 2880
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Guide26 Mermaid Math ON inline single multiline underbrace radical tag1 chart literal code inspected; screenshot-pixel equivalent dimensions; source b24087574b32eadb1c14f55d9a467dc1507d340f; baseline0.3.1113; Guide26; ad-hoc QA helper unavailable expected, external helper untouched"
+}

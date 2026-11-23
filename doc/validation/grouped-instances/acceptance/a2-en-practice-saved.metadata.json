@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-13T10:15:34.142125+00:00",
+  "capture": {
+    "captured_at": "2026-11-13T10:07:07.011000+00:00",
+    "route": "QA441/acceptance/a2-en-practice-saved",
+    "screen": "a2-en-practice-saved",
+    "browser_name": "Native AppKit / WKWebView",
+    "browser_version": "Not exposed by CUA; native packaged app",
+    "state": "PID 7354; English practice saved after cancelling Quit; native screenshot pixels used in compatibility viewport fields, CSS viewport not applicable",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "760ce5d29195412641ff8680511fb7726761873a4d775fef8bc67e58416557c2"
+  },
+  "source": {
+    "revision_at_collection": "a72636b771fa157f9a8cbfa70827f7e7c2e6e3dc",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

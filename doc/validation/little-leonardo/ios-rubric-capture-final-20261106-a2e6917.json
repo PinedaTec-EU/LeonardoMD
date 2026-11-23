@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "native-ios-evidence-v3",
+  "issue": 342,
+  "capture": "ios-rubric-capture-final-20261106-a2e6917-sent.png",
+  "captureSha256": "12f0e3d5a20aaf9e35449b67254f4f217fca53a3aa785356aadbc105f5c4751d",
+  "sourceCommit": "a2e691797e310d6e9fc5075179be0a3a781f141f",
+  "postCaptureEvidenceHead": "a2e691797e310d6e9fc5075179be0a3a781f141f",
+  "postCaptureEvidenceHeadScope": "Evidence assets, sidecars and guide packages may be committed after capture; all Swift product/test/config inputs remain the captured sourceCommit.",
+  "capturedAt": "2026-11-06T09:51:11.716+01:00",
+  "buildDelta": 87,
+  "testIdentifier": "PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()",
+  "testResult": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-z6tmr6sc/Result.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo Rubric342 QA 20261105",
+    "model": "iPhone18Pro",
+    "os": "iOS 27.0",
+    "udid": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+    "screenshotPixels": { "width": 1206, "height": 2622 },
+    "viewportPoints": { "width": 402, "height": 874 },
+    "browser": null,
+    "viewportCSS": null
+  },
+  "transport": "real pinned HTTPS fixture with synthetic TLS identity and owned loopback Mac authority",
+  "captureProvenance": {
+    "attachmentManifest": "/tmp/leonardo-final-captures-a2e6917.smsGCT/manifest.json",
+    "attachmentManifestSha256": "6a438fd205c0b1cf0aa88f67f4802366b1717a7209ecfd4759161e725ee4dbd9",
+    "qaRoot": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-z6tmr6sc",
+    "response": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-z6tmr6sc/rubric-response.json",
+    "responseSha256": "5266e72feb2211404c12690e549fc8a2d1e9a13db861313ff5e12e5d82abaeab",
+    "readyManifest": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-z6tmr6sc/ready.json",
+    "readyManifestSha256": "b0d7a23485b0a6ad3a909ed030a30a5b47d10c84d801fd4063c32ec173243be2",
+    "fixtureLog": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-z6tmr6sc/fixture.log",
+    "fixtureLogSha256": "3ef6e712cf5e8e33c76b96b944f03f20176c94d1174067d58d5edaa3d9eea292",
+    "sourceCommitBuilt": "a2e691797e310d6e9fc5075179be0a3a781f141f",
+    "sourceWasUnchangedAfterBuild": true,
+    "unchangedScope": "Swift product/test/config inputs listed by sourceInputSha256; guide assets/resources are mapped as evidence-only packaging inputs."
+  },
+  "states": {
+    "drawing": {
+      "capture": "ios-rubric-capture-final-20261106-a2e6917-drawing.png",
+      "sha256": "cf15c162df16beeff2e8fa1770a4ec184e624999ec30937a9169389f9099557e",
+      "pixels": { "width": 1206, "height": 2622 },
+      "attachment": "BDB04FEC-E294-4F03-8F0A-1E4872944566.png",
+      "timestamp": "2026-11-06T09:50:58.477+01:00"
+    },
+    "preview": {
+      "capture": "ios-rubric-capture-final-20261106-a2e6917-preview.png",
+      "sha256": "496e09deb0c5223c552187cafc8f16e886273d6aa26187a1d03f4a162260c9a3",
+      "pixels": { "width": 1206, "height": 2622 },
+      "attachment": "48149CEA-CFCC-4D96-B509-128923F52AA5.png",
+      "timestamp": "2026-11-06T09:51:00.132+01:00"
+    },
+    "sent": {
+      "capture": "ios-rubric-capture-final-20261106-a2e6917-sent.png",
+      "sha256": "12f0e3d5a20aaf9e35449b67254f4f217fca53a3aa785356aadbc105f5c4751d",
+      "pixels": { "width": 1206, "height": 2622 },
+      "attachment": "239C8AA4-83F3-4034-A09F-6777458BF0CF.png",
+      "timestamp": "2026-11-06T09:51:11.716+01:00"
+    }
+  },
+  "nativeModes": {
+    "happy": { "test": "PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-z6tmr6sc/Result.xcresult", "fixtureLogSha256": "3ef6e712cf5e8e33c76b96b944f03f20176c94d1174067d58d5edaa3d9eea292", "passed": 1, "failed": 0, "skipped": 0 },
+    "lostAck": { "test": "PairingUITests/testMacRequestedRubricCaptureLostAcknowledgementReconcilesAfterRelaunch()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-lost-ack-tv5j1diz/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-lost-ack-tv5j1diz/lost-ack.json", "proofSha256": "2b730b0af60a1841df898a05f3710a78caf4aaa492b1ac7f673cd0c2579e8d54", "fixtureLogSha256": "1716245d0b63c607d1d21fa278298042cd9f8224ec2830ff51a9f5ba8af17a06", "passed": 1, "failed": 0, "skipped": 0, "source": "a2e691797e310d6e9fc5075179be0a3a781f141f" },
+    "revokeAfterDraw": { "test": "PairingUITests/testGrantedReaderAndUnsentRubricBlocksAfterForegroundRevocation()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-revoke-after-draw-2wfo6t8o/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-revoke-after-draw-2wfo6t8o/rubric-revoked.json", "proofSha256": "ab8f9b5b40a854c19f5ea1a885d6af5ecc2066e20c3dcb45befa5b393e30825a", "fixtureLogSha256": "588fc338305bf7b52657fa03ff66feb1eb9b49d21dcbef3cee7f1e3514ca0848", "passed": 1, "failed": 0, "skipped": 0, "source": "a2e691797e310d6e9fc5075179be0a3a781f141f" },
+    "lateProjectRevoke": { "test": "PairingUITests/testGrantedProjectLateResponseDoesNotResurrectAfterForegroundRevocation()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-late-project-revoke-uvb9ljbz/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-late-project-revoke-uvb9ljbz/late-project-revocation.json", "proofSha256": "65a057fb90bad6bb8be5b87a050717874db87898c21bb61f20742c59de651644", "fixtureLogSha256": "4303d429a1a92327201595314163121cd7175108371c2d55a7249d1d0da1deb7", "passed": 1, "failed": 0, "skipped": 0, "source": "a2e691797e310d6e9fc5075179be0a3a781f141f" },
+    "enrollmentPersistenceFailure": { "test": "PairingUITests/testEnrollmentPersistenceFailureFailsClosedAfterRelaunch()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-enrollment-persist-failure-zew2i96e/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-enrollment-persist-failure-zew2i96e/mobile-persistence-failure.json", "proofSha256": "77ed6e1412069b73720d98cafbfd190234c3e838308aaa8e9b468b642f03a854", "fixtureLogSha256": "799b5d79b4fe7f198cccbbdd1272350a4e9ef81767f0a77ea4a67e5fb82e3397", "passed": 1, "failed": 0, "skipped": 0 },
+    "capabilityPersistenceFailure": { "test": "PairingUITests/testCapabilityRefreshPersistenceFailureFailsClosed()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-capability-persist-failure-6kc38e8m/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-capability-persist-failure-6kc38e8m/mobile-persistence-failure.json", "proofSha256": "19c26a646ec92ab57fb0c2537a358a0c24f160d2be5f944df72ab6a90365fe00", "fixtureLogSha256": "e429dbd199557200d36e95de3e50aaf5863e9c3623e56c931f87d197e26cab6d", "passed": 1, "failed": 0, "skipped": 0 },
+    "revocationCacheDeletionFailure": { "test": "PairingUITests/testRevocationCacheDeletionFailureRetriesAfterRelaunch()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-revocation-cache-delete-failure-4sjjl1gw/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-revocation-cache-delete-failure-4sjjl1gw/mobile-persistence-failure.json", "proofSha256": "7070f891ea90b9f37d0b4a40b35eb58e9279289c37d4c6a6504c92fd0a01ee5c", "fixtureLogSha256": "cfb8ea7d518c0bf556add7add37b0380867a1487d736f66bf9a2304d996b2f26", "passed": 1, "failed": 0, "skipped": 0 },
+    "reconnectDuringPurge": { "test": "PairingUITests/testReconnectDuringRevocationPurgePreservesNewCache()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-reconnect-during-purge-jahcgbsl/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-reconnect-during-purge-jahcgbsl/reconnect-during-purge.json", "proofSha256": "3e919ac506191ce088d372ed9ee3507f969dfdb12715a622595a5ad8a2453096", "fixtureLogSha256": "007067a16d80ac1c491034182688974e52830cd672716ea3d6959a31e4e76b85", "passed": 1, "failed": 0, "skipped": 0 },
+    "revocationUncertaintyRevalidation": { "test": "PairingUITests/testInheritedRevocationMarkerQuarantinesCacheUntilStatus()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-revocation-uncertainty-revalidation-e_waotae/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-revocation-uncertainty-revalidation-e_waotae/revocation-uncertainty.json", "proofSha256": "5b53ccb9837149b729714e55113aa2757e4b9bf3a5dd3d65048d1e36c2170285", "fixtureLogSha256": "b620885bfb69c92b4fcc5efdc35d56fdac16c77f0d2c93fa0626d8fae7d2e484", "passed": 1, "failed": 0, "skipped": 0 },
+    "acceptLostAck": { "test": "PairingUITests/testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch()", "result": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-accept-lost-ack-g81348hz/Result.xcresult", "proof": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-accept-lost-ack-g81348hz/accept-lost-ack.json", "proofSha256": "d3cafa141ca56693613cb682c59b5f48e34f82b565f961aa36739f88828e6b9d", "fixtureLogSha256": "fc382f79719fadf6d7f3dbbcae299edc6776233894a8a5a3cc5dae929de134fc", "proofValues": { "injected": true, "responsePosts": 1, "uniqueResponseRequestIDs": 1, "sameRequestID": true, "uniqueAcceptRequestIDs": 1, "blockedAcceptPosts": 5, "blockedRubricPolls": 4 }, "passed": 1, "failed": 0, "skipped": 0 }
+  },
+  "fullValidation": {
+    "command": "swift test --skip-build",
+    "recordedBuildCommand": "python3 scripts/compile-and-record.py --root . --pr-number 352 -- swift test",
+    "log": "/tmp/leonardo-full-swift-a2e6917.log",
+    "logSha256": "9cfdf059e6570b13383e2e10672a5b80bae2aaa72c198e8fecc842bb25c068e6",
+    "xctest": { "executed": 689, "passed": 654, "skipped": 35, "failed": 0, "targets": { "LeonardoSyncTransportTests": 12, "LeonardoSyncTests": 80, "LeonardoRenderTests": 23, "LeonardoIntegrationTests": 39, "LeonardoDesktopSyncTests": 56, "LeonardoCoreTests": 115, "LeonardoAppTests": 364 } },
+    "swiftTesting": { "executed": 70, "passed": 70, "skipped": 0, "suites": 9, "failed": 0 },
+    "queueFocused": { "passed": 3, "failed": 0, "log": "/tmp/leonardo-360-queue-tests.log" }
+  },
+  "buildProof": {
+    "iosBuildCommand": "python3 scripts/compile-and-record.py --root . --pr-number 352 -- xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'platform=iOS Simulator,id=A5A73B11-EE27-40AC-ABAB-CADF1B85143B' -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- build-for-testing",
+    "iosBuildLog": "/tmp/leonardo-ios-365-a2e6917-build.log",
+    "iosBuildDelta": 87,
+    "hostCompileDelta": 88,
+    "ledgerBuild": 89,
+    "signing": "CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-",
+    "diagnostics": "-collect-test-diagnostics never",
+    "sourceCommitBuilt": "a2e691797e310d6e9fc5075179be0a3a781f141f"
+  },
+  "guideValidation": {
+    "packageCommand": "python3 scripts/package-user-guide.py --web-output doc",
+    "packageChecks": { "command": "python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'", "passed": 3, "failed": 0, "log": "/tmp/leonardo-guide-package-a2e6917.log", "logSha256": "3772a428fec76d8f3577c0304e0d460d6c18fa0569693cfdb70fc3b592c4a986" },
+    "nativeGuideChecks": { "command": "python3 scripts/compile-and-record.py --root . --pr-number 352 -- swift test --filter BundledUserGuideTests", "passed": 5, "failed": 0, "log": "/tmp/leonardo-352-guide-current-a2e6917.log", "logSha256": "03bd89f0ec7ad12698f27a7ebbdeaf589b068ef0483f6bcea2c7616d294107e2", "buildDelta": 89 }
+  },
+  "reproducibleCommands": {
+    "commonSimulator": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B (LittleLeonardo Rubric342 QA 20261105, iPhone18Pro, iOS 27.0)",
+    "nativeRun": "xcodebuild test-without-building -xctestrun <product-path>/<mode>.xctestrun -destination 'platform=iOS Simulator,id=A5A73B11-EE27-40AC-ABAB-CADF1B85143B' -only-testing:LittleLeonardoUITests/PairingUITests/<mode-test> -collect-test-diagnostics never -resultBundlePath <result.xcresult>",
+    "fixtureReset": "Before each mode, uninstall eu.pinedatec.LittleLeonardo and eu.pinedatec.LittleLeonardo.UITests from the owned simulator; use a fresh owned temporary fixture root and fresh xctestrun result bundle.",
+    "transport": "Synthetic owned Mac authority and TLS identity composed through DesktopDirectRuntime.makeListener; requests use the real pinned HTTPS route."
+  },
+  "sourceInputSha256": {
+    "Mobile/LittleLeonardo/MobileLibrary.swift": "0f19db5a25884e95f59026a04df76370cb501bc2ae11e2650d217d1172f75907",
+    "Mobile/LittleLeonardo/MobileRubricCaptureView.swift": "5e34aa49e324c03f7571fc32599f65d330c399022d8f7e33c1ea19491428c53d",
+    "Mobile/LittleLeonardo/MobileDirectConnectionStore.swift": "637ffac8a927fab6c032facf1e61bb93830697897667016cd573d34ca19d5559",
+    "Mobile/LittleLeonardo/MobileDirectAuthorization.swift": "41cfe00d8cf2354a8c7615a67edcec1ab68cd5bb49750bc7167eedefee161820",
+    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "4a31276bf0adaa9b5ae09198212c77d03d9a438717b515661245d43c6703f3c5",
+    "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift": "cf076c6d88083addae1e0e2c5b630a17fc5670c992b64980db8c41e10b12b3a3",
+    "Sources/LeonardoSync/MobileSyncOperationQueue.swift": "572d90d1de22da4551a3d349a0a1a6971e5969197e708cdebd39d51db0f6a56e",
+    "Tests/LeonardoSyncTests/MobileSyncOperationQueueTests.swift": "09764195a60ac7951c5d659951636fa7199261994bf0577c22b1de96331021ce",
+    "Sources/LeonardoSync/MobileRubricDraft.swift": "6a99b6a4091e031cb856ca7b98e6642beb74e8dea39236ff2d6ccd0898f9dab1",
+    "Sources/LeonardoSync/RubricExchange.swift": "48e2260223531bf7d14783d1d54c229399d5453b772a015798c911f8c4224cde",
+    "Sources/LeonardoCore/LeonardoGraphic.swift": "2d49d255baa57368117e8f037cb262e707a6eda2da839a1b8aa9f1c1f00063f3",
+    "Sources/LeonardoSyncTransport/DirectEnrollmentClient.swift": "75b541be6b3b8ef981fabcba1473b4811c9a712bdd5203b03f7a8938cdb964e1",
+    "Sources/LeonardoSyncTransport/DirectHTTPSRouter.swift": "c4d7b0d18d4de32c166e91c3b4fa2f83bfc0db9d4d32d901960c066ae1919578",
+    "Sources/LeonardoSync/DirectSyncAuthority.swift": "85f1b78a0edc6acf6924fb03f346d13d598d82d7ad658a1188162b3827ad25ee",
+    "Mobile/LittleLeonardo.xcodeproj/project.pbxproj": "38e7ab2fdfca39719c89c488d2a936c20a9b9884d3e2fd83d0870ca2818d403e"
+  },
+  "metadataLimitations": {
+    "browserCaptureHelper": "capture_metadata.py is browser-only and requires browser_name, browser_version and viewport_css; native iOS records observed viewportPoints and browser=null instead of invented CSS/browser fields.",
+    "claims": "Simulator-only native evidence; no physical device, production Mac, App Store/TestFlight or production-network claim.",
+    "fixture": "The Mac authority, source corpus, TLS identity and fault gates are synthetic and owned; transport remains the real pinned HTTPS path.",
+    "issue365": "The earlier source4820477 accept-lost-ack run exposed responsePosts=2; issue #365 was registered before the a2e6917 coalescing fix. Final a2e6917 proof records responsePosts=1.",
+    "sourceMapping": "All ten native modes and the three raw screenshots use sourceCommit a2e691797e310d6e9fc5075179be0a3a781f141f; later guide/package/sidecar changes are evidence-only and do not alter these Swift inputs."
+  }
+}

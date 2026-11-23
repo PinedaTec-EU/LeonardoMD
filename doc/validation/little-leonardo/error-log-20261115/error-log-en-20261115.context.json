@@ -1,0 +1,22 @@
+{
+  "source_sha": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+  "source_note": "Captured from the PR #435 working tree before commit; application sources and Xcode build inputs are identical to source_sha. The later commit changed the build-count ledger and documentation inventory only.",
+  "result_bundle": "test_sim_2026-11-15T15-52-24-668Z_pid55093_f4ea963e.xcresult",
+  "test": "PairingUITests/testEnglishErrorLogRouteAndScreenAreLocalized",
+  "test_result": "passed",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max; LittleLeonardo PR435 Localization QA 20261115",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Synchronization > Diagnostics > View log > Error log",
+  "locale": "English (en_US)",
+  "viewport_points": {"width": 440, "height": 956},
+  "screenshot_pixels": {"width": 1320, "height": 2868},
+  "capture_mode": "XCTest viewport screenshot attachment; exported with xcresulttool; original PNG, unmodified",
+  "captured_at": "2026-11-15T15:52:45.016Z",
+  "browser": "Not applicable: native iOS app; no browser",
+  "css_viewport": "Not applicable: native UIKit points are reported above",
+  "state": "The English Error log screen displays the local retention notice and seven synthetic normalized network-failure entries with opaque references and numeric codes.",
+  "data_provenance": "Synthetic isolated QA simulator; no owner document or credential.",
+  "image_bytes": 284330,
+  "image_sha256": "927c6546edf496caec57676f2163c409ad31ca2f965e4fc870ac6d7a694b15c9"
+}

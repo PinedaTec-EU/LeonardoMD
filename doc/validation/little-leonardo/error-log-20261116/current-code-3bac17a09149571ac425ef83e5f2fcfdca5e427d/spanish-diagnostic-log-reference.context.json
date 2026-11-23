@@ -1,0 +1,25 @@
+{
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-16T16:26:27.939000Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "height": 874,
+    "width": 402
+  },
+  "route": "/native/ios/on-demand/spanish-diagnostic-log-reference",
+  "screen": "spanish-diagnostic-log-reference",
+  "source_sha": "3bac17a09149571ac425ef83e5f2fcfdca5e427d",
+  "test_source_sha": "fc607375",
+  "repository_head_at_test": "0b611957afd07de59489d3331ca6c81100e9e892",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "device_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+  "device_name": "LittleLeonardo PR435 Exact English QA 20261116",
+  "platform": "iOS Simulator 26.5 (23F77)",
+  "locale": "es-ES",
+  "state": "Spanish local diagnostic log contains the matching download attempt and reference. Classic appearance.",
+  "viewport_css": null,
+  "sha256": "a10bce438cf8572205cc927514835be78db0c2453a028bc996c44d5c87957dc6",
+  "xctest_attachment_id": "175CCB26-A8C4-4E8C-B8FA-1B804DE71166"
+}

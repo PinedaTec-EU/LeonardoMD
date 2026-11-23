@@ -18,25 +18,25 @@ public enum MarkdownDocumentParser {
 
     public static func parse(_ source: String) -> MarkdownDocument {
         let normalized = source.replacingOccurrences(of: "\r\n", with: "\n")
-        guard normalized.hasPrefix("---\n") || normalized == delimiter else {
+        guard let parts = splitFrontMatter(normalized) else {
             return MarkdownDocument(body: normalized)
         }
+        let metadataLines = parts.metadata.split(separator: "\n", omittingEmptySubsequences: false)[...]
+        return MarkdownDocument(body: parts.body, frontMatter: parseMetadata(metadataLines), tags: FrontMatterTags.parse(metadataLines.map(String.init)))
+    }
 
-        let lines = normalized.split(separator: "\n", omittingEmptySubsequences: false)
-        guard lines.first.map(String.init) == delimiter else {
-            return MarkdownDocument(body: normalized)
-        }
-
-        guard let closingIndex = lines.dropFirst().firstIndex(where: {
-            $0 == Substring(delimiter) || $0 == Substring(alternateDelimiter)
-        }) else {
-            return MarkdownDocument(body: normalized)
-        }
-
-        let metadataLines = lines[lines.index(after: lines.startIndex)..<closingIndex]
-        let bodyStart = lines.index(after: closingIndex)
-        let body = lines[bodyStart...].joined(separator: "\n")
-        return MarkdownDocument(body: body, frontMatter: parseMetadata(metadataLines), tags: FrontMatterTags.parse(metadataLines.map(String.init)))
+    /// Separates the envelope without normalizing the author's bytes.
+    static func splitFrontMatter(_ source: String) -> (header: String, metadata: String, body: String)? {
+        let lines = source.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "\n" || $0 == "\r\n" })
+        guard lines.first == Substring(delimiter),
+              let closing = lines.dropFirst().firstIndex(where: {
+                  $0 == Substring(delimiter) || $0 == Substring(alternateDelimiter)
+              }) else { return nil }
+        let end = lines[closing].endIndex
+        let bodyStart = end == source.endIndex ? end : source.index(after: end)
+        let metadataStart = source.index(after: lines[0].endIndex)
+        let metadata = String(source[metadataStart..<lines[closing].startIndex])
+        return (String(source[..<bodyStart]), metadata, String(source[bodyStart...]))
     }
 
     private static func parseMetadata(_ lines: ArraySlice<Substring>) -> [String: String] {

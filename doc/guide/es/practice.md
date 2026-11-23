@@ -1,0 +1,15 @@
+# Tu formulario de práctica
+
+**Escribe en los campos y guarda con ⌘S.** Este documento se abre en **Rellenar formulario**. Si cambias de modo, vuelve con **⌘4**. No necesitas abrir el candado: sirve para editar la estructura.
+
+Tu nombre: {{field:practiceName}}
+
+¿Qué quieres crear con Leonardo?
+
+{{field:practiceGoal}}
+
+He revisado el destino antes de compartir: {{field:practiceReady}}
+
+Guarda, cierra esta pestaña y usa el botón del punto 4 de la ayuda para volver a tu copia. Las respuestas se conservan por separado. El botón selecciona esta pestaña si ya estaba abierta.
+
+Para compartir, usa **Exportar respuesta Leonardo** y elige un archivo MDLR nuevo. Conserva tu copia original. Usa datos ficticios para practicar.

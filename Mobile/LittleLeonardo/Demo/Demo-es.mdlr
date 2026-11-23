@@ -1,0 +1,139 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "document": {
+    "id": "little-leonardo-demo-es",
+    "kind": "form",
+    "revision": 1,
+    "locale": "es-ES"
+  },
+  "fields": {
+    "name": {
+      "type": "text",
+      "maxLength": 80,
+      "label": "Nombre de prueba",
+      "helpText": "Práctica local: usa datos ficticios. Pulsa Guardar para confirmar tus respuestas."
+    },
+    "goal": {
+      "type": "multiline",
+      "maxLength": 1000,
+      "label": "Tu objetivo",
+      "helpText": "Práctica local: usa datos ficticios. Pulsa Guardar para confirmar tus respuestas."
+    },
+    "rating": {
+      "type": "select",
+      "options": [
+        {
+          "value": "reading",
+          "label": "Lectura"
+        },
+        {
+          "value": "forms",
+          "label": "Formularios"
+        }
+      ],
+      "label": "Tu interés",
+      "helpText": "Práctica local: usa datos ficticios. Pulsa Guardar para confirmar tus respuestas."
+    },
+    "ready": {
+      "type": "checkbox",
+      "label": "He probado la demo",
+      "helpText": "Práctica local: usa datos ficticios. Pulsa Guardar para confirmar tus respuestas."
+    }
+  },
+  "values": {
+    "name": null,
+    "goal": null,
+    "rating": null,
+    "ready": false
+  }
+}
+---
+# Bienvenido a Little Leonardo
+
+Esta demo está incluida en la instalación. Puedes probarla sin cuenta, sin Mac, sin conexión a Internet y sin conceder permisos de cámara o red local. Todos los ejemplos y recursos están en tu dispositivo.
+
+## Empieza aquí
+
+1. Desliza para leer los ejemplos y completa el formulario al final.
+2. Pulsa **Guardar / Save** para confirmar las respuestas; espera el mensaje de guardado antes de salir. Vuelve a abrir la demo para comprobarlas.
+3. Pulsa **Ver texto / View source** para inspeccionar el Markdown y los metadatos del formato.
+4. **Restablecer / Reset** pide confirmación y borra solo las respuestas de esta demo en el idioma seleccionado.
+5. Regresa a la biblioteca para cambiar entre Español y English. Cada idioma conserva su propia práctica.
+
+Las respuestas se guardan en una copia privada en este dispositivo; no se envían a ningún servidor ni al Mac. Desinstalar la app elimina esa copia. La demo no modifica documentos sincronizados ni representa un envío de formulario.
+
+## Un documento, muchas posibilidades
+
+Texto con **negrita**, *cursiva*, ~~tachado~~ y `código`.
+
+> Little Leonardo te permite consultar contenido de LeonardoMD sin conexión después de descargarlo.
+
+- Lectura con estructura y ejemplos.
+- Recursos locales incluidos.
+- Una práctica segura para explorar formularios.
+
+| Capacidad | Ejemplo incluido |
+| --- | --- |
+| Markdown | Títulos, listas, citas y tablas |
+| Visualización | Mermaid, matemáticas y gráficos |
+| Leonardo | Campos tipados con respuestas separadas del texto |
+
+![Portada local de la guía Leonardo](assets/demo.png)
+
+## Diagrama Mermaid
+
+El motor está activado en esta demo. Si está desactivado en otro visor, el bloque se conserva como código.
+
+```mermaid
+flowchart LR
+  A[Documento] --> B[Lectura offline]
+  B --> C[Practica local]
+```
+
+## Matemáticas
+
+El motor Math está activado aquí. Fórmula en línea: $a^2+b^2=c^2$.
+
+$$E = mc^2$$
+
+$$
+\underbrace{N_{\epsilon}}_{\text{cajas}} = C\epsilon^{-D} \tag{1}
+$$
+
+## Gráfico con datos locales
+
+Vega-Lite está activado en esta demo; los datos están incluidos y no se descargan. En un visor sin el motor, se conserva el bloque de código.
+
+```vega-lite
+{"mark":"bar","data":{"values":[{"topic":"Markdown","examples":5},{"topic":"Leonardo","examples":4},{"topic":"Offline","examples":3}]},"encoding":{"x":{"field":"topic","type":"nominal"},"y":{"field":"examples","type":"quantitative"}},"width":"container","height":180}
+```
+
+## Prueba el formulario
+
+Usa datos ficticios. Toca los campos, escribe, elige una opción y marca la casilla. No se necesita firma ni una solicitud de un Mac.
+
+{{field:name}}
+
+¿Qué quieres explorar?
+
+{{field:goal}}
+
+{{field:rating}}
+
+{{field:ready}}
+
+Pulsa **Guardar / Save**, vuelve a la biblioteca y entra de nuevo: las respuestas deben seguir ahí. **Ver texto / View source** muestra las respuestas en `values`; los campos y el cuerpo permanecen separados.
+
+## Tus proyectos y la conexión con el Mac
+
+Esta práctica local es independiente de los proyectos descargados, que son de **solo lectura**. La demo no habilita la edición general de documentos sincronizados ni la apertura de cualquier MDLR desde Archivos.
+
+Para consultar tus propios proyectos, vuelve a la biblioteca y pulsa **Conectar**. Abre LeonardoMD en tu Mac y ve a **Sincronización → Compartir desde este Mac**. Activa el servicio, elige contenido guardado y abre la invitación. Con ambos dispositivos en la misma red local, escanea el QR o usa IP y puerto en Little Leonardo. Compara el código en ambos dispositivos, autoriza el acceso en el Mac y pulsa **Sincronizar** en el móvil. La cámara solo es necesaria para escanear; IP y puerto es la alternativa manual. Después de descargar, puedes leer sin conexión.
+
+Las solicitudes reales de rúbrica se inician desde el Mac y requieren un dispositivo enlazado. Este formulario no simula una autorización ni envía una rúbrica.
+
+## Recorrido para App Review
+
+En una instalación limpia, abre **Demo y práctica / Demo & practice** y elige Español o English. Comprueba la tabla, la imagen local, el diagrama, las dos ecuaciones y el gráfico. Completa el formulario, pulsa **Guardar / Save**, sal y vuelve a entrar. Inspecciona **Ver texto / View source** y prueba **Restablecer / Reset**. Este recorrido funciona en modo avión y es el mismo para todos los usuarios. La conexión con un Mac es una función separada y no es necesaria para esta demo.

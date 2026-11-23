@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T08:36:31.426Z",
+  "route": "/native/help/en",
+  "screen": "en-practice-reopened",
+  "browser_name": "Native LeonardoMD AppKit / WKWebView",
+  "browser_version": "Not exposed by native CUA",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Separate practice form reopened after fill/save/close; QA385 English answer preserved; viewport_css is screenshot-pixel equivalent; CSS and native-point dimensions unavailable from CUA; source d8487bc; Guide24; baseline0.3.1057"
+}

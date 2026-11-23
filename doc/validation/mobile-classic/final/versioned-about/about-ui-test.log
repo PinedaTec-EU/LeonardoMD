@@ -1,0 +1,152 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /tmp/leonardo-386-derived/Build/Products/Classic387ReleaseMetadata.xctestrun -destination "platform=iOS Simulator,id=926C886F-52D8-4766-B84D-1A5D8C218080" "-only-testing:LittleLeonardoUITests/PairingUITests/testClassicLibrarySettingsAndInstalledAbout" -resultBundlePath /tmp/ll387-release-metadata-about.xcresult
+
+Writing result bundle at path:
+	/tmp/ll387-release-metadata-about.xcresult
+
+2026-11-07 12:48:42.902 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:48:52.340507+0100 LittleLeonardoUITests-Runner[90630:104725319] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-11-07 12:48:55.801.
+Test Suite 'LittleLeonardoUITests.xctest' started at 2026-11-07 12:48:55.801.
+Test Suite 'PairingUITests' started at 2026-11-07 12:48:55.801.
+Test Case '-[LittleLeonardoUITests.PairingUITests testClassicLibrarySettingsAndInstalledAbout]' started.
+    t =     0.01s Start Test at 2026-11-07 12:48:55.809
+    t =     0.08s Set Up
+    t =     0.09s Open eu.pinedatec.LittleLeonardo
+    t =     0.09s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 12:48:56.198 xcodebuild[90471:104724073] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 12:48:56.198 xcodebuild[90471:104724073] [MT] IDELaunchParametersSnapshot: no debugger version
+objc[90630]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x109f24398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10a428310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-11-07 12:48:56.203 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     0.93s         Setting up automation session
+    t =     3.42s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.80s Waiting 15.0s for "open-sync-settings" Button to exist
+    t =     5.83s     Checking `Expect predicate `existsNoRetry == 1` for object "open-sync-settings" Button`
+    t =     5.83s         Checking existence of `"open-sync-settings" Button`
+    t =     5.99s Waiting 5.0s for "Biblioteca" NavigationBar to exist
+    t =     7.02s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =     7.02s         Checking existence of `"Biblioteca" NavigationBar`
+    t =     7.06s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =     7.18s Added attachment named 'Classic library'
+    t =     7.18s Tap "open-sync-settings" Button
+    t =     7.18s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.18s     Find the "open-sync-settings" Button
+    t =     7.21s     Check for interrupting elements affecting "open-sync-settings" Button
+    t =     7.25s     Synthesize event
+    t =     7.60s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.14s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =     8.26s Added attachment named 'Classic synchronization settings'
+    t =     8.26s Waiting 5.0s for "open-about" Button to exist
+    t =     9.29s     Checking `Expect predicate `existsNoRetry == 1` for object "open-about" Button`
+    t =     9.29s         Checking existence of `"open-about" Button`
+    t =     9.34s Tap "open-about" Button
+    t =     9.34s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.34s     Find the "open-about" Button
+    t =     9.38s     Check for interrupting elements affecting "open-about" Button
+    t =     9.43s     Synthesize event
+    t =     9.72s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.06s Waiting 5.0s for "Little Leonardo" StaticText to exist
+    t =    11.10s     Checking `Expect predicate `existsNoRetry == 1` for object "Little Leonardo" StaticText`
+    t =    11.10s         Checking existence of `"Little Leonardo" StaticText`
+    t =    11.15s Waiting 5.0s for "about-version" Any to exist
+    t =    12.18s     Checking `Expect predicate `existsNoRetry == 1` for object "about-version" Any`
+    t =    12.18s         Checking existence of `"about-version" Any`
+    t =    12.29s Tap "Ayuda" Button
+    t =    12.29s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    12.29s     Find the "Ayuda" Button
+    t =    12.33s     Check for interrupting elements affecting "Ayuda" Button
+    t =    12.38s     Synthesize event
+    t =    12.67s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    13.02s Waiting 5.0s for "Conecta tu Mac" StaticText to exist
+    t =    14.04s     Checking `Expect predicate `existsNoRetry == 1` for object "Conecta tu Mac" StaticText`
+    t =    14.04s         Checking existence of `"Conecta tu Mac" StaticText`
+    t =    14.09s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    14.19s Added attachment named 'Classic offline help'
+    t =    14.19s Tap "Acerca de" Button
+    t =    14.19s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.19s     Find the "Acerca de" Button
+    t =    14.23s     Check for interrupting elements affecting "BackButton" Button
+    t =    14.27s     Synthesize event
+    t =    14.56s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.84s Tap "Privacidad" Button
+    t =    14.84s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.84s     Find the "Privacidad" Button
+    t =    14.89s     Check for interrupting elements affecting "Privacidad" Button
+    t =    14.93s     Synthesize event
+    t =    15.22s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    15.52s Waiting 5.0s for "Datos en este dispositivo" StaticText to exist
+    t =    16.55s     Checking `Expect predicate `existsNoRetry == 1` for object "Datos en este dispositivo" StaticText`
+    t =    16.55s         Checking existence of `"Datos en este dispositivo" StaticText`
+    t =    16.59s Tap "Acerca de" Button
+    t =    16.59s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    16.59s     Find the "Acerca de" Button
+    t =    16.63s     Check for interrupting elements affecting "BackButton" Button
+    t =    16.67s     Synthesize event
+    t =    16.96s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.24s Tap "Licencias" Button
+    t =    17.24s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.24s     Find the "Licencias" Button
+    t =    17.28s     Check for interrupting elements affecting "Licencias" Button
+    t =    17.32s     Synthesize event
+    t =    17.62s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.94s Waiting 5.0s for StaticText (First Match) to exist
+    t =    18.96s     Checking `Expect predicate `existsNoRetry == 1` for object StaticText (First Match)`
+    t =    18.97s         Checking existence of `StaticText (First Match)`
+    t =    19.03s Tap "Acerca de" Button
+    t =    19.03s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.03s     Find the "Acerca de" Button
+    t =    19.07s     Check for interrupting elements affecting "BackButton" Button
+    t =    19.11s     Synthesize event
+    t =    19.40s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.67s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    19.78s Added attachment named 'Classic About installed application'
+    t =    19.78s Tap "Cerrar" Button
+    t =    19.78s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.78s     Find the "Cerrar" Button
+    t =    19.83s     Check for interrupting elements affecting "Cerrar" Button
+    t =    19.87s     Synthesize event
+    t =    20.17s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.50s Tap "open-pairing" Button
+    t =    20.50s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.51s     Find the "open-pairing" Button
+    t =    20.54s     Check for interrupting elements affecting "open-pairing" Button
+    t =    20.57s     Synthesize event
+    t =    20.87s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    21.33s Waiting 5.0s for "pairing-method" SegmentedControl to exist
+    t =    22.35s     Checking `Expect predicate `existsNoRetry == 1` for object "pairing-method" SegmentedControl`
+    t =    22.35s         Checking existence of `"pairing-method" SegmentedControl`
+    t =    22.42s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    22.52s Added attachment named 'Classic QR pairing'
+    t =    22.52s Tap "IP y puerto" Button
+    t =    22.52s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    22.52s     Find the "IP y puerto" Button
+    t =    22.57s     Check for interrupting elements affecting "IP y puerto" Button
+    t =    22.62s     Synthesize event
+    t =    22.90s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    24.53s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    24.65s Added attachment named 'Classic manual pairing'
+    t =    24.65s Tear Down
+Test Case '-[LittleLeonardoUITests.PairingUITests testClassicLibrarySettingsAndInstalledAbout]' passed (24.948 seconds).
+Test Suite 'PairingUITests' passed at 2026-11-07 12:49:20.757.
+	 Executed 1 test, with 0 failures (0 unexpected) in 24.948 (24.956) seconds
+Test Suite 'LittleLeonardoUITests.xctest' passed at 2026-11-07 12:49:20.759.
+	 Executed 1 test, with 0 failures (0 unexpected) in 24.948 (24.958) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 12:49:20.760.
+	 Executed 1 test, with 0 failures (0 unexpected) in 24.948 (24.959) seconds
+2026-11-07 12:49:20.782 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:49:20.782 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:49:20.782 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:49:20.791 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:49:20.791 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:49:20.791 xcodebuild[90471:104724073] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:49:21.049 xcodebuild[90471:104724073] [MT] IDETestOperationsObserverDebug: 38.425 elapsed -- Testing started completed.
+2026-11-07 12:49:21.049 xcodebuild[90471:104724073] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-07 12:49:21.049 xcodebuild[90471:104724073] [MT] IDETestOperationsObserverDebug: 38.425 sec, +38.425 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/ll387-release-metadata-about.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

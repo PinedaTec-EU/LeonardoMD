@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-11-06T16:49:30.239Z",
+  "route": "/native/diagnostics/cached-guide-v17",
+  "screen": "Diagnostic for issue #378: stale personal guide copy",
+  "browser_name": "Native macOS application window with WKWebView content, via CUA",
+  "browser_version": null,
+  "viewport_css": null,
+  "capture_mode": "element",
+  "state": "Historical v17 personal copy differs from candidate bundle; NOT current Help acceptance evidence. Runtime SVG and outline work, but new help examples are missing.",
+  "data_provenance": "synthetic",
+  "unavailable_context": "Native CUA does not expose the packaged WKWebView browser version or CSS viewport. Both are explicitly unavailable; image dimensions are not substituted."
+}

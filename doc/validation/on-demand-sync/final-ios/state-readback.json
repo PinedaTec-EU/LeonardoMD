@@ -1,0 +1,19 @@
+{
+  "source": "66c9e644a3203e1725f466973e1940acff61e61f",
+  "recorded_at": "2026-11-07T15:47:07.619285+00:00",
+  "simulator": "926C886F-52D8-4766-B84D-1A5D8C218080",
+  "bundle_identifier": "eu.pinedatec.LittleLeonardo",
+  "version": "0.3.1113",
+  "build": "1113",
+  "temporary_limit_bytes": 134217728,
+  "offline_paths": [
+    "notes/agenda.md",
+    "notes/decisions.md",
+    "notes/future.md"
+  ],
+  "offline_bytes": 166,
+  "temporary_paths": [],
+  "retained_folder": "notes",
+  "data_provenance": "synthetic",
+  "result": "Three native UI tests PASS; source fixture PASS; separate About/native Help test PASS; not physical-device acceptance"
+}

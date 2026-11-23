@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-11-04T22:59:30.340Z",
+  "route": "/native/rubrics/form-canvas",
+  "screen": "Expanded rubric field in protected MDLR",
+  "browser_name": "Native AppKit/SwiftUI",
+  "browser_version": "Not applicable",
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Synthetic straight-line ink; library opt-in disabled; protected form request; native point dimensions unavailable via capture API",
+  "built_source_commit": "59b6b148fdae5b0f6789e119c0d6c965462846d7",
+  "pid": 56028,
+  "image": {
+    "sha256": "d2edbaf6247c1406aa0d479971881743b4fbe70241ca11e1e5da2c5fd0ef11b6",
+    "width_px": 1296,
+    "height_px": 906
+  }
+}

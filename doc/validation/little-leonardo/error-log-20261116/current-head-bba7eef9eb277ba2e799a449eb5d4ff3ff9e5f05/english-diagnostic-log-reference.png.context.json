@@ -1,0 +1,28 @@
+{
+  "captured_at": "2026-11-16T02:12:13Z",
+  "route": "Sync settings > Error log",
+  "screen": "The matching local download-log entry with the same reference as the inline preview.",
+  "capture_tool": "XCUITest native app screenshot attachment",
+  "capture_mode": "native app viewport",
+  "state": "English inline reference matches the local download diagnostic; native points measured from app.frame; English; Classic appearance",
+  "data_provenance": "synthetic",
+  "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+  "source_sha": "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
+  "result_bundle": "/tmp/leonardo-pr435-final-english-20261116.xcresult",
+  "simulator": {
+    "name": "iPhone 17 Pro",
+    "device_id": "C1762B8D-7017-4573-A613-2A914D69140D",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "os_build": "23F77",
+    "viewport_points": {
+      "width": 402,
+      "height": 874
+    },
+    "image_pixels": {
+      "width": 1206,
+      "height": 2622
+    }
+  },
+  "image_sha256": "5c3f2b5aeb33ff2e109c639755cc91b4a5975c62b1352d72a596172d08adebe1"
+}

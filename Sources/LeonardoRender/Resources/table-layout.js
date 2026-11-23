@@ -1,0 +1,163 @@
+(() => {
+  "use strict";
+
+  // Only validated numeric ch values reach CSS; directives never inject markup.
+  const directive = /^<!--\s*leonardo:table\s+widths="([^"]+)"\s*-->\s*$/;
+  let allowsLegacyWidths = true;
+  let tableRenderKey = "";
+  let documentTokens = [];
+  const maximumCharacters = 200;
+  const automaticMinimumCharacters = 12;
+  const horizontalCellPadding = 1.5;
+
+  function parseWidths(raw) {
+    const match = directive.exec(raw);
+    if (!match) return null;
+    const widths = match[1].trim().split(/\s+/);
+    return widths.every((width) => width === "auto" || (
+      /^[1-9]\d*ch$/.test(width) && Number(width.slice(0, -2)) <= maximumCharacters
+    )) ? widths : null;
+  }
+
+  function annotateTables(tokens) {
+    let pending = null;
+    tokens.forEach((token) => {
+      if (token.type === "space") return;
+      if (token.type === "table" && pending?.length === token.header.length) {
+        token.leonardoWidths = pending;
+      }
+      pending = token.type === "html" ? parseWidths(token.raw) : null;
+      if (token.tokens) annotateTables(token.tokens);
+      if (token.items) token.items.forEach((item) => annotateTables(item.tokens));
+    });
+    return tokens;
+  }
+
+  function sizedTable(token) {
+    const widths = token.leonardoWidths;
+    const html = window.marked.Renderer.prototype.table.call(this, token);
+    const opening = `<table data-leonardo-gfm="${tableRenderKey}"`;
+    if (!widths) return html.replace("<table>", `${opening}>`);
+    const characters = widths.reduce((sum, width) => sum + (
+      width === "auto" ? automaticMinimumCharacters : Number(width.slice(0, -2))
+    ), 0);
+    const padding = widths.length * horizontalCellPadding;
+    const total = `calc(${characters}ch + ${padding}em + ${widths.length + 1}px)`;
+    const tableWidth = widths.includes("auto") ? `max(100%, ${total})` : total;
+    const columns = widths.map((width) => width === "auto" ? "<col>" :
+      `<col style="width: calc(${width} + ${horizontalCellPadding}em + 1px)">`).join("");
+    return html.replace("<table>",
+      `${opening} class="table-sized" style="width: ${tableWidth}"><colgroup>${columns}</colgroup>`);
+  }
+
+  const parser = new window.marked.Marked({
+    gfm: true,
+    breaks: false,
+    hooks: { processAllTokens: (tokens) => {
+      // Share the existing parse with feature detection, including consumed reference definitions.
+      documentTokens = tokens;
+      return window.LeonardoEditing.annotate(allowsLegacyWidths ? annotateTables(tokens) : tokens);
+    } },
+    renderer: {
+      table: sizedTable,
+      heading(token) {
+        const html = window.marked.Renderer.prototype.heading.call(this, token);
+        if (!Number.isSafeInteger(token.leonardoSourceLine)) return html;
+        return html.replace(/^<h([1-6])>/,
+          `<h$1 data-leonardo-source-line="${token.leonardoSourceLine}" data-leonardo-heading="${tableRenderKey}">`);
+      },
+      html(token) {
+        if (!allowsLegacyWidths && token.block === true && token.raw.trim() === "<!-- leonardo:page-break -->") return '<hr data-leonardo-page-break="true">';
+        return window.marked.Renderer.prototype.html.call(this, token);
+      },
+      text(token) {
+        const html = window.marked.Renderer.prototype.text.call(this, token);
+        return window.LeonardoEditing.span(token, html);
+      },
+      codespan(token) {
+        return `<code>${window.LeonardoEditing.span(token, window.LeonardoEditing.escapeHTML(token.text))}</code>`;
+      },
+      code(token) {
+        const html = window.marked.Renderer.prototype.code.call(this, token);
+        if (token.leonardoEditID === undefined) return html;
+        return html.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, (_, open, body, close) =>
+          open + window.LeonardoEditing.span(token, body.replace(/\n$/, "")) + close);
+      }
+    }
+  });
+
+  // Protect display TeX before Markdown interprets underscores, escapes or HTML.
+  // Custom tokens have no preview-edit ranges: edit formulas in source.
+  const displayMath = (source) => /^\$\$([\s\S]+?)\$\$/.exec(source);
+  parser.use({ extensions: [
+    {
+      name: "leonardoDisplayMathBlock", level: "block",
+      tokenizer(source) {
+        const match = /^ {0,3}\$\$([\s\S]+?)\$\$/.exec(source);
+        if (!match) return;
+        // Check the first closing delimiter separately: do not backtrack into
+        // another expression to satisfy the end-of-line requirement.
+        const ending = /^[ \t]*(?:\n|$)/.exec(source.slice(match[0].length));
+        if (ending) return { type: "leonardoDisplayMathBlock", raw: match[0] + ending[0], text: match[0].trim() };
+      },
+      renderer(token) { return `<p>${window.LeonardoEditing.escapeHTML(token.text)}</p>\n`; }
+    },
+    {
+      name: "leonardoDisplayMathInline", level: "inline",
+      start(source) { return source.indexOf("$$"); },
+      tokenizer(source) {
+        const match = displayMath(source);
+        if (match) return { type: "leonardoDisplayMathInline", raw: match[0], text: match[0] };
+      },
+      renderer(token) { return window.LeonardoEditing.escapeHTML(token.text); }
+    }
+  ] });
+
+  window.LeonardoTables = {
+    get documentTokens() { return documentTokens; },
+    render(markdown, legacyWidths = true) {
+      allowsLegacyWidths = legacyWidths;
+      tableRenderKey = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
+      const extras = window.LeonardoMarkdownExtras;
+      if (extras) {
+        extras.install(parser);
+        extras.beginDocument(markdown);
+      }
+      const html = parser.parse(markdown);
+      return extras ? extras.finish(html) : html;
+    },
+    headingForSourceLine(root, line) {
+      if (!Number.isSafeInteger(line) || line < 1) return null;
+      return Array.from(root.querySelectorAll("h1, h2, h3, h4, h5, h6")).find(heading =>
+        heading.dataset.leonardoHeading === tableRenderKey &&
+        Number(heading.dataset.leonardoSourceLine) === line) || null;
+    },
+    isMarkdownTable: table => table.dataset.leonardoGfm === tableRenderKey,
+    sourceFor(table, root, markdown) {
+      const nodes = Array.from(root.querySelectorAll("table")).filter(this.isMarkdownTable);
+      return this.sources(markdown)[nodes.indexOf(table)];
+    },
+    sources(markdown) {
+      const tables = [];
+      function visit(tokens) {
+        for (const token of tokens || []) {
+          if (token.type === "table") tables.push(token.raw);
+          else if (token.tokens) visit(token.tokens);
+          if (token.items) token.items.forEach(item => visit(item.tokens));
+        }
+      }
+      visit(parser.lexer(markdown));
+      return tables;
+    },
+    prepare(root) {
+      root.querySelectorAll("table").forEach((table) => {
+        const viewport = document.createElement("div");
+        viewport.className = "table-viewport";
+        // Keyboard users can reach and scroll an overflowing table.
+        viewport.tabIndex = 0;
+        table.before(viewport);
+        viewport.appendChild(table);
+      });
+    }
+  };
+})();

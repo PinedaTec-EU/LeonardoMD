@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-12T20:07:06.741738+00:00",
+  "capture": {
+    "captured_at": "2026-11-12T20:00:43.021000+00:00",
+    "route": "/native/practice/es",
+    "screen": "LeonardoMD 0.3.1333 packaged QA window — es-practice-reopened",
+    "browser_name": "Native macOS app with embedded WKWebView",
+    "browser_version": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+    "state": "Formulario de práctica es v1 reabierto desde Ayuda en el mismo proceso QA; tres respuestas sintéticas presentes; estado guardado en archivo local.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "d858de1d6fc80e28d426a07fab32ec9dc9af06aa3bc061fbcfe1f4ffe68741ae"
+  },
+  "source": {
+    "revision_at_collection": "ae473bc8ddafd88a6c05922b91519802b49c7ee8",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

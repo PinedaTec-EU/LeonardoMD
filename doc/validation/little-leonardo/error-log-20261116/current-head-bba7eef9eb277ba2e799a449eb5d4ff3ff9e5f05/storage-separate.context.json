@@ -1,0 +1,26 @@
+{
+  "browser_name" : "Little Leonardo native SwiftUI\/WKWebView · iOS Simulator 26.5",
+  "browser_version" : "WKWebView engine version not exposed by XCTest",
+  "capture_mode" : "viewport",
+  "captured_at" : "2026-11-16T02:58:15Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 874,
+    "width" : 402
+  },
+  "route" : "\/native\/ios\/on-demand\/storage-separate",
+  "screen" : "storage-separate",
+  "source_sha" : "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
+  "state" : "128MiB temporary budget; retained project and independent offline\/pending accounting; native points measured from app.frame; Spanish; Classic appearance",
+  "test" : "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "simulator" : {
+    "name" : "LittleLeonardo PR435 Spanish QA 20261116",
+    "device_id" : "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "model" : "iPhone 17 Pro",
+    "os" : "iOS 26.5",
+    "os_build" : "23F77",
+    "image_pixels" : {"width" : 1206, "height" : 2622}
+  },
+  "image_sha256" : "1a68ee3ccba117ebafe13bc73c34c70ae6a0b6f552cd9a9d22fe83c2fa3e1246",
+  "viewport_css" : null
+}

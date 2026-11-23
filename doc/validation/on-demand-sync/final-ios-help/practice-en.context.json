@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-07T15:39:18.591000+00:00",
+  "route": "/native/ios/help/practice-en",
+  "screen": "English saved practice_0_C88F7AD1-FE94-478E-AA8E-8D986B073075.png",
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iPhone18Pro Simulator \u00b7 iOS27.0",
+  "browser_version": "Native; WKWebView engine not exposed by XCTest",
+  "viewport_css": {
+    "width": 1206,
+    "height": 2622
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "66c9e644a3203e1725f466973e1940acff61e61f",
+  "state": "Version0.3.1113/build1113; practice-en; legacy XCTest attachment provides pixel dimensions only, so viewport is screenshot-pixel equivalent, not CSS/native points; original capture time from xcresult manifest"
+}

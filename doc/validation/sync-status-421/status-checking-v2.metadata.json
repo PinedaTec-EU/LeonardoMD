@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T23:50:51.412992+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T23:50:16.275000+00:00",
+    "route": "/native/preferences/synchronization",
+    "screen": "Synchronization helper status",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Synthetic helper status: checking; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 532,
+      "height": 150
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1064,
+    "height_px": 300,
+    "sha256": "a4dbe1941d6e639b67d8d1776e2bc899de0398d6a8cb405f3a9d63978871d924"
+  },
+  "source": {
+    "revision_at_collection": "2cbf38fff8a1ce742c04f26eb90a69aa6690ea0c",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

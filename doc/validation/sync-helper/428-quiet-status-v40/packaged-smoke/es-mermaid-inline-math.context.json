@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-12T19:54:50.145Z",
+  "route": "/native/user-guide/es",
+  "screen": "LeonardoMD 0.3.1333 packaged QA window — es-mermaid-inline-math",
+  "browser_name": "Native macOS app with embedded WKWebView",
+  "browser_version": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Guía española v59; Mermaid y Math activados; diagrama y fórmula en línea renderizados; ejemplo de código literal.",
+  "data_provenance": "synthetic"
+}

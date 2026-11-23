@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-08T07:14:15.812343+00:00",
+  "capture": {
+    "captured_at": "2026-11-08T07:11:41.946000+00:00",
+    "route": "/native/help/guide27/es-chart",
+    "screen": "es-chart",
+    "browser_name": "LeonardoMD native AppKit/SwiftUI/WKWebView",
+    "browser_version": "Native; WKWebView engine version not exposed by CUA",
+    "state": "Spanish Guide27 live local Vega-Lite chart; original native screenshot; viewport image-pixel equivalent (native-point viewport unavailable)",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "4fa54ac7a8efa946c0f5a5922564a28a5b60442b3354b05b8e66798a208e78a0"
+  },
+  "source": {
+    "revision_at_collection": "59534bd2dbfb040e2c110cd08fa48174e4a60298",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

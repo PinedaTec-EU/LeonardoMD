@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-11-07T00:38:42.722Z",
+  "capture_interval": {
+    "requested_at": "2026-11-07T00:38:41.859Z",
+    "received_at": "2026-11-07T00:38:42.722Z",
+    "limitation": "Native CUA does not expose compositor timestamp"
+  },
+  "route": "/native/packaged-help/en/en-opening-images",
+  "screen": "en-opening-images",
+  "browser_name": "Native packaged LeonardoMD AppKit/SwiftUI/WKWebView",
+  "browser_version": "unavailable from native CUA target",
+  "viewport_css": null,
+  "context_limitations": "Native target exposes no CSS viewport or browser engine version. This capture shows only the first English Guide page and two local images; other live examples, the Spanish Guide, and practice save/close/reopen remain unreviewed.",
+  "capture_mode": "element",
+  "state": "Actual Help menu opened Guide v23 in protected Preview; top local cover and journey images visible. Other live examples still require viewport inspection.",
+  "data_provenance": "synthetic",
+  "application": {
+    "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+    "bundlePath": "Temporary QA bundle built from output/LeonardoMD.app; exact filesystem path omitted from repository evidence.",
+    "bundleID": "eu.pinedatec.LeonardoMD.qa.a4bd0239ae5644f593cab7025076f017",
+    "executable": "LeonardoMD",
+    "version": "0.3.1057",
+    "build": "1057",
+    "pid": 15291,
+    "executableSHA256": "fc1de7078270616c35b82b2861a7ff41d1537a8341a5be7b6da292fb32f993c8",
+    "readiness": "CUA observed new-tab window and real Help menu opening English Guide23 in this exact process; no forwarding claim"
+  },
+  "image_sha256": "97ccfa660208aef87e8ac2a9d98d72ca5a60054dcf7c19b5250dbc607b26341c",
+  "original_encoding": "JPEG",
+  "repositoryEvidencePath": "doc/validation/little-leonardo/guide-v23/packaged-help/en-opening-images.jpg",
+  "imageHandling": "Original JPEG copied byte-for-byte; no crop, resize, or pixel edits."
+}

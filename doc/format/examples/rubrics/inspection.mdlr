@@ -1,0 +1,27 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "document": {
+    "kind": "form",
+    "title": "Fictional inspection response"
+  },
+  "fields": {
+    "signature": {
+      "type": "rubric",
+      "label": "Inspection rubric",
+      "required": true,
+      "rubricSize": {
+        "width": 240,
+        "height": 80
+      }
+    }
+  },
+  "values": {}
+}
+---
+# Fictional inspection response
+
+Click the declared field in Fill.
+
+{{field:signature}}

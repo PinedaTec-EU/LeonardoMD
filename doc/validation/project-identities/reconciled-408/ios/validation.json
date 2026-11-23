@@ -1,0 +1,187 @@
+{
+  "generated_at": "2026-11-10T13:45:00Z",
+  "repository": "PinedaTec-EU/LeonardoMD",
+  "pr": 400,
+  "source": {
+    "final_head": "acb46fc23bf883098d9112803b457e23ac2f21c4",
+    "functional_build_input": "33650e806efc05cfe462118da3e0b08c44b8f69f",
+    "build_input_state": "The successful iOS build ran after applying the one-line #416 test correction in the worktree, before that correction was committed as acb46fc. The compiled production sources and test source are identical to acb46fc; the only post-build tracked change was the compilation-ledger build allocation.",
+    "working_tree_at_report": "codex/399-project-icons; deploy/version/entries/400.yaml modified by the recorder from build 12 to build 13; parent-owned doc/validation/project-identities/reconciled-408/ remains untracked.",
+    "tree_sha256_33650e8": "626affb2882848da565a8784a4d67ad8c132d637b23787c39dbb2279b2cde51a",
+    "tree_sha256_acb46fc": "eb108f3faaf94a230892d29e415d26023ceecbe6e3c13ffc267712bfccbce350",
+    "git_tree_object_33650e8": "97a5bdfebc615bb70427ed0941265b559743d0d3",
+    "git_tree_object_acb46fc": "1e1c1193f90d1e94e9364759ce7523f950163eb0"
+  },
+  "device": {
+    "name": "LittleLeonardo400 Project Icons",
+    "model": "iPhone 18 Pro",
+    "runtime": "iOS 27.0",
+    "udid": "6FD32358-3F48-4272-90BE-B0E9E0B0E4CF",
+    "os_build": "24A434",
+    "native_viewport_points": {
+      "width": 402,
+      "height": 874
+    },
+    "pixel_scale": 3,
+    "css_viewport": null
+  },
+  "build": {
+    "derived_data": "/Volumes/MSM4Ext/XcodeData/DerivedData/400-ios-33650e8",
+    "derived_data_size": "421M",
+    "raw_build_log": null,
+    "raw_build_log_note": "The successful build-for-testing invocation was not redirected to a file; its success and recorder allocation were observed in the terminal output. The exact command is recorded below.",
+    "command": "python3 scripts/compile-and-record.py --pr-number 400 -- xcodebuild -quiet -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'id=6FD32358-3F48-4272-90BE-B0E9E0B0E4CF' -derivedDataPath /Volumes/MSM4Ext/XcodeData/DerivedData/400-ios-33650e8 -configuration Debug CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- build-for-testing",
+    "result": "passed; recorder reported build delta 11 at the time, then the parent thread completed the ledger to build 13"
+  },
+  "test_results": {
+    "unit": {
+      "result_bundle": "/tmp/leonardo400-xcresults/ios-unit.xcresult",
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "command": "TEST_RUNNER_LEONARDO_PROJECT_IDENTITY_EVIDENCE=/tmp/leonardo400-ios-identities TEST_RUNNER_LEONARDO_PROJECT_IDENTITY_SOURCE_SHA=33650e806efc05cfe462118da3e0b08c44b8f69f xcodebuild -quiet -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'id=6FD32358-3F48-4272-90BE-B0E9E0B0E4CF' -derivedDataPath /Volumes/MSM4Ext/XcodeData/DerivedData/400-ios-33650e8 -resultBundlePath /tmp/leonardo400-xcresults/ios-unit.xcresult test-without-building -only-testing LittleLeonardoTests"
+    },
+    "demo_ui": {
+      "result_bundle": "/tmp/leonardo400-xcresults/ios-demo-ui.xcresult",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "command": "xcodebuild -quiet -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'id=6FD32358-3F48-4272-90BE-B0E9E0B0E4CF' -derivedDataPath /Volumes/MSM4Ext/XcodeData/DerivedData/400-ios-33650e8 -resultBundlePath /tmp/leonardo400-xcresults/ios-demo-ui.xcresult test-without-building -only-testing LittleLeonardoUITests/MobileDemoUITests"
+    },
+    "on_demand_ui": {
+      "result_bundle": "/tmp/leonardo400-xcresults/ios-ondemand-ui.xcresult",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "command": "TEST_RUNNER_LEONARDO_ON_DEMAND_QA_ROOT=/tmp/leonardo400-ondemand-qa-33650e8 xcodebuild -quiet -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'id=6FD32358-3F48-4272-90BE-B0E9E0B0E4CF' -derivedDataPath /Volumes/MSM4Ext/XcodeData/DerivedData/400-ios-33650e8 -resultBundlePath /tmp/leonardo400-xcresults/ios-ondemand-ui.xcresult test-without-building -only-testing LittleLeonardoUITests/OnDemandSyncUITests"
+    },
+    "about_help_ui": {
+      "result_bundle": "/tmp/leonardo400-xcresults/ios-about-help.xcresult",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "test_file": "Mobile/LittleLeonardoUITests/PairingUITests.swift",
+      "test_method": "testClassicLibrarySettingsAndInstalledAbout()",
+      "command": "xcodebuild -quiet -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'id=6FD32358-3F48-4272-90BE-B0E9E0B0E4CF' -derivedDataPath /Volumes/MSM4Ext/XcodeData/DerivedData/400-ios-33650e8 -resultBundlePath /tmp/leonardo400-xcresults/ios-about-help.xcresult test-without-building -only-testing LittleLeonardoUITests/PairingUITests/testClassicLibrarySettingsAndInstalledAbout"
+    }
+  },
+  "fixture": {
+    "result": "1 passed, 0 failed; 175.951 seconds",
+    "command": "LEONARDO_ON_DEMAND_QA_ROOT=/tmp/leonardo400-ondemand-qa-33650e8 swift test --skip-build --filter OnDemandMobileAcceptanceFixtureTests",
+    "root": "/tmp/leonardo400-ondemand-qa-33650e8",
+    "evidence": [
+      "ready.json",
+      "metadata-only.json",
+      "single-file.json",
+      "completed.json"
+    ],
+    "completed": {
+      "catalogues": 3,
+      "snapshots": 0,
+      "files": {
+        "notes/agenda.md": 1,
+        "notes/decisions.md": 3,
+        "notes/future.md": 1,
+        "reference/readme.md": 1
+      }
+    },
+    "listener_after_test": "46987 free"
+  },
+  "product_hashes": {
+    "bundle_id": "eu.pinedatec.LittleLeonardo",
+    "built": {
+      "root": "/Volumes/MSM4Ext/XcodeData/DerivedData/400-ios-33650e8/Build/Products/Debug-iphonesimulator/LittleLeonardo.app",
+      "LittleLeonardo": {
+        "bytes": 40160,
+        "sha256": "f2713b5dc25798997c1ace631f7854758bcfec74932b96bbc9b6a3aa4e7d08d0"
+      },
+      "LittleLeonardo.debug.dylib": {
+        "bytes": 12148512,
+        "sha256": "2b1f67c50f9577cd5ee3ca20ddfaf236d06ee815693ddc72ce4093ae38630452"
+      },
+      "Info.plist": {
+        "bytes": 1742,
+        "sha256": "c2de11d7b43588f30d3af05a0a0fc3a4308752897356a6f08e110a6b0a9f72e2"
+      }
+    },
+    "installed": {
+      "root": "/Users/jmr.pineda/Library/Developer/CoreSimulator/Devices/6FD32358-3F48-4272-90BE-B0E9E0B0E4CF/data/Containers/Bundle/Application/E2AA4FDD-FCA8-45AB-B23E-677CC138E275/LittleLeonardo.app",
+      "LittleLeonardo": {
+        "bytes": 40160,
+        "sha256": "f2713b5dc25798997c1ace631f7854758bcfec74932b96bbc9b6a3aa4e7d08d0"
+      },
+      "LittleLeonardo.debug.dylib": {
+        "bytes": 12148512,
+        "sha256": "2b1f67c50f9577cd5ee3ca20ddfaf236d06ee815693ddc72ce4093ae38630452"
+      },
+      "Info.plist": {
+        "bytes": 1742,
+        "sha256": "c2de11d7b43588f30d3af05a0a0fc3a4308752897356a6f08e110a6b0a9f72e2"
+      }
+    },
+    "installed_vs_built_note": "Both sets were re-read with hashlib.sha256 before publication; identical bytes confirmed.",
+    "built_installed_identical": true,
+    "runtime_version_fields": {
+      "CFBundleIdentifier": "eu.pinedatec.LittleLeonardo",
+      "CFBundleExecutable": "LittleLeonardo",
+      "CFBundleShortVersionString": null,
+      "CFBundleVersion": null
+    }
+  },
+  "exported_original_captures": {
+    "directory": "/tmp/leonardo400-ios-attachments",
+    "manifests": [
+      "demo/manifest.json",
+      "ondemand/manifest.json",
+      "about/manifest.json"
+    ],
+    "native_viewport_points": {
+      "width": 402,
+      "height": 874
+    },
+    "css_viewport": null,
+    "captures": [
+      {
+        "purpose": "Demo local header",
+        "path": "/tmp/leonardo400-ios-attachments/demo/E47B5ABC-B7B9-43B5-A54E-80C309216806.png",
+        "sha256": "7bbf8c4bc40879ed8d09c49f7885f2729633f8f3a12c7aa9c2f9097dbeeea6a4",
+        "pixels": "1206x2622",
+        "timestamp": "2026-11-10T13:32:32.326Z",
+        "test": "MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored"
+      },
+      {
+        "purpose": "Received project swipe/delete action",
+        "path": "/tmp/leonardo400-ios-attachments/ondemand/B815AC3D-413D-41EF-B63A-C9C0148BFFD8.png",
+        "sha256": "1c955747b68455b90bcd10b0f349c49842c32668d8a1ad05fa33b3ae9327bd96",
+        "pixels": "1206x2622",
+        "timestamp": "2026-11-10T13:38:32.528Z",
+        "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache"
+      },
+      {
+        "purpose": "About/Ayuda bilingual project identity help",
+        "path": "/tmp/leonardo400-ios-attachments/about/4E6787F1-51B5-4AB0-BF03-5427E3819579.png",
+        "sha256": "372f2390a17cbbbe5c4e5d6e76de120e43f384505c6e41caa1b513efebd93f05",
+        "pixels": "1206x2622",
+        "timestamp": "2026-11-10T13:39:43.781Z",
+        "test": "PairingUITests/testClassicLibrarySettingsAndInstalledAbout"
+      }
+    ],
+    "identity_matrix": {
+      "directory": "/tmp/leonardo400-ios-identities",
+      "count": 8,
+      "visually_inspected": 8,
+      "roles": [
+        "received",
+        "recovery"
+      ],
+      "sizes": [
+        "large",
+        "accessibility3"
+      ],
+      "devices": [
+        "iPhone 390-point capture",
+        "iPad 834-point capture"
+      ]
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "file": "es-chart.jpg",
+    "captured_at": "2026-11-10T15:36:36.308Z",
+    "locale": "es",
+    "screen": "Compara de un vistazo \u00b7 Gr\u00e1ficos",
+    "math_enabled": true,
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "engine_version": "not exposed",
+    "source": "acb46fc23bf883098d9112803b457e23ac2f21c4",
+    "pid": 86473,
+    "route": "/native/macos/help42/es-chart",
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "browser_name": "Packaged LeonardoMD native WKWebView",
+    "browser_version": "not exposed by CUA"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "d55b1749f4f259aecac229eb0b06201f148b474d94cc08ee3e4b2b77ae651dbb"
+  },
+  "source": {
+    "revision_at_collection": "7a2e097f28bc25575c407ce75719e26b02c2edf0",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "captured_at" : "2026-11-07T21:18:32Z",
+  "component" : "MobileProjectIdentityLabel",
+  "dynamic_type" : "large",
+  "height_points" : "104",
+  "platform" : "iOS native UIHostingController",
+  "role" : "received",
+  "source_sha" : "7ce073dfb43ca0317876223e1d98a42115d40075",
+  "state" : "received from another device",
+  "width_points" : "834"
+}

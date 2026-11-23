@@ -1,0 +1,69 @@
+{
+  "source": "560627b21b9032f68edb0b5fba2c2d67b6f39a0d",
+  "pid": 2544,
+  "version": "0.3.1136",
+  "build": "1136",
+  "guide": 31,
+  "kind": "fresh actual packaged ad-hoc QA",
+  "normal_quit": true,
+  "helper_pid_preserved": 67032,
+  "final_locale": "English",
+  "final_math": "ON",
+  "root_restore_plan": "/tmp/ll397-help31-backup-plan.json",
+  "original_restoration": "Root restored all three original files byte-for-byte after normal QA quit; sync preferences remained identical",
+  "help": {
+    "en": {
+      "bundle_sha256": "df21e73dec9ad128f501772a3044dd0b11f348bdb260806c2c7675dfec2dff02",
+      "personal_sha256": "df21e73dec9ad128f501772a3044dd0b11f348bdb260806c2c7675dfec2dff02",
+      "actual_help_menu": true,
+      "mermaid": true,
+      "inline_math": true,
+      "one_line_display": true,
+      "multiline_display": true,
+      "underbraces": true,
+      "radicals_arrows_cancellation": true,
+      "box_counting_tag_1": true,
+      "code_literal": true,
+      "math_off_fallback": true,
+      "charts": true,
+      "local_images": true,
+      "tables": true
+    },
+    "es": {
+      "bundle_sha256": "df217cab2702ab42ef432f3fcbaaaa3ec02c2feed2f280c43d5461853c523d57",
+      "personal_sha256": "df217cab2702ab42ef432f3fcbaaaa3ec02c2feed2f280c43d5461853c523d57",
+      "actual_help_menu": true,
+      "mermaid": true,
+      "inline_math": true,
+      "one_line_display": true,
+      "multiline_display": true,
+      "underbraces": true,
+      "radicals_arrows_cancellation": true,
+      "box_counting_tag_1": true,
+      "code_literal": true,
+      "math_off_fallback": true,
+      "charts": true,
+      "local_images": true,
+      "tables": true
+    }
+  },
+  "practice": {
+    "en": {
+      "values": {
+        "practiceGoal": "Check bundled help offline",
+        "practiceName": "Guide31 synthetic QA",
+        "practiceReady": true
+      },
+      "filled_saved_closed_reopened": true
+    },
+    "es": {
+      "values": {
+        "practiceGoal": "Revisar ayuda sin conexion",
+        "practiceName": "QA ficticia Guide31",
+        "practiceReady": true
+      },
+      "filled_saved_closed_reopened": true
+    }
+  },
+  "restored_files": 3
+}

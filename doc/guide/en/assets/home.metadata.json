@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-10-31T10:23:05.943885+00:00",
+  "capture": {
+    "captured_at": "2026-10-31T10:22:32.697000+00:00",
+    "route": "/native/user-guide/en",
+    "screen": "Leonardo guide: Home; isolated empty favorites and recent items",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Home; isolated empty favorites and recent items; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 1000,
+      "height": 800
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2000,
+    "height_px": 1600,
+    "sha256": "75b56e7b7d2806a526dce83d535695500ce465584bf9b6f81b844922b889bab9"
+  },
+  "source": {
+    "revision_at_collection": "e457e86eccade662825253d4f94dc3a20999edf9",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

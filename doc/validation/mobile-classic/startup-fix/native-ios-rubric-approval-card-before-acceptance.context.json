@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T12:43:11.896000+00:00",
+  "route": "/LittleLeonardo/native-ios-rubric-approval-card-before-acceptance",
+  "screen": "Native iOS rubric approval card before acceptance",
+  "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+  "browser_version": "iOS 27.0 (24A434); SDK27.1",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "capture_mode": "viewport",
+  "state": "Native iOS rubric approval card before acceptance; synthetic QA; native points in viewport_css; source 99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+  "data_provenance": "synthetic"
+}

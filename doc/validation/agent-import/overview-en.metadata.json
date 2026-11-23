@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-05T10:17:35.790162+00:00",
+  "capture": {
+    "captured_at": "2026-11-05T10:16:52.881000+00:00",
+    "route": "/native/user-guide/en",
+    "screen": "Leonardo guide: Agent import guide; original illustrative SVG loaded; no PDF selected or sent",
+    "browser_name": "Native WKWebView; User-Agent reports engine compatibility versions",
+    "browser_version": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+    "state": "Agent import guide; original illustrative SVG loaded; no PDF selected or sent; language en",
+    "viewport_css": {
+      "width": 1100,
+      "height": 772
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2200,
+    "height_px": 1544,
+    "sha256": "19e1b2d8fd3e2da71d8b51359ced2d04fad9d2eb6a04a36bf54fbd633824770b"
+  },
+  "source": {
+    "revision_at_collection": "4c300eadf91bbca5260772c51bbec581b1c3bc0f",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

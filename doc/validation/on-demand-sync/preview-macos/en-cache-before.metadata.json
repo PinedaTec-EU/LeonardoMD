@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-08T07:14:15.486067+00:00",
+  "capture": {
+    "captured_at": "2026-11-08T07:13:05.647000+00:00",
+    "route": "/native/help/guide27/en-cache-before",
+    "screen": "en-cache-before",
+    "browser_name": "LeonardoMD native AppKit/SwiftUI/WKWebView",
+    "browser_version": "Native; WKWebView engine version not exposed by CUA",
+    "state": "Mac storage controls visible before editing budget; original native screenshot; viewport image-pixel equivalent (native-point viewport unavailable)",
+    "viewport_css": {
+      "width": 1160,
+      "height": 1240
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 1160,
+    "height_px": 1240,
+    "sha256": "3971fb4d48e4583c0073316b40b8d4a1428ce59fec79155f1d2b750b5cb86634"
+  },
+  "source": {
+    "revision_at_collection": "59534bd2dbfb040e2c110cd08fa48174e4a60298",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

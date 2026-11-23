@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-11-07T21:10:33.376Z",
+  "screen": "Final fresh instance: Ayuda ES, tabla de roles e imagen local",
+  "route": "/native/project-identities/help-es-project-roles",
+  "capture_mode": "element",
+  "browser_name": "Native packaged AppKit/WKWebView",
+  "browser_version": null,
+  "viewport_css": null,
+  "native_viewport_points": null,
+  "data_provenance": "synthetic",
+  "source_sha": "490086a6829f30cab3e5a7c6fe6e03a75f90e22d",
+  "limitations": "CUA exposes native screenshot pixels and accessibility; CSS viewport, native point geometry and engine version unavailable."
+}

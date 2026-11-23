@@ -1,0 +1,7 @@
+Test Suite 'RegisteredSyncHelperAcceptanceTests' started at 2026-11-05 09:31:29.864.
+Test Case '-[LeonardoDesktopSyncTests.RegisteredSyncHelperAcceptanceTests testRealRegisteredSourceSurvivesEditorExitAndHelperRestartThenDisables]' started.
+Test Case '-[LeonardoDesktopSyncTests.RegisteredSyncHelperAcceptanceTests testRealRegisteredSourceSurvivesEditorExitAndHelperRestartThenDisables]' passed (194.719 seconds).
+Test Suite 'RegisteredSyncHelperAcceptanceTests' passed at 2026-11-05 09:34:44.583.
+	 Executed 1 test, with 0 failures (0 unexpected) in 194.719 (194.719) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 194.719 (194.719) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 194.719 (194.724) seconds

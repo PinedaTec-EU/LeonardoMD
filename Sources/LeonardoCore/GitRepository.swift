@@ -101,6 +101,7 @@ public protocol GitClient: Sendable {
     func push() async throws -> GitOperationResult
 }
 
+#if os(macOS)
 public actor GitRepository: GitClient {
     public let rootURL: URL
     private let runner: GitProcessRunner
@@ -334,3 +335,5 @@ public actor GitRepository: GitClient {
         }
     }
 }
+
+#endif

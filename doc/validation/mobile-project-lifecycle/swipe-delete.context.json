@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-10T09:46:43.294000+00:00",
+  "route": "/native/ios/library",
+  "screen": "swipe-delete",
+  "browser_name": "XCUITest native screenshot (no browser)",
+  "browser_version": "Not applicable; iOS Simulator 27.0 (24A434)",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "capture_mode": "viewport",
+  "state": "LittleLeonardo iPhone 17 Pro; native logical points supplied in viewport_css; light Classic; swipe-delete",
+  "data_provenance": "synthetic"
+}

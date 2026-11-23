@@ -1,0 +1,69 @@
+Window: "Practice-v1-en.mdlr", App: LeonardoMD QA 441 A2.
+0 standard window Practice-v1-en.mdlr, Secondary Actions: Raise, URL: file:///var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/en/Practice-v1-en.mdlr
+	1 container
+		2 scroll area
+			3 button Description: New tab, Help: Open a document or project in this tab
+			4 button Description: Close tab New tab, ID: xmark
+			5 unknown Description: Reorder tab Guide-v71-en.mdlz, Help: Drag to reorder tab
+			6 button Description: Guide-v71-en.mdlz, Help: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application Support/LeonardoMD/User Guides/v71/en/Guide-v71-en.mdlz
+			7 button Description: Close tab Guide-v71-en.mdlz, ID: xmark
+			8 unknown Description: Reorder tab Practice-v1-en.mdlr, Help: Drag to reorder tab
+			9 button (selected) Description: Practice-v1-en.mdlr, Help: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application Support/LeonardoMD/Practice Forms/v1/en/Practice-v1-en.mdlr
+			10 button Description: Close tab Practice-v1-en.mdlr, ID: xmark
+		11 button Description: Find, Help: Find in open documents (⌘F), ID: document-find
+		12 button Description: New tab, Help: New tab (⌘T), ID: new-document-tab
+		13 button Description: Preferences, Help: Preferences…, ID: tab-bar-preferences
+		14 text Practice-v1-en.mdlr Unsaved changes
+		15 image Description: Circle, ID: document-unsaved-changes
+		16 menu button Move, ID: folder
+		17 menu button Hdr, Description: hdr, Help: Instances, ID: instance-switcher
+		18 image Description: Search Document, ID: doc.text.magnifyingglass
+		19 text Leonardo form response ·
+		20 image Description: Move, ID: folder
+		21 text Local file
+		22 menu button Description: Application menu, ID: instance-application-menu
+		23 button Description: Document protection, Help: Protected · click to enable editing, Value: Read only, ID: document-protection
+		24 button Description: Undo, Help: Undo (⌘Z), ID: document-undo
+		25 button (disabled) Description: Redo, Help: Redo (⇧⌘Z), ID: document-redo
+		26 button Description: Save, Help: Save (⌘S)
+		27 menu button Mode, Value: Fill, ID: document-mode
+		28 menu button Insert, ID: document-insert
+		29 menu button Export, ID: document-export
+		30 menu button More
+		31 scroll area
+			32 HTML content leonardo-document://local/en/
+				33 container
+					34 heading Your practice form, Value: 1
+						35 text Your practice form
+					36 text Type into the fields and save with ⌘S. This document opens in Fill form. If you change modes, return with ⌘4. You do not need to unlock the padlock: it permits structural editing. Your name:  Practice name
+					37 button Help for Practice name
+					38 text field (settable) Practice name, Value: QA441 A2 EN
+					39 text What would you like to create with Leonardo? Your goal
+					40 button Help for Your goal
+					41 text entry area (settable) Your goal, Value: [text entry area]
+					42 text I checked the destination before sharing: Ready to share
+					43 button Help for Ready to share
+					44 checkbox Ready to share, Value: 0
+					45 text Save, close this tab and use the button in chapter 4 of the guide to return to your copy. Answers are retained separately. The button selects this tab if already open. To share, use Export Leonardo response and choose a new MDLR file. Keep your original copy. Use fictional data for practice.
+			46 scroll bar (settable, float) 0
+		47 text Value: Version 0.3.1587 · stable Pending changes, ID: status-version
+		48 image Description: Circle, ID: circle.fill
+		49 text Standalone document Leonardo form response
+		50 image Description: Search Document, ID: doc.text.magnifyingglass
+		51 text Local file
+		52 image Description: Move, ID: folder
+		53 text UTF-8 220 words
+	54 close button
+	55 zoom button
+	56 minimize button
+	57 image Practice-v1-en.mdlr
+	58 text Practice-v1-en.mdlr
+59 menu bar
+	60 LeonardoMD QA 441 A2
+	61 File
+	62 Edit
+	63 View
+	64 Window
+	65 Help
+
+The focused UI element is 0 standard window Practice-v1-en.mdlr, Secondary Actions: Raise, URL: file:///var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-441-acceptance-a2-home-_chemrts/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/en/Practice-v1-en.mdlr

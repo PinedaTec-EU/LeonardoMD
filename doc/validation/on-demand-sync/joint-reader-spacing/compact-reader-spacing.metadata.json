@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T10:09:56.776460+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T09:48:50.974000+00:00",
+    "route": "/native/ios/spacing/compact-reader-spacing",
+    "screen": "Compact reader spacing",
+    "browser_name": "Native iOS SwiftUI WKWebView Simulator",
+    "browser_version": "iOS27.0; WK engine not exposed",
+    "state": "0.3.1147/1147; native screenshot image-pixel equivalent viewport; CSS N/A",
+    "viewport_css": {
+      "width": 1206,
+      "height": 2622
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "040176059ccac4444ba089923d73aa28d4f720c4e7b2c041acc37e8fbbc69cb4"
+  },
+  "source": {
+    "revision_at_collection": "ff20ce0a4bbf4041f45a99e8412ed8e5613e3341",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}
