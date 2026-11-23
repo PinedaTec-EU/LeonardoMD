@@ -62,6 +62,23 @@ final class FavoritesTests: XCTestCase {
         XCTAssertEqual(missing, FavoriteItem(kind: .project, url: root.appendingPathComponent("", isDirectory: true)))
     }
 
+    func testClearingRecentProjectsPersistsWithoutClearingFavoritesOrWorkspaces() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.initialize()
+        session.globalPreferences.recentProjectPaths = [root]
+        session.globalPreferences.recentWorkspacePaths = [root]
+        session.toggleFavorite(root, kind: .project)
+        session.clearRecentProjects()
+        await session.settingsTask?.value
+
+        let saved = try await session.configurations.loadGlobalPreferences(at: session.globalPreferencesURL)
+        XCTAssertTrue(saved.recentProjectPaths.isEmpty)
+        XCTAssertEqual(saved.recentWorkspacePaths, [root])
+        XCTAssertEqual(saved.favorites, [FavoriteItem(kind: .project, url: root)])
+    }
+
     func testSavedItemOpeningDispatchesThroughEachExistingWorkflow() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let project = root.appendingPathComponent("Project")
