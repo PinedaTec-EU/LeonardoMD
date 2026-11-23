@@ -801,13 +801,31 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertNotNil(retainedCredential)
     }
 
-    func testRevocationIsDurableBeforeFailedPurgeAndRetriesWithoutNetworkOrCredential() async throws {
+    func testRevocationIsDurableBeforeFailedPurgeAndResumesOnRestartWithoutNetworkOrCredential() async throws {
         let fixture = try PeerLibraryFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
         await fixture.remote.setAccess(.authorized)
         let copy = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
         let directory = try await fixture.library.open(copyID: copy.id)
+        let otherConnection = try await fixture.library.enroll(
+            endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Other Mac")
+        let otherCopy = try await fixture.library.importProject(
+            connectionID: otherConnection.id, projectID: fixture.remote.project.id)
+        let otherDirectory = try await fixture.library.open(copyID: otherCopy.id)
+
+        try Data("local edit".utf8).write(to: directory.appendingPathComponent("docs/note.md"))
+        await fixture.remote.setReachable(false)
+        do {
+            _ = try await fixture.library.send(copyID: copy.id, buffers: [])
+            XCTFail("Offline send succeeded")
+        } catch {
+            XCTAssertEqual((error as? URLError)?.code, .notConnectedToInternet)
+        }
+        let staged = try await fixture.outbox.load(copyID: copy.id)
+        XCTAssertNotNil(staged)
+        await fixture.remote.setReachable(true)
+
         await fixture.workspace.setFailRemoval(true)
         await fixture.remote.setAccess(.revoked)
         do { _ = try await fixture.library.refresh(connectionID: connection.id); XCTFail("Failed purge confirmed") } catch {}
@@ -821,8 +839,21 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: directory.path))
         await fixture.workspace.setFailRemoval(false)
         await fixture.remote.setReachable(false)
-        let retried = try await fixture.library.refresh(connectionID: connection.id)
-        XCTAssertEqual(retried.access, .revoked)
+        let restarted = DesktopPeerLibrary(
+            connections: FileDesktopPeerConnectionStore(root: fixture.connectionRoot),
+            copies: fixture.copies, workspace: fixture.workspace,
+            credentials: fixture.credentials, remote: fixture.remote,
+            revoker: PeerRevokerFixture(), outbox: fixture.outbox)
+
+        // The desktop controller loads this list during initialization.
+        let restored = try await restarted.connections()
+        XCTAssertEqual(restored.first(where: { $0.id == connection.id })?.revoked, true)
+        XCTAssertEqual(restored.first(where: { $0.id == otherConnection.id })?.revoked, false)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: otherDirectory.path))
+        let otherArchive = try await fixture.copies.load(id: otherCopy.id)
+        XCTAssertNotNil(otherArchive)
+        let removedProposal = try await fixture.outbox.load(copyID: copy.id)
+        XCTAssertNil(removedProposal)
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
         let removed = try await fixture.copies.load(id: copy.id)
         XCTAssertNil(removed)
