@@ -12,7 +12,7 @@ extension LeonardoDocument {
         guard let response = applyingFormValues(values) else {
             throw LeonardoFormResponseError.rejectedValues
         }
-        let errors = LeonardoFormatParser.validate(response, context: .submission)
+        let errors = LeonardoFormatValidator.validate(response, context: .submission)
             .filter { $0.severity == .error }
         guard errors.isEmpty else {
             throw LeonardoFormResponseError.invalidResponse(errors)
