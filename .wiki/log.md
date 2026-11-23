@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-11-24: [#588](https://github.com/PinedaTec-EU/LeonardoMD/issues/588) uses Leonardo Classic for the initial session and preferences without a palette. Explicit preferences retain their saved palette. Bilingual Help v132 documents the default.
+
 - 2026-11-22: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) judge-blocker follow-up: macOS guided-signing actions now bind to the selected signer position, guard asynchronous target publication against selection races, advance through repeated occurrences, and give rubric-only profiles a transient declared-identity profile ID. Core treats unassigned rubric fields as ordinary required/optional data, compares complete rendered locations for readiness, and restores `readyToSign` after `resume` plus `begin` when the last location was already confirmed. Focused recorder validation passes 15 Core + 9 App tests; PR #520 build delta is 76. Packaged macOS/iOS QA remains owned by the parent task.
 
 - 2026-11-21: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) correction/import follow-up: signed-sidecar history may retain multiple semantic revisions at one local path, while the exact document identity and revision remain single-writer. Import selects only that exact revision and preserves older audit sessions; the protected store compares the target session inside its file-lock transaction so progress from another open document is retained. A focused persistence regression covers historical revisions and same-revision forks.

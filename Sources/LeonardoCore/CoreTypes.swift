@@ -254,7 +254,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
 
     public init(
         schemaVersion: Int = GlobalPreferences.currentSchemaVersion,
-        palette: PaletteID = .paperWhite,
+        palette: PaletteID = .leonardoClassic,
         customTokens: PaletteTokenOverrides? = nil,
         colorLeonardoFiles: Bool = true,
         followActiveFile: Bool = true,
@@ -307,7 +307,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
             throw ConfigurationError.unsupportedSchemaVersion(version)
         }
         schemaVersion = version
-        palette = try container.decodeIfPresent(PaletteID.self, forKey: .palette) ?? .paperWhite
+        palette = try container.decodeIfPresent(PaletteID.self, forKey: .palette) ?? Self.default.palette
         customTokens = try container.decodeIfPresent(PaletteTokenOverrides.self, forKey: .customTokens)
         colorLeonardoFiles = try container.decodeIfPresent(Bool.self, forKey: .colorLeonardoFiles) ?? true
         followActiveFile = try container.decodeIfPresent(Bool.self, forKey: .followActiveFile) ?? true

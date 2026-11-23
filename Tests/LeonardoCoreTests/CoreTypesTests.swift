@@ -14,6 +14,16 @@ final class CoreTypesTests: XCTestCase {
         }
     }
 
+    func testDefaultPaletteAppliesOnlyWhenPreferencesOmitPalette() throws {
+        let decoder = JSONDecoder()
+        let legacy = try decoder.decode(GlobalPreferences.self, from: Data(#"{}"#.utf8))
+        let saved = try decoder.decode(GlobalPreferences.self, from: Data(#"{"palette":"paper-white"}"#.utf8))
+
+        XCTAssertEqual(GlobalPreferences.default.palette, .leonardoClassic)
+        XCTAssertEqual(legacy.palette, .leonardoClassic)
+        XCTAssertEqual(saved.palette, .paperWhite)
+    }
+
     func testCustomTokenOverridesLayerOnInheritedPalette() throws {
         let global = GlobalPreferences(
             palette: .paperWhite,
