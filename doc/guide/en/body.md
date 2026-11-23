@@ -667,7 +667,7 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Share in Synchronization preferences](assets/sync-sharing-v129.png)
+![Share in Synchronization preferences](assets/sync-sharing-v130.png)
 
 Little Leonardo is a **read-only companion for the shared source**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
@@ -885,7 +885,7 @@ If a safe stop cannot be confirmed, installation is postponed rather than forcib
 
 ## 15. Connect to other computers and offline copies
 
-![Remote in Synchronization preferences](assets/sync-connections-v129.png)
+![Remote in Synchronization preferences](assets/sync-connections-v130.png)
 
 The illustrated **Share** and **Remote** buttons switch between these two views. In **Remote**, expand a Mac to review its new projects and files, or open its menu to rename it.
 

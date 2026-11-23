@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-23T12:41:47.472183+00:00",
+  "collected_at": "2026-11-23T13:03:01.211893+00:00",
   "capture": {
-    "captured_at": "2026-11-23T12:41:08.244153+00:00",
+    "captured_at": "2026-11-23T13:03:01.172994+00:00",
     "route": "/native/preferences/extensions",
     "screen": "Preferences / extensions",
     "browser_name": "Native AppKit / SwiftUI",
@@ -18,12 +18,12 @@
   "image": {
     "format": "png",
     "width_px": 1560,
-    "height_px": 360,
-    "sha256": "de9a634c6a040bfe18a4426ffda0b1e2c8963d3b28fda5f0a8be085e18108278"
+    "height_px": 370,
+    "sha256": "62d830d1a163f943f2a3337afc05142bb202a8c4b2d0604ca7e51f5784ede6b7"
   },
   "source": {
-    "revision_at_collection": "01a5bfcfcf3fcdc0daf01d438a930a347207542e",
-    "tracked_changes_present": false,
+    "revision_at_collection": "fdbd41553ccc46ec3944c648db46ef95c14c8f84",
+    "tracked_changes_present": true,
     "untracked_files_present": true
   }
 }

@@ -49,6 +49,21 @@ final class SynchronizationPreferencesTests: XCTestCase {
                       "Both roles must observe the common service disable immediately")
     }
 
+    func testHelperExplanationStatesThatDisablingSyncStopsBothRolesWhileAppIsOpen() {
+        let original = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = original }
+
+        LanguageSettings.shared.language = .english
+        XCTAssertTrue(SyncHelperPreferencesSection.explanation.contains(
+            "When off, sharing and remote access stop even with LeonardoMD open."
+        ))
+
+        LanguageSettings.shared.language = .spanish
+        XCTAssertTrue(SyncHelperPreferencesSection.explanation.contains(
+            "Al desactivarlo, se cortan el uso compartido y el acceso remoto aunque LeonardoMD siga abierto."
+        ))
+    }
+
     func testBothRolePagesPreserveDisabledSharingAndHelper() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

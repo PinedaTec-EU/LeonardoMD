@@ -5,6 +5,10 @@ struct SyncHelperPreferencesSection: View {
     @Bindable var controller: SyncHelperController
     @State private var showsDiagnostics = false
 
+    static var explanation: String {
+        L10n.text("When off, sharing and remote access stop even with LeonardoMD open. Starts at login and shares saved files after you close the editor.")
+    }
+
     private var showsStatusIndicator: Bool {
         let state = controller.displayedState
         return controller.hasPresentedStatus && (state == .running || state == .notInstalled || state == .failed)
@@ -36,7 +40,7 @@ struct SyncHelperPreferencesSection: View {
             }
             .disabled(controller.busy && (!controller.upgrading || !controller.enabled))
 
-            Text(L10n.text("Sharing and remote access require Leonardo Sync. It starts at login and shares saved files after the editor closes."))
+            Text(Self.explanation)
                 .font(.caption).foregroundStyle(.secondary)
 
             if showsWarning {

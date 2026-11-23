@@ -1,12 +1,12 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v129-en.mdlz` and `Guide-v129-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v130-en.mdlz` and `Guide-v130-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v129/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v130/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v129 documents the illustrated Preferences and the Share / Remote workflows.
+Guide v130 documents the illustrated Preferences and the Share / Remote workflows.
 
 Guide v120 retains the guided-signing content from v119 and explains mouse selection
 in the Sync diagnostic report. Package SHA-256: EN `1ffb6a548c4c5687254bfe69edb962a8a7eee836ad43032868814a262cc14e19`, ES `79e27f4d0501574ce0ff8719d652afcf05484084d1fb2278ae9eb88dbc2abeeb`.
@@ -31,7 +31,7 @@ Guide v116 ES SHA-256: `a37577fb4e1e40b8a28e6a44658a2a61d9a816396cccbd1def6b7de9
 Guide v115 explains the fixed local image requirement and verified-only ink for
 guided signing positions. Packaged Help validation remains pending.
 Guide v115 EN SHA-256: `ea25e6ba373ae13a0662e414ded7e2aacfebf3f1c190e9f7ca0b1743a2ddaab1`
-Guide v115 ES SHA-256: `79d2412923e5c40e7b700169b090c37e86ee3d63cd8f0e3697d592f58d93ea6c`
+Guide v115 ES SHA-256: `79d2412523e5c40e7b700169b090c37e86ee3d63cd8f0e3697d592f58d93ea6c`
 
 Guide v114 explains saving the form before the first confirmation or exchange, recovering a
 trusted sealed revision through Save Copy, and blocked confirmation when a local
