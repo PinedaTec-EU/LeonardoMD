@@ -19,6 +19,7 @@ public struct LeonardoFormReservationStore: Sendable {
     public enum Failure: Error {
         case busy
         case inactive
+        case revoked
         case revisionChanged
         case conflictingRetry
         case invalidStorage
@@ -27,12 +28,13 @@ public struct LeonardoFormReservationStore: Sendable {
     private enum State: Codable {
         case active(Reservation)
         case cancelled(Reservation)
+        case revoked(Reservation)
         case completed(Reservation, [String: LeonardoJSONValue], LeonardoDocument)
 
         var reservation: Reservation {
             switch self {
             case .active(let reservation), .cancelled(let reservation),
-                 .completed(let reservation, _, _):
+                 .revoked(let reservation), .completed(let reservation, _, _):
                 reservation
             }
         }
@@ -59,8 +61,9 @@ public struct LeonardoFormReservationStore: Sendable {
         try transaction(for: source) { folder in
             let record = recordURL(for: reservation.id, in: folder)
             if let existing = try read(record) {
-                guard case .active = existing,
-                      existing.reservation == reservation else { throw Failure.inactive }
+                guard existing.reservation == reservation else { throw Failure.inactive }
+                if case .revoked = existing { throw Failure.revoked }
+                guard case .active = existing else { throw Failure.inactive }
                 return
             }
             guard try active(in: folder) == nil else { throw Failure.busy }
@@ -78,7 +81,26 @@ public struct LeonardoFormReservationStore: Sendable {
                 try write(.cancelled(reservation), to: record)
             case .cancelled:
                 return
+            case .revoked:
+                throw Failure.revoked
             case .completed:
+                throw Failure.inactive
+            }
+        }
+    }
+
+    /// The caller must authorize a host-owner action. A stale selection
+    /// can revoke only the exact reservation shown at confirmation.
+    public func forceRevoke(_ reservation: Reservation, for source: URL) throws {
+        try transaction(for: source) { folder in
+            let record = recordURL(for: reservation.id, in: folder)
+            guard let state = try read(record), state.reservation == reservation else { throw Failure.inactive }
+            switch state {
+            case .active:
+                try write(.revoked(reservation), to: record)
+            case .revoked:
+                return
+            case .cancelled, .completed:
                 throw Failure.inactive
             }
         }
@@ -100,6 +122,8 @@ public struct LeonardoFormReservationStore: Sendable {
                 return response
             case .cancelled:
                 throw Failure.inactive
+            case .revoked:
+                throw Failure.revoked
             case .completed(_, let submittedValues, let response):
                 guard values == submittedValues else { throw Failure.conflictingRetry }
                 return response

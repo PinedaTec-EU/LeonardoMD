@@ -72,4 +72,29 @@ final class LeonardoFormResponseTests: XCTestCase {
         XCTAssertNil(try store.activeReservation(for: source))
         XCTAssertThrowsError(try store.acquire(other, for: source) { "v1" })
     }
+
+    func testForceRevokeRejectsOldDeliveryAndLeavesNewReservationAlone() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("form.mdlf")
+        let store = LeonardoFormReservationStore(root: root)
+        let old = LeonardoFormReservationStore.Reservation(id: UUID(), deviceID: UUID(), revision: "v1")
+        let next = LeonardoFormReservationStore.Reservation(id: UUID(), deviceID: UUID(), revision: "v1")
+        try store.acquire(old, for: source) { "v1" }
+        try store.forceRevoke(old, for: source)
+
+        let reopened = LeonardoFormReservationStore(root: root)
+        XCTAssertNil(try reopened.activeReservation(for: source))
+        try reopened.acquire(next, for: source) { "v1" }
+        try reopened.forceRevoke(old, for: source)
+        XCTAssertEqual(try reopened.activeReservation(for: source), next)
+        XCTAssertThrowsError(try reopened.finish(old, for: source, values: ["name": .string("Ana")]) {
+            XCTFail("A revoked session must never reach source inspection")
+            return ("v1", template)
+        }) { error in
+            guard case LeonardoFormReservationStore.Failure.revoked = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
+    }
 }
