@@ -679,7 +679,7 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
-![Compartir en las preferencias de Sincronización](guide/es/assets/sync-sharing-v125.png)
+![Compartir en las preferencias de Sincronización](guide/es/assets/sync-sharing-v129.png)
 
 Little Leonardo es un **compañero de solo lectura para la fuente compartida**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
@@ -908,7 +908,7 @@ Si no se puede confirmar la parada segura, se aplaza la instalación en vez de t
 
 ## 15. Conectarme a otros equipos y copias sin conexión
 
-![Remoto en las preferencias de Sincronización](guide/es/assets/sync-connections-v125.png)
+![Remoto en las preferencias de Sincronización](guide/es/assets/sync-connections-v129.png)
 
 Los botones ilustrados **Compartir** y **Remoto** cambian de vista. En **Remoto**, despliega un Mac para revisar sus proyectos y archivos nuevos, o abre su menú para cambiarle el nombre.
 
