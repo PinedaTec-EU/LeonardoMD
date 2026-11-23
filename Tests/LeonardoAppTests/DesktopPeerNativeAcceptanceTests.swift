@@ -100,16 +100,27 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         let previousLanguage = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previousLanguage }
-        LanguageSettings.shared.language = .english
-        let view = DesktopPeerRemoteProjectsView(controller: fixture.peer)
-            .frame(width: 920, height: 620, alignment: .topLeading)
-            .padding(16)
-            .background(Color(nsColor: .windowBackgroundColor))
-        let host = NSHostingView(rootView: view)
-        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 952, height: 652),
-            to: destination.appendingPathComponent("remote-project-review.png"), language: "en",
-            state: "Synthetic MacBook; Incoming Research awaits Add or Ignore; docs/future.md awaits review; accepted project remains browseable",
-            route: "/native/remote-projects", screen: "Remote projects grouped by connected Mac")
+        for (scheme, accent, language, suffix) in [
+            (ColorScheme.light, Color.brown, AppLanguage.english, "light"),
+            (.dark, .cyan, .spanish, "dark")
+        ] {
+            LanguageSettings.shared.language = language
+            let size = NSSize(width: 600, height: 460)
+            let view = DesktopPeerRemoteProjectsView(controller: fixture.peer)
+                .buttonStyle(PremiumButtonStyle())
+                .tint(accent)
+                .environment(\.leonardoAccent, accent)
+                .preferredColorScheme(scheme)
+                .padding(12)
+                .frame(width: size.width, height: size.height, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor))
+            let host = NSHostingView(rootView: view)
+            host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
+            try await GuideCaptureSupport.captureNative(host, size: size,
+                to: destination.appendingPathComponent("remote-project-review-\(suffix).png"), language: language.rawValue,
+                state: "Synthetic MacBook expanded in \(suffix) appearance; Incoming Research awaits Add or Ignore; docs/future.md awaits review",
+                route: "/native/remote-projects", screen: "Remote projects grouped by connected Mac")
+        }
     }
 
     func testAcceptedRemoteProjectCatalogueRemainsBrowseableAfterOfflineRestart() async throws {

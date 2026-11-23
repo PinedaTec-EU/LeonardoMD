@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-23T08:38:24.675Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 780,
+    "width" : 780
+  },
+  "os" : "Version 27.2.1 (Build 26B131)",
+  "route" : "\/native\/preferences\/extensions",
+  "screen" : "Preferences \/ extensions",
+  "source_sha" : "6a8245d7e00f2a547817310e7836f90d8bcec286",
+  "state" : "Illustrated pane; standalone synthetic preferences; light theme; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 780,
+    "width" : 780
+  }
+}
