@@ -25,13 +25,18 @@ enum PreferencesArtwork: String {
 
 struct IllustratedPreferencesHeader: View {
     let title: String
+    let subtitle: String
     let artwork: PreferencesArtwork
 
     var body: some View {
         HStack(spacing: 16) {
-            Text(title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Spacer(minLength: 0)
-            artwork.illustration.frame(width: 220, height: 90)
+            artwork.illustration.frame(width: 148, height: 60)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 6)

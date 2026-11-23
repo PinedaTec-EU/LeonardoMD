@@ -587,7 +587,7 @@ antes de borrar archivos que ya no uses.
 
 *Personalizar paleta: cuatro colores editables, vista previa del contraste y Aplicar.*
 
-Abre **LeonardoMD → Preferencias…** (⌘,). Las pestañas permanecen fijas; General y Extensiones tienen cada una su selector **Global / Este proyecto**. Comprueba ese selector antes de cambiar un ajuste.
+Abre **LeonardoMD → Preferencias…** (⌘,). Debajo del título de cada pestaña se indica su ámbito. Las pestañas permanecen fijas; General y Extensiones tienen cada una su selector **Global / Este proyecto**. Comprueba ese selector antes de cambiar un ajuste.
 
 | Ámbito | Ejemplos | Dónde se aplica |
 | --- | --- | --- |
@@ -707,7 +707,7 @@ la instantánea congelada, el prefijo de la cadena y las huellas de las claves
 públicas mediante un canal independiente; la importación usa compare-and-swap y
 nunca sobrescribe progreso más reciente.
 
-1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador verde confirma que el asistente funciona; un fallo real lo muestra en rojo con un mensaje breve. Durante la comprobación conserva el estado anterior: no aparece un estado gris temporal ni la línea «Servicio de sincronización en ejecución».
+1. Activa **Leonardo Sync** con el interruptor común junto a **Compartir** y **Remoto**. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador verde confirma que el asistente funciona; un fallo real lo muestra en rojo con un mensaje breve. Durante la comprobación conserva el estado anterior: no aparece un estado gris temporal ni la línea «Servicio de sincronización en ejecución».
    Pulsa **Ver diagnóstico…** encima del selector para consultar el estado del servicio, la última comprobación, la versión de LeonardoMD y los eventos recientes del servicio en esta sesión. **Copiar diagnóstico** lleva el informe completo al portapapeles. Para copiar solo una parte, arrastra sobre el texto, haz clic derecho en la selección y elige **Copiar**. Puedes pegar el texto copiado en otra aplicación. El informe excluye invitaciones, códigos de emparejamiento, nombres de dispositivos, direcciones de red y rutas de archivos. **Enviar diagnóstico por correo…** abre un borrador en tu aplicación de correo predeterminada, con el mismo informe en el cuerpo y `leonardo@pinedatec.eu` como destinatario. Revisa el borrador y envíalo desde tu aplicación de correo. Si se abre la aplicación predeterminada pero no aparece el borrador, vuelve a la hoja, pulsa **Copiar diagnóstico** y pega el informe en un correo nuevo a `leonardo@pinedatec.eu`. Puedes usar tu aplicación de correo habitual o el correo web.
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.

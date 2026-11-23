@@ -23,10 +23,11 @@ struct SyncRoleSelector: View {
             selection = page
         } label: {
             VStack(spacing: 2) {
-                page.artwork.illustration.frame(width: 84, height: 48)
+                page.artwork.illustration.frame(width: 72, height: 38)
                 Text(page.title).font(.callout.weight(.semibold))
             }
-            .frame(width: 124, height: 76)
+            .frame(minWidth: 0, maxWidth: .infinity)
+            .frame(height: 64)
             .background { PremiumControlBackground(selected: selected) }
             .overlay(alignment: .topTrailing) {
                 if selected {

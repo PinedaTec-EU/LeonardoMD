@@ -36,7 +36,7 @@ struct SyncHelperPreferencesSection: View {
             }
             .disabled(controller.busy && (!controller.upgrading || !controller.enabled))
 
-            Text(L10n.text("Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor."))
+            Text(L10n.text("Sharing and remote access require Leonardo Sync. It starts at login and shares saved files after the editor closes."))
                 .font(.caption).foregroundStyle(.secondary)
 
             if showsWarning {
@@ -44,12 +44,15 @@ struct SyncHelperPreferencesSection: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
+            if controller.showsApprovalAction {
+                Button(L10n.text("Open Login Items settings")) { controller.openApprovalSettings() }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
+            }
+
             HStack {
-                if controller.showsApprovalAction {
-                    Button(L10n.text("Open Login Items settings")) { controller.openApprovalSettings() }
-                }
                 Spacer()
                 Button(L10n.text("View diagnostics…")) { showsDiagnostics = true }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
             }
         }
         .sheet(isPresented: $showsDiagnostics) {

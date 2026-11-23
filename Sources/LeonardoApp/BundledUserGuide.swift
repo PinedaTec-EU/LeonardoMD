@@ -5,8 +5,8 @@ enum BundledUserGuide {
     enum Topic {
         case userGuide, agentImport
 
-        var resourcePrefix: String { self == .userGuide ? "Guide-v125-" : "AgentImport-v3-" }
-        var copyDirectory: String { self == .userGuide ? "User Guides/v125/" : "Agent Import Guides/v3/" }
+        var resourcePrefix: String { self == .userGuide ? "Guide-v129-" : "AgentImport-v3-" }
+        var copyDirectory: String { self == .userGuide ? "User Guides/v129/" : "Agent Import Guides/v3/" }
     }
     static func resourceURL(language: AppLanguage, topic: Topic = .userGuide) throws -> URL {
         guard let url = Bundle.module.url(forResource: topic.resourcePrefix + language.rawValue, withExtension: "mdlz") else {
