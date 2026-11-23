@@ -71,6 +71,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     private var pendingLaunches: [[URL]] = []
     private var processingLaunches = false
     private var launched = false
+    private var startupTask: Task<Void, Never>?
+    private var restoration = SessionRestoration()
     private var terminationPending = false
     private let updateQuitEndpoint = UpdateQuitEndpoint()
     private static let closeCheckInterval: Duration = .milliseconds(50)
@@ -110,8 +112,19 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         configureMenu()
         if role == .primary { startPrincipalServices() }
         diagnostics.record(.menuConfigured)
-        if windows.isEmpty { newEmptyWindow() }
-        processPendingLaunches()
+        let initialWindow = windows.first ?? showDocumentWindow()
+        let initialTabID = initialWindow.documents.activeID
+        if role == .primary, let initialTabID {
+            initialWindow.documents.reserveStartupTab(initialTabID)
+        }
+        startupTask = Task {
+            if role == .primary, let initialTabID {
+                await restoreStartupSession(in: initialWindow, initialTabID: initialTabID)
+            }
+            initialWindow.documents.releaseStartupTabs()
+            startupTask = nil
+            processPendingLaunches()
+        }
         NSApp.activate(ignoringOtherApps: true)
         if updateQuitEndpoint.isStarted { InstancePresentation.shared.start() }
         diagnostics.record(.applicationReady)
@@ -183,7 +196,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     private func processPendingLaunches() {
-        guard !processingLaunches, !terminationPending else { return }
+        guard startupTask == nil, !processingLaunches, !terminationPending else { return }
         processingLaunches = true
         Task {
             defer { processingLaunches = false }
@@ -257,6 +270,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         let reportingSession = activeSession
         terminationPending = true
         Task {
+            await startupTask?.value
             var canTerminate = true
             for window in windows {
                 if await !window.documents.prepareClose() { canTerminate = false; break }
@@ -273,6 +287,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 }
                 if !canTerminate { reportHelperUpdateCancellation(on: reportingSession) }
             }
+            if role == .primary { finishSessionCapture(approved: canTerminate) }
             if canTerminate {
                 if role == .primary { await DesktopSyncController.shared.stop() }
                 for window in windows { await window.documents.finishPreparedClose() }
@@ -288,6 +303,31 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
+    }
+
+    private func finishSessionCapture(approved: Bool) {
+        do {
+            try restoration.finishTermination(approved: approved, openWindows: windows.map { $0.documents.savedWindow })
+        } catch {
+            logger.error("session_capture_failed: \(String(describing: error), privacy: .private)")
+        }
+    }
+
+    private func restoreStartupSession(in initialWindow: DocumentWindow, initialTabID: UUID) async {
+        guard let session = initialWindow.documents.tabs.first(where: { $0.id == initialTabID })?.session else { return }
+        await session.initialize()
+        do {
+            guard let saved = try restoration.load(
+                restorePreviousSession: session.globalPreferences.restorePreviousSession,
+                explicitURLs: pendingLaunches.flatMap { $0 }
+            ) else { return }
+            for (index, window) in saved.windows.enumerated() {
+                let controller = index == 0 ? initialWindow : showDocumentWindow()
+                let tabID = index == 0 ? initialTabID : controller.documents.activeID
+                guard let tabID else { return }
+                await controller.documents.restore(window, initialTabID: tabID)
+            }
+        } catch { session.report(error) }
     }
 
     func reportInstallationCancellation(on session: AppSession? = nil) {
@@ -322,19 +362,31 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func newWindow(url: URL?) {
         guard !terminationPending else { return }
+        let controller = showDocumentWindow()
+        if let url { Task { await controller.session.open(url) } }
+    }
+
+    private func showDocumentWindow() -> DocumentWindow {
         let isFirstWindow = !recordedFirstWindow
         recordedFirstWindow = true
         if isFirstWindow { diagnostics.record(.firstWindowCreating) }
         let controller = DocumentWindow()
         if isFirstWindow { diagnostics.record(.firstWindowCreated) }
         windows.append(controller)
-        controller.onClose = { [weak self, weak controller] in
-            self?.windows.removeAll { $0 === controller }
+        controller.documents.waitForStartup = { [weak self] in
+            await self?.startupTask?.value
+        }
+        controller.onClose = { [weak self, weak controller] savedWindow in
+            guard let self else { return }
+            windows.removeAll { $0 === controller }
+            if windows.isEmpty, role == .primary, let savedWindow {
+                restoration.stageLastClosedWindow(savedWindow)
+            }
         }
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
         if isFirstWindow { diagnostics.record(.firstWindowShown) }
-        if let url { Task { await controller.session.open(url) } }
+        return controller
     }
 
     @objc private func showAbout() {
@@ -497,11 +549,12 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 final class DocumentWindow: NSWindowController, NSWindowDelegate {
     let documents = DocumentTabs()
     var session: AppSession { documents.activeSession }
-    var onClose: (() -> Void)?
-    private var closeAfterSave = false
+    var onClose: ((SavedSession.Window?) -> Void)?
+    private var preparedSession: SavedSession.Window?
 
     init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 850), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
+        window.isRestorable = false
         window.isReleasedWhenClosed = false
         window.title = "LeonardoMD"
         window.titlebarAppearsTransparent = true
@@ -519,11 +572,13 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     }
     required init?(coder: NSCoder) { nil }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if closeAfterSave { return true }
+        if preparedSession != nil { return true }
         Task {
+            await documents.awaitStartupBeforeClosing()
             guard await documents.prepareClose() else { return }
+            let savedWindow = documents.savedWindow
             await documents.finishPreparedClose()
-            closeAfterSave = true
+            preparedSession = savedWindow
             sender.performClose(nil)
         }
         return false
@@ -539,6 +594,6 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         persistWindowFrame()
         documents.stop()
-        onClose?()
+        onClose?(preparedSession)
     }
 }

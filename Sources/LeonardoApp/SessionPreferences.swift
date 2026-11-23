@@ -64,14 +64,20 @@ extension AppSession {
         persistSettings()
         scheduleSearch()
     }
-    func persistSettings() {
+    func setRestorePreviousSession(_ value: Bool) {
+        guard globalPreferences.restorePreviousSession != value else { return }
+        globalPreferences.restorePreviousSession = value
+        persistSettings(includeProject: false)
+    }
+
+    func persistSettings(includeProject: Bool = true) {
         let global = globalPreferences
         let project = projectConfiguration
-        let root = projectURL
+        let root = includeProject ? projectURL : nil
         let oldGlobal = globalBaseline
         let oldProject = projectBaseline
         globalBaseline = global
-        projectBaseline = project
+        if includeProject { projectBaseline = project }
         settingsRevision += 1
         let revision = settingsRevision
         let previous = settingsTask

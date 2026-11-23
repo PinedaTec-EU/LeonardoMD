@@ -81,6 +81,21 @@ public enum LeonardoPackageTransport {
         try open(packageURL, extractingTo: destination, hooks: nil)
     }
 
+    /// Reopens the existing user-owned extraction without reading its original archive.
+    public static func reopenExtraction(documentURL: URL) throws -> LeonardoPackageWorkspace {
+        guard documentURL.isFileURL, ["mdlf", "mdlr"].contains(documentURL.pathExtension.lowercased()) else {
+            throw LeonardoPackageError.invalidArchive("Expected an extracted MDLF/MDLR document")
+        }
+        let folder = documentURL.deletingLastPathComponent()
+        do {
+            let ownership = try LeonardoSecureExtraction.existingWorkspaceOwnership(at: folder)
+            return LeonardoPackageWorkspace(packageURL: nil, directoryURL: folder, documentURL: documentURL,
+                                            digest: nil, temporary: false, extractionOwnership: ownership)
+        } catch let error as LeonardoSecureExtractionFailure {
+            throw error.packageError
+        }
+    }
+
     internal static func openForTesting(
         _ packageURL: URL,
         extractingTo destination: URL? = nil,

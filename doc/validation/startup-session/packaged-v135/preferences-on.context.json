@@ -1,0 +1,15 @@
+{
+  "browser_name": "Native AppKit / SwiftUI",
+  "browser_version": "Not applicable, native Preferences",
+  "capture_mode": "element",
+  "captured_at": "2026-11-23T16:42:21.166535+00:00",
+  "data_provenance": "synthetic",
+  "route": "/native/preferences/general",
+  "screen": "Preferences / General / On this Mac",
+  "source_sha": "7bb998795e64cfc8b17169a82ae57dce9d24db4f",
+  "state": "Compact General header, startup switch on",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "browser_name": "Native WKWebView, MarkdownPreviewHost",
+  "browser_version": "macOS 27.2.1 WebKit",
+  "capture_mode": "element",
+  "captured_at": "2026-11-23T23:01:50.707926+00:00",
+  "data_provenance": "synthetic",
+  "route": "/native/preview/restored-extraction",
+  "screen": "Preview of the restored extracted MDLF",
+  "source_sha": "c4d68cb6fecd5918ee837f6694702200faa18d69",
+  "state": "After close and restoration. Blue extraction asset and edited paragraph.",
+  "viewport_css": {
+    "width": 800,
+    "height": 600
+  }
+}

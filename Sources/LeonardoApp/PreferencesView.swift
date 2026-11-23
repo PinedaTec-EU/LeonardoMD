@@ -121,6 +121,7 @@ struct PreferencesView: View {
                     }
                 }
                 Section(L10n.text("On this Mac")) {
+                    StartupPreferences(session: session)
                     InstancePreferencesView()
                     Toggle(L10n.text("Follow active file in sidebar"), isOn: Binding(
                         get: { session.globalPreferences.followActiveFile },
