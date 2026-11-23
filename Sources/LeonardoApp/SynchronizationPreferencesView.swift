@@ -23,13 +23,18 @@ struct SynchronizationPreferencesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GroupBox {
-                SyncHelperPreferencesSection(controller: source.helper)
-                    .toggleStyle(PremiumSwitchStyle())
-                    .padding(8)
-            }.padding(.horizontal, 16).fixedSize(horizontal: false, vertical: true)
-            SyncRoleSelector(selection: $page)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 12) {
+                GroupBox {
+                    SyncHelperPreferencesSection(controller: source.helper)
+                        .toggleStyle(PremiumSwitchStyle())
+                        .padding(4)
+                }
+                .frame(minWidth: 0, maxWidth: .infinity)
+                SyncRoleSelector(selection: $page)
+                    .frame(minWidth: 0, maxWidth: .infinity)
+            }
+            .padding(.horizontal, 16)
+            .fixedSize(horizontal: false, vertical: true)
             switch page {
             case .sharing:
                 MobileSyncPreferencesView(session: session, controller: source)

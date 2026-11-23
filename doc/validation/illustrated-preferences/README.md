@@ -16,14 +16,14 @@ evidence commit changes the captures, report and compilation accounting.
 - [Synchronization with Share selected](preferences-sync-es.png)
 - [Updates](preferences-updates-es.png)
 
-The [Remote selector state](../../guide/es/assets/sync-connections-v125.png)
+The [Remote selector state](https://github.com/PinedaTec-EU/LeonardoMD/blob/d7147bd027b19fe51f243621baaba53eb0920443/doc/guide/es/assets/sync-connections-v125.png)
 and the linked Mac's expanded detail below cover the alternate synchronization
 state. The guide checks are recorded as separate regression results.
 
 ## Native evidence
 
 - Route: LeonardoMD → Preferences → General, Extensions, Synchronization and Updates. The first packaged instance showed the four illustrated headers at 780 × 780 points and exposed the English and Spanish role buttons. Switching to Remote exposed its scrollable device workspace. The preview used Leonardo Classic. No real device was paired or refreshed for QA.
-- [Share in Spanish](../../guide/es/assets/sync-sharing-v125.png) and [Remote in Spanish](../../guide/es/assets/sync-connections-v125.png) show the production role selector in an isolated fixture. [Share in English](../../guide/en/assets/sync-sharing-v125.png) and [Remote in English](../../guide/en/assets/sync-connections-v125.png) show the same states.
+- [Share in Spanish](https://github.com/PinedaTec-EU/LeonardoMD/blob/d7147bd027b19fe51f243621baaba53eb0920443/doc/guide/es/assets/sync-sharing-v125.png) and [Remote in Spanish](https://github.com/PinedaTec-EU/LeonardoMD/blob/d7147bd027b19fe51f243621baaba53eb0920443/doc/guide/es/assets/sync-connections-v125.png) show the production role selector in an isolated fixture. [Share in English](https://github.com/PinedaTec-EU/LeonardoMD/blob/d7147bd027b19fe51f243621baaba53eb0920443/doc/guide/en/assets/sync-sharing-v125.png) and [Remote in English](https://github.com/PinedaTec-EU/LeonardoMD/blob/d7147bd027b19fe51f243621baaba53eb0920443/doc/guide/en/assets/sync-connections-v125.png) show the same states.
 - [Light](remote-project-review-light.png) and [dark](remote-project-review-dark.png) show a synthetic Mac expanded in the production remote projects component at 600 × 460 points. These are native component captures, not full-window dark-mode acceptance.
 - `LEONARDO_SOURCE_PR=576 ./launch.sh --qa` launched two distinct QA app processes with the real LeonardoMD executable and Sparkle. No LeonardoMD process existed before either launch. PIDs 92609 (guide v124) and 96491 (guide v125) both started a first window on macOS 27.2.1, candidate base 0.3.2189. Their disposable bundle directories were `leonardo-native-qa-ci6sfobj` and `leonardo-native-qa-zieagszv`, respectively. Both were quit normally, and the exact PIDs were verified absent. No device sessions were opened.
 
