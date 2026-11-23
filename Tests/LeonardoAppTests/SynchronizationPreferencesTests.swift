@@ -74,6 +74,7 @@ final class SynchronizationPreferencesTests: XCTestCase {
                 let host = NSHostingView(rootView: SynchronizationPreferencesView(session: session,
                     source: source, client: client, initialPage: page)
                     .buttonStyle(PremiumButtonStyle()).modifier(SessionAppearance(session: session))
+                    .padding(.top, 20)
                     .frame(width: 532, height: 490, alignment: .topLeading)
                     .background(Color(nsColor: .windowBackgroundColor)))
                 let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_ROLES_EVIDENCE"]
