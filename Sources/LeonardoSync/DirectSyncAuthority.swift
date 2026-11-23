@@ -102,13 +102,15 @@ public actor DirectSyncAuthority {
     let uploads: (any DesktopPeerUploadStore)?
     let receipts: (any DesktopPeerReceiptStore)?
     private let rubrics: (any RubricExchangeStore)?
+    private let formCompletion: (any RemoteFormCompletionHosting)?
     public let sourceDeviceID: UUID
 
     public init(registry: PairingRegistry, projects: [SharedProjectSource], serverFingerprint: Data,
                 persist: @escaping @Sendable (PairingRegistry) async throws -> Void,
                 uploads: (any DesktopPeerUploadStore)? = nil,
                 receipts: (any DesktopPeerReceiptStore)? = nil,
-                rubrics: (any RubricExchangeStore)? = nil) throws {
+                rubrics: (any RubricExchangeStore)? = nil,
+                formCompletion: (any RemoteFormCompletionHosting)? = nil) throws {
         guard serverFingerprint.count == 32, Set(projects.map { $0.descriptor.id }).count == projects.count else {
             throw PairingError.invalidProject
         }
@@ -119,6 +121,7 @@ public actor DirectSyncAuthority {
         self.uploads = uploads
         self.receipts = receipts
         self.rubrics = rubrics
+        self.formCompletion = formCompletion
         self.sourceDeviceID = Self.sourceID(for: serverFingerprint)
     }
 
@@ -363,6 +366,21 @@ public actor DirectSyncAuthority {
         guard let file = snapshot.files.first(where: { $0.path == request.path }),
               RemoteFileEntry(file: file).revision == request.revision else { throw SyncError.publicationPending }
         return file
+    }
+
+    public func completeForm(deviceID: UUID, credential: String, projectID: UUID,
+                             command: RemoteFormCompletionCommand) throws -> RemoteFormCompletionReceipt {
+        try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let formCompletion else { throw RemoteFormCompletionError.unsupported }
+        guard let source = projects[projectID], source.rootURL != nil else { throw PairingError.invalidProject }
+        try source.descriptor.scope.validate(command.path)
+        try source.descriptor.selection?.validate(command.path)
+        guard Self.isLeonardoFormatPath(command.path), !command.revision.isEmpty,
+              command.revision.utf8.count <= 128,
+              (command.action == .finish) == (command.values != nil) else {
+            throw RemoteFormCompletionError.invalidCommand
+        }
+        return try formCompletion.handle(command, deviceID: deviceID, source: source)
     }
 
     private func checkAccess(deviceID: UUID, credential: String, projectID: UUID) throws {

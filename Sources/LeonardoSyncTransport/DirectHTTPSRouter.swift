@@ -75,6 +75,14 @@ public struct DirectHTTPSRouter: Sendable {
                                                                       response: response, now: now()))
             }
             if path.count == 7, path[4] == "projects", let projectID = UUID(uuidString: String(path[5])) {
+                if request.method == "POST", path[6] == "form-completion" {
+                    guard request.body.count <= HTTPRequestParser.maximumBodyBytes else {
+                        return HTTPResponse(status: 413)
+                    }
+                    let command = try JSONDecoder().decode(RemoteFormCompletionCommand.self, from: request.body)
+                    return try json(await authority.completeForm(deviceID: deviceID, credential: credential,
+                                                                projectID: projectID, command: command))
+                }
                 if request.method == "GET", path[6] == "catalogue" {
                     return try json(await authority.catalogue(deviceID: deviceID, credential: credential,
                         projectID: projectID, supportsLeonardoFormats: supportsLeonardoFormats))
@@ -143,6 +151,12 @@ public struct DirectHTTPSRouter: Sendable {
             return HTTPResponse(status: failure.reason == .sourceUnavailable ? 500 : 413)
         }
         catch SyncError.invalidSnapshot { return HTTPResponse(status: 400) }
+        catch RemoteFormCompletionError.unsupported { return HTTPResponse(status: 404) }
+        catch RemoteFormCompletionError.invalidCommand { return HTTPResponse(status: 400) }
+        catch RemoteFormCompletionError.busy { return HTTPResponse(status: 423) }
+        catch RemoteFormCompletionError.staleRevision { return HTTPResponse(status: 409) }
+        catch RemoteFormCompletionError.inactive { return HTTPResponse(status: 410) }
+        catch RemoteFormCompletionError.invalidResponse { return HTTPResponse(status: 422) }
         catch RubricExchangeError.unsupported { return HTTPResponse(status: 404) }
         catch RubricExchangeError.notFound { return HTTPResponse(status: 404) }
         catch RubricExchangeError.expired { return HTTPResponse(status: 409) }

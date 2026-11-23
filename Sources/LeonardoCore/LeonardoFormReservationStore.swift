@@ -25,6 +25,10 @@ public struct LeonardoFormReservationStore: Sendable {
         case invalidStorage
     }
 
+    public enum Status: Sendable {
+        case active, cancelled, revoked, completed
+    }
+
     private enum State: Codable {
         case active(Reservation)
         case cancelled(Reservation)
@@ -49,6 +53,19 @@ public struct LeonardoFormReservationStore: Sendable {
     public func activeReservation(for source: URL) throws -> Reservation? {
         try transaction(for: source) { folder in
             try active(in: folder)?.reservation
+        }
+    }
+
+    public func status(of reservation: Reservation, for source: URL) throws -> Status {
+        try transaction(for: source) { folder in
+            let record = recordURL(for: reservation.id, in: folder)
+            guard let state = try read(record), state.reservation == reservation else { throw Failure.inactive }
+            switch state {
+            case .active: return .active
+            case .cancelled: return .cancelled
+            case .revoked: return .revoked
+            case .completed: return .completed
+            }
         }
     }
 
