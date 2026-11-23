@@ -1,0 +1,13 @@
+# Startup restoration after lifecycle fixes
+
+[PR #91](https://github.com/PinedaTec-EU/LeonardoMD/pull/91) and [issue #90](https://github.com/PinedaTec-EU/LeonardoMD/issues/90). Validated November 23, 2026. Source `ac3de526f8a1055836a02cbde0efc11571528e7b`. The later evidence commit records only this evidence and the successful build in the PR ledger.
+
+Run `LEONARDO_SOURCE_PR=91 ./launch.sh --qa <synthetic-project>` and relaunch the same verified QA bundle after each normal exit. The preflight verified the real native executable, dependencies, signatures and absence of XCTest linkage. Bundle `leonardo-native-qa-fwb287hd/LeonardoMDQA.app/Contents/MacOS/LeonardoMD`, identifier `eu.pinedatec.LeonardoMD.qa.5c34df108f1940dc9b4679016118bfdc`, version/build `0.3.2205/2205`, macOS 27.2.1.
+
+- PID 6265 at 18:58:34 opened the synthetic project. In Preferences with **This project** selected, switched the Mac-wide setting from [on](preferences-on.png) to [off](preferences-off.png). The project JSON hash, inode, modification time and size matched before and after changing the preference. Closed the last window normally and verified the prepared project location was committed on successful quit.
+- PID 6826 at 18:59:48 opened an empty viewer with restoration off. Opened both Guide v135 locales from the actual Help menu. Verified the rendered switch instruction in chapter 11 and exact equality of the bundled and working-copy packages. Re-enabled restoration and quit normally.
+- PID 7288 at 19:00:58 restored the selected English guide after launching without a target. Opened a new window and a new tab. The snapshot captured at successful quit contained the restored window with its selected guide and a separate window with two empty tabs.
+- The deterministic XCTest regression verifies a veto leaves the previous snapshot byte-identical even if the last window was staged, an intervening new tab cannot receive the restore payload, and changing the global setting from an open project preserves project file data and modification time. Control flow reserves the original window/tab before the first suspension and awaits the complete startup task before any shutdown preparation or snapshot capture.
+- All three candidate PIDs were verified absent after normal exit. No other LeonardoMD instance was present at setup. No Device Hub sessions were opened. Restored the pretest snapshot state.
+
+Guide v135 SHA-256 EN `c6a8c5455b10424145c2f74e05160630e1b72d9af042257e208eac71f84f9ef5`, ES `6e7b4e09d0cd4f95611683f29fced617b6c38342abc60084674814836822bbf6`. The illustrated guide content is identical to the previously validated v135 package.

@@ -18,6 +18,8 @@ final class DocumentTabs {
     weak var presentationWindow: NSWindow? {
         didSet { tabs.forEach { $0.session.presentationWindow = presentationWindow } }
     }
+    var waitForStartup: @MainActor () async -> Void = {}
+    private var startupTabIDs: Set<UUID> = []
     var updateWindow: ((String, URL?, Bool) -> Void)?
     var openingProjectDocuments: Set<URL> = []
     private var stopped = false
@@ -137,7 +139,30 @@ final class DocumentTabs {
         }
     }
 
+    func reserveStartupTab(_ id: UUID) {
+        startupTabIDs.insert(id)
+    }
+
+    func releaseStartupTabs() {
+        startupTabIDs.removeAll()
+    }
+
+    func awaitStartupBeforeClosing(tabID: UUID? = nil) async {
+        if tabID.map(startupTabIDs.contains) ?? !startupTabIDs.isEmpty {
+            await waitForStartup()
+        }
+    }
+
+    func waitForStartupRestoreAccess() async -> Bool {
+        while closing && !stopped {
+            do { try await Task.sleep(for: .milliseconds(50)) }
+            catch { return false }
+        }
+        return !stopped
+    }
+
     func close(_ id: UUID) async {
+        await awaitStartupBeforeClosing(tabID: id)
         guard !closing, let index = tabs.firstIndex(where: { $0.id == id }) else { return }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         closing = true

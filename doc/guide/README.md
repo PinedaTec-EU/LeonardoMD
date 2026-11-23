@@ -1,12 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v131-en.mdlz` and `Guide-v131-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v136-en.mdlz` and `Guide-v136-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v131/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v136/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v131 explains how to import an existing Mac pairing credential when macOS requires approval.
+Guide v136 explains migration of existing Mac pairing credentials.
+
+Guide v135 documents the macOS startup restoration switch in chapter 11. Package SHA-256: EN `c6a8c5455b10424145c2f74e05160630e1b72d9af042257e208eac71f84f9ef5`, ES `6e7b4e09d0cd4f95611683f29fced617b6c38342abc60084674814836822bbf6`.
 
 Guide v130 documents the illustrated Preferences and the Share / Remote workflows.
 
