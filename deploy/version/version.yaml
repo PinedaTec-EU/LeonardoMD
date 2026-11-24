@@ -1309,9 +1309,19 @@
       "pr": 585,
       "summary": "Desktop and mobile interface review now uses evidence captured from the running app.",
       "to_version": "0.3.2241"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.2241",
+      "merge_sha": "e58e9e914694715538fd1b83d5675434d642c26b",
+      "pr": 583,
+      "summary": "The Extensions page now matches the heading and options backgrounds of the other Preferences pages.",
+      "to_version": "0.3.2244"
     }
   ],
-  "current_version": "0.3.2241",
+  "current_version": "0.3.2244",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
