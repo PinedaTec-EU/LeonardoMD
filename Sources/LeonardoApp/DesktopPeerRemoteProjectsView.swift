@@ -129,7 +129,7 @@ struct DesktopPeerRemoteProjectsView: View {
                 Button(L10n.text("Update list"), systemImage: "arrow.clockwise") {
                     Task { await controller.refreshConnectionOnRequest(connection.id) }
                 }
-                .disabled(!controller.helper.online || controller.busy)
+                .disabled(controller.busy || (!controller.helper.online && !connection.credentialDeferred))
             }
             Menu {
                 Button(L10n.text("Rename computer…"), systemImage: "pencil") {

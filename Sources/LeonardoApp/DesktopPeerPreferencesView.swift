@@ -25,7 +25,9 @@ struct DesktopPeerPreferencesView: View {
                         .disabled(!controller.helper.online || controller.busy)
                     Button(L10n.text("Update list"), systemImage: "arrow.clockwise") {
                         Task { await controller.refreshAllConnections() }
-                    }.disabled(!controller.helper.online || controller.busy || (controller.connections.isEmpty && !controller.needsConnectionReload))
+                    }.disabled(controller.busy
+                        || (!controller.helper.online && !controller.connections.contains(where: \.credentialDeferred))
+                        || (controller.connections.isEmpty && !controller.needsConnectionReload))
                 }
                 Text(L10n.text("Enable Leonardo Sync on this Mac and sharing on the other Mac, then compare the codes."))
                     .font(.caption).foregroundStyle(.secondary)

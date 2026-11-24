@@ -183,6 +183,8 @@ final class DesktopPeerController {
             if connections.contains(where: { $0.id == id && $0.credentialDeferred }) {
                 guard !importingLegacyCredentials else { return }
                 try await authorizeLegacyCredentials([id])
+                await loadConnections()
+                guard helper.online else { return }
             }
             await refresh(id)
         } catch {
