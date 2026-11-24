@@ -1,4 +1,6 @@
 {
+  "Reopen documents and projects on startup": "Reopen documents and projects on startup",
+  "Reopens the previous session on this Mac. Opening a file directly takes priority.": "Reopens the previous session on this Mac. Opening a file directly takes priority.",
   "This file has signing history, but its current signing identity is unavailable. Restore the exact signing header before continuing.": "This file has signing history, but its current signing identity is unavailable. Restore the exact signing header before continuing.",
   "The document has no stable signing identity or revision. Create a new revision before continuing.": "The document has no stable signing identity or revision. Create a new revision before continuing.",
   "More than one signing session matches this document revision. Reload it or create a new revision before continuing.": "More than one signing session matches this document revision. Reload it or create a new revision before continuing.",

@@ -1279,9 +1279,39 @@
       "pr": 581,
       "summary": "Compact Preferences headers and put Share and Remote beside the Leonardo Sync service.",
       "to_version": "0.3.2205"
+    },
+    {
+      "delta": {
+        "build": 22
+      },
+      "from_version": "0.3.2205",
+      "merge_sha": "f3c6906df85d21ac476482c5c56d066f2bee0b44",
+      "pr": 91,
+      "summary": "LeonardoMD reopens your projects and documents on startup by default. Turn this off in General preferences to start with an empty window and keep your recent items.",
+      "to_version": "0.3.2227"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.2227",
+      "merge_sha": "d3b2cafacf02bf03ff7053a36f21407d8ad48a7e",
+      "pr": 587,
+      "summary": "The receiving Mac resumes interrupted cleanup of revoked remote copies and queued changes on restart, even when the source Mac is unreachable.",
+      "to_version": "0.3.2230"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.3.2230",
+      "merge_sha": "25047d0ee4bdc275d4c69f9c6aa574fd8ede9f95",
+      "pr": 585,
+      "summary": "Desktop and mobile interface review now uses evidence captured from the running app.",
+      "to_version": "0.3.2241"
     }
   ],
-  "current_version": "0.3.2205",
+  "current_version": "0.3.2241",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

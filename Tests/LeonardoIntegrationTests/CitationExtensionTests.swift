@@ -74,7 +74,7 @@ final class CitationExtensionTests: XCTestCase {
         XCTAssertEqual(sourceHidden, "false")
     }
 
-    func testCitationPDFWaitsForBibliographyAndCapturesOptionalEvidence() async throws {
+    func testCitationPDFWaitsForBibliography() async throws {
         let source = "# PDF\n\nA result [@smith2024].\n\n```bibtex\n@article{smith2024, author={Smith, Jane}, title={PDF Example}, year={2024}}\n```\n"
         let configuration = MarkdownPreviewConfiguration(allowsCitations: true)
         let (host, window) = makeHost(content: source, config: configuration)
@@ -84,7 +84,6 @@ final class CitationExtensionTests: XCTestCase {
 
         let pdf = try await host.exportPDF()
         XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
-        try await captureEvidenceIfRequested(web, name: "citations-pdf")
     }
 
     func testStaleCitationRenderCannotMutateNewDocument() async throws {
@@ -185,37 +184,6 @@ final class CitationExtensionTests: XCTestCase {
             XCTAssertEqual(attempts, "0")
             XCTAssertEqual(entries, "0")
         }
-    }
-
-    private func captureEvidenceIfRequested(_ web: WKWebView, name: String) async throws {
-        guard let path = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
-        let image: NSImage = try await withCheckedThrowingContinuation { continuation in
-            web.takeSnapshot(with: nil) { image, error in
-                if let error { continuation.resume(throwing: error) }
-                else if let image { continuation.resume(returning: image) }
-                else { continuation.resume(throwing: CocoaError(.fileReadUnknown)) }
-            }
-        }
-        let root = URL(fileURLWithPath: path, isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        guard let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let png = bitmap.representation(using: .png, properties: [:]) else {
-            throw CocoaError(.fileReadUnknown)
-        }
-        try png.write(to: root.appendingPathComponent(name + ".png"), options: [.atomic])
-        let metadata: [String: String] = [
-            "screen": "citation bibliography PDF preview",
-            "head": ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local working tree",
-            "browser": try await evaluate("navigator.userAgent", in: web),
-            "imagePixels": "\(bitmap.pixelsWide)x\(bitmap.pixelsHigh)",
-            "capturedAtUTC": ISO8601DateFormatter().string(from: Date()),
-            "viewportPoints": "1000x800",
-            "captureMode": "viewport",
-            "fixture": "synthetic Citation.js BibTeX document"
-        ]
-        let data = try JSONSerialization.data(withJSONObject: metadata, options: [.prettyPrinted, .sortedKeys])
-        try data.write(to: root.appendingPathComponent(name + ".json"), options: [.atomic])
     }
 
     private func evaluate(_ script: String, in web: WKWebView) async throws -> String {

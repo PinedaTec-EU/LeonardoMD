@@ -28,3 +28,7 @@ suites. `ci:full` schedules all suites. Labels are read when the planning job
 runs. Adding or removing a label does not launch product CI on its own.
 After changing labels on an existing run, select **Re-run all jobs** and confirm
 the new plan in the run summary before relying on the additional checks.
+
+CI builds both native applications and runs functional checks. The author
+reviews the affected UI on the running app and attaches the desktop or device
+captures to the PR. CI does not generate UI evidence or run UI automation.

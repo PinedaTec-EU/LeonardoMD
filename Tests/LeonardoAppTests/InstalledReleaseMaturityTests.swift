@@ -34,47 +34,6 @@ final class InstalledReleaseMaturityTests: XCTestCase {
         XCTAssertTrue(proof.verifies(identity: identity, publicKey: Data(base64Encoded: "a3GPslwOW8arEKunqgwyZDTsngVAFY8jLjQiR1bzyxI=")!))
     }
 
-    func testCapturePromotedPreferences() async throws {
-        let environment = ProcessInfo.processInfo.environment
-        guard let path = environment["LEONARDO_MATURITY_EVIDENCE"]
-            ?? environment["LEONARDO_VISUAL_EVIDENCE"].map({ $0 + "/maturity" }) else {
-            throw XCTSkip("Set LEONARDO_MATURITY_EVIDENCE for native promotion captures")
-        }
-        let destination = URL(fileURLWithPath: path)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let head = environment["EVIDENCE_SHA"] ?? "local working tree"
-        try "Head: \(head)\nSurface: native NSHostingView Updates preferences\nViewport: 580x620 points\nStates: beta and authenticated stable, subscriptions stable and beta, languages en/es\nFixture: synthetic 0.1.601 with ephemeral Ed25519 key; no install/network/fresh-process claim\n".write(
-            to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        let key = Curve25519.Signing.PrivateKey()
-        let config = configuration(key: key)
-        let identity = self.identity
-        let data = try proof(key: key)
-        for subscription in UpdateChannel.allCases {
-            let suite = "ReleaseMaturityCapture.\(UUID().uuidString)"
-            let defaults = UserDefaults(suiteName: suite)!
-            defer { defaults.removePersistentDomain(forName: suite) }
-            defaults.set(subscription.rawValue, forKey: ApplicationUpdates.channelPreferenceKey)
-            let maturity = InstalledReleaseMaturity(configuration: config, defaults: defaults,
-                identify: { identity }, fetch: { _ in data })
-            let updates = ApplicationUpdates(defaults: defaults, configuration: config, driver: FakeUpdateDriver(), maturity: maturity)
-            for promoted in [false, true] {
-                if promoted { await maturity.refresh() }
-                for language in AppLanguage.allCases {
-                    LanguageSettings.shared.language = language
-                    let host = NSHostingView(rootView: UpdatePreferencesView(updates: updates)
-                        .buttonStyle(PremiumButtonStyle()).frame(width: 580, height: 620)
-                        .background(Color(nsColor: .windowBackgroundColor)))
-                    let filename = "maturity-\(language.rawValue)-\(subscription.rawValue)-\(promoted ? "promoted" : "beta").png"
-                    try await NativeViewCaptureSupport.capture(host, size: NSSize(width: 580, height: 620),
-                        to: destination.appendingPathComponent(filename), settlingMilliseconds: 250,
-                        title: "Leonardo Installed Maturity QA")
-                }
-            }
-        }
-    }
-
     func testPromotionPreservesBothSubscriptionsAndSurvivesOfflineRelaunch() async throws {
         let key = Curve25519.Signing.PrivateKey()
         let data = try proof(key: key)

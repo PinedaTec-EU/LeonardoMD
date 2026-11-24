@@ -2,6 +2,30 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2241
+
+- #584 Removed: automated user interface tests and CI captures ([#585](https://github.com/PinedaTec-EU/LeonardoMD/pull/585))
+
+<p>Desktop and mobile interface review now uses evidence captured from the running app.</p>
+
+Source: `25047d0ee4bdc275d4c69f9c6aa574fd8ede9f95`. Delta: `{"build": 11}`.
+
+## 0.3.2230
+
+- #586 Fixed: resume revoked workspace cleanup on startup ([#587](https://github.com/PinedaTec-EU/LeonardoMD/pull/587))
+
+<p>The receiving Mac resumes interrupted cleanup of revoked remote copies and queued changes on restart, even when the source Mac is unreachable.</p>
+
+Source: `d3b2cafacf02bf03ff7053a36f21407d8ad48a7e`. Delta: `{"build": 3}`.
+
+## 0.3.2227
+
+- #90 Added: global startup session preference ([#91](https://github.com/PinedaTec-EU/LeonardoMD/pull/91))
+
+<p>LeonardoMD reopens your projects and documents on startup by default. Turn this off in General preferences to start with an empty window and keep your recent items.</p>
+
+Source: `f3c6906df85d21ac476482c5c56d066f2bee0b44`. Delta: `{"build": 22}`.
+
 ## 0.3.2205
 
 - #337 Updated: compact macOS preferences headers ([#581](https://github.com/PinedaTec-EU/LeonardoMD/pull/581))

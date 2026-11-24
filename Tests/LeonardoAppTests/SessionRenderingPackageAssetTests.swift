@@ -46,15 +46,6 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         let session = tabs.activeSession
         session.authorizePath = { _, _ in }
         defer { tabs.stop() }
-        let evidenceDirectory: URL?
-        if let evidencePath = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
-            let directory = URL(fileURLWithPath: evidencePath, isDirectory: true)
-                .appendingPathComponent("package-assets", isDirectory: true)
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            evidenceDirectory = directory
-        } else {
-            evidenceDirectory = nil
-        }
         let projectOpened = await session.openProject(project)
         XCTAssertTrue(projectOpened)
         await session.openDocument(package)
@@ -63,9 +54,7 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         try await assertWorkspaceAssetAndPDF(
             session: session,
             expectedAsset: packageAsset,
-            expectedAssetPath: "assets/\(hash).svg",
-            state: "package",
-            evidenceDirectory: evidenceDirectory
+            expectedAssetPath: "assets/\(hash).svg"
         )
 
         let oldWorkspace = try XCTUnwrap(session.packageWorkspace)
@@ -78,33 +67,39 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         try await assertWorkspaceAssetAndPDF(
             session: session,
             expectedAsset: packageAsset,
-            expectedAssetPath: "assets/\(hash).svg",
-            state: "extracted",
-            evidenceDirectory: evidenceDirectory
+            expectedAssetPath: "assets/\(hash).svg"
         )
-        if let evidenceDirectory {
-            let context = """
-            Surface: actual MarkdownPreviewHost/WKWebView using AppSession.renderConfiguration
-            States: package and extracted workspace with the same active project
-            Viewport: 800x600 points
-            Project conflict: assets/logo.svg and assets/\(hash).svg are red
-            Package asset: assets/\(hash).svg is blue and is loaded from the workspace root
-            Preview and PDF: both use the captured renderConfiguration.localAssetRoot
-            Active project: \(project.path)
-            Package source: \(package.path)
-            Provenance head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? ProcessInfo.processInfo.environment["GITHUB_SHA"] ?? ProcessInfo.processInfo.environment["CI_COMMIT_SHA"] ?? "unknown")
-            Evidence root: \(evidenceDirectory.path)
-            """
-            try context.write(to: evidenceDirectory.appendingPathComponent("capture-context.txt"), atomically: true, encoding: .utf8)
-        }
+        let extractedDocument = try XCTUnwrap(session.documentURL)
+        let editedSource = try String(contentsOf: extractedDocument, encoding: .utf8) + "\n\nEdited in the extraction.\n"
+        try editedSource.write(to: extractedDocument, atomically: true, encoding: .utf8)
+        let archiveBeforeQuit = try Data(contentsOf: package)
+        let store = SessionRestoration(preferencesURL: root.appendingPathComponent("preferences.json"))
+        let closeApproved = await tabs.prepareClose()
+        XCTAssertTrue(closeApproved)
+        try store.save(SavedSession(windows: [tabs.savedWindow]))
+        await tabs.finishPreparedClose()
+        let saved = try XCTUnwrap(store.load(restorePreviousSession: true, explicitURLs: []).flatMap { $0.windows.first })
+
+        let restored = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { restored.stop() }
+        await restored.restore(saved, initialTabID: try XCTUnwrap(restored.activeID))
+        let reopened = restored.activeSession
+        XCTAssertEqual(reopened.projectURL?.standardizedFileURL, project.standardizedFileURL)
+        XCTAssertEqual(reopened.documentURL?.standardizedFileURL, extractedDocument.standardizedFileURL)
+        XCTAssertEqual(reopened.documentStorage, .extracted)
+        XCTAssertEqual(reopened.content, editedSource)
+        XCTAssertEqual(try Data(contentsOf: package), archiveBeforeQuit)
+        try await assertWorkspaceAssetAndPDF(
+            session: reopened,
+            expectedAsset: packageAsset,
+            expectedAssetPath: "assets/\(hash).svg"
+        )
     }
 
     private func assertWorkspaceAssetAndPDF(
         session: AppSession,
         expectedAsset: Data,
-        expectedAssetPath: String,
-        state: String,
-        evidenceDirectory: URL?
+        expectedAssetPath: String
     ) async throws {
         let configuration = session.renderConfiguration
         let workspaceRoot = try XCTUnwrap(session.packageWorkspace?.directoryURL)
@@ -156,24 +151,37 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         XCTAssertTrue(imageLoaded, "The package image must decode in the preview WKWebView")
         let source = try await webView.evaluateJavaScript("document.querySelector('img')?.currentSrc") as? String
         XCTAssertTrue(source?.contains(expectedAssetPath) == true)
-        if let evidenceDirectory {
-            try await captureSnapshot(
-                webView,
-                to: evidenceDirectory.appendingPathComponent("\(state).png")
-            )
-        }
         let pdf = try await host.exportPDF()
-        XCTAssertTrue(pdf.starts(with: Data("%PDF-".utf8)))
+        XCTAssertTrue(try containsBlueAsset(in: pdf), "Exported PDF must render the blue extraction asset")
     }
 
-    private func captureSnapshot(_ webView: WKWebView, to url: URL) async throws {
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = webView.bounds
-        let image = try await webView.takeSnapshot(configuration: configuration)
-        let tiff = try XCTUnwrap(image.tiffRepresentation)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiff))
-        let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-        try png.write(to: url, options: .atomic)
+    private func containsBlueAsset(in pdf: Data) throws -> Bool {
+        let provider = try XCTUnwrap(CGDataProvider(data: pdf as CFData))
+        let document = try XCTUnwrap(CGPDFDocument(provider))
+        let page = try XCTUnwrap(document.page(at: 1))
+        let bounds = page.getBoxRect(.mediaBox)
+        let width = Int(bounds.width.rounded(.up))
+        let height = Int(bounds.height.rounded(.up))
+        let colorSpace = try XCTUnwrap(CGColorSpace(name: CGColorSpace.sRGB))
+        let bitmap = try XCTUnwrap(CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        ))
+        bitmap.setFillColor(NSColor.white.cgColor)
+        bitmap.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        bitmap.translateBy(x: -bounds.minX, y: -bounds.minY)
+        bitmap.drawPDFPage(page)
+
+        let pixels = try XCTUnwrap(bitmap.data).assumingMemoryBound(to: UInt8.self)
+        for y in stride(from: 0, to: height, by: 2) {
+            for x in stride(from: 0, to: width, by: 2) {
+                let index = y * bitmap.bytesPerRow + x * 4
+                if pixels[index] < 26 && pixels[index + 1] < 26 && pixels[index + 2] > 204 { return true }
+            }
+        }
+        return false
     }
+
 }
 #endif

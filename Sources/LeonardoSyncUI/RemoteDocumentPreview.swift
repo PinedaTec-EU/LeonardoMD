@@ -68,12 +68,17 @@ public struct RemoteDocumentPreview: View {
         .toolbar { Button(source ? t("Show document", "Ver documento") : t("Show source", "Ver texto")) { source.toggle() } }
         .task(id: request) { await load() }
         .navigationDestination(item: $linked) { target in
-            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish,
-                                  appearance: appearance, compactFirstHeading: compactFirstHeading,
-                                  failurePresentation: failurePresentation,
-                                  failureDiagnosticPresentation: failureDiagnosticPresentation)
+            linkedPreview(for: target)
         }
     }
+
+    func linkedPreview(for target: RemoteFileEntry) -> Self {
+        Self(library: library, projectID: projectID, entry: target, spanish: spanish,
+             appearance: appearance, compactFirstHeading: compactFirstHeading,
+             failurePresentation: failurePresentation,
+             failureDiagnosticPresentation: failureDiagnosticPresentation)
+    }
+
     @ViewBuilder private var content: some View {
         Group {
             if project == nil { Text(t("Access removed", "Acceso retirado")) }
