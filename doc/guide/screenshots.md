@@ -25,16 +25,8 @@ Full capture revisions:
 - `b8900bf`: `b8900bf14f17aba18e4e89cb141c392048a5314f`.
 - `4b0eacc`: `4b0eacc829b944858fe63e5334c123d5a9b39fbb` (dialog selection and scope controls).
 
-New photographs use the opt-in `UserGuideFeatureCaptureTests` fixture, one
-language per process:
-
-```sh
-LEONARDO_GUIDE_FEATURE_EVIDENCE=/tmp/guide-photos LEONARDO_NATIVE_CAPTURE_LANGUAGE=en swift test --skip-build --filter UserGuideFeatureCaptureTests
-```
-
-Build the current tests first using the repository compilation recorder.
-Repeat with `es`. The fixture never starts a sharing service or pairs a real
-device, installs an update, sends a proposal or launches the packaged product.
+Capture new screenshots from the running app in each locale using synthetic data.
+Record the source revision, locale and visible state alongside each original.
 Home, palette and update illustrations retain their original `e457e86` capture
 revision; the synchronization pages were recaptured at `f1ecf7b` after the role
 reorganization and common lifecycle composition. Historical pre-role originals

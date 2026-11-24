@@ -46,15 +46,6 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         let session = tabs.activeSession
         session.authorizePath = { _, _ in }
         defer { tabs.stop() }
-        let evidenceDirectory: URL?
-        if let evidencePath = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
-            let directory = URL(fileURLWithPath: evidencePath, isDirectory: true)
-                .appendingPathComponent("package-assets", isDirectory: true)
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            evidenceDirectory = directory
-        } else {
-            evidenceDirectory = nil
-        }
         let projectOpened = await session.openProject(project)
         XCTAssertTrue(projectOpened)
         await session.openDocument(package)
@@ -63,9 +54,7 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         try await assertWorkspaceAssetAndPDF(
             session: session,
             expectedAsset: packageAsset,
-            expectedAssetPath: "assets/\(hash).svg",
-            state: "package",
-            evidenceDirectory: evidenceDirectory
+            expectedAssetPath: "assets/\(hash).svg"
         )
 
         let oldWorkspace = try XCTUnwrap(session.packageWorkspace)
@@ -78,9 +67,7 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         try await assertWorkspaceAssetAndPDF(
             session: session,
             expectedAsset: packageAsset,
-            expectedAssetPath: "assets/\(hash).svg",
-            state: "extracted",
-            evidenceDirectory: evidenceDirectory
+            expectedAssetPath: "assets/\(hash).svg"
         )
         let extractedDocument = try XCTUnwrap(session.documentURL)
         let editedSource = try String(contentsOf: extractedDocument, encoding: .utf8) + "\n\nEdited in the extraction.\n"
@@ -105,33 +92,14 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         try await assertWorkspaceAssetAndPDF(
             session: reopened,
             expectedAsset: packageAsset,
-            expectedAssetPath: "assets/\(hash).svg",
-            state: "restored-extraction",
-            evidenceDirectory: evidenceDirectory
+            expectedAssetPath: "assets/\(hash).svg"
         )
-        if let evidenceDirectory {
-            let context = """
-            Surface: actual MarkdownPreviewHost/WKWebView using AppSession.renderConfiguration
-            States: package, extracted workspace and restored extraction with the same active project
-            Viewport: 800x600 points
-            Project conflict: assets/logo.svg and assets/\(hash).svg are red
-            Package asset: assets/\(hash).svg is blue and is loaded from the workspace root
-            Preview and PDF: both use the captured renderConfiguration.localAssetRoot
-            Active project: \(project.path)
-            Package source: \(package.path)
-            Provenance head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? ProcessInfo.processInfo.environment["GITHUB_SHA"] ?? ProcessInfo.processInfo.environment["CI_COMMIT_SHA"] ?? "unknown")
-            Evidence root: \(evidenceDirectory.path)
-            """
-            try context.write(to: evidenceDirectory.appendingPathComponent("capture-context.txt"), atomically: true, encoding: .utf8)
-        }
     }
 
     private func assertWorkspaceAssetAndPDF(
         session: AppSession,
         expectedAsset: Data,
-        expectedAssetPath: String,
-        state: String,
-        evidenceDirectory: URL?
+        expectedAssetPath: String
     ) async throws {
         let configuration = session.renderConfiguration
         let workspaceRoot = try XCTUnwrap(session.packageWorkspace?.directoryURL)
@@ -183,16 +151,7 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         XCTAssertTrue(imageLoaded, "The package image must decode in the preview WKWebView")
         let source = try await webView.evaluateJavaScript("document.querySelector('img')?.currentSrc") as? String
         XCTAssertTrue(source?.contains(expectedAssetPath) == true)
-        if let evidenceDirectory {
-            try await captureSnapshot(
-                webView,
-                to: evidenceDirectory.appendingPathComponent("\(state).png")
-            )
-        }
         let pdf = try await host.exportPDF()
-        if let evidenceDirectory {
-            try pdf.write(to: evidenceDirectory.appendingPathComponent("\(state).pdf"), options: .atomic)
-        }
         XCTAssertTrue(try containsBlueAsset(in: pdf), "Exported PDF must render the blue extraction asset")
     }
 
@@ -224,14 +183,5 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
         return false
     }
 
-    private func captureSnapshot(_ webView: WKWebView, to url: URL) async throws {
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = webView.bounds
-        let image = try await webView.takeSnapshot(configuration: configuration)
-        let tiff = try XCTUnwrap(image.tiffRepresentation)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiff))
-        let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-        try png.write(to: url, options: .atomic)
-    }
 }
 #endif

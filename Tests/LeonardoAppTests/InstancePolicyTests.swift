@@ -65,27 +65,6 @@ final class InstancePolicyTests: XCTestCase {
         XCTAssertEqual(InstancePresentation.representative(in: [older, tie]), tie)
     }
 
-    func testAccessoryApplicationMenuKeepsRealActionsWithoutMutatingTheMenuBar() {
-        let original = NSMenu()
-        let file = NSMenuItem(title: "File", action: nil, keyEquivalent: "")
-        let submenu = NSMenu(title: "File")
-        let action = NSMenuItem(title: "New window", action: NSSelectorFromString("newEmptyWindow"), keyEquivalent: "n")
-        let target = NSObject()
-        action.target = target
-        submenu.addItem(action)
-        file.submenu = submenu
-        original.addItem(file)
-        let popup = InstanceApplicationMenu.makeMenu(from: original, title: "Application menu")
-        XCTAssertEqual(original.items.count, 1)
-        XCTAssertEqual(popup.items.count, 2)
-        XCTAssertEqual(popup.items.first?.title, "Application menu")
-        let copiedAction = popup.items[1].submenu?.items.first
-        XCTAssertEqual(copiedAction?.action, action.action)
-        XCTAssertTrue(copiedAction?.target === target)
-        XCTAssertEqual(copiedAction?.keyEquivalent, "n")
-        XCTAssertFalse(popup.items[1] === original.items[0])
-    }
-
     func testUnavailableSuiteUsesStandardApplicationPreferences() {
         let defaults = UserDefaults.standard
         let key = InstancePreferences.preferenceKey

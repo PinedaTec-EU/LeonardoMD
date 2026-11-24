@@ -32,6 +32,11 @@ extension FavoriteItem.Kind {
 }
 
 extension AppSession {
+    func clearRecentProjects() {
+        globalPreferences.recentProjectPaths.removeAll()
+        persistSettings()
+    }
+
     func currentItem(_ kind: FavoriteItem.Kind) -> URL? {
         switch kind {
         case .document: documentURL

@@ -98,8 +98,7 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         switch category {
         case .documents: NSDocumentController.shared.clearRecentDocuments(nil)
         case .projects:
-            session()?.globalPreferences.recentProjectPaths = []
-            session()?.persistSettings()
+            session()?.clearRecentProjects()
         }
     }
 }

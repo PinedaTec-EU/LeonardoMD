@@ -26,12 +26,9 @@ status keys or structured state rather than translated status strings so an
 open view can translate them again after a language change. Accessibility
 identifiers remain language independent.
 
-`LocalizationVisualTests` optionally exports native host captures when
-`LEONARDO_LOCALIZATION_EVIDENCE` names an output directory. The same hosting
-views are retained while changing languages, exercising live observation.
-The test uses empty sessions and does not launch the application's
-single-instance process. Layer-backed native controls may be absent from
-cache-display captures; use real application screenshots for those controls.
+For interface changes, switch languages in the running app and capture the
+affected views and menus with synthetic content. Record the tested revision,
+locale and visible state with the evidence.
 
 Tracking: [#57](https://github.com/PinedaTec-EU/LeonardoMD/issues/57).
 
@@ -59,6 +56,6 @@ Refresh on main’s tab reordering retains the drag gesture, measured frames and
 
 Tab grip help and accessibility also use catalogs, including formatted document titles. `LocalizationTests` guards Spanish help/accessibility literals in app source to catch omissions during integration. Regression: [#65](https://github.com/PinedaTec-EU/LeonardoMD/issues/65).
 
-An open About window observes the same language-change notification and updates its native title synchronously; its existing SwiftUI content remains observable. The optional visual test also supports `LEONARDO_LOCALIZATION_LIVE_QA=1`, retaining native document-tabs, About and Preferences windows for CUA capture for ten minutes, using temporary synthetic documents and isolated preferences. This harness does not claim the application's single-instance service.
+An open About window observes the same language-change notification and updates its native title synchronously; its existing SwiftUI content remains observable.
 
 Tab file-path help belongs to the selection button rather than its parent group, so it cannot override the reorder grip’s localized tooltip. Author-owned native screenshots and accessibility captures at the reviewed source head are linked in PR #58; evidence is stored separately from the source branch to preserve immutable review identity.

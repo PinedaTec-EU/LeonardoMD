@@ -65,6 +65,11 @@ with no user-visible help impact must explain that conclusion in the PR.
 
 ## Scope native visual QA to affected screens
 
+Perform UI and appearance checks on the running app and attach the relevant
+desktop or device evidence to the PR. Keep screenshot capture and automated UI
+interaction out of the test suites and CI. Keep automated tests for product
+logic, renderer behavior, persistence, synchronization and packaging.
+
 Run manual visual QA when a change affects the interface. Cover the affected
 screen and the states and transitions needed to verify the changed behavior.
 Add another screen, theme, locale or viewport only when it verifies a distinct

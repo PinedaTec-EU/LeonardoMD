@@ -6,7 +6,7 @@ import LeonardoCore
 
 @MainActor
 final class FormCalendarTests: XCTestCase {
-    func testCalendarKeepsDraftsSynchronizesDatesAndUsesTheme() async throws {
+    func testCalendarKeepsDraftsAndSynchronizesDates() async throws {
         let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 700))
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -40,8 +40,6 @@ final class FormCalendarTests: XCTestCase {
           input.value = 'incomplete'; input.dispatchEvent(new Event('input'));
           root.querySelector('.leonardo-calendar-toggle').click();
           const draft = input.value === 'incomplete';
-          document.documentElement.style.setProperty('--ld-background', 'rgb(20, 30, 40)');
-          const themed = getComputedStyle(panel).backgroundColor === 'rgb(20, 30, 40)';
           root.querySelector('.leonardo-calendar-toggle').dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
           const escaped = panel.hidden;
           LeonardoForms.begin({allowsFormFilling: true, source: 'locale', leonardo: {document: {locale: 'not_a_locale'}}}, root);
@@ -62,12 +60,12 @@ final class FormCalendarTests: XCTestCase {
           locked.querySelector('.leonardo-calendar-toggle').click();
           lockedInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowDown', altKey: true, bubbles: true}));
           const protectedDate = locked.querySelector('.leonardo-calendar-toggle').disabled && locked.querySelector('.leonardo-calendar').hidden && lockedInput.value === '2024-02-29' && Object.keys(LeonardoForms.snapshot().changes).length === 0;
-          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported, protectedDate, fallbackLocale, fallbackSelection, gregorianLocale};
+          return {leap, keyboard, saved, synchronized, draft, escaped, exported, protectedDate, fallbackLocale, fallbackSelection, gregorianLocale};
         })()
         """) as? [String: Bool]
         let checks = try XCTUnwrap(result)
         for (name, passed) in checks { XCTAssertTrue(passed, name) }
-        XCTAssertEqual(checks.count, 12)
+        XCTAssertEqual(checks.count, 11)
     }
 
     func testGuidedSigningRubricFieldsCannotUseInsertRubricBypass() async throws {
