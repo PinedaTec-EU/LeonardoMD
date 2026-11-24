@@ -1319,6 +1319,16 @@
       "pr": 583,
       "summary": "The Extensions page now matches the heading and options backgrounds of the other Preferences pages.",
       "to_version": "0.3.2244"
+    },
+    {
+      "delta": {
+        "build": 22
+      },
+      "from_version": "0.3.2244",
+      "merge_sha": "96736158cf7ccb67eebcbc604e51e28c91adb22e",
+      "pr": 589,
+      "summary": "Leonardo Classic is the macOS default, and the first window opens with the saved palette when one is set.",
+      "to_version": "0.3.2266"
     }
   ],
   "initial_version": "0.1.56",
@@ -1329,5 +1339,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.2244"
+  "version": "0.3.2266"
 }

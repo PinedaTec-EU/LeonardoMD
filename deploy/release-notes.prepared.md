@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2266
+
+- #588 Fixed: use Leonardo Classic from startup ([#589](https://github.com/PinedaTec-EU/LeonardoMD/pull/589))
+
+<p>Leonardo Classic is the macOS default, and the first window opens with the saved palette when one is set.</p>
+
+Source: `96736158cf7ccb67eebcbc604e51e28c91adb22e`. Delta: `{"build": 22}`.
+
 ## 0.3.2244
 
 - #582 Fixed: normalize the Extensions preferences background ([#583](https://github.com/PinedaTec-EU/LeonardoMD/pull/583))
