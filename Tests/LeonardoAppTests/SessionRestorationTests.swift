@@ -37,11 +37,22 @@ final class SessionRestorationTests: XCTestCase {
         delegate.bringWindowsToFront()
         delegate.newEmptyWindow()
         let (opening, signalOpening) = AsyncStream<Void>.makeStream()
-        let recentOpen = Task {
-            signalOpening.yield(())
-            await delegate.openExternalDocument(recentDocument)
+        var recentOpen: Task<Void, Never>?
+        let recentMenu = RecentItemsMenu(session: { nil }, openDocument: { url in
+            recentOpen = Task {
+                signalOpening.yield(())
+                await delegate.openExternalDocument(url)
+            }
+        })
+        let openRecent = NSSelectorFromString("openRecent:")
+        let menuItem = NSMenuItem(title: recentDocument.lastPathComponent, action: openRecent, keyEquivalent: "")
+        menuItem.target = recentMenu
+        menuItem.tag = RecentItemsMenu.Category.documents.rawValue
+        menuItem.representedObject = recentDocument
+        XCTAssertTrue(app.sendAction(openRecent, to: menuItem.target, from: menuItem))
+        if recentOpen != nil {
+            for await _ in opening { break }
         }
-        for await _ in opening { break }
         signalOpening.finish()
         XCTAssertFalse(window.isVisible)
         XCTAssertEqual(app.windows.filter(\.isVisible).map(\.windowNumber), originalVisibleWindowNumbers)
@@ -50,7 +61,7 @@ final class SessionRestorationTests: XCTestCase {
         signalResume.finish()
         signalStarted.finish()
         await startup.value
-        await recentOpen.value
+        await recentOpen?.value
         XCTAssertTrue(window.isVisible)
         XCTAssertEqual(controller.session.palette, PaletteCatalog.graphiteGlass)
         XCTAssertEqual(controller.session.displayDocumentURL, recentDocument)
