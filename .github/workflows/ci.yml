@@ -103,6 +103,7 @@ jobs:
         id: full-suite
         timeout-minutes: 20
         shell: bash
+        # The isolated steps must pass before their cases can be excluded here.
         if: steps.isolated-file-list.outcome == 'success' && steps.isolated-file-list.outputs.executed == 'true' && steps.isolated-truncated-https.outcome == 'success' && steps.isolated-truncated-https.outputs.executed == 'true' && steps.isolated-project-https.outcome == 'success' && steps.isolated-project-https.outputs.executed == 'true'
         env:
           NSUnbufferedIO: "YES"
@@ -110,7 +111,10 @@ jobs:
           set -o pipefail
           mkdir -p "$RUNNER_TEMP/swift-test-diagnostics"
           python3 scripts/run-swift-test-with-timeout.py --seconds 900 \
-            --diagnostics "$RUNNER_TEMP/swift-test-diagnostics" 2>&1 \
+            --diagnostics "$RUNNER_TEMP/swift-test-diagnostics" \
+            --skip 'LeonardoAppTests[.]FileListTests/' \
+            --skip 'LeonardoSyncTransportTests[.]HTTPSRuntimeTests/testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext$' \
+            --skip 'LeonardoSyncTransportTests[.]HTTPSRuntimeTests/testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS$' 2>&1 \
             | tee "$RUNNER_TEMP/swift-test-diagnostics/full-suite.log"
       - name: Summarize Swift test crash reports
         if: always()
