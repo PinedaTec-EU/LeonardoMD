@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-23T23:47:58.426234+00:00",
+  "collected_at": "2026-11-24T00:35:49.850536+00:00",
   "capture": {
-    "captured_at": "2026-11-23T23:46:30+00:00",
+    "captured_at": "2026-11-24T00:34:24+00:00",
     "route": "Ayuda → Guía de Leonardo → Capítulo 11",
     "screen": "Ayuda → Guía de Leonardo → Capítulo 11",
     "browser_name": "Native LeonardoMD macOS app",
-    "browser_version": "0.3.2205 (2205) on macOS 27.2.1 (26B131)",
+    "browser_version": "0.3.2230 (2230) on macOS 27.2.1 (26B131)",
     "state": "Spanish packaged Help v137 displays the Leonardo Classic default.",
     "viewport_css": {
       "width": 1260,
@@ -19,11 +19,11 @@
     "format": "png",
     "width_px": 2520,
     "height_px": 1700,
-    "sha256": "a1dc9168876774eb90c8b0e0c9b81caf2b8250aadfcb9aaeb1e9470956cac87c"
+    "sha256": "7e7356d192973673da928a4877eaf7bbddf4645cacb7b1f0c7f4693b8360ae3c"
   },
   "source": {
-    "revision_at_collection": "91aa15814040a3f93e528d2f600c08d293f7d557",
+    "revision_at_collection": "9d6609a7bc8430b56d36bc7368d5170db5e48ec6",
     "tracked_changes_present": true,
-    "untracked_files_present": true
+    "untracked_files_present": false
   }
 }
