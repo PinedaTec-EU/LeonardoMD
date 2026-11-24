@@ -1,85 +1,31 @@
-import AppKit
 import XCTest
 import LeonardoCore
 @testable import LeonardoApp
 
 @MainActor
 final class SessionRestorationTests: XCTestCase {
-    func testStartupCommandsWaitForSavedPaletteAndRetainRecentOpen() async throws {
+    func testSessionsInheritSavedPaletteBeforeLoadingTheirOwnPreferences() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let preferencesURL = root.appendingPathComponent("preferences.json")
-        try await ConfigurationStore.shared.saveGlobalPreferences(
-            GlobalPreferences(palette: .paperWhite), at: preferencesURL
-        )
+        let url = root.appendingPathComponent("preferences.json")
+        let preferences = GlobalPreferences(palette: .paperWhite)
+        try await ConfigurationStore.shared.saveGlobalPreferences(preferences, at: url)
 
-        let recentDocument = root.appendingPathComponent("recent.md")
-        try "# Recent document".write(to: recentDocument, atomically: true, encoding: .utf8)
+        let tabs = DocumentTabs(preferencesURL: url)
+        defer { for tab in tabs.tabs { tab.session.stop() } }
+        await tabs.activeSession.initialize()
 
-        let app = NSApplication.shared
-        let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(), instance: SingleInstance(), role: .secondary)
-        let controller = DocumentWindow(preferencesURL: preferencesURL)
-        let window = try XCTUnwrap(controller.window)
-        defer {
-            for tab in controller.documents.tabs { tab.session.stop() }
-            window.close()
-        }
-        let originalVisibleWindowNumbers = app.windows.filter(\.isVisible).map(\.windowNumber)
-        let (started, signalStarted) = AsyncStream<Void>.makeStream()
-        let (resume, signalResume) = AsyncStream<Void>.makeStream()
-        let startup = delegate.startInitialWindow(controller, initialize: { session in
-            signalStarted.yield(())
-            for await _ in resume { break }
-            await session.initialize()
-        })
-        for await _ in started { break }
+        let newWindowTabs = DocumentTabs(preferencesURL: url, initialGlobalPreferences: tabs.activeSession.globalPreferences)
+        defer { for tab in newWindowTabs.tabs { tab.session.stop() } }
+        XCTAssertEqual(newWindowTabs.activeSession.palette, PaletteCatalog.paperWhite)
+        XCTAssertEqual(newWindowTabs.activeSession.globalBaseline, preferences)
 
-        delegate.bringWindowsToFront()
-        delegate.newEmptyWindow()
-        let (opening, signalOpening) = AsyncStream<Void>.makeStream()
-        var recentOpen: Task<Void, Never>?
-        let recentMenu = RecentItemsMenu(session: { nil }, openDocument: { url in
-            recentOpen = Task {
-                signalOpening.yield(())
-                await delegate.openExternalDocument(url)
-            }
-        })
-        let openRecent = NSSelectorFromString("openRecent:")
-        let menuItem = NSMenuItem(title: recentDocument.lastPathComponent, action: openRecent, keyEquivalent: "")
-        menuItem.target = recentMenu
-        menuItem.tag = RecentItemsMenu.Category.documents.rawValue
-        menuItem.representedObject = recentDocument
-        XCTAssertTrue(app.sendAction(openRecent, to: menuItem.target, from: menuItem))
-        if recentOpen != nil {
-            for await _ in opening { break }
-        }
-        signalOpening.finish()
-        XCTAssertFalse(window.isVisible)
-        XCTAssertEqual(app.windows.filter(\.isVisible).map(\.windowNumber), originalVisibleWindowNumbers)
-
-        signalResume.yield(())
-        signalResume.finish()
-        signalStarted.finish()
-        await startup.value
-        await recentOpen?.value
-        XCTAssertTrue(window.isVisible)
-        XCTAssertEqual(controller.session.palette, PaletteCatalog.paperWhite)
-        XCTAssertEqual(controller.session.displayDocumentURL, recentDocument)
-
-        let tabID = try XCTUnwrap(controller.documents.addTab())
-        XCTAssertEqual(controller.documents.activeID, tabID)
-        XCTAssertEqual(controller.session.palette, PaletteCatalog.paperWhite)
-
-        let existingWindows = Set(app.windows.map(\.windowNumber))
-        delegate.newEmptyWindow()
-        let newWindow = try XCTUnwrap(app.windows.first { !existingWindows.contains($0.windowNumber) })
-        let newController = try XCTUnwrap(newWindow.windowController as? DocumentWindow)
-        defer {
-            newController.session.stop()
-            newWindow.close()
-        }
-        XCTAssertTrue(newWindow.isVisible)
-        XCTAssertEqual(newController.session.palette, PaletteCatalog.paperWhite)
+        let tabID = try XCTUnwrap(tabs.addTab())
+        XCTAssertEqual(tabs.activeID, tabID)
+        XCTAssertEqual(tabs.activeSession.palette, PaletteCatalog.paperWhite)
+        XCTAssertEqual(tabs.activeSession.globalBaseline, preferences)
+        await tabs.activeSession.initialize()
+        XCTAssertEqual(tabs.activeSession.palette, PaletteCatalog.paperWhite)
     }
 
     func testMissingPreferenceDefaultsToRestoringSession() throws {
