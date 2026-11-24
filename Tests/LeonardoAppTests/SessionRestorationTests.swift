@@ -5,13 +5,16 @@ import LeonardoCore
 
 @MainActor
 final class SessionRestorationTests: XCTestCase {
-    func testStartupWindowCommandsWaitForSavedPalette() async throws {
+    func testStartupCommandsWaitForSavedPaletteAndRetainRecentOpen() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let preferencesURL = root.appendingPathComponent("preferences.json")
         try await ConfigurationStore.shared.saveGlobalPreferences(
             GlobalPreferences(palette: .graphiteGlass), at: preferencesURL
         )
+
+        let recentDocument = root.appendingPathComponent("recent.md")
+        try "# Recent document".write(to: recentDocument, atomically: true, encoding: .utf8)
 
         let app = NSApplication.shared
         let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(), instance: SingleInstance(), role: .secondary)
@@ -33,6 +36,13 @@ final class SessionRestorationTests: XCTestCase {
 
         delegate.bringWindowsToFront()
         delegate.newEmptyWindow()
+        let (opening, signalOpening) = AsyncStream<Void>.makeStream()
+        let recentOpen = Task {
+            signalOpening.yield(())
+            await delegate.openExternalDocument(recentDocument)
+        }
+        for await _ in opening { break }
+        signalOpening.finish()
         XCTAssertFalse(window.isVisible)
         XCTAssertEqual(app.windows.filter(\.isVisible).map(\.windowNumber), originalVisibleWindowNumbers)
 
@@ -40,8 +50,10 @@ final class SessionRestorationTests: XCTestCase {
         signalResume.finish()
         signalStarted.finish()
         await startup.value
+        await recentOpen.value
         XCTAssertTrue(window.isVisible)
         XCTAssertEqual(controller.session.palette, PaletteCatalog.graphiteGlass)
+        XCTAssertEqual(controller.session.displayDocumentURL, recentDocument)
     }
 
     func testMissingPreferenceDefaultsToRestoringSession() throws {

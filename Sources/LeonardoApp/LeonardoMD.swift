@@ -237,8 +237,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         }
     }
 
-    private func openExternalDocument(_ url: URL) async {
+    func openExternalDocument(_ url: URL) async {
         guard url.isFileURL else { return }
+        await startupTask?.value
         while true {
             if terminationPending {
                 try? await Task.sleep(for: Self.closeCheckInterval)
