@@ -28,6 +28,18 @@ final class SessionRestorationTests: XCTestCase {
         XCTAssertEqual(tabs.activeSession.palette, PaletteCatalog.paperWhite)
     }
 
+    func testClosingLastTabCarriesSavedPaletteIntoReplacement() async throws {
+        let tabs = DocumentTabs(initialGlobalPreferences: GlobalPreferences(palette: .paperWhite))
+        defer { tabs.stop() }
+        let lastTabID = try XCTUnwrap(tabs.activeID)
+        await tabs.close(lastTabID)
+
+        XCTAssertNotEqual(tabs.activeID, lastTabID)
+        XCTAssertEqual(tabs.tabs.count, 1)
+        XCTAssertEqual(tabs.activeSession.palette, PaletteCatalog.paperWhite)
+        XCTAssertEqual(tabs.activeSession.globalBaseline.palette, .paperWhite)
+    }
+
     func testMissingPreferenceDefaultsToRestoringSession() throws {
         XCTAssertTrue(GlobalPreferences.default.restorePreviousSession)
         let preferences = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))

@@ -179,6 +179,7 @@ final class DocumentTabsTests: XCTestCase {
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
         let session = tabs.activeSession
         await session.open(try document("note.md", in: root))
+        session.globalPreferences.palette = .paperWhite
         session.busy = true
         session.fileOperationCount = 1
         var finished = false
@@ -187,6 +188,7 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertEqual(session.content, "")
         XCTAssertFalse(finished)
         XCTAssertFalse(tabs.activeSession === session)
+        XCTAssertEqual(tabs.activeSession.globalPreferences.palette, .paperWhite)
         session.busy = false
         for _ in 0..<10 { await Task.yield() }
         XCTAssertFalse(finished)
