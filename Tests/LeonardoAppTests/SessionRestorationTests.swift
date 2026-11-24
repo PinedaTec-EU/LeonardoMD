@@ -1,9 +1,49 @@
+import AppKit
 import XCTest
 import LeonardoCore
 @testable import LeonardoApp
 
 @MainActor
 final class SessionRestorationTests: XCTestCase {
+    func testStartupWindowCommandsWaitForSavedPalette() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let preferencesURL = root.appendingPathComponent("preferences.json")
+        try await ConfigurationStore.shared.saveGlobalPreferences(
+            GlobalPreferences(palette: .graphiteGlass), at: preferencesURL
+        )
+
+        let app = NSApplication.shared
+        let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(), instance: SingleInstance(), role: .secondary)
+        let controller = DocumentWindow(preferencesURL: preferencesURL)
+        let window = try XCTUnwrap(controller.window)
+        defer {
+            controller.session.stop()
+            window.close()
+        }
+        let originalVisibleWindowNumbers = app.windows.filter(\.isVisible).map(\.windowNumber)
+        let (started, signalStarted) = AsyncStream<Void>.makeStream()
+        let (resume, signalResume) = AsyncStream<Void>.makeStream()
+        let startup = delegate.startInitialWindow(controller, initialize: { session in
+            signalStarted.yield(())
+            for await _ in resume { break }
+            await session.initialize()
+        })
+        for await _ in started { break }
+
+        delegate.bringWindowsToFront()
+        delegate.newEmptyWindow()
+        XCTAssertFalse(window.isVisible)
+        XCTAssertEqual(app.windows.filter(\.isVisible).map(\.windowNumber), originalVisibleWindowNumbers)
+
+        signalResume.yield(())
+        signalResume.finish()
+        signalStarted.finish()
+        await startup.value
+        XCTAssertTrue(window.isVisible)
+        XCTAssertEqual(controller.session.palette, PaletteCatalog.graphiteGlass)
+    }
+
     func testMissingPreferenceDefaultsToRestoringSession() throws {
         XCTAssertTrue(GlobalPreferences.default.restorePreviousSession)
         let preferences = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))

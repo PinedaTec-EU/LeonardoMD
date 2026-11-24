@@ -113,16 +113,27 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         configureMenu()
         if role == .primary { startPrincipalServices() }
         diagnostics.record(.menuConfigured)
-        let initialWindow = windows.first ?? makeDocumentWindow()
+        startInitialWindow(windows.first ?? makeDocumentWindow()) { [self] in
+            NSApp.activate(ignoringOtherApps: true)
+            recordApplicationReady()
+        }
+        if updateQuitEndpoint.isStarted { InstancePresentation.shared.start() }
+    }
+
+    @discardableResult
+    func startInitialWindow(
+        _ initialWindow: DocumentWindow,
+        initialize: @escaping @MainActor (AppSession) async -> Void = { await $0.initialize() },
+        didPresent: @escaping @MainActor () -> Void = {}
+    ) -> Task<Void, Never> {
         let initialTabID = initialWindow.documents.activeID
         if role == .primary, let initialTabID {
             initialWindow.documents.reserveStartupTab(initialTabID)
         }
-        startupTask = Task {
-            await initialWindow.session.initialize()
+        let task = Task {
+            await initialize(initialWindow.session)
             presentDocumentWindow(initialWindow)
-            NSApp.activate(ignoringOtherApps: true)
-            recordApplicationReady()
+            didPresent()
             if role == .primary, let initialTabID {
                 await restoreStartupSession(in: initialWindow, initialTabID: initialTabID)
             }
@@ -130,7 +141,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
             startupTask = nil
             processPendingLaunches()
         }
-        if updateQuitEndpoint.isStarted { InstancePresentation.shared.start() }
+        startupTask = task
+        return task
     }
 
     private func recordApplicationReady() {
@@ -368,14 +380,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     @objc func newEmptyWindow() { newWindow(url: nil) }
 
     func newWindow(url: URL?) {
-        guard !terminationPending else { return }
-        if !recordedFirstWindowPresentation, let startupTask {
-            Task { [weak self] in
-                await startupTask.value
-                self?.newWindow(url: url)
-            }
-            return
-        }
+        guard !terminationPending, recordedFirstWindowPresentation || startupTask == nil else { return }
         let controller = showDocumentWindow()
         if let url { Task { await controller.session.open(url) } }
     }
@@ -492,7 +497,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     @objc private func fill() { Task { await activeSession?.setDocumentMode(.fill) } }
     @objc private func outline() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
-    @objc private func bringWindowsToFront() {
+    @objc func bringWindowsToFront() {
         guard let active = windows.first(where: { $0.window === NSApp.mainWindow }) ?? windows.last else { return }
         NSApp.activate(ignoringOtherApps: true)
         active.window?.deminiaturize(nil)
@@ -576,12 +581,13 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
 @MainActor
 final class DocumentWindow: NSWindowController, NSWindowDelegate {
-    let documents = DocumentTabs()
+    let documents: DocumentTabs
     var session: AppSession { documents.activeSession }
     var onClose: ((SavedSession.Window?) -> Void)?
     private var preparedSession: SavedSession.Window?
 
-    init() {
+    init(preferencesURL: URL = AppSession.preferencesURL) {
+        documents = DocumentTabs(preferencesURL: preferencesURL)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 850), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.isRestorable = false
         window.isReleasedWhenClosed = false
