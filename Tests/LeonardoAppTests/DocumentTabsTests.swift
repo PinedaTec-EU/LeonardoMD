@@ -189,6 +189,7 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertFalse(finished)
         XCTAssertFalse(tabs.activeSession === session)
         XCTAssertEqual(tabs.activeSession.globalPreferences.palette, .paperWhite)
+        XCTAssertEqual(tabs.activeSession.globalBaseline.palette, .paperWhite)
         session.busy = false
         for _ in 0..<10 { await Task.yield() }
         XCTAssertFalse(finished)
