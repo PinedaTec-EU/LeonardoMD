@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2230
+
+- #586 Fixed: resume revoked workspace cleanup on startup ([#587](https://github.com/PinedaTec-EU/LeonardoMD/pull/587))
+
+<p>The receiving Mac resumes interrupted cleanup of revoked remote copies and queued changes on restart, even when the source Mac is unreachable.</p>
+
+Source: `d3b2cafacf02bf03ff7053a36f21407d8ad48a7e`. Delta: `{"build": 3}`.
+
 ## 0.3.2227
 
 - #90 Added: global startup session preference ([#91](https://github.com/PinedaTec-EU/LeonardoMD/pull/91))
