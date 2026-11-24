@@ -1,10 +1,12 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v137-en.mdlz` and `Guide-v137-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v138-en.mdlz` and `Guide-v138-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v137/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v138/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v138 documents the shared Home selector and direct remote access in chapter 7.
 
 Guide v137 documents Leonardo Classic as the default appearance.
 
