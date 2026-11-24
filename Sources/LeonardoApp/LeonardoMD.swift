@@ -369,6 +369,13 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func newWindow(url: URL?) {
         guard !terminationPending else { return }
+        if !recordedFirstWindowPresentation, let startupTask {
+            Task { [weak self] in
+                await startupTask.value
+                self?.newWindow(url: url)
+            }
+            return
+        }
         let controller = showDocumentWindow()
         if let url { Task { await controller.session.open(url) } }
     }
@@ -385,7 +392,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         if isFirstWindow { diagnostics.record(.firstWindowCreating) }
         let controller = DocumentWindow()
         if isFirstWindow { diagnostics.record(.firstWindowCreated) }
-        windows.append(controller)
+        controller.window?.isExcludedFromWindowsMenu = true
         controller.documents.waitForStartup = { [weak self] in
             await self?.startupTask?.value
         }
@@ -400,6 +407,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     private func presentDocumentWindow(_ controller: DocumentWindow) {
+        if !windows.contains(where: { $0 === controller }) { windows.append(controller) }
+        controller.window?.isExcludedFromWindowsMenu = false
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
         if !recordedFirstWindowPresentation {
@@ -449,6 +458,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard recordedFirstWindowPresentation else { return false }
         if menuItem.action == #selector(newInstance) {
             return !terminationPending && !UpdateInstanceTermination.shared.installationPending
                 && InstancePreferences.shared.allowsMultipleInstances
@@ -483,10 +493,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     @objc private func outline() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
     @objc private func bringWindowsToFront() {
+        guard let active = windows.first(where: { $0.window === NSApp.mainWindow }) ?? windows.last else { return }
         NSApp.activate(ignoringOtherApps: true)
-        let active = windows.first { $0.window === NSApp.mainWindow } ?? windows.last
-        active?.window?.deminiaturize(nil)
-        active?.window?.makeKeyAndOrderFront(nil)
+        active.window?.deminiaturize(nil)
+        active.window?.makeKeyAndOrderFront(nil)
     }
     private var activeDocuments: DocumentTabs? {
         windows.first { $0.window === NSApp.mainWindow }?.documents ?? windows.last?.documents
