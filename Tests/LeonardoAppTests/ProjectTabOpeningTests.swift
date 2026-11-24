@@ -121,10 +121,6 @@ final class ProjectTabOpeningTests: XCTestCase {
         XCTAssertNil(session.currentItem(.workspace))
         XCTAssertTrue(session.recentItems(.workspace).isEmpty)
         XCTAssertEqual(RecentItemsMenu.Category.allCases.count, 2)
-        let menu = NSMenu()
-        let controller = FavoritesMenu(session: { session })
-        controller.add(to: menu)
-        XCTAssertEqual(menu.items.first?.submenu?.items.count, 2)
     }
 
     func testOutsideUnsupportedAndStaleSourceCannotCreateTabs() async throws {

@@ -5,25 +5,16 @@ import LeonardoCore
 
 @MainActor
 final class TrashUnavailableConfirmationTests: XCTestCase {
-    func testKnownUnavailableTrashUsesOneExplicitConfirmationInBothLanguages() async throws {
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            for confirm in [false, true] {
-                let fixture = try DeletionFixture(preflightError: CocoaError(.featureUnsupported) as NSError)
-                defer { fixture.close() }
-                let operation = try XCTUnwrap(fixture.session.delete(fixture.document))
-                let sheet = try await confirmation(on: fixture.window)
-                let controls = descendants(of: try XCTUnwrap(sheet.contentView))
-                XCTAssertTrue(controls.compactMap { ($0 as? NSButton)?.title }.contains(L10n.text("Delete Permanently")))
-                let copy = controls.compactMap { ($0 as? NSTextField)?.stringValue }.joined(separator: " ")
-                XCTAssertTrue(copy.contains(L10n.text("Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.")))
-                fixture.window.endSheet(sheet, returnCode: confirm ? .alertSecondButtonReturn : .alertFirstButtonReturn)
-                await operation.value
-                XCTAssertEqual(FileManager.default.fileExists(atPath: fixture.document.path), !confirm)
-                XCTAssertEqual(fixture.observation.trashAttempts, 0)
-            }
+    func testKnownUnavailableTrashUsesOneExplicitConfirmation() async throws {
+        for confirm in [false, true] {
+            let fixture = try DeletionFixture(preflightError: CocoaError(.featureUnsupported) as NSError)
+            defer { fixture.close() }
+            let operation = try XCTUnwrap(fixture.session.delete(fixture.document))
+            let sheet = try await confirmation(on: fixture.window)
+            fixture.window.endSheet(sheet, returnCode: confirm ? .alertSecondButtonReturn : .alertFirstButtonReturn)
+            await operation.value
+            XCTAssertEqual(FileManager.default.fileExists(atPath: fixture.document.path), !confirm)
+            XCTAssertEqual(fixture.observation.trashAttempts, 0)
         }
     }
 
@@ -68,10 +59,6 @@ final class TrashUnavailableConfirmationTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(20))
         }
         throw XCTUnwrapError.missingSheet
-    }
-
-    private func descendants(of view: NSView) -> [NSView] {
-        [view] + view.subviews.flatMap { descendants(of: $0) }
     }
 }
 

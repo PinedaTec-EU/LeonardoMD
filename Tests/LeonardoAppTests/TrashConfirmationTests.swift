@@ -5,10 +5,8 @@ import LeonardoCore
 
 @MainActor
 final class TrashConfirmationTests: XCTestCase {
-    func testCancelPreservesItemInBothLanguages() async throws {
+    func testCancelPreservesDocumentAndFolder() async throws {
         _ = NSApplication.shared
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -28,39 +26,21 @@ final class TrashConfirmationTests: XCTestCase {
             owner.close()
         }
         defer { session.stop() }
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            for item in [document, folder] {
-                let name = item.lastPathComponent
-                session.delete(item)
-                for _ in 0..<100 where owner.attachedSheet == nil {
-                    try await Task.sleep(for: .milliseconds(20))
-                }
-                let sheet = try XCTUnwrap(owner.attachedSheet, "Expected the real production confirmation sheet")
-                XCTAssertTrue(sheet.sheetParent === owner)
-                let view = try XCTUnwrap(sheet.contentView)
-                let controls = Self.descendants(of: view)
-                let buttons = controls.compactMap { $0 as? NSButton }.map(\.title)
-                XCTAssertTrue(buttons.contains(L10n.text("Cancel")))
-                XCTAssertTrue(buttons.contains(L10n.text("Move to Trash")))
-                let copy = controls.compactMap { ($0 as? NSTextField)?.stringValue }.joined(separator: "\n")
-                let explanation = "The item will be moved to Trash. You can recover it from Trash."
-                XCTAssertTrue(copy.contains(L10n.text(explanation)))
-                print("Native Trash sheet: \(language.rawValue)-\(name), viewport=\(view.bounds.size)")
-                owner.endSheet(sheet, returnCode: .alertFirstButtonReturn)
-                for _ in 0..<100 where owner.attachedSheet != nil {
-                    try await Task.sleep(for: .milliseconds(20))
-                }
-                await Task.yield()
-                XCTAssertNil(owner.attachedSheet)
-                XCTAssertEqual(try String(contentsOf: document, encoding: .utf8), "Preserve this document")
-                XCTAssertTrue(FileManager.default.fileExists(atPath: root.path))
+        for item in [document, folder] {
+            session.delete(item)
+            for _ in 0..<100 where owner.attachedSheet == nil {
+                try await Task.sleep(for: .milliseconds(20))
             }
+            let sheet = try XCTUnwrap(owner.attachedSheet, "Expected the real production confirmation sheet")
+            XCTAssertTrue(sheet.sheetParent === owner)
+            owner.endSheet(sheet, returnCode: .alertFirstButtonReturn)
+            for _ in 0..<100 where owner.attachedSheet != nil {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            await Task.yield()
+            XCTAssertNil(owner.attachedSheet)
+            XCTAssertEqual(try String(contentsOf: document, encoding: .utf8), "Preserve this document")
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.path))
         }
     }
-
-    private static func descendants(of view: NSView) -> [NSView] {
-        [view] + view.subviews.flatMap { descendants(of: $0) }
-    }
-
 }

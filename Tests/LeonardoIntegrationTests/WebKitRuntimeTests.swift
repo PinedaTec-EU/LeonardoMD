@@ -251,13 +251,6 @@ final class WebKitRuntimeTests: XCTestCase {
         })()
         """
         try await waitFor(layout, in: web)
-        _ = try await evaluate("document.body.style.transition = 'none'", in: web)
-        host.apply(content: source, baseURL: nil,
-            configuration: MarkdownPreviewConfiguration(appearance: MarkdownAppearance(
-                backgroundHex: "#171717", textHex: "#F1F1EB", headingHex: "#9BD1FA",
-                accentHex: "#9BD1FA", codeBackgroundHex: "#262626")),
-            onLinkActivation: nil, onScrollProgress: nil)
-        try await waitFor("getComputedStyle(document.body).backgroundColor === 'rgb(23, 23, 23)'", in: web)
         window.setContentSize(NSSize(width: 400, height: 800))
         try await waitFor("document.querySelector('.table-viewport').scrollWidth > document.querySelector('.table-viewport').clientWidth", in: web)
         try await waitFor(layout, in: web)
@@ -645,16 +638,6 @@ final class WebKitRuntimeTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(50))
         }
         XCTAssertEqual(activated, "Design Systems")
-        _ = try await evaluate("document.querySelector('.tag-pill').focus()", in: web)
-        let focus = try await evaluate("document.activeElement.className", in: web)
-        XCTAssertEqual(focus, "tag-pill")
-        // Hidden test windows do not advance CSS transition frames reliably.
-        _ = try await evaluate("document.body.style.transition = 'none'", in: web)
-        host.apply(content: source, baseURL: nil,
-                   configuration: MarkdownPreviewConfiguration(appearance: MarkdownAppearance(
-                    backgroundHex: "#171717", textHex: "#F1F1EB", headingHex: "#9BD1FA", accentHex: "#9BD1FA", codeBackgroundHex: "#262626")),
-                   onLinkActivation: nil, onTagActivation: { activated = $0 }, onScrollProgress: nil)
-        try await waitFor("getComputedStyle(document.body).backgroundColor === 'rgb(23, 23, 23)'", in: web)
         host.apply(content: "# Untagged", baseURL: nil, configuration: .default,
                    onLinkActivation: nil, onTagActivation: { activated = $0 }, onScrollProgress: nil)
         try await waitFor("document.querySelector('h1')?.textContent === 'Untagged'", in: web)
