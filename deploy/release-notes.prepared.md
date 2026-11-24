@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2227
+
+- #90 Added: global startup session preference ([#91](https://github.com/PinedaTec-EU/LeonardoMD/pull/91))
+
+<p>LeonardoMD reopens your projects and documents on startup by default. Turn this off in General preferences to start with an empty window and keep your recent items.</p>
+
+Source: `f3c6906df85d21ac476482c5c56d066f2bee0b44`. Delta: `{"build": 22}`.
+
 ## 0.3.2205
 
 - #337 Updated: compact macOS preferences headers ([#581](https://github.com/PinedaTec-EU/LeonardoMD/pull/581))
