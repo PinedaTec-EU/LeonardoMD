@@ -238,14 +238,18 @@ final class DesktopPeerController {
             await refreshConnections()
             return
         }
-        do {
-            try authorizeStorage()
-            let deferredIDs = connections.filter(\.credentialDeferred).map(\.id)
-            try await authorizeLegacyCredentials(deferredIDs)
-            if !deferredIDs.isEmpty { await loadConnections() }
-            await refreshConnections()
-        } catch {
-            self.error = PeerSyncErrorMessage.text(error)
+        do { try authorizeStorage() }
+        catch { present(error); return }
+
+        let deferredIDs = connections.filter(\.credentialDeferred).map(\.id)
+        var authorizationFailure: Error?
+        do { try await authorizeLegacyCredentials(deferredIDs) }
+        catch { authorizationFailure = error }
+
+        if !deferredIDs.isEmpty { await loadConnections() }
+        await refreshConnections()
+        if let authorizationFailure {
+            error = PeerSyncErrorMessage.text(authorizationFailure)
         }
     }
 
