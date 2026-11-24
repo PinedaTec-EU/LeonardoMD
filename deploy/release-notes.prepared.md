@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2244
+
+- #582 Fixed: normalize the Extensions preferences background ([#583](https://github.com/PinedaTec-EU/LeonardoMD/pull/583))
+
+<p>The Extensions page now matches the heading and options backgrounds of the other Preferences pages.</p>
+
+Source: `e58e9e914694715538fd1b83d5675434d642c26b`. Delta: `{"build": 3}`.
+
 ## 0.3.2241
 
 - #584 Removed: automated user interface tests and CI captures ([#585](https://github.com/PinedaTec-EU/LeonardoMD/pull/585))

@@ -50,7 +50,9 @@ struct ExtensionPreferences: View {
                 Text(L10n.text("Charts and bibliography engines load only when used. Disabling an extension preserves the document source."))
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        }.toggleStyle(PremiumSwitchStyle())
+        }
+        .background(Color(nsColor: .textBackgroundColor))
+        .toggleStyle(PremiumSwitchStyle())
     }
 
     private func extensionCard(_ title: String, identifier: String, description: String, symbol: String, enabled: Binding<Bool>) -> some View {
