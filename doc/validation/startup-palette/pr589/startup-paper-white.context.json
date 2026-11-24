@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-24T08:25:16Z",
+  "route": "Startup session restoration",
+  "screen": "Restored second document window",
+  "browser_name": "Native LeonardoMD macOS app",
+  "browser_version": "0.3.2230 (2230) on macOS 27.2.1 (26B131)",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Saved Paper White, two restored windows, second tab selected in the first window.",
+  "data_provenance": "synthetic"
+}

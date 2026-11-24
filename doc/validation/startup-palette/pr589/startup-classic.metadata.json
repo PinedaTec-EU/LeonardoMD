@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-24T01:46:20.668334+00:00",
+  "collected_at": "2026-11-24T08:25:59.890734+00:00",
   "capture": {
-    "captured_at": "2026-11-24T01:45:43+00:00",
+    "captured_at": "2026-11-24T08:25:13+00:00",
     "route": "Home",
     "screen": "Home",
     "browser_name": "Native LeonardoMD macOS app",
     "browser_version": "0.3.2230 (2230) on macOS 27.2.1 (26B131)",
     "state": "Explicitly saved Leonardo Classic. First available normal window shows the saved palette.",
     "viewport_css": {
-      "width": 1262,
-      "height": 852
+      "width": 1244,
+      "height": 840
     },
     "capture_mode": "viewport",
     "data_provenance": "synthetic"
@@ -19,11 +19,11 @@
     "format": "png",
     "width_px": 2520,
     "height_px": 1700,
-    "sha256": "c30b89755f0a34a1b86e2818c1ea1f2726464123adca5ebe8cdd7d8234a7f7e6"
+    "sha256": "b91c3f6a0c6c28e1489e882539bb818837104237dd0acd36384746243d8fbd91"
   },
   "source": {
-    "revision_at_collection": "aefc29abd6b062fa078bb39215b64d3d7757dccb",
+    "revision_at_collection": "93d5a166a9a297896ae289a87f0e321ed3ad4400",
     "tracked_changes_present": true,
-    "untracked_files_present": false
+    "untracked_files_present": true
   }
 }
