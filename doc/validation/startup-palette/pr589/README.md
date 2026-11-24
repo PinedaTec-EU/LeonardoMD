@@ -1,6 +1,6 @@
 # Leonardo Classic startup validation
 
-[Issue #588](https://github.com/PinedaTec-EU/LeonardoMD/issues/588) and [PR #589](https://github.com/PinedaTec-EU/LeonardoMD/pull/589), November 24, 2026. Product and test source `9d6609a7bc8430b56d36bc7368d5170db5e48ec6`. Later changes record only these captures and the compilation ledger. Verify the mapping with `git diff --name-only 9d6609a7bc8430b56d36bc7368d5170db5e48ec6 HEAD`.
+[Issue #588](https://github.com/PinedaTec-EU/LeonardoMD/issues/588) and [PR #589](https://github.com/PinedaTec-EU/LeonardoMD/pull/589), November 24, 2026. Product and test source `4e43cca572c65c69680d2042cff56ae5459d55ef`. Later changes record only these captures and the compilation ledger. Verify the mapping with `git diff --name-only 4e43cca572c65c69680d2042cff56ae5459d55ef HEAD`.
 
 | State | Capture | Metadata |
 | --- | --- | --- |
@@ -14,6 +14,15 @@ The captures show the initial Home window or the documented Help section. The st
 
 Build and start from the product source using `LEONARDO_SOURCE_PR=589 ./launch.sh --qa --env "CFFIXED_USER_HOME=$QA_HOME" --env "HOME=$QA_HOME" --args --new-instance`. Use a disposable home. Leave any pre-existing production instance running. Start without the preferences file, then seed `Library/Application Support/LeonardoMD/preferences.json` with `{"palette":"leonardo-classic"}` or `{"palette":"graphite-glass"}` between fresh launches. Open Help and use the document outline to reach chapter 11. Both working copies matched their bundled Guide v137 templates. Form practice behavior was outside the change scope.
 
-Native QA verified the real packaged executable and dependency checks for version 0.3.2230 build 2230 on macOS 27.2.1 (26B131). Bundle identifier `eu.pinedatec.LeonardoMD.qa.1f8ba9f79b7f4944983e96eb2c109b17`. Executable in `leonardo-native-qa-2fo9dx7_/LeonardoMDQA.app/Contents/MacOS/LeonardoMD`. Owned PIDs 30317 (01:33:11), 31529 (01:34:20), 31988 (01:34:44), 32110 (01:34:50) and 32362 (01:35:11) exited after graceful quit. No Device Hub sessions were opened.
+Native QA verified the real packaged executable and dependency checks for version 0.3.2230 build 2230 on macOS 27.2.1 (26B131). Bundle identifier `eu.pinedatec.LeonardoMD.qa.ae13b66612524bb0949a3e330c239c74`. Executable in `leonardo-native-qa-gs54_044/LeonardoMDQA.app/Contents/MacOS/LeonardoMD`. Owned PIDs 55065 (02:03:02), 55277 (02:03:14) and 55393 (02:03:19) exited after graceful quit. No Device Hub sessions were opened.
 
-Local checks on the reconciled source passed 584 XCTest cases (40 skips, zero failures), 72 Swift Testing cases and three deterministic Guide package tests.
+Local checks on the reconciled source passed 585 XCTest cases (40 skips, zero failures), 72 Swift Testing cases and three deterministic Guide package tests.
+
+The delayed-preference XCTest holds initialization suspended, calls Bring all to front and New Window, and checks that the first window remains hidden until saved Graphite Glass is loaded. The intermediate QA process 50317 (01:58:19, bundle `eu.pinedatec.LeonardoMD.qa.84ec5dfee2de4b469a03a789a61f96f9`, executable in `leonardo-native-qa-u_0ezusr/LeonardoMDQA.app/Contents/MacOS/LeonardoMD`) also exited after graceful quit.
+
+The following SHA-256 digests come from the actual packaged files and personal copies opened through Help. Each pair also passed `cmp`.
+
+| Locale | Bundled guide | Opened personal copy |
+| --- | --- | --- |
+| English | `34237873642a85b25df2d9b6d7316e1ce0b0b86b20ebd84efc0eb4a87d609386` | `34237873642a85b25df2d9b6d7316e1ce0b0b86b20ebd84efc0eb4a87d609386` |
+| Spanish | `4f8363d706aa4c12a02423e7c453faa20b5800351228e7dcf276e4e5d5c09030` | `4f8363d706aa4c12a02423e7c453faa20b5800351228e7dcf276e4e5d5c09030` |

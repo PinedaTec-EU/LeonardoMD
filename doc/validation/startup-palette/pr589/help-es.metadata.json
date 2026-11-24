@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-24T00:35:49.850536+00:00",
+  "collected_at": "2026-11-24T01:03:58.047476+00:00",
   "capture": {
-    "captured_at": "2026-11-24T00:34:24+00:00",
+    "captured_at": "2026-11-24T01:03:19+00:00",
     "route": "Ayuda → Guía de Leonardo → Capítulo 11",
     "screen": "Ayuda → Guía de Leonardo → Capítulo 11",
     "browser_name": "Native LeonardoMD macOS app",
@@ -19,10 +19,10 @@
     "format": "png",
     "width_px": 2520,
     "height_px": 1700,
-    "sha256": "7e7356d192973673da928a4877eaf7bbddf4645cacb7b1f0c7f4693b8360ae3c"
+    "sha256": "0ad20b6a5f32ead6dc7b1d81e79e89a13179c00337a7b3a34a82f1387ba2567a"
   },
   "source": {
-    "revision_at_collection": "9d6609a7bc8430b56d36bc7368d5170db5e48ec6",
+    "revision_at_collection": "4e43cca572c65c69680d2042cff56ae5459d55ef",
     "tracked_changes_present": true,
     "untracked_files_present": false
   }

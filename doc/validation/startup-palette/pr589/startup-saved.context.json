@@ -1,12 +1,12 @@
 {
-  "captured_at": "2026-11-24T00:34:21Z",
+  "captured_at": "2026-11-24T01:03:15Z",
   "route": "Home",
   "screen": "Home",
   "browser_name": "Native LeonardoMD macOS app",
   "browser_version": "0.3.2230 (2230) on macOS 27.2.1 (26B131)",
   "viewport_css": {
     "width": 1262,
-    "height": 850
+    "height": 852
   },
   "capture_mode": "viewport",
   "state": "Explicitly saved Graphite Glass. First available normal window shows the saved palette.",
