@@ -1,11 +1,11 @@
 {
-  "captured_at": "2026-11-24T08:35:11Z",
+  "captured_at": "2026-11-24T09:13:52Z",
   "route": "Home",
   "screen": "Home",
   "browser_name": "Native LeonardoMD macOS app",
-  "browser_version": "0.3.2241 (2241) on macOS 27.2.1 (26B131)",
+  "browser_version": "0.3.2244 (2244) on macOS 27.2.1 (26B131)",
   "viewport_css": {
-    "width": 1258,
+    "width": 1260,
     "height": 850
   },
   "capture_mode": "viewport",

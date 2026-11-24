@@ -1,12 +1,12 @@
 {
-  "captured_at": "2026-11-24T08:35:16Z",
+  "captured_at": "2026-11-24T09:13:57Z",
   "route": "Home",
   "screen": "Home",
   "browser_name": "Native LeonardoMD macOS app",
-  "browser_version": "0.3.2241 (2241) on macOS 27.2.1 (26B131)",
+  "browser_version": "0.3.2244 (2244) on macOS 27.2.1 (26B131)",
   "viewport_css": {
-    "width": 1262,
-    "height": 852
+    "width": 1254,
+    "height": 846
   },
   "capture_mode": "viewport",
   "state": "Explicitly saved Leonardo Classic. First available normal window shows the saved palette.",
