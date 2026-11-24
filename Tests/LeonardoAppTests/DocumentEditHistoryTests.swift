@@ -113,37 +113,6 @@ final class DocumentEditHistoryTests: XCTestCase {
         XCTAssertFalse(session.canUndoDocument)
     }
 
-    func testCaptureNativeDocumentHistory() async throws {
-        guard let path = ProcessInfo.processInfo.environment["LEONARDO_UNDO_EVIDENCE"] else {
-            throw XCTSkip("Set LEONARDO_UNDO_EVIDENCE for native Undo/Redo captures")
-        }
-        let destination = URL(fileURLWithPath: path, isDirectory: true)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: fixture, withIntermediateDirectories: true)
-        let file = fixture.appendingPathComponent("Project notes.md")
-        try "# Project notes\n\nInitial text.".write(to: file, atomically: true, encoding: .utf8)
-        let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
-        defer { session.stop(); try? FileManager.default.removeItem(at: fixture) }
-        await session.open(file)
-        session.isProtected = false
-        session.mode = .edit
-        let previousLanguage = LanguageSettings.shared.language
-        LanguageSettings.shared.language = .spanish
-        defer { LanguageSettings.shared.language = previousLanguage }
-        let view = NSHostingView(rootView: WorkspaceView(session: session))
-        let size = NSSize(width: 1440, height: 800)
-        _ = session.editDocument(expected: session.content, replacement: "# Project notes\n\nUpdated text.")
-        try await NativeViewCaptureSupport.capture(view, size: size,
-            to: destination.appendingPathComponent("undo-available.png"))
-        await session.undoDocument()
-        XCTAssertEqual(session.content, "# Project notes\n\nInitial text.")
-        try await NativeViewCaptureSupport.capture(view, size: size,
-            to: destination.appendingPathComponent("redo-available.png"))
-        await session.redoDocument()
-        XCTAssertEqual(session.content, "# Project notes\n\nUpdated text.")
-    }
-
     func testNoOpDoesNotConsumeHistoryAndHistoryIsBounded() {
         var history = DocumentEditHistory()
         history.record(before: "Same", after: "Same", form: false)

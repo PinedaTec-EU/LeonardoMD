@@ -95,14 +95,6 @@ final class PreviewEditingTests: XCTestCase {
         XCTAssertEqual(marker, "kept")
         let flushed = await host.flushEdits()
         XCTAssertTrue(flushed)
-        if let directory = ProcessInfo.processInfo.environment["LEONARDO_EDITING_EVIDENCE"] {
-            _ = try await webView.evaluateJavaScript("document.querySelector('strong span').focus()")
-            let image = try await webView.takeSnapshot(configuration: nil)
-            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-            let destination = URL(fileURLWithPath: directory, isDirectory: true)
-            try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-            try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("preview-edited.png"))
-        }
         configuration.allowsEditing = false
         host.apply(content: buffer, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
         let locked = try await webView.evaluateJavaScript("document.querySelectorAll('[contenteditable=\"plaintext-only\"]').length") as? Int

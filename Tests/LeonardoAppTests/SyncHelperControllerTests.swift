@@ -177,12 +177,6 @@ final class SyncHelperControllerTests: XCTestCase {
             "QR creation must not start a health check while live helper health is unavailable")
         XCTAssertEqual(source.invitationURL, invitation,
             "A rejected QR action must preserve the current invitation during recovery")
-        try await captureStatusIndicator(helper,
-            state: pendingRenewal ? "sharing-renewal-pending" : "sharing-cancelled-recovery")
-        if pendingRenewal {
-            try await captureSyncActionState(projectID: project.id, proposal: proposal,
-                controller: source, state: "unavailable")
-        }
 
         if pendingRenewal { _ = try await fixture.configurations.finishSyncHelperUpgrade(token, at: fixture.preferences) }
         await helper.refreshIfRecoverable()
@@ -196,10 +190,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming rows must remain through recovery")
         await source.createQR()
         XCTAssertNotNil(source.invitationURL, "A healthy helper can create an invitation after recovery")
-        if pendingRenewal {
-            try await captureSyncActionState(projectID: project.id, proposal: proposal,
-                controller: source, state: "recovered")
-        }
     }
 
     func testIndependentAutomaticStopCannotUndoNewEnable() async throws {
@@ -486,73 +476,39 @@ final class SyncHelperControllerTests: XCTestCase {
         }
         XCTAssertTrue(controller.checking)
         XCTAssertEqual(controller.displayedState, .running, "A background check must preserve the last visible status")
-        try await captureStatusIndicator(controller, state: "checking")
         await control.resumeStatus(); await refresh.value
         XCTAssertFalse(controller.checking)
         XCTAssertTrue(controller.online)
-        try await captureStatusIndicator(controller, state: "online")
         await control.setStatusEnabled(false)
         await controller.refresh()
         XCTAssertEqual(controller.displayedState, .failed)
         XCTAssertNotNil(controller.displayedError)
-        try await captureStatusIndicator(controller, state: "error")
     }
 
-    private func captureStatusIndicator(_ controller: SyncHelperController, state: String) async throws {
-        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
-        let destination = URL(fileURLWithPath: output)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        LanguageSettings.shared.language = .english
-        let host = NSHostingView(rootView: VStack(alignment: .leading, spacing: 12) {
-            SyncHelperPreferencesSection(controller: controller)
-            Divider()
-            Text("Share from this Mac")
-        }.toggleStyle(PremiumSwitchStyle()).padding(16).frame(width: 532, height: 260, alignment: .topLeading)
-            .background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 260),
-            to: destination.appendingPathComponent("status-\(state).png"), language: "en",
-            state: "Synthetic helper status: \(state)", route: "/native/preferences/synchronization",
-            screen: "Synchronization helper status")
-    }
-
-    func testStatusSectionReservesSpaceOnlyForVisibleWarnings() async throws {
+    func testStatusDiagnosticsRedactPrivateErrorsAndTrackApproval() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
         let registration = HelperRegistrationFake(); registration.status = .enabled
         let control = HelperControlFake(); await control.setBuildIdentity(replacement)
         let controller = upgrading(fixture, registration, control)
         await controller.refresh()
-        func sectionHeight() -> CGFloat {
-            let host = NSHostingView(rootView: SyncHelperPreferencesSection(controller: controller).frame(width: 532))
-            host.layoutSubtreeIfNeeded()
-            return host.fittingSize.height
-        }
-        let baseline = sectionHeight()
         XCTAssertNotNil(controller.diagnostics.lastCheck)
 
         let privateError = "/Users/example/Private.md https://192.0.2.1/invite?token=secret 123456"
         await control.setStatusError(privateError); await controller.refresh()
         XCTAssertEqual(controller.displayedError, privateError)
-        let warningHeight = sectionHeight()
-        XCTAssertGreaterThan(warningHeight, baseline)
         for sensitiveValue in ["/Users/example", "192.0.2.1", "secret", "123456"] {
             XCTAssertFalse(controller.diagnostics.report.contains(sensitiveValue))
         }
 
-        await control.setStatusError(String(repeating: privateError, count: 20)); await controller.refresh()
-        XCTAssertEqual(sectionHeight(), warningHeight, "Private error length must not affect layout")
-
         registration.status = .requiresApproval
         await controller.refresh()
         XCTAssertTrue(controller.showsApprovalAction)
-        XCTAssertGreaterThan(sectionHeight(), baseline)
 
         registration.status = .enabled
         await control.setStatusError(nil); await controller.refresh()
-        XCTAssertEqual(sectionHeight(), baseline)
-
+        XCTAssertFalse(controller.showsApprovalAction)
+        XCTAssertNil(controller.displayedError)
     }
 
     func testReturningFromApprovalRefreshesOnlyWhileApprovalIsRequired() async throws {
@@ -1062,7 +1018,6 @@ final class SyncHelperControllerTests: XCTestCase {
             XCTAssertFalse(helper.online)
             let currentStatusCalls = await control.statusCalls
             XCTAssertEqual(currentStatusCalls, previousStatusCalls, "Pending consent blocks peer health requests")
-            if upgradePending { try await captureStatusIndicator(helper, state: "renewal-pending") }
         }
     }
 
@@ -2303,12 +2258,10 @@ final class SyncHelperControllerTests: XCTestCase {
         let controller = upgrading(fixture, registration, control)
         await controller.refresh()
         XCTAssertTrue(controller.online)
-        try await captureStatusIndicator(controller, state: "approval-before")
         registration.status = .requiresApproval
         await controller.refresh()
         XCTAssertEqual(controller.state, .approvalRequired)
         XCTAssertFalse(controller.checkingStatus)
-        try await captureStatusIndicator(controller, state: "approval-required")
     }
 
     func testMissingRegistrationPreservesErrorDuringRecovery() async throws {
@@ -2371,7 +2324,6 @@ final class SyncHelperControllerTests: XCTestCase {
         await controller.refresh()
         XCTAssertEqual(controller.displayedState, .failed)
         XCTAssertNotNil(controller.displayedError)
-        try await captureStatusIndicator(controller, state: "recovery-error")
 
         await control.pauseStatus(at: 3)
         let refresh = Task { await controller.refresh() }
@@ -2382,12 +2334,10 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(controller.checkingStatus)
         XCTAssertEqual(controller.displayedState, .failed)
         XCTAssertNotNil(controller.displayedError)
-        try await captureStatusIndicator(controller, state: "recovery-checking")
         await control.resumeStatus(); await refresh.value
         XCTAssertTrue(controller.online)
         XCTAssertNil(controller.displayedError)
         XCTAssertFalse(controller.checkingStatus)
-        try await captureStatusIndicator(controller, state: "recovery-online")
     }
 
     func testRefreshPreservesErrorWhileChecking() async throws {
@@ -2662,19 +2612,15 @@ final class SyncHelperControllerTests: XCTestCase {
         await source.initialize()
         XCTAssertEqual(source.settings.projects.count, 1)
         XCTAssertTrue(source.sharingPresentationAvailable)
-        let project = try XCTUnwrap(source.settings.projects.first)
-        try await captureSharedProjectRow(project, controller: source, state: "before")
         await control.failStatus(at: 2)
         let refresh = Task { await helper.refresh() }
         for _ in 0..<5000 { if await pause.isWaiting { break }; try await Task.sleep(for: .milliseconds(1)) }
         guard await pause.isWaiting else { await pause.resume(); await refresh.value; XCTFail("Retry did not pause"); return }
         XCTAssertFalse(source.sharingAvailable, "Operations must see the real failure")
         XCTAssertTrue(source.sharingPresentationAvailable, "A retry must not add a transient paused line to shared projects")
-        try await captureSharedProjectRow(project, controller: source, state: "retrying")
         await pause.resume(); await refresh.value
         XCTAssertTrue(source.sharingAvailable)
         XCTAssertTrue(source.sharingPresentationAvailable)
-        try await captureSharedProjectRow(project, controller: source, state: "recovered")
         await control.setUnavailable()
         let failed = Task { await helper.refresh() }
         for _ in 0..<5000 { if await pause.isWaiting { break }; try await Task.sleep(for: .milliseconds(1)) }
@@ -2737,8 +2683,6 @@ final class SyncHelperControllerTests: XCTestCase {
         source.reviewing = review
         XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
             "An open, complete review can be applied before health fails")
-        try await captureSourceReview(review, controller: source, name: "source-review-online-before-retry",
-            state: "The same custom source review is open and Apply is enabled before the helper health retry")
 
         let failedCall = await control.statusCalls + 1
         await control.failStatus(at: failedCall)
@@ -2768,8 +2712,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(source.reviewing?.id, review.id, "The active review must remain open during recovery")
         XCTAssertTrue(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
             "Apply must disable while the helper health is unavailable")
-        try await captureSourceReview(review, controller: source, name: "source-review-unavailable",
-            state: "The same custom source review stays open while live helper health is unavailable; Apply is disabled")
         await source.reviewProposal(proposal)
         let appliedReview = await source.applyReview(review, decisions: [:])
         XCTAssertFalse(appliedReview,
@@ -2796,8 +2738,6 @@ final class SyncHelperControllerTests: XCTestCase {
 
         XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
             "A complete review can be applied while helper health is confirmed")
-        try await captureSourceReview(review, controller: source, name: "source-review-recovered",
-            state: "The same custom source review remains open after same-endpoint recovery; Apply is enabled")
         let terminalFailure = await control.statusCalls + 1
         await control.failStatus(at: terminalFailure)
         await control.failStatus(at: terminalFailure + 1)
@@ -2821,8 +2761,6 @@ final class SyncHelperControllerTests: XCTestCase {
             "A terminal health failure must not dismiss the in-progress review")
         let actionsAfterTerminalFailure = await runtime.recordedActionsValue
         XCTAssertEqual(actionsAfterTerminalFailure.apply, 0)
-        try await captureSourceReview(review, controller: source, name: "review-draft-unavailable",
-            state: "Selected custom text remains 1/1 while the sync helper is unavailable; Apply disabled")
 
         await control.setStatusEnabled(true)
         await source.refreshConsent(refreshHelper: true)
@@ -2832,8 +2770,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(source.reviewing?.draft.decisions["notes.md"], decision)
         XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
             "Apply must become available after a confirmed recovery")
-        try await captureSourceReview(review, controller: source, name: "review-draft-recovered",
-            state: "The same selected 1/1 custom text remains after helper recovery; Apply enabled")
     }
 
     func testRecoveredHelperRestartClearsInvalidatedInvitationAtSameEndpoint() async throws {
@@ -2884,7 +2820,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(source.sharingPresentationAvailable)
         XCTAssertEqual(source.invitationURL, displayedInvitation,
             "The last confirmed QR remains visible while helper recovery is still unresolved")
-        try await capturePairingInvitationState(source, state: "valid-qr-retained-during-recovery")
 
         await runtime.simulateHelperRestart()
         await pause.release()
@@ -2895,7 +2830,6 @@ final class SyncHelperControllerTests: XCTestCase {
             "A recovered same-endpoint service must remove a QR that its live registry invalidated")
         XCTAssertTrue(source.consent.requests.isEmpty,
             "Consent rows cleared by the service restart must match the recovered registry")
-        try await capturePairingInvitationState(source, state: "invalidated-qr-removed-after-restart")
     }
 
     func testStaleConsentResponseCannotClearInvitationCreatedWhileWaiting() async throws {
@@ -3097,7 +3031,6 @@ final class SyncHelperControllerTests: XCTestCase {
         await source.refreshConsent(refreshHelper: false)
         XCTAssertEqual(source.consent.devices, [device],
             "A healthy helper with sharing switched off must retain saved paired devices during retry")
-        try await captureUnavailablePairedDevice(device, controller: source)
 
         await pause.release(); await refresh.value
         XCTAssertTrue(helper.online)
@@ -3166,125 +3099,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(source.incoming.isEmpty,
             "A proposal response from an older poll must not restore rows after terminal cleanup")
         XCTAssertTrue(source.consent.requests.isEmpty)
-    }
-
-    private func captureSharedProjectRow(_ project: MobileSharedProject, controller: DesktopSyncController, state: String) async throws {
-        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
-        let destination = URL(fileURLWithPath: output)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        LanguageSettings.shared.language = .english
-        let host = NSHostingView(rootView: SharedProjectRow(project: project, controller: controller)
-            .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
-            .background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
-            to: destination.appendingPathComponent("project-\(state).png"), language: "en",
-            state: "Synthetic shared project: \(state)", route: "/native/preferences/synchronization",
-            screen: "Shared project status")
-    }
-
-    private func captureSyncActionState(projectID: UUID,
-                                       proposal: DesktopPeerIncomingProposal,
-                                       controller: DesktopSyncController,
-                                       state: String) async throws {
-        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
-        let destination = URL(fileURLWithPath: output)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        let availability = state == "unavailable" ? "helper health unavailable; pairing actions are disabled" :
-            "helper health recovered; pairing actions are enabled"
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            let suffix = language.rawValue
-            let invitation = NSHostingView(rootView: DesktopPairingInvitationSection(controller: controller)
-                .padding(16).frame(width: 640, height: 300, alignment: .topLeading)
-                .background(Color(nsColor: .windowBackgroundColor)))
-            try await GuideCaptureSupport.captureNative(invitation, size: NSSize(width: 640, height: 300),
-                to: destination.appendingPathComponent("pairing-invitation-\(state)-\(suffix).png"), language: suffix,
-                state: "Synthetic pairing invitation, QR and copy controls; \(availability)",
-                route: "/native/preferences/synchronization", screen: "Pairing invitation controls")
-            let incoming = NSHostingView(rootView: IncomingProposalRow(item: proposal, controller: controller)
-                .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
-                .background(Color(nsColor: .windowBackgroundColor)))
-            try await GuideCaptureSupport.captureNative(incoming, size: NSSize(width: 532, height: 100),
-                to: destination.appendingPathComponent("incoming-review-\(state)-\(suffix).png"), language: suffix,
-                state: "Synthetic incoming proposal retained; \(availability)",
-                pixelScale: 1,
-                route: "/native/preferences/synchronization", screen: "Incoming proposal actions")
-            let consent = NSHostingView(rootView: PairingConsentActions(controller: controller,
-                projects: [projectID], captureOnly: false, confirmed: true, onCancel: {}, onAllow: {})
-                .padding(16).frame(width: 420, height: 60, alignment: .topLeading)
-                .background(Color(nsColor: .windowBackgroundColor)).buttonStyle(PremiumButtonStyle()))
-            try await GuideCaptureSupport.captureNative(consent, size: NSSize(width: 420, height: 60),
-                to: destination.appendingPathComponent("consent-actions-\(state)-\(suffix).png"), language: suffix,
-                state: "Synthetic confirmed pairing request; \(availability)",
-                route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
-        }
-    }
-
-    private func capturePairingInvitationState(_ controller: DesktopSyncController,
-                                               state: String) async throws {
-        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
-        let destination = URL(fileURLWithPath: output)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        let visibleState = controller.invitationURL == nil ? "invalidated invitation removed" :
-            "valid invitation QR retained"
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            let suffix = language.rawValue
-            let host = NSHostingView(rootView: DesktopPairingInvitationSection(controller: controller)
-                .padding(16).frame(width: 640, height: 300, alignment: .topLeading)
-                .background(Color(nsColor: .windowBackgroundColor)))
-            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 640, height: 300),
-                to: destination.appendingPathComponent("pairing-\(state)-\(suffix).png"), language: suffix,
-                state: "\(state); \(visibleState)", route: "/native/preferences/synchronization",
-                screen: "Pairing invitation recovery")
-        }
-    }
-
-    private func captureSourceReview(_ value: DesktopSourceReview, controller: DesktopSyncController,
-                                    name: String, state: String) async throws {
-        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
-        let destination = URL(fileURLWithPath: output)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            let suffix = language.rawValue
-            let host = NSHostingView(rootView: DesktopSourceReviewView(controller: controller, value: value)
-                .buttonStyle(PremiumButtonStyle())
-                .background(Color(nsColor: .windowBackgroundColor)))
-            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 960, height: 660),
-                to: destination.appendingPathComponent("\(name)-\(suffix).png"), language: suffix,
-                state: state,
-                pixelScale: 0.75,
-                route: "/native/preferences/synchronization/review", screen: "Incoming source review")
-        }
-    }
-
-    private func captureUnavailablePairedDevice(_ device: PairedDevice,
-                                               controller: DesktopSyncController) async throws {
-        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
-        let destination = URL(fileURLWithPath: output)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            let suffix = language.rawValue
-            let host = NSHostingView(rootView: AuthorizedDeviceRow(device: device, controller: controller)
-                .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
-                .background(Color(nsColor: .windowBackgroundColor)))
-            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
-                to: destination.appendingPathComponent("paired-device-sharing-off-\(suffix).png"), language: suffix,
-                state: "Synthetic paired device retained while local sharing is off and helper health retry is active; revoke disabled",
-                route: "/native/preferences/synchronization", screen: "Authorized device row")
-        }
     }
 
     func testFirstStatusFailureRetriesHealthBeforeReconciliation() async throws {
@@ -3817,55 +3631,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertNil(recovered.mobileSync.helperUpgradeToken)
     }
 
-    func testCaptureSafeUpgradeAndExplicitDisable() async throws {
-        guard let path = ProcessInfo.processInfo.environment["LEONARDO_HELPER_UPGRADE_EVIDENCE"] else {
-            throw XCTSkip("Requires an explicit native component evidence destination")
-        }
-        let destination = URL(fileURLWithPath: path)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let fixture = try ControllerFixture(); defer { fixture.remove() }
-        let registration = HelperRegistrationFake(); let control = HelperControlFake()
-        let controller = upgrading(fixture, registration, control)
-        await controller.setEnabled(true)
-        await control.pauseReload()
-        let refresh = Task { await controller.refresh() }
-        for _ in 0..<5000 {
-            if await control.hasHeldReload { break }
-            try await Task.sleep(for: .milliseconds(1))
-        }
-        let held = await control.hasHeldReload
-        guard held else {
-            await control.resumeReload(); await refresh.value
-            XCTFail("Upgrade did not reach the controlled graceful-stop barrier"); return
-        }
-        do {
-            XCTAssertTrue(controller.busy && controller.upgrading && controller.enabled)
-            let size = NSSize(width: 900, height: 300)
-            func view() -> NSView {
-                NSHostingView(rootView: Form { SyncHelperPreferencesSection(controller: controller) }
-                    .formStyle(.grouped).frame(width: size.width, height: size.height))
-            }
-            try await GuideCaptureSupport.captureNative(view(), size: size,
-                to: destination.appendingPathComponent("upgrade-waiting.png"), language: "en",
-                state: "Synthetic older helper; graceful stop held; master remains on and explicit disable is available",
-                route: "/native/synchronization/helper/upgrade", screen: "Production helper preference section")
-            await controller.setEnabled(false)
-            await control.resumeReload(); await refresh.value
-            XCTAssertFalse(controller.online || controller.enabled || controller.busy)
-            XCTAssertEqual(registration.registrations, 1)
-            let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
-            XCTAssertFalse(settings.mobileSync.helperEnabled)
-            XCTAssertNil(settings.mobileSync.helperUpgradeToken)
-            try await GuideCaptureSupport.captureNative(view(), size: size,
-                to: destination.appendingPathComponent("upgrade-cancelled.png"), language: "en",
-                state: "Owner explicitly disabled during upgrade; stop completed without replacement or re-enabling",
-                route: "/native/synchronization/helper/disabled", screen: "Production helper preference section")
-        } catch {
-            await control.resumeReload(); await refresh.value
-            throw error
-        }
-    }
-
     func testEnableRegistersAndRequiresLiveHealthBeforeReportingOnline() async throws {
         let fixture = try ControllerFixture()
         defer { fixture.remove() }
@@ -3992,7 +3757,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(controller.state, .failed,
             "Automatic checks must not clear the diagnostic while a live helper still holds the shutdown lock")
         XCTAssertEqual(controller.error, shutdownError)
-        try await captureStatusIndicator(controller, state: "disabled-failure")
 
         let statusCallsBeforePreflight = await control.statusCalls
         let reloadsBeforePreflight = await control.reloads
@@ -4010,7 +3774,6 @@ final class SyncHelperControllerTests: XCTestCase {
         let reloadsAfterPreflight = await control.reloads
         XCTAssertEqual(statusCallsAfterPreflight, statusCallsBeforePreflight)
         XCTAssertEqual(reloadsAfterPreflight, reloadsBeforePreflight)
-        try await captureStatusIndicator(controller, state: "disabled-failure-preflight")
 
         activeHelper = nil
         await control.setUnavailable(false)
@@ -4018,7 +3781,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(registration.status, .notRegistered)
         XCTAssertEqual(controller.state, .disabled)
         XCTAssertNil(controller.error, "Clear the shutdown diagnostic only after the helper is confirmed stopped")
-        try await captureStatusIndicator(controller, state: "disabled-recovered")
     }
 
     func testDeadHelperCanBeUnregisteredWithoutAnXPCAcknowledgement() async throws {

@@ -55,14 +55,6 @@ final class PDFModeTransitionTests: XCTestCase {
             XCTAssertEqual(diagramRendered, true)
             XCTAssertEqual(session.content, loadedSource)
             XCTAssertFalse(session.isDirty)
-            if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
-                let directory = URL(fileURLWithPath: output).appendingPathComponent("pdf-mode-transitions")
-                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                try data.write(to: directory.appendingPathComponent("\(mode).pdf"))
-                let image = try await web.takeSnapshot(configuration: nil)
-                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-                try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: directory.appendingPathComponent("\(mode).png"))
-            }
         }
     }
 

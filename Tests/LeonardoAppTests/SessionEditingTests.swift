@@ -850,58 +850,6 @@ final class SessionEditingTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: secondFile, encoding: .utf8), "# Second")
     }
 
-    func testCapturePreviewSynchronizationWarningsInBothLanguages() async throws {
-        guard let path = ProcessInfo.processInfo.environment["LEONARDO_PREVIEW_ALERT_EVIDENCE"] else {
-            throw XCTSkip("Set LEONARDO_PREVIEW_ALERT_EVIDENCE to capture native preview warning states")
-        }
-        let directory = URL(fileURLWithPath: path, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let previousLanguage = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previousLanguage }
-
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            let alerts = [
-                ("retry", AppSession.previewEditsSynchronizationWarning()),
-                ("close", AppSession.previewEditsCloseWarning(documentName: "sample.md")),
-            ]
-            for (name, alert) in alerts {
-                alert.layout()
-                alert.window.center()
-                alert.window.orderFrontRegardless()
-                try await Task.sleep(for: .milliseconds(250))
-                let capturedAt = ISO8601DateFormatter().string(from: Date())
-                let filename = "preview-alert-\(language.rawValue)-\(name).png"
-                let screenshotURL = directory.appendingPathComponent(filename)
-                let capture = Process()
-                capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                capture.arguments = ["-x", "-l", String(alert.window.windowNumber),
-                                    screenshotURL.path]
-                try capture.run()
-                capture.waitUntilExit()
-                XCTAssertEqual(capture.terminationStatus, 0)
-                let context: [String: Any] = [
-                    "captured_at": capturedAt,
-                    "route": "LeonardoMD / Preview editing / Preview synchronization \(name) alert",
-                    "screen": "\(language.rawValue) native Preview synchronization \(name) alert",
-                    "browser_name": "Native macOS AppKit (no browser)",
-                    "browser_version": "Not applicable; production NSAlert builder in XCTest host",
-                    "source_revision": ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "unavailable",
-                    "state": "\(NSApp.effectiveAppearance.name) appearance; synthetic sample.md content; \(name) recovery state.",
-                    "viewport_css": [
-                        "width": Int(alert.window.frame.width),
-                        "height": Int(alert.window.frame.height)
-                    ],
-                    "capture_mode": "element",
-                    "data_provenance": "synthetic"
-                ]
-                let contextData = try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
-                try contextData.write(to: directory.appendingPathComponent(filename + ".context.json"), options: .atomic)
-                alert.window.orderOut(nil)
-            }
-        }
-    }
-
     func testInactiveTabCancelKeepsAllTabsAndDiscardClosesWithoutSaving() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -1077,41 +1025,6 @@ final class SessionEditingTests: XCTestCase {
         XCTAssertTrue(session.externalConflict)
         XCTAssertTrue(session.canEditDocument)
         XCTAssertNotNil(session.errorMessage)
-    }
-
-    func testCaptureProtectionAndUnsavedStates() async throws {
-        guard let destination = ProcessInfo.processInfo.environment["LEONARDO_EDITING_EVIDENCE"] else {
-            throw XCTSkip("Set LEONARDO_EDITING_EVIDENCE for native editing captures")
-        }
-        let (root, session) = try await fixture()
-        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
-        session.mode = .edit
-        let previousLanguage = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previousLanguage }
-        let output = URL(fileURLWithPath: destination, isDirectory: true)
-        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-        let host = NSHostingView(rootView: WorkspaceView(session: session))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 850),
-                              styleMask: [.borderless], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.contentView = host
-        window.orderFront(nil)
-        defer { window.close() }
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            for writable in [false, true] {
-                session.isProtected = !writable
-                if writable { _ = session.editDocument(expected: session.content, replacement: "# Modified draft\n\nThese changes have not been saved.") }
-                else { session.content = session.snapshot?.content ?? ""; session.contentChanged() }
-                try await Task.sleep(for: .milliseconds(300))
-                host.layoutSubtreeIfNeeded()
-                host.displayIfNeeded()
-                let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-                host.cacheDisplay(in: host.bounds, to: bitmap)
-                try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to:
-                    output.appendingPathComponent("editing-\(language.rawValue)-\(writable ? "unsaved" : "protected").png"))
-            }
-        }
     }
 
     func testSaveChoiceRetainsDraftOnConflict() async throws {

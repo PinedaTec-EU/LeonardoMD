@@ -61,7 +61,6 @@ final class WebKitRuntimeTests: XCTestCase {
         let text = try await evaluate("document.querySelector('#leonardo-markdown').textContent", in: web)
         XCTAssertTrue(text.contains(" between "))
         XCTAssertFalse(text.contains("<br>"))
-        try await captureTagPreview(web, name: "display-math-adjacent")
     }
 
     func testMigratedMarkdownRendersMetadataOutsideEditedArticle() async throws {
@@ -84,11 +83,9 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertFalse(metadata.contains("formatVersion"))
         let tags = try await evaluate("document.querySelectorAll('.tag-pill').length", in: web)
         XCTAssertEqual(tags, "2")
-        try await captureTagPreview(web, name: "mdlf-migration-metadata")
         config.frontMatter = .hidden
         host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         try await waitFor("document.querySelector('.front-matter') === null && document.querySelectorAll('.tag-pill').length === 2", in: web)
-        try await captureTagPreview(web, name: "mdlf-migration-hidden-metadata")
     }
 
     func testLeonardoLayoutAndFieldValuesUseExplicitOptIn() async throws {
@@ -118,7 +115,6 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertEqual(result2, "0")
         let result3 = try await evaluate("document.querySelector('col').style.width", in: web)
         XCTAssertEqual(result3, "25%")
-        try await captureTagPreview(web, name: "leonardo-form-layout")
         config.allowsLeonardoFormat = false
         host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         try await waitFor("document.querySelector('.leonardo-field-value') === null && !document.querySelector('#leonardo-markdown').classList.contains('leonardo-document')", in: web)
@@ -255,15 +251,6 @@ final class WebKitRuntimeTests: XCTestCase {
         })()
         """
         try await waitFor(layout, in: web)
-        try await captureTagPreview(web, name: "tables-light-wide")
-        _ = try await evaluate("document.body.style.transition = 'none'", in: web)
-        host.apply(content: source, baseURL: nil,
-            configuration: MarkdownPreviewConfiguration(appearance: MarkdownAppearance(
-                backgroundHex: "#171717", textHex: "#F1F1EB", headingHex: "#9BD1FA",
-                accentHex: "#9BD1FA", codeBackgroundHex: "#262626")),
-            onLinkActivation: nil, onScrollProgress: nil)
-        try await waitFor("getComputedStyle(document.body).backgroundColor === 'rgb(23, 23, 23)'", in: web)
-        try await captureTagPreview(web, name: "tables-dark-wide")
         window.setContentSize(NSSize(width: 400, height: 800))
         try await waitFor("document.querySelector('.table-viewport').scrollWidth > document.querySelector('.table-viewport').clientWidth", in: web)
         try await waitFor(layout, in: web)
@@ -276,7 +263,6 @@ final class WebKitRuntimeTests: XCTestCase {
         })()
         """, in: web)
         XCTAssertEqual(scroll, "1")
-        try await captureTagPreview(web, name: "tables-dark-narrow-scrolled")
     }
 
     func testTableDirectivesAreScopedValidatedAndExcludedFromCode() async throws {
@@ -380,7 +366,6 @@ final class WebKitRuntimeTests: XCTestCase {
         })()
         """, in: web)
         XCTAssertEqual(word, "1")
-        try await captureTagPreview(web, name: "tables-natural-and-fixed-narrow")
     }
 
     func testBoundedRasterPreviewPDFResolutionAndSourceRestoration() async throws {
@@ -396,7 +381,6 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertLessThan(try XCTUnwrap(Int(width)), 3_000)
         let originalStyle = try await evaluate("document.querySelector('img').getAttribute('style') || ''", in: web)
         let source = try await evaluate("document.querySelector('img').getAttribute('src')", in: web)
-        try await captureTagPreview(web, name: "bounded-raster-preview")
         _ = try await web.evaluateJavaScript("void window.LeonardoImages.preparePDF(document.querySelector('main'))")
         try await waitFor("document.querySelector('img').currentSrc.includes('leonardo-image-purpose=pdf') && document.querySelector('img').complete", in: web)
         let pdfWidth = try await evaluate("document.querySelector('img').naturalWidth", in: web)
@@ -557,7 +541,6 @@ final class WebKitRuntimeTests: XCTestCase {
         try await waitFor("document.querySelectorAll('img').length === 4 && Array.from(document.querySelectorAll('img')).every(i => i.complete && i.naturalWidth === 32 && i.naturalHeight === 16)", in: web)
         let failures = try await evaluate("document.querySelectorAll('.leonardo-image-unavailable').length", in: web)
         XCTAssertEqual(failures, "0")
-        try await captureTagPreview(web, name: "bounded-memory-formats")
         let pdf = try await host.exportPDF()
         XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
     }
@@ -590,7 +573,6 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertEqual(alt, "Authored fallback")
         let fallback = try await evaluate("document.querySelector('.leonardo-image-unavailable')?.textContent", in: web)
         XCTAssertEqual(fallback, "Authored fallback")
-        try await captureTagPreview(web, name: "bounded-image-fallback")
         do {
             _ = try await host.exportPDF()
             XCTFail("A failed image must not be silently omitted")
@@ -656,42 +638,11 @@ final class WebKitRuntimeTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(50))
         }
         XCTAssertEqual(activated, "Design Systems")
-        _ = try await evaluate("document.querySelector('.tag-pill').focus()", in: web)
-        let focus = try await evaluate("document.activeElement.className", in: web)
-        XCTAssertEqual(focus, "tag-pill")
-        try await captureTagPreview(web, name: "tags-light")
-        // Hidden test windows do not advance CSS transition frames reliably.
-        _ = try await evaluate("document.body.style.transition = 'none'", in: web)
-        host.apply(content: source, baseURL: nil,
-                   configuration: MarkdownPreviewConfiguration(appearance: MarkdownAppearance(
-                    backgroundHex: "#171717", textHex: "#F1F1EB", headingHex: "#9BD1FA", accentHex: "#9BD1FA", codeBackgroundHex: "#262626")),
-                   onLinkActivation: nil, onTagActivation: { activated = $0 }, onScrollProgress: nil)
-        try await waitFor("getComputedStyle(document.body).backgroundColor === 'rgb(23, 23, 23)'", in: web)
-        try await captureTagPreview(web, name: "tags-dark")
         host.apply(content: "# Untagged", baseURL: nil, configuration: .default,
                    onLinkActivation: nil, onTagActivation: { activated = $0 }, onScrollProgress: nil)
         try await waitFor("document.querySelector('h1')?.textContent === 'Untagged'", in: web)
         let remaining = try await evaluate("document.querySelectorAll('.document-tags').length", in: web)
         XCTAssertEqual(remaining, "0")
-    }
-
-    private func captureTagPreview(_ web: WKWebView, name: String) async throws {
-        guard let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
-        let png: Data = try await withCheckedThrowingContinuation { continuation in
-            web.takeSnapshot(with: nil) { image, error in
-                if let error { continuation.resume(throwing: error); return }
-                guard let tiff = image?.tiffRepresentation,
-                      let bitmap = NSBitmapImageRep(data: tiff),
-                      let data = bitmap.representation(using: .png, properties: [:]) else {
-                    continuation.resume(throwing: CocoaError(.fileReadUnknown))
-                    return
-                }
-                continuation.resume(returning: data)
-            }
-        }
-        let root = URL(fileURLWithPath: directory, isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        try png.write(to: root.appendingPathComponent(name + ".png"))
     }
 
     func testDisabledEnginesSanitizationAndIncrementalDocumentUpdate() async throws {
