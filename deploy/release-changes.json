@@ -1329,6 +1329,16 @@
       "pr": 589,
       "summary": "Leonardo Classic is the macOS default, and the first window opens with the saved palette when one is set.",
       "to_version": "0.3.2266"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.2266",
+      "merge_sha": "c83ca1f5664b2da83055881501333511cb6e26cb",
+      "pr": 594,
+      "summary": "Run isolated macOS test cases once per CI job while retaining their diagnostics.",
+      "to_version": "0.3.2267"
     }
   ],
   "initial_version": "0.1.56",
@@ -1339,5 +1349,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.2266"
+  "version": "0.3.2267"
 }

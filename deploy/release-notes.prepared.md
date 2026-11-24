@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2267
+
+- #593 Updated: run isolated macOS tests once ([#594](https://github.com/PinedaTec-EU/LeonardoMD/pull/594))
+
+<p>Run isolated macOS test cases once per CI job while retaining their diagnostics.</p>
+
+Source: `c83ca1f5664b2da83055881501333511cb6e26cb`. Delta: `{"build": 1}`.
+
 ## 0.3.2266
 
 - #588 Fixed: use Leonardo Classic from startup ([#589](https://github.com/PinedaTec-EU/LeonardoMD/pull/589))
