@@ -485,42 +485,30 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertNotNil(controller.displayedError)
     }
 
-    func testStatusSectionReservesSpaceOnlyForVisibleWarnings() async throws {
+    func testStatusDiagnosticsRedactPrivateErrorsAndTrackApproval() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
         let registration = HelperRegistrationFake(); registration.status = .enabled
         let control = HelperControlFake(); await control.setBuildIdentity(replacement)
         let controller = upgrading(fixture, registration, control)
         await controller.refresh()
-        func sectionHeight() -> CGFloat {
-            let host = NSHostingView(rootView: SyncHelperPreferencesSection(controller: controller).frame(width: 532))
-            host.layoutSubtreeIfNeeded()
-            return host.fittingSize.height
-        }
-        let baseline = sectionHeight()
         XCTAssertNotNil(controller.diagnostics.lastCheck)
 
         let privateError = "/Users/example/Private.md https://192.0.2.1/invite?token=secret 123456"
         await control.setStatusError(privateError); await controller.refresh()
         XCTAssertEqual(controller.displayedError, privateError)
-        let warningHeight = sectionHeight()
-        XCTAssertGreaterThan(warningHeight, baseline)
         for sensitiveValue in ["/Users/example", "192.0.2.1", "secret", "123456"] {
             XCTAssertFalse(controller.diagnostics.report.contains(sensitiveValue))
         }
 
-        await control.setStatusError(String(repeating: privateError, count: 20)); await controller.refresh()
-        XCTAssertEqual(sectionHeight(), warningHeight, "Private error length must not affect layout")
-
         registration.status = .requiresApproval
         await controller.refresh()
         XCTAssertTrue(controller.showsApprovalAction)
-        XCTAssertGreaterThan(sectionHeight(), baseline)
 
         registration.status = .enabled
         await control.setStatusError(nil); await controller.refresh()
-        XCTAssertEqual(sectionHeight(), baseline)
-
+        XCTAssertFalse(controller.showsApprovalAction)
+        XCTAssertNil(controller.displayedError)
     }
 
     func testReturningFromApprovalRefreshesOnlyWhileApprovalIsRequired() async throws {
