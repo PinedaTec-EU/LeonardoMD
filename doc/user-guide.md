@@ -398,11 +398,12 @@ For example, if an instruction is separated from its field, ask the agent to cor
 
 ## 7. Home, recent items and favorites
 
-![Home: isolated initial state; no favorites or recent documents.](guide/en/assets/home.png)
 
 *Home: isolated initial state; no favorites or recent documents.*
 
-Home separates **Projects** from **Documents**, with Favorites and Recents for each. Use Open document for one file; Open project for a working folder. A standalone file uses global preferences and does not expose its neighboring files. **Open folder as project** adds that folder's navigation when you need it.
+Choose **Projects** or **Documents** at the top of Home to switch Favorites, Recents and Remote items together. The Open button opens a local folder or file for the selected type. A standalone file uses global preferences and does not expose its neighboring files. **Open folder as project** adds that folder’s navigation when you need it.
+
+In **Remote items**, select a project to browse its catalogue or a document to open its preview. The row identifies the source Mac. First add the shared project in **Preferences → Synchronization → Remote**. Files kept offline can be read when the source is unavailable. Other files may require reconnecting to their source.
 
 - Star an item to keep it independently of recent history. File → Favorites provides another way to open it.
 - Check the parent path when two entries share a name. Unavailable files are disabled: restore the volume or choose the new location with Open.

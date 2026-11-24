@@ -1,5 +1,7 @@
 # Desktop peer synchronization
 
+On macOS Home, the Projects / Documents selector scopes Favorites, Recents and Remote items. The Remote section uses the accepted project descriptors and cached catalogues from the desktop peer controller, and opens them in the same browser as Synchronization preferences.
+
 Preferences separates local publishing (**Share**) from incoming connections
 (**Remote**) with illustrated role buttons. Remote expands one Mac inline across
 the pane; project discovery, new-file notices and added-project actions remain
