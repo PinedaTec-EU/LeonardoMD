@@ -396,7 +396,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         let isFirstWindow = !recordedFirstWindow
         recordedFirstWindow = true
         if isFirstWindow { diagnostics.record(.firstWindowCreating) }
-        let controller = DocumentWindow()
+        let currentSession = activeDocuments?.activeSession
+        let controller = DocumentWindow(
+            preferencesURL: currentSession?.globalPreferencesURL ?? AppSession.preferencesURL,
+            initialGlobalPreferences: currentSession?.globalPreferences ?? .default
+        )
         if isFirstWindow { diagnostics.record(.firstWindowCreated) }
         controller.window?.isExcludedFromWindowsMenu = true
         controller.documents.waitForStartup = { [weak self] in
@@ -587,8 +591,8 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     var onClose: ((SavedSession.Window?) -> Void)?
     private var preparedSession: SavedSession.Window?
 
-    init(preferencesURL: URL = AppSession.preferencesURL) {
-        documents = DocumentTabs(preferencesURL: preferencesURL)
+    init(preferencesURL: URL = AppSession.preferencesURL, initialGlobalPreferences: GlobalPreferences = .default) {
+        documents = DocumentTabs(preferencesURL: preferencesURL, initialGlobalPreferences: initialGlobalPreferences)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 850), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.isRestorable = false
         window.isReleasedWhenClosed = false

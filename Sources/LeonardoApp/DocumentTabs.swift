@@ -1,4 +1,5 @@
 import AppKit
+import LeonardoCore
 import Observation
 
 @MainActor
@@ -27,10 +28,10 @@ final class DocumentTabs {
     private let preferencesURL: URL
     let search = DocumentSearch()
 
-    init(preferencesURL: URL = AppSession.preferencesURL) {
+    init(preferencesURL: URL = AppSession.preferencesURL, initialGlobalPreferences: GlobalPreferences = .default) {
         self.preferencesURL = preferencesURL
         search.criteriaDidChangeHandler = { [weak self] in self?.refreshSearch() }
-        addTab()
+        addTab(initialGlobalPreferences: initialGlobalPreferences)
     }
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
@@ -38,10 +39,11 @@ final class DocumentTabs {
     var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
-    func addTab() -> UUID? {
+    func addTab(initialGlobalPreferences: GlobalPreferences? = nil) -> UUID? {
         guard !closing, !stopped else { return nil }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
-        let session = AppSession(preferencesURL: preferencesURL)
+        let preferences = initialGlobalPreferences ?? tabs.first { $0.id == activeID }?.session.globalPreferences ?? .default
+        let session = AppSession(preferencesURL: preferencesURL, initialGlobalPreferences: preferences)
         session.presentationWindow = presentationWindow
         session.documentContentDidChange = { [weak self] in self?.refreshSearch() }
         let tab = DocumentTab(session: session)

@@ -10,7 +10,7 @@ final class SessionRestorationTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let preferencesURL = root.appendingPathComponent("preferences.json")
         try await ConfigurationStore.shared.saveGlobalPreferences(
-            GlobalPreferences(palette: .graphiteGlass), at: preferencesURL
+            GlobalPreferences(palette: .paperWhite), at: preferencesURL
         )
 
         let recentDocument = root.appendingPathComponent("recent.md")
@@ -21,7 +21,7 @@ final class SessionRestorationTests: XCTestCase {
         let controller = DocumentWindow(preferencesURL: preferencesURL)
         let window = try XCTUnwrap(controller.window)
         defer {
-            controller.session.stop()
+            for tab in controller.documents.tabs { tab.session.stop() }
             window.close()
         }
         let originalVisibleWindowNumbers = app.windows.filter(\.isVisible).map(\.windowNumber)
@@ -63,8 +63,23 @@ final class SessionRestorationTests: XCTestCase {
         await startup.value
         await recentOpen?.value
         XCTAssertTrue(window.isVisible)
-        XCTAssertEqual(controller.session.palette, PaletteCatalog.graphiteGlass)
+        XCTAssertEqual(controller.session.palette, PaletteCatalog.paperWhite)
         XCTAssertEqual(controller.session.displayDocumentURL, recentDocument)
+
+        let tabID = try XCTUnwrap(controller.documents.addTab())
+        XCTAssertEqual(controller.documents.activeID, tabID)
+        XCTAssertEqual(controller.session.palette, PaletteCatalog.paperWhite)
+
+        let existingWindows = Set(app.windows.map(\.windowNumber))
+        delegate.newEmptyWindow()
+        let newWindow = try XCTUnwrap(app.windows.first { !existingWindows.contains($0.windowNumber) })
+        let newController = try XCTUnwrap(newWindow.windowController as? DocumentWindow)
+        defer {
+            newController.session.stop()
+            newWindow.close()
+        }
+        XCTAssertTrue(newWindow.isVisible)
+        XCTAssertEqual(newController.session.palette, PaletteCatalog.paperWhite)
     }
 
     func testMissingPreferenceDefaultsToRestoringSession() throws {
