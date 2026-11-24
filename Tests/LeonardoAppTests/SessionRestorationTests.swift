@@ -4,6 +4,42 @@ import LeonardoCore
 
 @MainActor
 final class SessionRestorationTests: XCTestCase {
+    func testSessionsInheritSavedPaletteBeforeLoadingTheirOwnPreferences() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("preferences.json")
+        let preferences = GlobalPreferences(palette: .paperWhite)
+        try await ConfigurationStore.shared.saveGlobalPreferences(preferences, at: url)
+
+        let tabs = DocumentTabs(preferencesURL: url)
+        defer { for tab in tabs.tabs { tab.session.stop() } }
+        await tabs.activeSession.initialize()
+
+        let newWindowTabs = DocumentTabs(preferencesURL: url, initialGlobalPreferences: tabs.activeSession.globalPreferences)
+        defer { for tab in newWindowTabs.tabs { tab.session.stop() } }
+        XCTAssertEqual(newWindowTabs.activeSession.palette, PaletteCatalog.paperWhite)
+        XCTAssertEqual(newWindowTabs.activeSession.globalBaseline, preferences)
+
+        let tabID = try XCTUnwrap(tabs.addTab())
+        XCTAssertEqual(tabs.activeID, tabID)
+        XCTAssertEqual(tabs.activeSession.palette, PaletteCatalog.paperWhite)
+        XCTAssertEqual(tabs.activeSession.globalBaseline, preferences)
+        await tabs.activeSession.initialize()
+        XCTAssertEqual(tabs.activeSession.palette, PaletteCatalog.paperWhite)
+    }
+
+    func testClosingLastTabCarriesSavedPaletteIntoReplacement() async throws {
+        let tabs = DocumentTabs(initialGlobalPreferences: GlobalPreferences(palette: .paperWhite))
+        defer { tabs.stop() }
+        let lastTabID = try XCTUnwrap(tabs.activeID)
+        await tabs.close(lastTabID)
+
+        XCTAssertNotEqual(tabs.activeID, lastTabID)
+        XCTAssertEqual(tabs.tabs.count, 1)
+        XCTAssertEqual(tabs.activeSession.palette, PaletteCatalog.paperWhite)
+        XCTAssertEqual(tabs.activeSession.globalBaseline.palette, .paperWhite)
+    }
+
     func testMissingPreferenceDefaultsToRestoringSession() throws {
         XCTAssertTrue(GlobalPreferences.default.restorePreviousSession)
         let preferences = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))

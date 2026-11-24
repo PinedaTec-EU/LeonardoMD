@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-24T09:13:51Z",
+  "route": "Help → Leonardo user guide → Chapter 11",
+  "screen": "Help → Leonardo user guide → Chapter 11",
+  "browser_name": "Native LeonardoMD macOS app",
+  "browser_version": "0.3.2244 (2244) on macOS 27.2.1 (26B131)",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "English packaged Help v137 displays the Leonardo Classic default.",
+  "data_provenance": "synthetic"
+}

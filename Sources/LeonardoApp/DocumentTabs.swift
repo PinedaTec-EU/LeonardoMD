@@ -1,4 +1,5 @@
 import AppKit
+import LeonardoCore
 import Observation
 
 @MainActor
@@ -27,10 +28,10 @@ final class DocumentTabs {
     private let preferencesURL: URL
     let search = DocumentSearch()
 
-    init(preferencesURL: URL = AppSession.preferencesURL) {
+    init(preferencesURL: URL = AppSession.preferencesURL, initialGlobalPreferences: GlobalPreferences = .default) {
         self.preferencesURL = preferencesURL
         search.criteriaDidChangeHandler = { [weak self] in self?.refreshSearch() }
-        addTab()
+        addTab(initialGlobalPreferences: initialGlobalPreferences)
     }
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
@@ -38,10 +39,11 @@ final class DocumentTabs {
     var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
-    func addTab() -> UUID? {
+    func addTab(initialGlobalPreferences: GlobalPreferences? = nil) -> UUID? {
         guard !closing, !stopped else { return nil }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
-        let session = AppSession(preferencesURL: preferencesURL)
+        let preferences = initialGlobalPreferences ?? tabs.first { $0.id == activeID }?.session.globalPreferences ?? .default
+        let session = AppSession(preferencesURL: preferencesURL, initialGlobalPreferences: preferences)
         session.presentationWindow = presentationWindow
         session.documentContentDidChange = { [weak self] in self?.refreshSearch() }
         let tab = DocumentTab(session: session)
@@ -194,7 +196,7 @@ final class DocumentTabs {
         tabs.remove(at: index)
         if tabs.isEmpty {
             closing = false
-            addTab()
+            addTab(initialGlobalPreferences: session.globalPreferences)
         } else if activeID == id {
             activeID = tabs[min(index, tabs.count - 1)].id
         }
@@ -289,11 +291,14 @@ final class DocumentTabs {
         // Active close iterations own indices; completed preparation no longer does.
         while closing && !preparedForClose { try? await Task.sleep(for: .milliseconds(20)) }
         let ids = Set(affected.map(\.id))
+        let preferences = tabs.first { $0.id == activeID }?.session.globalPreferences
+            ?? affected.first?.session.globalPreferences ?? .default
         tabs.removeAll { ids.contains($0.id) }
         if tabs.isEmpty {
             // Keep the active-session invariant even while a window is terminating.
-            if addTab() == nil {
-                tabs = [DocumentTab(session: AppSession(preferencesURL: preferencesURL))]
+            if addTab(initialGlobalPreferences: preferences) == nil {
+                let replacement = AppSession(preferencesURL: preferencesURL, initialGlobalPreferences: preferences)
+                tabs = [DocumentTab(session: replacement)]
                 activeID = tabs[0].id
             }
         } else if activeID.map(ids.contains) == true { activeID = tabs[0].id }

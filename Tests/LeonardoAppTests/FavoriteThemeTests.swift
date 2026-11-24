@@ -33,6 +33,17 @@ final class FavoriteThemeTests: XCTestCase {
         return url
     }
 
+    func testStartupKeepsClassicWhenSavedPaletteIsClassic() async throws {
+        let preferencesURL = root.appendingPathComponent("preferences.json")
+        try Data(#"{"palette":"leonardo-classic"}"#.utf8).write(to: preferencesURL)
+        let startup = AppSession(preferencesURL: preferencesURL)
+        sessions.append(startup)
+
+        XCTAssertEqual(startup.palette, PaletteCatalog.leonardoClassic)
+        await startup.initialize()
+        XCTAssertEqual(startup.palette, PaletteCatalog.leonardoClassic)
+    }
+
     func testRecentProjectUsesPersistedFavoriteAndClearsOnSwitch() async throws {
         let project = try folder("Project")
         let other = try folder("Other")
@@ -45,11 +56,11 @@ final class FavoriteThemeTests: XCTestCase {
         let opened1 = await reader.openProject(project.appendingPathComponent("", isDirectory: true))
         XCTAssertTrue(opened1)
         XCTAssertEqual(reader.resolved.palette, .graphiteGlass)
-        XCTAssertEqual(reader.globalPreferences.palette, .paperWhite)
+        XCTAssertEqual(reader.globalPreferences.palette, .leonardoClassic)
         XCTAssertNil(reader.projectConfiguration.palette)
         let opened2 = await reader.openProject(other)
         XCTAssertTrue(opened2)
-        XCTAssertEqual(reader.resolved.palette, .paperWhite)
+        XCTAssertEqual(reader.resolved.palette, .leonardoClassic)
         XCTAssertNil(reader.errorMessage)
     }
 
@@ -67,10 +78,10 @@ final class FavoriteThemeTests: XCTestCase {
         XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         await session.detachProject()
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         await session.openSavedItem(parent, kind: .workspace)
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
     }
 
     func testStandaloneOpeningAndSaveCopyLeaveProjectAppearance() async throws {
@@ -86,14 +97,14 @@ final class FavoriteThemeTests: XCTestCase {
         await session.open(file)
         XCTAssertEqual(session.documentURL, file)
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         _ = await session.openProject(project)
         XCTAssertEqual(session.resolved.palette, .graphiteGlass)
         let copy = root.appendingPathComponent("Copy.md")
         await session.saveCopyAndOpen(to: copy, sourceURL: file)
         XCTAssertEqual(session.documentURL, copy)
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         XCTAssertNil(session.errorMessage)
     }
 
@@ -107,7 +118,7 @@ final class FavoriteThemeTests: XCTestCase {
         let opened5 = await first.openProject(project)
         XCTAssertTrue(opened5)
         XCTAssertEqual(first.resolved.palette, .graphiteGlass)
-        XCTAssertEqual(second.resolved.palette, .paperWhite)
+        XCTAssertEqual(second.resolved.palette, .leonardoClassic)
         first.projectConfiguration.palette = .leonardoClassic
         first.projectConfiguration.customTokens = PaletteTokenOverrides(accent: "#123456")
         XCTAssertEqual(first.resolved.paletteTokens, PaletteCatalog.graphiteGlass.tokens)

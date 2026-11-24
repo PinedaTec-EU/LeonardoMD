@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-24T09:14:40.236209+00:00",
+  "capture": {
+    "captured_at": "2026-11-24T09:14:04+00:00",
+    "route": "File → Recent documents",
+    "screen": "Second tab.md opened from Recent Documents",
+    "browser_name": "Native LeonardoMD macOS app",
+    "browser_version": "0.3.2244 (2244) on macOS 27.2.1 (26B131)",
+    "state": "Saved Paper White, restoration disabled, synthetic recent document selected in the native menu.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "18ac16a9d69ab5eeb2d45c595acd271334ceff117c32b9f9f5b6fdd45a791e74"
+  },
+  "source": {
+    "revision_at_collection": "911f93eda1a1eaefed89331a8d4837fe396c37ef",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

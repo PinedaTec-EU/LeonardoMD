@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-24T09:14:07Z",
+  "route": "File → Close tab",
+  "screen": "Home after closing the last tab",
+  "browser_name": "Native LeonardoMD macOS app",
+  "browser_version": "0.3.2244 (2244) on macOS 27.2.1 (26B131)",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Saved Paper White remains visible in the blank replacement tab.",
+  "data_provenance": "synthetic"
+}
