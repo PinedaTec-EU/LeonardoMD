@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2241
+
+- #584 Removed: automated user interface tests and CI captures ([#585](https://github.com/PinedaTec-EU/LeonardoMD/pull/585))
+
+<p>Desktop and mobile interface review now uses evidence captured from the running app.</p>
+
+Source: `25047d0ee4bdc275d4c69f9c6aa574fd8ede9f95`. Delta: `{"build": 11}`.
+
 ## 0.3.2230
 
 - #586 Fixed: resume revoked workspace cleanup on startup ([#587](https://github.com/PinedaTec-EU/LeonardoMD/pull/587))
