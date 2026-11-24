@@ -1,0 +1,4 @@
+{
+  "build": 1,
+  "summary": "Run isolated macOS test cases once per CI job while retaining their diagnostics."
+}
