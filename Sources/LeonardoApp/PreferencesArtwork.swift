@@ -1,11 +1,11 @@
 import AppKit
 import SwiftUI
 
-enum PreferencesArtwork: String {
-    case general, extensions, sync, updates, share, remote
+enum PreferencesArtwork: String, CaseIterable {
+    case general, extensions, sync, updates, share, remote, project, document
 
     @MainActor private static let images: [Self: NSImage] = Dictionary(uniqueKeysWithValues:
-        [Self.general, .extensions, .sync, .updates, .share, .remote].compactMap { artwork in
+        Self.allCases.compactMap { artwork in
             guard let url = Bundle.module.url(forResource: "preferences-\(artwork.rawValue)", withExtension: "png"),
                   let image = NSImage(contentsOf: url) else { return nil }
             return (artwork, image)

@@ -38,39 +38,19 @@ struct WelcomeView: View {
 
     private var categorySelector: some View {
         HStack(spacing: 12) {
-            categoryButton(.project, icon: "folder")
-            categoryButton(.document, icon: "doc.richtext")
+            categoryButton(.project, artwork: .project)
+            categoryButton(.document, artwork: .document)
         }
+        .frame(maxWidth: 220)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L10n.text("Item type"))
         .accessibilityIdentifier("welcome-item-type")
     }
 
-    private func categoryButton(_ category: FavoriteItem.Kind, icon: String) -> some View {
-        let selected = kind == category
-        return Button {
+    private func categoryButton(_ category: FavoriteItem.Kind, artwork: PreferencesArtwork) -> some View {
+        IllustratedSelectorButton(title: L10n.text(category.title), artwork: artwork, selected: kind == category) {
             kind = category
-        } label: {
-            VStack(spacing: 4) {
-                Image(systemName: icon).font(.title2).foregroundStyle(session.accentColor)
-                    .accessibilityHidden(true)
-                Text(L10n.text(category.title)).font(.callout.weight(.semibold))
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 64)
-            .background { PremiumControlBackground(selected: selected) }
-            .overlay(alignment: .topTrailing) {
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(session.accentColor)
-                        .padding(6)
-                        .accessibilityHidden(true)
-                }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("welcome-kind-\(category.rawValue)")
     }
 }
