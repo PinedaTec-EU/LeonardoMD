@@ -20,7 +20,10 @@ revoked token. See [#537](https://github.com/PinedaTec-EU/LeonardoMD/issues/537)
 `DesktopPeerLibrary` refreshes device authorization before reading or changing a
 linked project. A source Mac revoking the **device** durably revokes the local
 connection, purges its managed copies/outbox and removes its stored credential;
-the recipient must pair again and obtain owner approval. A pending, removed or
+the recipient must pair again and obtain owner approval. Startup loads connections
+through `DesktopPeerLibrary.connections()`, which retries pending removal of
+revoked workspaces and outbox entries from local state, including offline.
+See [#586](https://github.com/PinedaTec-EU/LeonardoMD/issues/586). A pending, removed or
 narrowed **project grant** leaves the device paired. Its durable project barrier
 hides editable copies and blocks open/compare/send until authenticated
 reconciliation, while preserving the working directory and any open local

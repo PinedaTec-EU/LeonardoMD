@@ -1,6 +1,7 @@
 #if os(macOS)
 import Foundation
 import LeonardoSync
+import OSLog
 
 /// Application owner for peer bindings, credentials and copy lifecycle. Remote writes are
 /// reconciled separately; reading a new remote snapshot never replaces a dirty working directory.
@@ -14,6 +15,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     private let revoker: any DesktopPeerAccessRevoker
     private let receiptApplier: (any LeonardoSync.DesktopPeerReceiptApplier)?
     private let now: @Sendable () -> Date
+    private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "desktop-peer-library")
     private var changing = false
     private var confirmedDeniedConnectionIDs: Set<UUID> = []
 
@@ -32,7 +34,15 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         try enter(); defer { changing = false }
         var result: [DesktopPeerConnection] = []
         for id in try await connectionStore.connectionIDs() {
-            if let value = try await listedConnection(id: id) { result.append(value) }
+            guard var connection = try await listedConnection(id: id) else { continue }
+            if connection.revoked && !connection.copies.isEmpty {
+                do {
+                    try await cleanupDenied(&connection)
+                } catch {
+                    logger.error("Revoked workspace cleanup pending for connection \(id, privacy: .public): \(String(describing: error), privacy: .private)")
+                }
+            }
+            result.append(connection)
         }
         return result
     }
@@ -348,8 +358,10 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
             }
             try await workspace.remove(id: copyID)
             try await outbox?.remove(copyID: copyID)
-            connection.forgetCopy(projectID: projectID)
-            try await connectionStore.save(connection)
+            var cleaned = connection
+            cleaned.forgetCopy(projectID: projectID)
+            try await connectionStore.save(cleaned)
+            connection = cleaned
         }
         if connection.revoked { try? await credentials.remove(deviceID: connection.id) }
     }
