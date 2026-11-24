@@ -203,6 +203,8 @@ jobs:
           -parallel-testing-enabled NO
           -only-testing:LittleLeonardoTests/MobileRevocationTests
           -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests
+          -only-testing:LittleLeonardoTests/MobileDemoStoreTests
+          -only-testing:LittleLeonardoTests/MobileDirectConnectionStoreTests
           -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests
           -only-testing:LittleLeonardoTests/MobileProjectFileVisibilityTests
           -only-testing:LittleLeonardoTests/MobileReaderSpacingTests

@@ -4,7 +4,7 @@ import WebKit
 import XCTest
 import LeonardoCore
 import LeonardoSync
-import LeonardoSyncUI
+@testable import LeonardoSyncUI
 
 /// Exercises the production preview's task, download library and disk cache together.
 @MainActor final class RemoteDocumentPreviewIntegrationTests: XCTestCase {
@@ -107,6 +107,40 @@ import LeonardoSyncUI
             XCTAssertGreaterThan(rendered["fieldCount"] as? Int ?? 0, 0)
             XCTAssertTrue(rendered["controlsDisabled"] as? Bool == true,
                           "Received MDLR fields must stay read-only")
+        }
+    }
+
+    func testLinkedPreviewInheritsItsDiagnosticPresenter() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DownloadLibrary(cache: OnDemandCache(root: root))
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Synthetic project", scope: try CorpusScope(folder: ""))
+        let parent = RemoteFileEntry(file: CorpusFile(path: "reference/index.md", content: Data("# Index".utf8)))
+        let linked = RemoteFileEntry(file: CorpusFile(path: "reference/linked.md", content: Data("# Linked document".utf8)))
+        try await library.update(id: descriptor.id, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [parent, linked]))
+        library.fetch = { _, _ in throw PreviewFailure.unavailable }
+
+        var recordedMessages: [String] = []
+        let preview = RemoteDocumentPreview(library: library, projectID: descriptor.id, entry: parent,
+            failureDiagnosticPresentation: { error, identity, shouldRecord in
+                XCTAssertEqual(error as? PreviewFailure, .unavailable)
+                let reference = identity.uuidString.replacingOccurrences(of: "-", with: "").prefix(12)
+                let message = "Couldn't load linked document. Code: LL-\(reference)"
+                if shouldRecord { recordedMessages.append(message) }
+                return message
+            })
+        let child = preview.linkedPreview(for: linked)
+        do {
+            _ = try await library.openResult(id: child.projectID, path: child.entry.path,
+                diagnosticPresentation: child.failureDiagnosticPresentation)
+            XCTFail("Expected the linked document download to fail")
+        } catch {
+            let message = try XCTUnwrap(recordedMessages.first)
+            XCTAssertEqual(recordedMessages, [message])
+            XCTAssertNotNil(message.range(of: #"LL-[0-9A-F]{12}"#, options: .regularExpression))
+            XCTAssertEqual(library.failures[DownloadLibrary.key(id: descriptor.id, path: linked.path)], message)
+            XCTAssertFalse(message.contains("Synthetic update unavailable"))
         }
     }
 
