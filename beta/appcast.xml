@@ -3,6 +3,23 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.2244</title>
+            <pubDate>Tue, 24 Nov 2026 10:04:12 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>2244</sparkle:version>
+            <sparkle:shortVersionString>0.3.2244</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Changes since beta 0.3.2205
+
+- The Extensions page now matches the heading and options backgrounds of the other Preferences pages.
+- LeonardoMD reopens your projects and documents on startup by default. Turn this off in General preferences to start with an empty window and keep your recent items.
+- The receiving Mac resumes interrupted cleanup of revoked remote copies and queued changes on restart, even when the source Mac is unreachable.
+- Desktop and mobile interface review now uses evidence captured from the running app.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.2244/LeonardoMD-0.3.2244.zip" length="27974747" type="application/octet-stream" sparkle:edSignature="mOawLBtkjfugv+bnj/Eo9h1G2ROEC4Z9kuBb8Tsx9z3shEsHqm1CXtN6DcAkHqEY5OwagnJbLgZNtVcVmTWaAg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.2205</title>
             <pubDate>Mon, 23 Nov 2026 16:54:43 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
