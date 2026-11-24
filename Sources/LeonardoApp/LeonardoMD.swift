@@ -113,10 +113,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         configureMenu()
         if role == .primary { startPrincipalServices() }
         diagnostics.record(.menuConfigured)
-        startInitialWindow(windows.first ?? makeDocumentWindow()) { [self] in
+        startInitialWindow(windows.first ?? makeDocumentWindow(), didPresent: { [self] in
             NSApp.activate(ignoringOtherApps: true)
             recordApplicationReady()
-        }
+        })
         if updateQuitEndpoint.isStarted { InstancePresentation.shared.start() }
     }
 
