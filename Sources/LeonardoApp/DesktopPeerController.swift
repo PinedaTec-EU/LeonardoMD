@@ -177,10 +177,11 @@ final class DesktopPeerController {
     }
 
     func refreshConnectionOnRequest(_ id: UUID) async {
-        guard !InstanceRuntime.isAdditional, !busy, !importingLegacyCredentials else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         do {
             try authorizeStorage()
             if connections.contains(where: { $0.id == id && $0.credentialDeferred }) {
+                guard !importingLegacyCredentials else { return }
                 try await authorizeLegacyCredentials([id])
             }
             await refresh(id)
@@ -232,7 +233,11 @@ final class DesktopPeerController {
     private var importingLegacyCredentials = false
 
     func refreshAllConnections() async {
-        guard !InstanceRuntime.isAdditional, !busy, !importingLegacyCredentials else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        if importingLegacyCredentials {
+            await refreshConnections()
+            return
+        }
         do {
             try authorizeStorage()
             let deferredIDs = connections.filter(\.credentialDeferred).map(\.id)
