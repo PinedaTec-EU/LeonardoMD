@@ -1,0 +1,4 @@
+{
+  "build": 1,
+  "summary": "Overlap iOS simulator startup and CI compilation while preserving isolated reader tests."
+}
