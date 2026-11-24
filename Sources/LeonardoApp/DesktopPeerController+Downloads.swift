@@ -77,9 +77,8 @@ extension DesktopPeerController {
 
     func downloadQuarantineIDs() -> Set<UUID> {
         Set(connections.filter { !$0.revoked }.flatMap { connection in
-            let projects = connection.credentialDeferred
-                ? Set(connection.grants.keys)
-                : reviewStore.authorizationRequiredProjects(connectionID: connection.id)
+            var projects = reviewStore.authorizationRequiredProjects(connectionID: connection.id)
+            if connection.credentialDeferred { projects.formUnion(connection.grants.keys) }
             return projects.map {
                 Self.downloadID(connectionID: connection.id, projectID: $0)
             }

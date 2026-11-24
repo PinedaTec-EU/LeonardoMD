@@ -86,7 +86,18 @@ final class DesktopPeerControllerTests: XCTestCase {
         try await cache.update(id: downloadID, descriptor: descriptor, catalogue: RemoteProjectCatalogue(files: [entry]))
         try await cache.store(id: downloadID, entry: entry, file: file)
 
+        let quarantinedProjectID = UUID()
+        let quarantinedID = DesktopPeerController.downloadID(connectionID: connection.id, projectID: quarantinedProjectID)
+        let quarantinedDescriptor = SharedProjectDescriptor(id: quarantinedProjectID, name: "Previously quarantined",
+                                                             scope: try CorpusScope(folder: ""), selection: selection)
+        try await cache.update(id: quarantinedID, descriptor: quarantinedDescriptor,
+                               catalogue: RemoteProjectCatalogue(files: [entry]))
+        try await cache.store(id: quarantinedID, entry: entry, file: file)
+        await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: [quarantinedProjectID])
+
         await controller.initialize()
+        let preservedProjects = try await cache.projects()
+        XCTAssertEqual(Set(preservedProjects.map(\.id)), [downloadID, quarantinedID])
         XCTAssertTrue(controller.connections.first?.credentialDeferred == true)
         XCTAssertTrue(controller.downloads.projects.isEmpty)
         XCTAssertFalse(controller.reviewStore.hasMigratedExistingProjects)
