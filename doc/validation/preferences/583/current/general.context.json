@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-24T08:34:33.752302+00:00",
+  "route": "/native/preferences/general",
+  "screen": "Preferences / general",
+  "browser_name": "Native AppKit / SwiftUI",
+  "browser_version": "Not applicable; macOS 27.2.1",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Fresh packaged QA build 0.3.2241, 780 \u00d7 780 pt Preferences sheet, light appearance, English, general selected.",
+  "data_provenance": "live-redacted"
+}
