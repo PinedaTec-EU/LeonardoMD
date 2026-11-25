@@ -296,36 +296,6 @@ final class MobileExtensionRecommendationsTests: XCTestCase {
     }
 }
 
-private extension ProjectIdentity {
-    var captureName: String {
-        switch self {
-        case .received: "received"
-        case .recoveryArchive: "recovery"
-        case .local: "local"
-        case .sharedFromThisDevice: "shared"
-        case .unknown: "unknown"
-        }
-    }
-
-    var evidenceState: String {
-        switch self {
-        case .received: "received from another device"
-        case .recoveryArchive: "recovery archive"
-        default: title(languageCode: "en")
-        }
-    }
-}
-
-private extension DynamicTypeSize {
-    var captureName: String {
-        switch self {
-        case .large: "large"
-        case .accessibility3: "accessibility3"
-        default: "dynamic"
-        }
-    }
-}
-
 final class MobileDirectConnectionStoreTests: XCTestCase {
     func testSharedFileStatusPrioritizesLiveTransferAndDownloadFailure() {
         XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: true, hasFailed: true,
