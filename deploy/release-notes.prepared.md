@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2303
+
+- #577 Added: shared form reservation protocol and host adapter ([#578](https://github.com/PinedaTec-EU/LeonardoMD/pull/578))
+
+<p>Adds the protocol and host-side persistence for reserving shared Leonardo forms, validating revisions and responses, and revoking an exact session. The editor and mobile controls are pending.</p>
+
+Source: `cb76b933e8ffaa46facbc0d243e9204903f29bc2`. Delta: `{"build": 5}`.
+
 ## 0.3.2298
 
 - #598 Added: direct remote access on Home ([#599](https://github.com/PinedaTec-EU/LeonardoMD/pull/599))
