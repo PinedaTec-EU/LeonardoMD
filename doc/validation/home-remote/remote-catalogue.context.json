@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-11-25T18:27:44+01:00",
+  "route": "Home / Projects / Remote items / LeonardoSyncQA",
+  "screen": "Home / Projects / Remote items / LeonardoSyncQA",
+  "browser_name": "N/A (native macOS application)",
+  "browser_version": "N/A",
+  "viewport_css": {
+    "width": 530,
+    "height": 330
+  },
+  "capture_mode": "element",
+  "state": "Accepted synthetic project catalogue; notes.md cached; sheet-only crop",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "width": 530,
+    "height": 330
+  },
+  "build_source_sha": "58096da5fcc7df8c7276cf0a215d3d86a85076b2",
+  "bundle": "LeonardoMDQA.app",
+  "version": "0.3.2288",
+  "os": "macOS 27.2.1",
+  "time_source": "Original capture file birth time"
+}

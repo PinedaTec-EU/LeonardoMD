@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-11-25T17:14:11+01:00",
+  "route": "Home / Documents",
+  "screen": "Home / Documents",
+  "browser_name": "N/A (native macOS application)",
+  "browser_version": "N/A",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Documents selected; Favorites and Recents collapsed; Remotes expanded",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "width": 1260,
+    "height": 850
+  },
+  "build_source_sha": "58096da5fcc7df8c7276cf0a215d3d86a85076b2",
+  "bundle": "LeonardoMDQA.app",
+  "version": "0.3.2288",
+  "os": "macOS 27.2.1",
+  "time_source": "Original capture file birth time"
+}

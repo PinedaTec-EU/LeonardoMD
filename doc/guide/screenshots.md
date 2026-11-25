@@ -8,7 +8,6 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 
 | Locale assets | Original capture source | Observed state |
 | --- | --- | --- |
-| `en/es/assets/home.png` | `e457e86` | Actual Welcome component; isolated empty favorites/recents |
 | `en/es/assets/palette.png` | `e457e86` | Actual palette editor; initial valid global palette |
 | `en/es/assets/sync-sharing-v130.png` | #581 capture context and metadata | Synchronization → Share; one common service control; disabled helper/sharing; isolated empty content |
 | `en/es/assets/sync-review-draft-unavailable.png` | #428 capture context and metadata; original components retained in `doc/validation/sync-helper/428-quiet-status-v32/` | Synthetic source review remains open while helper health is unavailable; Apply decisions is disabled; component-only evidence |
@@ -27,13 +26,18 @@ Full capture revisions:
 
 Capture new screenshots from the running app in each locale using synthetic data.
 Record the source revision, locale and visible state alongside each original.
-Home, palette and update illustrations retain their original `e457e86` capture
+Palette and update illustrations retain their original `e457e86` capture
 revision; the synchronization pages were recaptured at `f1ecf7b` after the role
 reorganization and common lifecycle composition. Historical pre-role originals
 are preserved under `doc/validation/sync-helper/accepted-component-capture/`
 and `previous-guide/`. Keep the actual original capture revision when reusing
 an unchanged component; do not attribute an older capture to changed UI.
-For changed UI, recapture and replace both locales with new canonical metadata.
+For changed UI, recapture and replace both locales with new canonical metadata
+when an illustration is needed to follow the instructions. Home chapter 7
+describes the selector, three disclosure controls and both remote routes in
+text so the instructions apply regardless of whether the sections have items.
+The superseded Home illustrations were removed from both guides. Current native
+Home validation captures are in [Home validation](../validation/home-remote/README.md).
 
 Before adding a guide image, check each locale's decoded-image envelope with
 `test_package_user_guide.py`. Retina captures consume substantially more of the

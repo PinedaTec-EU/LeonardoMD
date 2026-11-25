@@ -3,26 +3,29 @@ import LeonardoCore
 
 struct SavedItemsView: View {
     @Bindable var session: AppSession
-    @State private var favoriteKind: FavoriteItem.Kind = .project
-    @State private var recentKind: FavoriteItem.Kind = .project
+    let kind: FavoriteItem.Kind
 
-    private static let categoryOrder: [FavoriteItem.Kind] = [.project, .document]
+    @State private var favoritesExpanded = true
+    @State private var remoteExpanded = true
+    @State private var recentsExpanded = true
+
     private static let visibleRowLimit = 5
     private static let rowHeight: CGFloat = 48
     private static let rowSpacing: CGFloat = 4
 
-    init(session: AppSession, favoriteKind: FavoriteItem.Kind = .project,
-         recentKind: FavoriteItem.Kind = .project) {
-        self.session = session
-        _favoriteKind = State(initialValue: favoriteKind)
-        _recentKind = State(initialValue: recentKind)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            favorites
+            section("Favorites", isExpanded: $favoritesExpanded, identifier: "welcome-favorites") {
+                favorites
+            }
             Divider()
-            recentItems
+            section("Remote items", isExpanded: $remoteExpanded, identifier: "welcome-remote") {
+                WelcomeRemoteItemsView(kind: kind, showNonDocumentFiles: session.showNonDocumentFiles)
+            }
+            Divider()
+            section("Recent items", isExpanded: $recentsExpanded, identifier: "welcome-recent") {
+                recentItems
+            }
         }
         .padding(20)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -31,42 +34,40 @@ struct SavedItemsView: View {
 
     private var recentItems: some View {
         savedSection(
-            title: "Recent items", selection: $recentKind,
-            urls: session.recentItems(recentKind), emptyMessage: "No recent items",
+            urls: session.recentItems(kind), emptyMessage: "No recent items",
             identifier: "welcome-recent"
         )
     }
 
     private var favorites: some View {
         savedSection(
-            title: "Favorites", selection: $favoriteKind,
-            urls: session.globalPreferences.favorites.filter { $0.kind == favoriteKind }.map(\.url),
+            urls: session.globalPreferences.favorites.filter { $0.kind == kind }.map(\.url),
             emptyMessage: "No favorites yet", identifier: "welcome-favorites"
         )
     }
 
-    private func savedSection(
-        title: String, selection: Binding<FavoriteItem.Kind>, urls: [URL],
-        emptyMessage: String, identifier: String
+    private func section<Content: View>(
+        _ title: String, isExpanded: Binding<Bool>, identifier: String,
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text(title)).font(.title2.weight(.semibold))
-            Picker(L10n.text(title), selection: selection) {
-                ForEach(Self.categoryOrder, id: \.self) { kind in
-                    Text(L10n.text(kind.title)).tag(kind)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .accessibilityIdentifier(identifier + "-tabs")
-            if urls.isEmpty {
-                Text(L10n.text(emptyMessage))
-                    .font(.caption).foregroundStyle(.secondary)
-            } else {
-                savedList(urls, kind: selection.wrappedValue)
-                    .id(selection.wrappedValue)
-                    .accessibilityIdentifier(identifier + "-list")
-            }
+        DisclosureGroup(isExpanded: isExpanded) {
+            content().padding(.top, 12)
+        } label: {
+            Text(L10n.text(title))
+                .font(.title2.weight(.semibold))
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    @ViewBuilder
+    private func savedSection(urls: [URL], emptyMessage: String, identifier: String) -> some View {
+        if urls.isEmpty {
+            Text(L10n.text(emptyMessage))
+                .font(.caption).foregroundStyle(.secondary)
+        } else {
+            savedList(urls, kind: kind)
+                .id(kind)
+                .accessibilityIdentifier(identifier + "-list")
         }
     }
 

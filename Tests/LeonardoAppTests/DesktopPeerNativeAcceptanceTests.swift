@@ -45,7 +45,7 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
         XCTAssertFalse(message.localizedCaseInsensitiveContains("error 4"), message)
     }
 
-    func testAcceptedRemoteProjectCatalogueRemainsBrowseableAfterOfflineRestart() async throws {
+    func testHomeRemoteItemsRetainAcceptedCatalogueAndOpenCachedDocumentAfterOfflineRestart() async throws {
         let fixture = try NativePeerAcceptanceFixture()
         addTeardownBlock { @MainActor in await fixture.cleanup() }
         await fixture.owner.initialize()
@@ -84,9 +84,29 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
             XCTAssertEqual(restarted.acceptedProjectDescriptors(for: restoredConnection).map(\.id), [fixture.shared.id])
             let cached = try XCTUnwrap(restarted.downloads.projects.first(where: { $0.id == downloadID }))
             XCTAssertEqual(cached.descriptor.name, fixture.shared.name)
-            let opened = try await restarted.downloads.open(id: downloadID, path: "docs/note.md")
+            let projects = WelcomeRemoteItemsView.remoteItems(kind: .project, controller: restarted)
+            XCTAssertEqual(projects.map(\.projectID), [downloadID])
+            XCTAssertEqual(projects.first?.title, fixture.shared.name)
+            XCTAssertNil(projects.first?.path)
+
+            let documents = WelcomeRemoteItemsView.remoteItems(kind: .document, controller: restarted)
+            let cachedRow = try XCTUnwrap(documents.first(where: { $0.path == "docs/note.md" }))
+            XCTAssertEqual(cachedRow.title, "note.md")
+            XCTAssertTrue(cachedRow.detail.contains(fixture.shared.name))
+            let cachedPath = try XCTUnwrap(cachedRow.path)
+            let opened = try await restarted.downloads.open(id: cachedRow.projectID, path: cachedPath)
             XCTAssertEqual(opened.content, Data("baseline".utf8))
             XCTAssertNil(restarted.error)
+
+            let uncachedRow = try XCTUnwrap(documents.first(where: { $0.path == "docs/delete.md" }))
+            let uncachedPath = try XCTUnwrap(uncachedRow.path)
+            XCTAssertNil(cached.downloads[uncachedPath])
+            do {
+                _ = try await restarted.downloads.open(id: uncachedRow.projectID, path: uncachedPath)
+                XCTFail("An uncached document must require a connection to its source")
+            } catch {
+                XCTAssertTrue(restarted.downloads.projects.contains(where: { $0.id == downloadID }))
+            }
         } catch {
             await fixture.owner.stop()
             throw error
