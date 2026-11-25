@@ -26,11 +26,11 @@ extension AppSession {
             }
             if item.kind == .project {
                 try await relocateSavedSharing(from: item.url, to: url)
-                globalPreferences.recentProjectPaths = globalPreferences.recentProjectPaths.map {
-                    $0.standardizedFileURL.path == item.url.path ? url : $0
-                }
-            } else if recentItems(.document).contains(where: { $0.standardizedFileURL.path == item.url.path }) {
-                NSDocumentController.shared.noteNewRecentDocumentURL(url)
+                globalPreferences.recentProjectPaths = SavedItemRecentPathRepair.replacing(
+                    source: item.url, with: url, in: globalPreferences.recentProjectPaths
+                )
+            } else {
+                SavedItemRecentPathRepair.replaceRecentDocument(item.url, with: url)
             }
             if let previous = favorite(item.url, kind: item.kind),
                let index = globalPreferences.favorites.firstIndex(where: { $0.matches(item) }) {
@@ -70,6 +70,54 @@ extension AppSession {
         guard await sharing.relocateSharedProject(project, to: destination) else {
             throw SavedItemRecoveryError(message: "The shared project location could not be updated.")
         }
+    }
+}
+
+/// Keeps a successful Home relocation from leaving the old location in a
+/// recent-items collection. Project recents are persisted by
+/// `GlobalPreferences`; document recents are owned by AppKit and must be
+/// rebuilt because `NSDocumentController` has no per-URL removal API.
+enum SavedItemRecentPathRepair {
+    static func replacing(source: URL, with destination: URL, in paths: [URL]) -> [URL] {
+        let sourceIdentity = identity(of: source)
+        let destinationIdentity = identity(of: destination)
+        var replacementInserted = false
+        var result: [URL] = []
+
+        for path in paths {
+            let pathIdentity = identity(of: path)
+            guard pathIdentity == sourceIdentity || pathIdentity == destinationIdentity else {
+                result.append(path)
+                continue
+            }
+            guard !replacementInserted else { continue }
+            replacementInserted = true
+            result.append(destination)
+        }
+        return replacementInserted ? result : paths
+    }
+
+    @MainActor
+    static func replaceRecentDocument(_ source: URL, with destination: URL,
+                                      controller: NSDocumentController = .shared) {
+        let sourceIdentity = identity(of: source)
+        let destinationIdentity = identity(of: destination)
+        let existing = controller.recentDocumentURLs
+        guard existing.contains(where: { identity(of: $0) == sourceIdentity }) else { return }
+
+        let retained = existing.filter {
+            let pathIdentity = identity(of: $0)
+            return pathIdentity != sourceIdentity && pathIdentity != destinationIdentity
+        }
+        controller.clearRecentDocuments(nil)
+        for url in retained.reversed() {
+            controller.noteNewRecentDocumentURL(url)
+        }
+        controller.noteNewRecentDocumentURL(destination)
+    }
+
+    private static func identity(of url: URL) -> String {
+        url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 }
 
