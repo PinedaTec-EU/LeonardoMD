@@ -1,4 +1,0 @@
-{
-  "summary": "Mac-to-Mac pairing tokens are stored in the user Library and survive app updates. Existing tokens can be imported from Keychain once.",
-  "build": 15
-}

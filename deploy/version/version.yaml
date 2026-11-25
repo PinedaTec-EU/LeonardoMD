@@ -1339,9 +1339,19 @@
       "pr": 594,
       "summary": "Run isolated macOS test cases once per CI job while retaining their diagnostics.",
       "to_version": "0.3.2267"
+    },
+    {
+      "delta": {
+        "build": 15
+      },
+      "from_version": "0.3.2267",
+      "merge_sha": "0f1f98a1b39c8c9dd3e003fb261a88afd7603dfb",
+      "pr": 541,
+      "summary": "Mac-to-Mac pairing tokens are stored in the user Library and survive app updates. Existing tokens can be imported from Keychain once.",
+      "to_version": "0.3.2282"
     }
   ],
-  "current_version": "0.3.2267",
+  "current_version": "0.3.2282",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

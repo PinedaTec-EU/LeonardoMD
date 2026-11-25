@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2282
+
+- #537 Fixed: persist Mac pairing tokens in the user Library ([#541](https://github.com/PinedaTec-EU/LeonardoMD/pull/541))
+
+<p>Mac-to-Mac pairing tokens are stored in the user Library and survive app updates. Existing tokens can be imported from Keychain once.</p>
+
+Source: `0f1f98a1b39c8c9dd3e003fb261a88afd7603dfb`. Delta: `{"build": 15}`.
+
 ## 0.3.2267
 
 - #593 Updated: run isolated macOS tests once ([#594](https://github.com/PinedaTec-EU/LeonardoMD/pull/594))
