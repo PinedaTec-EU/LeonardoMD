@@ -48,7 +48,6 @@ final class TablePaginationTests: XCTestCase {
                 _ = try await web.evaluateJavaScript("window.LeonardoObjects.refresh()")
             }
 
-            try await captureIfRequested(web)
             let data = try await host.exportPDF()
             let pdf = try XCTUnwrap(PDFDocument(data: data))
             let text = try XCTUnwrap(pdf.string)
@@ -123,23 +122,5 @@ final class TablePaginationTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(50))
         }
         XCTFail("Paginated table never appeared")
-    }
-
-    private func captureIfRequested(_ web: WKWebView) async throws {
-        guard let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
-        let output = URL(fileURLWithPath: directory).appendingPathComponent("table-pagination")
-        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-        _ = try await web.evaluateJavaScript("document.querySelector('.leonardo-page[data-page=\"2\"]').scrollIntoView()")
-        try await Task.sleep(for: .milliseconds(150))
-        let image = try await web.takeSnapshot(configuration: nil)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-        try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-            .write(to: output.appendingPathComponent("records-preview.png"))
-        let environment = try await web.evaluateJavaScript("""
-        JSON.stringify({browser: navigator.userAgent, width: innerWidth, height: innerHeight, capturedAt: new Date().toISOString()})
-        """)
-        try XCTUnwrap(environment as? String).write(
-            to: output.appendingPathComponent("webkit-environment.json"), atomically: true, encoding: .utf8
-        )
     }
 }
