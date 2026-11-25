@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-25T21:47:46.362331+00:00",
+  "capture": {
+    "captured_at": "2026-11-25T21:47:01+00:00",
+    "route": "Home / Projects",
+    "screen": "Home / Projects",
+    "browser_name": "N/A (native macOS application)",
+    "browser_version": "N/A",
+    "state": "Spanish; all three section headings collapsed to exclude local data.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "8e08728f224461d4d0eeed1cf4d09c611e9ed1ac934b65a647abc1b443592445"
+  },
+  "source": {
+    "revision_at_collection": "1a691bb3e17ca50ac586d32d830c45db371b2054",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}
