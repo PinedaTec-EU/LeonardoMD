@@ -7,6 +7,8 @@ struct WelcomeRemoteItemsView: View {
     let showNonDocumentFiles: Bool
 
     @State private var destination: RemoteItem?
+    @State private var managingProject = false
+    @State private var managementError: String?
     private let controller = DesktopPeerController.shared
 
     var body: some View {
@@ -19,13 +21,27 @@ struct WelcomeRemoteItemsView: View {
                 ScrollView {
                     LazyVStack(spacing: 4) {
                         ForEach(items) { item in
-                            remoteRow(item)
+                            HStack(spacing: 8) {
+                                remoteRow(item)
+                                if item.path == nil, !InstanceRuntime.isAdditional,
+                                   let project = controller.downloads.projects.first(where: { $0.id == item.projectID }) {
+                                    projectMenu(project)
+                                }
+                            }
                         }
                     }
                 }
                 .frame(height: CGFloat(min(items.count, 5) * 52 - 4))
                 .id(kind)
             }
+        }
+        .alert(L10n.text("Synchronization error"), isPresented: Binding(
+            get: { managementError != nil },
+            set: { if !$0 { managementError = nil } }
+        )) {
+            Button(L10n.text("OK")) { managementError = nil }
+        } message: {
+            Text(managementError ?? "")
         }
         .sheet(item: $destination) { item in
             DesktopDownloadBrowser(library: controller.downloads, projectID: item.projectID,
@@ -89,6 +105,44 @@ struct WelcomeRemoteItemsView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(item.title)
         .accessibilityValue(item.detail)
+    }
+
+    private func projectMenu(_ project: CachedRemoteProject) -> some View {
+        let keptOffline = project.retention.contains { $0.isFolder && $0.path.isEmpty && $0.keep }
+        return Menu {
+            Button(L10n.text(keptOffline ? "Stop keeping project offline" : "Keep project offline"),
+                   systemImage: keptOffline ? "pin.slash" : "pin") {
+                updateProjectCache {
+                    await controller.downloads.retain(id: project.id, path: "", isFolder: true, keep: !keptOffline)
+                }
+            }
+            Button(L10n.text("Release temporary project downloads"), systemImage: "cloud") {
+                updateProjectCache {
+                    await controller.downloads.release(id: project.id, path: "", isFolder: true)
+                }
+            }
+            .disabled(!project.downloads.keys.contains { !project.keeps($0) })
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .imageScale(.large)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .disabled(managingProject || !controller.storageAuthorized)
+        .help(L10n.text("Manage remote project"))
+        .accessibilityLabel(L10n.format("Manage remote project: %@", project.descriptor.name))
+        .accessibilityIdentifier("welcome-remote-manage-\(project.id)")
+    }
+
+    private func updateProjectCache(_ operation: @escaping () async -> Void) {
+        guard !managingProject else { return }
+        managingProject = true
+        Task {
+            defer { managingProject = false }
+            controller.downloads.error = nil
+            await operation()
+            managementError = controller.downloads.error
+        }
     }
 
     struct RemoteItem: Identifiable {

@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 enum PreferencesArtwork: String, CaseIterable {
-    case general, extensions, sync, updates, share, remote, project, document
+    case general, extensions, sync, updates, share, remote, project, document, favorites, recent
 
     @MainActor private static let images: [Self: NSImage] = Dictionary(uniqueKeysWithValues:
         Self.allCases.compactMap { artwork in
