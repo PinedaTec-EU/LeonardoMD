@@ -2,6 +2,7 @@ import SwiftUI
 import LeonardoCore
 import LeonardoRender
 import LeonardoSync
+import LeonardoSyncUI
 
 @MainActor
 struct MobileDocumentView: View {

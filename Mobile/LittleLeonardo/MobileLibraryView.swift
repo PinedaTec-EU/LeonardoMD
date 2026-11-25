@@ -607,3 +607,20 @@ struct MobileProjectView: View {
                 compactFirstHeading: true,
                 failureDiagnosticPresentation: { error, identity, shouldRecord in
                     MobileErrorNotice.record(
+                        error,
+                        operation: .downloads,
+                        message: MobileErrorNotice.documentLoadMessage(spanish: spanishErrors),
+                        spanish: spanishErrors,
+                        diagnosticIdentity: identity,
+                        shouldRecord: shouldRecord).inlineMessage
+                }).classicSurface()
+        }
+        .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
+                      contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
+            if case .failure(let error) = result {
+                library.presentError(error, operation: .export,
+                                     message: "No se pudo exportar el archivo de recuperación.")
+            }
+        }
+    }
+}
