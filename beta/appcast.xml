@@ -3,6 +3,23 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.2282</title>
+            <pubDate>Wed, 25 Nov 2026 13:30:47 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>2282</sparkle:version>
+            <sparkle:shortVersionString>0.3.2282</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## LeonardoMD 0.3.2282 Beta
+
+- Mac-to-Mac pairing tokens are stored in the user Library and survive app updates. Existing tokens can be imported from Keychain once.
+- Leonardo Classic is the macOS default. The first window uses your saved palette when one is set.
+
+If an existing connection needs Keychain authorization, choose **Update list** in **Preferences → Synchronization → Remote**. Automatic refresh stays silent.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.2282/LeonardoMD-0.3.2282.zip" length="28029915" type="application/octet-stream" sparkle:edSignature="uM28mN2xiVA7hEY1wigEzH+AaKjaR5pwrP/f2fMt85BpgkTUCDlZ5ZjiKX+LKzxH95UF09pdislzesOsQMGXDQ==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.2244</title>
             <pubDate>Tue, 24 Nov 2026 10:04:12 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
@@ -62,24 +79,6 @@
 - If your default mail app opens without a draft, return to the diagnostics sheet, choose **Copy diagnostics**, and paste the report into a new message to **leonardo@pinedatec.eu**. You can use your usual mail app or webmail.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1968/LeonardoMD-0.3.1968.zip" length="25660206" type="application/octet-stream" sparkle:edSignature="EV1Z2N6l+81OBfDrIIAqs+SSJlObik/e/BG5SM4o/ydXwDBhvZkqSDS3D7ai1ZxWuieCWqPfJOsF1vnfUU7+Dg==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.3.1959</title>
-            <pubDate>Fri, 20 Nov 2026 04:00:44 +0100</pubDate>
-            <sparkle:version>1959</sparkle:version>
-            <sparkle:shortVersionString>0.3.1959</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">LeonardoMD 0.3.1959 beta
-
-- Choose whether non-document files appear in project lists, search, and remote review. The setting is off by default, and Markdown-linked images still render.
-- Little Leonardo can open received .mdlf and .mdlr files read-only. Edit or submit forms in LeonardoMD for macOS.
-- Peer transfers resume compatible saved selections, support larger manifests, and reject excluded file types before changing files.
-- Recovery guidance is available in English and Spanish.
-- Move selected project files to Trash with Delete or Forward Delete.
-- Browse offline summaries of recent changes in Release Notes and About.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1959/LeonardoMD-0.3.1959.zip" length="25640514" type="application/octet-stream" sparkle:edSignature="/QXBwBmArZATKwR0eM5+T8UJPBdyfnzLUQ/AqoElQ3tgsUICosfFyYiz9NT9fRSAPOJOdMK9NDlYaOr/XR04Dg==" />
         </item>
     <item leonardo:channel="beta">
             <title>0.3.1884</title>
@@ -934,6 +933,28 @@ Source: `49665943fe9d154988987d4204fbc1e1802fc53d`. Delta: `{"build": 4}`.
             <description sparkle:format="markdown">Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1333/LeonardoMD-0.3.1333.zip" length="24846834" type="application/octet-stream" sparkle:edSignature="GKz12raOn1i8LgZVPIvDSIlAUfDHA/HUb8Bmff4Iud6xegjllM12beeDw+zkPKqowFet0VCC8DIW0E3V1Jh+DQ==" />
+        </item>
+    <item leonardo:channel="stable">
+            <title>0.1.349</title>
+            <pubDate>Mon, 12 Oct 2026 15:23:19 +0200</pubDate>
+            <sparkle:version>349</sparkle:version>
+            <sparkle:shortVersionString>0.1.349</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.1.349
+
+This stable release enables future beta subscriptions.
+
+- Open Preferences → Updates to choose Stable or Beta. Stable is the default; opting into Beta includes both stable and experimental releases.
+- Use Check for updates now or enable periodic automatic checks in Preferences. You decide when to install.
+- Active or deferred update decisions protect the channel selection and survive restart.
+- Returning from Beta to Stable waits for a newer stable build; the app never downgrades.
+
+This arm64 distribution requires macOS 14 or later. It preserves the existing stable signing trust root and user data. Old beta packages with a different update signing key must install a current signed/notarized package manually.
+
+Promoted from validated beta 0.1.348 with unchanged application and dependency sources, using a higher ledger-materialized build. Publication and hosted update evidence: https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6124736089
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.349/LeonardoMD-0.1.349.zip" length="15676621" type="application/octet-stream" sparkle:edSignature="c3Rz+eF7I6eIB4dBLE0PBX8qxIP4ODg5bTDknDTtbNw7RUcniXXlPFCNhiOAxjoF/LxKPfTYCVxRrv8PyC+4Dg==" />
         </item>
     </channel>
 </rss>
