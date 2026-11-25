@@ -83,13 +83,42 @@ This follow-up validates the final renderer snapshot changes against the same pa
 - The full compile produced non-failing warnings in unrelated existing code, including a `.wifiAware` exhaustiveness warning in `Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift`; none is in this PR's source changes.
 - Exact-head GitHub CI and a strict independent review are separate merge gates; both require a result for the published PR head.
 
-The four sidecars and this report are linked from the [PR #448 validation thread](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The machine-readable acceptance record is [native-acceptance.json](native-acceptance.json).
+The four sidecars and this report are linked from the [PR #448 validation thread](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The [machine-readable record](native-acceptance.json) separates the historical pre-integration candidate from the merged Beta acceptance.
 
 
-## Mainline replay and remaining acceptance — 2026-11-17
+## Merged Beta acceptance — 2026-11-17
 
-The previous #448 head also carried old snapshots of #369 and #445. After both dependencies reached `main`, a tree comparison showed those snapshots would restore outdated Little Leonardo sources, tests and evidence over the integrated versions. The candidate is being rebuilt from `main` at `2916f9d27fed5b178d784071c26643f5210527ac`, retaining the Preview-close implementation and tests while excluding those parent changes. The bilingual help is regenerated as Guide v93 from current Guide v92 plus the Preview recovery text. Existing personal copies and practice answers through v92 are preserved.
+PR [#448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448) merged as `76740ee0f0017609978557241115a81872d2ad71`. The Beta tag points to `63ec49278932ec558dd436ed3aa38e7b72d89ce2`. Signed and notarized Beta [v0.3.1884](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1884) contains Guide v93 and the Preview close recovery. Exact-head [pull_request CI](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44099382827), retried [push CI](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44099367411), [validation](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44120116858) and [evidence-count check](https://github.com/PinedaTec-EU/LeonardoMD/runs/134169597849) passed. The native captures bound to `8f93584b5d6f5ed8e5ef121959539bd7c6a72102` show one Retry action and the close choices Keep Open / Discard Preview Changes.
 
-Guide v78 and v89 packaged runs above are historical, not acceptance for v93. The latest local capture retry failed before showing the app with `ScreenCaptureKit -3811`; it did not exercise the failing close state. The owner directed that the next packaged evidence attempt use the published Beta after the PR stack is reviewed and integrated. Beta Help acceptance in both locales, the required math/underbrace checks, both practice-form round trips, and Preview recovery during tab, window and app quit remain pending. The existing AppKit alert screenshots are component captures from source `45b5cd7f7a92a86f3f4cd0a745e005c921d71ebd`, not exact-head evidence for the refreshed candidate.
+### Failure and recovery behavior
 
-The refreshed candidate's exact-head CI and strict independent review are pending until its branch is published. Issue #447 remains open until post-merge Beta close-path acceptance is recorded.
+- `SessionEditingTests.testClosingAfterRendererFailureDiscardsWithoutRetryingFlush` forces the WebKit source snapshot to fail, verifies that the renderer flush returns false, then closes the document. It checks that one close recovery sheet appears; choosing Preview-only discard does not retry the failing flush, closes the tab, and still saves the separate native source draft through the ordinary save decision.
+- `SessionEditingTests.testFailedInactiveTabRecoverySelectsAndNamesItsDocument` checks Keep Open and discard for a failed inactive tab, including selection of the affected document behind the sheet and preservation of another tab's draft.
+- `SessionEditingTests.testTabWindowAndAppCloseDrainOrRecoverTableResizeAcrossMessageBarriers` covers tab, window and application close preparation while renderer messages arrive around the snapshot barrier. The window delegate and application termination delegate both route through `DocumentTabs.prepareClose`; the failure-resolution method used by that path is the same one exercised above.
+
+These deterministic XCTest/WebKit checks exercise the failure and close decisions in source. The specific rejection was not injected into the separately packaged Beta process; the user's original trigger remains unknown. The packaged app was exercised for release/update and bilingual Help acceptance, and CI verifies the native alert components and close-resolution regressions.
+
+### Packaged Beta Help acceptance
+
+The isolated QA bundle was `/Users/jmr.pineda/Applications/LeonardoMD-QA-448/LeonardoMD.app`, bundle ID `eu.pinedatec.LeonardoMD`, version/build `0.3.1884 / 1884`. It updated from `0.3.1602` through the in-app updater to Beta `0.3.1884`. In one fresh process, PID `47502` (started 2026-11-17 17:21:49 local time), English and Spanish Guide v93 opened through the native Help menu. The contemporaneous QA note records English Mermaid, math, chart, local-image and table examples, plus its practice-form round trip. For Spanish, it records Mermaid, inline/display math, underbraces/subscripts, the tagged box-counting equation `(1)`, chart, local images and tables; Math-disabled fallback preserved literal TeX, and Math was re-enabled. Its practice form also round-tripped. The note reports no visible KaTeX error and records the final extension state as Mermaid, Math, Vega-Lite and Markdown extras on; Citations off, with app language restored to English.
+
+The report did not enumerate the one-line and multiline `$$` cases, Markdown-sensitive TeX, tagged equation, Math-disabled fallback, and literal code examples separately for both locales. Those specific results are therefore not claimed as a complete v93 Help matrix here. A later Help-source identity check compared the current Help-created personal-copy files with the Beta bundle resources:
+
+| Locale | Beta bundled resource SHA-256 | Help-created personal-copy SHA-256 | Identity |
+| --- | --- | --- | --- |
+| English | `619699672c50a5295b7f6a968f9952a86b9d4f2cfd0389c322e4ec081e9a494c` | `619699672c50a5295b7f6a968f9952a86b9d4f2cfd0389c322e4ec081e9a494c` | Match |
+| Spanish | `ea512ab338ad8f269fdd650f29d8520e0a8378baa96309f2151abf1b79a9e519` | `ea512ab338ad8f269fdd650f29d8520e0a8378baa96309f2151abf1b79a9e519` | Match |
+
+Resource files were read from `LeonardoMD-QA-448/LeonardoMD.app/Contents/Resources/LeonardoMD_LeonardoApp.bundle/Contents/Resources/`; the persistent Help copies were read from `~/Library/Application Support/LeonardoMD/User Guides/v93/{en,es}/`. This follow-up verified byte identity without opening, modifying, or replacing the saved copies. It did not repeat the visual smoke: the Mac was locked when this correction was prepared.
+
+PID `47502` received a normal ⌘Q and was confirmed absent afterward. No force quit was used. The original reporter screenshot remains attached to #447. The recorded v93 Help/practice observations and the later byte-identity check are documented above; they do not establish every required formula/fallback result for both locales, and no fresh screenshot of the Beta app in the injected failure state was produced.
+
+### Issue closure chronology
+
+- On 2026-11-17, PR #448 merged as `76740ee0f0017609978557241115a81872d2ad71`. Exact-head CI, validation and evidence-count checks passed, and signed Beta `0.3.1884` supplied the recorded Help and practice-form acceptance.
+- On 2026-11-18, installed Beta follow-up PID `6590` at `/Applications/LeonardoMD.app/Contents/MacOS/LeonardoMD` opened Guide v93 in Spanish, rendered the underbrace, radical/long arrow, tagged box-counting equation `(1)` and chart without visible KaTeX errors, restored English, quit normally and was verified absent.
+- At 2026-11-18 13:44:56 UTC, the owner recorded the integrated regression and Beta evidence in the [closure comment](https://github.com/PinedaTec-EU/LeonardoMD/issues/447#issuecomment-6980390079). The issue closed at 13:45:04 UTC. The comment explicitly records that the original failed renderer flush was not re-triggered manually in Beta and that closure relies on the deterministic regression coverage and owner-requested Beta acceptance.
+
+### Acceptance decision
+
+The deterministic renderer-failure regression exercises the source-level recovery, Preview-only discard, preservation of other unsaved edits and one-time alert behavior. Exact-head CI for merged #448 passes, and signed Beta `0.3.1884` supplied the recorded Help, practice-form and follow-up rendering observations. The original renderer rejection was not injected into the packaged Beta and its trigger remains unknown. Issue #447 is closed on the integrated regression evidence and owner-requested Beta acceptance, with that limitation preserved in the [closure comment](https://github.com/PinedaTec-EU/LeonardoMD/issues/447#issuecomment-6980390079).

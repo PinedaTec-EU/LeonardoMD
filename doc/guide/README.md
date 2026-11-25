@@ -1,12 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v149-en.mdlz` and `Guide-v149-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v150-en.mdlz` and `Guide-v150-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v149/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v150/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v149 documents certificate signing and recipient verification in chapter 4.
+Guide v150 documents certificate signing and recipient verification in chapter 4.
+
+Guide v145 explains the separate remote project menu and its offline actions in chapter 7.
+
+Guide v144 documents the shared Home selector, collapsible sections and direct remote access in chapter 7.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 

@@ -1,0 +1,18 @@
+{
+  "captured_at": "2026-11-25T22:45:11+01:00",
+  "route": "Home / Remote items / Catalogue",
+  "screen": "Home / Remote items / Catalogue",
+  "browser_name": "N/A (native macOS application)",
+  "browser_version": "N/A",
+  "viewport_css": {
+    "width": 530,
+    "height": 330
+  },
+  "capture_mode": "element",
+  "state": "Synthetic project catalogue opened from its Home row; cached notes.md is listed.",
+  "data_provenance": "synthetic",
+  "build_source_sha": "89b740b2d7314ed3fec171fecdfa011571381e56",
+  "os": "macOS 27.2.1",
+  "version": "0.3.2298 / 2298",
+  "time_source": "Original capture file birth time"
+}

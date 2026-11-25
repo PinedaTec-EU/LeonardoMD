@@ -430,7 +430,7 @@
       }
     ]
   },
-  "current_candidate": {
+  "historical_preintegration_candidate": {
     "status": "replayed_on_current_main_validation_pending",
     "base_revision": "2916f9d27fed5b178d784071c26643f5210527ac",
     "source_revision": "pending_initial_candidate_commit",
@@ -466,5 +466,36 @@
     "historical_alert_captures_are_exact_head_evidence": false,
     "current_head_ci": "pending_publication",
     "strict_independent_review": "pending_publication"
+  },
+  "merged_beta_acceptance": {
+    "state": "accepted_with_recorded_limitations",
+    "merged_revision": "76740ee0f0017609978557241115a81872d2ad71",
+    "source_pr_head": "8f93584b5d6f5ed8e5ef121959539bd7c6a72102",
+    "beta_tag": "v0.3.1884",
+    "beta_source_revision": "63ec49278932ec558dd436ed3aa38e7b72d89ce2",
+    "release_url": "https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1884",
+    "guide_revision": 93,
+    "guide_packages": {
+      "en": {
+        "filename": "Guide-v93-en.mdlz",
+        "sha256": "619699672c50a5295b7f6a968f9952a86b9d4f2cfd0389c322e4ec081e9a494c"
+      },
+      "es": {
+        "filename": "Guide-v93-es.mdlz",
+        "sha256": "ea512ab338ad8f269fdd650f29d8520e0a8378baa96309f2151abf1b79a9e519"
+      }
+    },
+    "ci_url": "https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44099382827",
+    "independent_review_url": "https://github.com/PinedaTec-EU/LeonardoMD/pull/448#issuecomment-6953225721",
+    "packaged_observations": [
+      "hosted update",
+      "bilingual Help and practice form round trips",
+      "Spanish Guide follow-up"
+    ],
+    "failure_recovery_evidence": "Deterministic source regression and native warning captures",
+    "original_renderer_failure_reproduced_in_packaged_beta": false,
+    "complete_bilingual_math_matrix_claimed": false,
+    "closure_comment_url": "https://github.com/PinedaTec-EU/LeonardoMD/issues/447#issuecomment-6980390079",
+    "issue_closed_at": "2026-11-18T13:45:04Z"
   }
 }

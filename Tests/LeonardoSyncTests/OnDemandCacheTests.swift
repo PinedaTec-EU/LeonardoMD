@@ -65,6 +65,28 @@ final class OnDemandCacheTests: XCTestCase {
         XCTAssertNil(removed)
     }
 
+    func testProjectRootRetentionAndReleasePreserveRetainedFiles() async throws {
+        let (root, cache, descriptor, files) = try fixture(2)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let entries = files.map(RemoteFileEntry.init)
+        try await cache.update(id: descriptor.id, descriptor: descriptor, catalogue: RemoteProjectCatalogue(files: entries))
+        for (entry, file) in zip(entries, files) {
+            try await cache.store(id: descriptor.id, entry: entry, file: file)
+        }
+
+        try await cache.setRetained(id: descriptor.id, path: "", isFolder: true, keep: true)
+        try await cache.release(id: descriptor.id, path: "", isFolder: true)
+        var project = try await cache.project(id: descriptor.id)
+        XCTAssertEqual(project?.catalogue.files.filter { project?.isAvailableOffline($0) == true }.count, 2)
+
+        try await cache.setRetained(id: descriptor.id, path: "", isFolder: true, keep: false)
+        try await cache.setRetained(id: descriptor.id, path: entries[0].path, isFolder: false, keep: true)
+        try await cache.release(id: descriptor.id, path: "", isFolder: true)
+        project = try await cache.project(id: descriptor.id)
+        XCTAssertEqual(Set(project?.downloads.keys.map { $0 } ?? []), [entries[0].path])
+        XCTAssertEqual(project?.catalogue.files.count, 2)
+    }
+
     func testMalformedOrOutOfScopeCatalogueAndIncorrectContentAreRejected() async throws {
         let (root, cache, descriptor, files) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
