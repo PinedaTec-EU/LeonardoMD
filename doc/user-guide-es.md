@@ -406,9 +406,6 @@ Por ejemplo, si una instrucción queda separada de su campo, pide al agente que 
 
 ## 7. Inicio, recientes y favoritos
 
-
-*Inicio: estado inicial aislado, sin favoritos ni documentos recientes.*
-
 Elige **Proyectos** o **Documentos** en la parte superior de Inicio para cambiar Favoritos, Remotos y Recientes a la vez. Pulsa la flecha de una sección para plegarla o desplegarla. El botón Abrir abre una carpeta o un archivo local según el tipo seleccionado. Un archivo independiente usa las preferencias globales y no muestra sus vecinos. **Abrir carpeta como proyecto** añade la navegación de esa carpeta cuando la necesites.
 
 En **Remotos**, selecciona un proyecto para explorar su catálogo o un documento para abrir su vista previa. La fila identifica el Mac de origen. Primero añade el proyecto compartido en **Preferencias → Sincronización → Remoto**. Los archivos guardados para uso sin conexión se pueden leer aunque el equipo de origen no esté disponible. Otros archivos pueden requerir que vuelvas a conectarte.
