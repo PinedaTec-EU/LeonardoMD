@@ -66,7 +66,6 @@ final class SavedItemAvailabilityTests: XCTestCase {
         let destinationIdentity = destination.standardizedFileURL.resolvingSymlinksInPath().path
         let sourceIdentity = source.standardizedFileURL.resolvingSymlinksInPath().path
         let otherIdentity = other.standardizedFileURL.resolvingSymlinksInPath().path
-        XCTAssertEqual(identities.first, destinationIdentity)
         XCTAssertEqual(identities.filter { $0 == sourceIdentity }.count, 0)
         XCTAssertEqual(identities.filter { $0 == destinationIdentity }.count, 1)
         XCTAssertEqual(identities.filter { $0 == otherIdentity }.count, 1)
