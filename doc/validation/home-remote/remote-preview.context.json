@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-11-25T18:28:16+01:00",
+  "route": "Home / Documents / Remote items / notes.md",
+  "screen": "Home / Documents / Remote items / notes.md",
+  "browser_name": "N/A (native macOS application)",
+  "browser_version": "N/A",
+  "viewport_css": {
+    "width": 720,
+    "height": 581
+  },
+  "capture_mode": "element",
+  "state": "Direct read-only preview renders the synthetic document; sheet-only crop",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "width": 720,
+    "height": 581
+  },
+  "build_source_sha": "58096da5fcc7df8c7276cf0a215d3d86a85076b2",
+  "bundle": "LeonardoMDQA.app",
+  "version": "0.3.2288",
+  "os": "macOS 27.2.1",
+  "time_source": "Original capture file birth time"
+}

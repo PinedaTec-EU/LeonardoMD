@@ -10,7 +10,7 @@ struct WelcomeRemoteItemsView: View {
     private let controller = DesktopPeerController.shared
 
     var body: some View {
-        let items = remoteItems
+        let items = Self.remoteItems(kind: kind, controller: controller)
         VStack(alignment: .leading, spacing: 12) {
             if items.isEmpty {
                 Text(L10n.text("Add a shared project in Synchronization preferences to see its remote items here."))
@@ -33,7 +33,7 @@ struct WelcomeRemoteItemsView: View {
         }
     }
 
-    private var remoteItems: [RemoteItem] {
+    static func remoteItems(kind: FavoriteItem.Kind, controller: DesktopPeerController) -> [RemoteItem] {
         let catalogues = Dictionary(uniqueKeysWithValues: controller.downloads.projects.map { ($0.id, $0) })
         return controller.connections.flatMap { connection in
             let host = controller.reviewStore.hostName(for: connection)
@@ -53,7 +53,7 @@ struct WelcomeRemoteItemsView: View {
         }
     }
 
-    private func documentItems(in project: CachedRemoteProject, projectName: String, host: String) -> [RemoteItem] {
+    private static func documentItems(in project: CachedRemoteProject, projectName: String, host: String) -> [RemoteItem] {
         let deniedPaths = project.deniedPaths ?? []
         return project.catalogue.files.compactMap { entry in
             let path = entry.path as NSString
@@ -91,7 +91,7 @@ struct WelcomeRemoteItemsView: View {
         .accessibilityValue(item.detail)
     }
 
-    private struct RemoteItem: Identifiable {
+    struct RemoteItem: Identifiable {
         let projectID: UUID
         let title: String
         let detail: String
