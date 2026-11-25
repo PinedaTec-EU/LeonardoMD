@@ -20,21 +20,31 @@ struct DesktopDownloadBrowser: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 0) {
-                if let project = library.projects.first(where: { $0.id == projectID }) {
-                    ProjectIdentityLabel(name: project.descriptor.name, identity: .received)
-                        .padding(.horizontal)
-                        .padding(.top)
-                }
+        VStack(alignment: .leading, spacing: 16) {
+            header
+            NavigationStack {
                 SyncCatalogueView(library: library, projectID: projectID, spanish: spanish,
-                                  showNonDocumentFiles: showNonDocumentFiles) { selected = $0 }
-                    .padding()
+                                  showNonDocumentFiles: showNonDocumentFiles, showsTable: true) { selected = $0 }
+                    .navigationDestination(item: $selected) { entry in
+                        RemoteDocumentPreview(library: library, projectID: projectID, entry: entry, spanish: spanish)
+                    }
             }
-                .navigationDestination(item: $selected) { entry in
-                    RemoteDocumentPreview(library: library, projectID: projectID, entry: entry, spanish: spanish)
-                }
-                .toolbar { Button(L10n.text("Done")) { dismiss() } }
-        }.frame(minWidth: 720, minHeight: 520)
+        }
+        .padding(24)
+        .frame(width: selected == nil ? 530 : 720, height: selected == nil ? 330 : 520)
+    }
+
+    private var header: some View {
+        HStack {
+            if let project = library.projects.first(where: { $0.id == projectID }) {
+                ProjectIdentityLabel(name: project.descriptor.name, identity: .received)
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+            }
+            Spacer()
+            Button(L10n.text("Done")) { dismiss() }
+                .buttonStyle(PremiumButtonStyle())
+                .keyboardShortcut(.cancelAction)
+        }
     }
 }

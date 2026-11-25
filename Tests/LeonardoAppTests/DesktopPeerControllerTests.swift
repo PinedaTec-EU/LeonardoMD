@@ -1,5 +1,7 @@
 import XCTest
 import LeonardoSync
+import LeonardoDesktopSync
+import LeonardoSyncTransport
 @testable import LeonardoApp
 
 @MainActor
@@ -51,6 +53,62 @@ final class DesktopPeerControllerTests: XCTestCase {
         XCTAssertNotNil(controller.error)
         XCTAssertTrue(controller.connections.isEmpty)
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
+    }
+
+    func testDeferredCredentialPreservesOfflineCacheUntilExistingProjectsCanMigrate() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let suite = UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let connections = FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections"))
+        let copies = FileDesktopPeerCopyStore(root: root.appendingPathComponent("Copies"))
+        let credentials = DeferredControllerCredentials()
+        let revoker = DesktopPeerEditorRevoker()
+        let library = DesktopPeerLibrary(connections: connections, copies: copies,
+            workspace: DesktopPeerWorkspace(root: root.appendingPathComponent("Working"), copies: copies),
+            credentials: credentials, remote: DesktopPeerHTTPSRemote(), revoker: revoker)
+        let controller = DesktopPeerController(preferencesURL: root.appendingPathComponent("preferences.json"),
+                                               library: library, revoker: revoker, defaults: defaults)
+        defer { controller.stop() }
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let projectID = UUID()
+        let connection = try DesktopPeerConnection(remoteDeviceID: UUID(),
+            endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 7, count: 32),
+            grants: [projectID: selection])
+        try await connections.save(connection)
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Existing offline project",
+                                                  scope: try CorpusScope(folder: ""), selection: selection)
+        let file = CorpusFile(path: "docs/offline.md", content: Data("offline".utf8))
+        let downloadID = DesktopPeerController.downloadID(connectionID: connection.id, projectID: projectID)
+        let cache = OnDemandCache(root: root.appendingPathComponent("DesktopPeers/Downloads"))
+        let entry = RemoteFileEntry(file: file)
+        try await cache.update(id: downloadID, descriptor: descriptor, catalogue: RemoteProjectCatalogue(files: [entry]))
+        try await cache.store(id: downloadID, entry: entry, file: file)
+
+        let quarantinedProjectID = UUID()
+        let quarantinedID = DesktopPeerController.downloadID(connectionID: connection.id, projectID: quarantinedProjectID)
+        let quarantinedDescriptor = SharedProjectDescriptor(id: quarantinedProjectID, name: "Previously quarantined",
+                                                             scope: try CorpusScope(folder: ""), selection: selection)
+        try await cache.update(id: quarantinedID, descriptor: quarantinedDescriptor,
+                               catalogue: RemoteProjectCatalogue(files: [entry]))
+        try await cache.store(id: quarantinedID, entry: entry, file: file)
+        await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: [quarantinedProjectID])
+
+        await controller.initialize()
+        let preservedProjects = try await cache.projects()
+        XCTAssertEqual(Set(preservedProjects.map(\.id)), [downloadID, quarantinedID])
+        XCTAssertTrue(controller.connections.first?.credentialDeferred == true)
+        XCTAssertTrue(controller.downloads.projects.isEmpty)
+        XCTAssertFalse(controller.reviewStore.hasMigratedExistingProjects)
+
+        await credentials.unlock()
+        await controller.initialize()
+        XCTAssertTrue(controller.reviewStore.hasMigratedExistingProjects)
+        XCTAssertEqual(controller.downloads.projects.map(\.id), [downloadID])
+        controller.downloads.fetch = { _, _ in throw URLError(.notConnectedToInternet) }
+        let recovered = try await controller.downloads.open(id: downloadID, path: file.path)
+        XCTAssertEqual(recovered.content, file.content)
     }
 
     func testConfirmedDeviceRevocationInvalidatesAllItsDownloadsAndKeepsOtherConnection() async throws {
@@ -121,4 +179,19 @@ final class DesktopPeerControllerTests: XCTestCase {
         let unrelated = try await controller.downloads.open(id: unrelatedID, path: "docs/note.md")
         XCTAssertEqual(unrelated.content, Data(unrelatedProjectID.uuidString.utf8))
     }
+}
+
+
+private actor DeferredControllerCredentials: DeviceCredentialStore {
+    private var locked = true
+
+    func unlock() { locked = false }
+
+    func credential(deviceID: UUID) throws -> String? {
+        if locked { throw DesktopPeerCredentialError.legacyAuthorizationUnavailable }
+        return String(repeating: "a", count: 64)
+    }
+
+    func save(_ credential: String, deviceID: UUID) {}
+    func remove(deviceID: UUID) {}
 }

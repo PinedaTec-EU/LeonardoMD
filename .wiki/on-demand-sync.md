@@ -62,3 +62,5 @@ still require readable composited pixels under
 Joint acceptance now uses Guide33, main1147, compact common iOS reader, explicit source/document controls and joint-* native proof. See doc/validation/on-demand-sync/README.md for exact source mappings and limitations.
 
 Little Leonardo distribution builds declare `ITSAppUsesNonExemptEncryption` as Boolean false, matching the classification used for TestFlight 1279. The distribution verifier rejects missing or non-Boolean declarations; reassess if cryptography or linked libraries change. See `doc/mobile/rubric-exchange.md`.
+
+On macOS the received-project sheet uses the desktop table presentation of `SyncCatalogueView`. The project menu is in the footer, and the same catalogue rows and actions also serve the mobile presentation. See [#600](https://github.com/PinedaTec-EU/LeonardoMD/issues/600).

@@ -76,16 +76,18 @@ public struct SyncCatalogueView: View {
     let projectID: UUID
     let spanish: Bool
     let rowBackground: Color?
+    let showsTable: Bool
     let showNonDocumentFiles: Bool
     let fileVisibilitySurface: LeonardoProjectFileVisibility.Surface
     let open: (RemoteFileEntry) -> Void
     @State private var currentPath = ""
     public init(library: DownloadLibrary, projectID: UUID, spanish: Bool = false, rowBackground: Color? = nil,
-                showNonDocumentFiles: Bool = false,
+                showNonDocumentFiles: Bool = false, showsTable: Bool = false,
                 fileVisibilitySurface: LeonardoProjectFileVisibility.Surface = .macOS,
                 open: @escaping (RemoteFileEntry) -> Void) {
         self.library = library; self.projectID = projectID; self.spanish = spanish; self.rowBackground = rowBackground
         self.showNonDocumentFiles = showNonDocumentFiles; self.fileVisibilitySurface = fileVisibilitySurface
+        self.showsTable = showsTable
         self.open = open
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
@@ -106,63 +108,141 @@ public struct SyncCatalogueView: View {
 
     public var body: some View {
         if let project {
-            VStack(alignment: .leading) {
-                Text(t("Files download when opened. Use the context menu to keep files or folders offline.",
-                       "Los archivos se descargan al abrirlos. Usa el menú contextual para mantener archivos o carpetas sin conexión."))
-                    .font(.caption).foregroundStyle(.secondary)
-                List {
-                    if !currentPath.isEmpty {
-                        Button {
-                            currentPath = parentPath(of: currentPath)
-                        } label: {
-                            Label(t("Parent folder", "Carpeta superior"), systemImage: "chevron.left")
+            Group {
+                if showsTable {
+                    VStack(spacing: 10) {
+                        VStack(spacing: 0) {
+                            tableHeading
+                            Divider()
+                            catalogue(project)
+                                .scrollContentBackground(.hidden)
                         }
-                        .accessibilityIdentifier("download-parent-folder")
-                        .listRowBackground(rowBackground)
+                        .background(.background)
+                        .clipShape(.rect(cornerRadius: 8))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8).strokeBorder(.quaternary)
+                                .allowsHitTesting(false)
+                        }
+
+                        Divider()
+                        HStack(spacing: 12) {
+                            Text(t("Files download when opened.", "Los archivos se descargan al abrirlos."))
+                                .font(.caption).foregroundStyle(.secondary)
+                            Spacer()
+                            projectMenu(project)
+                        }
                     }
-                    ForEach(project.catalogue.immediateFolders(at: currentPath), id: \.self) { folder in
-                        folderRow(path: folder, project: project)
-                    }
-                    let files = project.catalogue.immediateFiles(at: currentPath)
-                    let visibleFiles = Self.visibleFiles(
-                        files,
-                        showNonDocumentFiles: showNonDocumentFiles,
-                        on: fileVisibilitySurface
-                    )
-                    if visibleFiles.isEmpty, !files.isEmpty {
-                        Text(t("No supported document files are shown. Enable Show non-document files in app settings to see the rest.",
-                               "No se muestran archivos con formato de documento compatible. Activa Mostrar archivos que no sean documentos en los ajustes de la app para ver el resto."))
+                } else {
+                    VStack(alignment: .leading) {
+                        Text(t("Files download when opened. Use the context menu to keep files or folders offline.",
+                               "Los archivos se descargan al abrirlos. Usa el menú contextual para mantener archivos o carpetas sin conexión."))
                             .font(.caption).foregroundStyle(.secondary)
-                            .accessibilityIdentifier("download-hidden-non-document-files")
+                        catalogue(project)
                     }
-                    ForEach(visibleFiles) { entry in
-                        Button { open(entry) } label: {
-                            HStack {
-                                Label(fileName(entry.path), systemImage: "doc")
-                                Spacer()
-                                status(paths: [entry], project: project)
-                            }.contentShape(Rectangle())
-                        }.buttonStyle(.plain)
-                        .accessibilityIdentifier("download-file-" + entry.path)
-                        .contextMenu { actions(path: entry.path, isFolder: false, project: project) }
-                        .listRowBackground(rowBackground)
-                    }
+                    .navigationTitle(currentPath.isEmpty ? project.descriptor.name : fileName(currentPath))
+                    .toolbar { projectMenu(project) }
                 }
-            }
-            .navigationTitle(currentPath.isEmpty ? project.descriptor.name : fileName(currentPath))
-            .toolbar {
-                Menu {
-                    actions(path: "", isFolder: true, project: project)
-                } label: {
-                    Label(t("Project actions", "Acciones del proyecto"), systemImage: "ellipsis.circle")
-                }
-                .accessibilityIdentifier("download-project-actions")
             }
             .onChange(of: project.catalogue) { _, catalogue in
                 currentPath = Self.navigationPath(afterRefresh: currentPath, in: catalogue)
             }
-        } else { Text(t("Project unavailable", "Proyecto no disponible")) }
+        } else {
+            Text(t("Project unavailable", "Proyecto no disponible"))
+        }
     }
+
+    private static let availabilityWidth: CGFloat = 124
+
+    private var tableHeading: some View {
+        HStack {
+            Text(t("Name", "Nombre"))
+            Spacer()
+            Text(t("Availability", "Disponibilidad"))
+                .frame(width: Self.availabilityWidth, alignment: .leading)
+        }
+        .font(.subheadline.weight(.semibold))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background(.quaternary.opacity(0.35))
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private func catalogue(_ project: CachedRemoteProject) -> some View {
+        let files = project.catalogue.immediateFiles(at: currentPath)
+        let visibleFiles = Self.visibleFiles(files, showNonDocumentFiles: showNonDocumentFiles, on: fileVisibilitySurface)
+        return List {
+            if !currentPath.isEmpty {
+                Button {
+                    currentPath = parentPath(of: currentPath)
+                } label: {
+                    Label(t("Parent folder", "Carpeta superior"), systemImage: "chevron.left")
+                    if showsTable {
+                        Text(fileName(currentPath)).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityIdentifier("download-parent-folder")
+                .listRowBackground(rowBackground)
+            }
+            ForEach(project.catalogue.immediateFolders(at: currentPath), id: \.self) { folder in
+                folderRow(path: folder, project: project)
+            }
+            if visibleFiles.isEmpty, !files.isEmpty {
+                Text(t("No supported document files are shown. Enable Show non-document files in app settings to see the rest.",
+                       "No se muestran archivos con formato de documento compatible. Activa Mostrar archivos que no sean documentos en los ajustes de la app para ver el resto."))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("download-hidden-non-document-files")
+            }
+            ForEach(visibleFiles) { entry in
+                fileRow(entry, project: project)
+            }
+        }
+    }
+
+    private func projectMenu(_ project: CachedRemoteProject) -> some View {
+        Menu {
+            actions(path: "", isFolder: true, project: project)
+        } label: {
+            Label(t("Project actions", "Acciones del proyecto"), systemImage: "ellipsis.circle")
+        }
+        .fixedSize()
+        .accessibilityIdentifier("download-project-actions")
+    }
+
+    private func fileRow(_ entry: RemoteFileEntry, project: CachedRemoteProject) -> some View {
+        Button { open(entry) } label: {
+            HStack {
+                if showsTable {
+                    Label {
+                        Text(fileName(entry.path))
+                    } icon: {
+                        Image(systemName: "doc").foregroundStyle(fileIconColor(entry, project: project))
+                    }
+                } else {
+                    Label(fileName(entry.path), systemImage: "doc")
+                }
+                Spacer()
+                availability(paths: [entry], project: project)
+            }.contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("download-file-" + entry.path)
+        .contextMenu { actions(path: entry.path, isFolder: false, project: project) }
+        .listRowBackground(rowBackground)
+    }
+
+    private func fileIconColor(_ entry: RemoteFileEntry, project: CachedRemoteProject) -> Color {
+        return project.isDownloaded(entry) && !project.keeps(entry.path) ? .blue : .secondary
+    }
+
+    @ViewBuilder private func availability(paths: [RemoteFileEntry], project: CachedRemoteProject) -> some View {
+        if showsTable {
+            HStack(spacing: 4) { status(paths: paths, project: project) }
+                .frame(width: Self.availabilityWidth, alignment: .leading)
+        } else {
+            status(paths: paths, project: project)
+        }
+    }
+
     private func folderRow(path: String, project: CachedRemoteProject) -> some View {
         let entries = project.catalogue.files.filter { path.isEmpty || $0.path.hasPrefix(path + "/") }
         return Button {
@@ -171,7 +251,7 @@ public struct SyncCatalogueView: View {
             HStack {
                 Label(fileName(path), systemImage: "folder")
                 Spacer()
-                status(paths: entries, project: project)
+                availability(paths: entries, project: project)
             }.contentShape(Rectangle())
         }
         .buttonStyle(.plain)

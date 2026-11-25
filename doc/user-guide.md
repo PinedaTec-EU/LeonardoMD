@@ -914,7 +914,7 @@ To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versio
 
 After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; in Little Leonardo, expand the Mac and project in **Library**. The catalogue starts at the project root. On Mac, select a folder to enter it and use **Parent folder** to move back up. Opening a file downloads it and its referenced local images; already downloaded files open from cache. If this Mac restarts while the source is unavailable, an accepted project remains listed with its last saved catalogue, so you can browse its names and open files already downloaded on this Mac. Other files need the source connection. New grants, catalogue changes and revocations are reflected after the next successful refresh. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
 
-Use the context menu on Mac or the **…** button in Little Leonardo:
+On Mac, the **Availability** column shows each item’s status. Use **Project actions** at the bottom for the whole project, or open the context menu on a file or folder for that item. Choose **Done** at the top to close the catalogue. In Little Leonardo, use the **…** button.
 
 - **Keep offline** downloads and retains the selection. At project level it includes current and future files; a folder includes future descendants. Referenced local images are retained with the document.
 - **Stop keeping offline** makes copies eligible for cache cleanup without deleting originals. A child can be excluded from a retained folder.
@@ -925,6 +925,8 @@ The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Av
 In **Synchronization → Storage and cache**, enter the temporary limit as a whole number of MiB and choose **Apply cache limit** (Return also applies it). Text being edited does not change the saved budget. Inspect temporary/offline usage and pending downloads, clear temporary cache or stop retaining a selection. The default limit is 256 MiB; zero disables temporary retention. Least recently used temporary files are removed first. Offline files are stored separately and do not count toward this limit; they require enough free device space. Cleanup never deletes editable desktop copies or rubric drafts.
 
 Automatic refresh defaults to every minute while the receiving app is active; an existing interval preference is preserved. iOS also refreshes on foreground activation and pauses while suspended. Transfers need a reachable source Mac. Offline, only previously downloaded content opens. Confirmed revocation removes access to the managed reader cache.
+
+Leonardo stores Mac-to-Mac pairing credentials in its Application Support folder in your user Library, so app updates preserve your connections. If a connection from an older version needs permission to import its credential from Keychain, choose **Update list** in Synchronization settings and authorize the import. Automatic refresh stays silent.
 
 On Mac, **Create editable copy** explicitly downloads the complete working copy for editing and the existing proposal/review workflow. These copies are separate from the automatically cleaned reader cache. Browsing or keeping files offline does not send edits.
 

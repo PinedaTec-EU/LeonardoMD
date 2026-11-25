@@ -1,12 +1,18 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v138-en.mdlz` and `Guide-v138-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v142-en.mdlz` and `Guide-v142-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v138/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v142/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v138 documents the shared Home selector and direct remote access in chapter 7.
+Guide v142 documents the shared Home selector and direct remote access in chapter 7.
+
+Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
+
+Guide v139 documents one-time import of Mac-to-Mac pairing tokens.
+Guide v139 EN SHA-256: `f4b8acc6d87c196e5fa1c09cf1776d067b733ddd13f3afadc40f270550cff915`
+and ES SHA-256: `cc9f59d27e486ff77f83ca8a416d0c191acc0b4d5aa7ca57e10f78548424d3d8`.
 
 Guide v137 documents Leonardo Classic as the default appearance.
 
