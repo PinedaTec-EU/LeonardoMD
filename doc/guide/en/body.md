@@ -560,8 +560,13 @@ move the exact token below in Edit to put it between the desired paragraphs:
 <!-- leonardo:page-break -->
 ```
 
-Text flows at block boundaries. Split an over-height block in source if its
-page has a dashed outline; PDF export rejects that overflow. Recheck page
+Text flows at block boundaries. In paginated preview and PDF, a Markdown table
+taller than a page continues on the next page at a row boundary. The column widths
+stay consistent and the header repeats unless its layout disables repetition.
+Resize a table in a continuous view before paginating it. A single row taller
+than a page or a long table with an interactive header can still overflow. If a
+page shows a dashed outline, shorten the overflowing content or increase the
+usable page height before exporting. Recheck page
 placement after changing content or fonts: Leonardo does not move rubrics with
 text. Objects outside page edges are cropped in PDF. Plain Markdown export
 loses page objects and rubric ink. Deleting/undoing an imported object retains

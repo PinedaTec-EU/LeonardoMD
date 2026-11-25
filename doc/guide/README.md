@@ -6,9 +6,9 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v145 explains the separate remote project menu and its offline actions in chapter 7.
-
-Guide v144 documents the shared Home selector, collapsible sections and direct remote access in chapter 7.
+Guide v145 documents the shared Home selector, the separate remote project menu,
+its offline actions and direct remote access in chapter 7, and explains Markdown
+table continuation across paginated preview and PDF pages.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
@@ -118,7 +118,7 @@ Guide v87 previously passed packaged Help acceptance in a fresh macOS QA
 process. The bundle/opened-copy hashes, rendered examples, Math fallback,
 practice-form round trips and teardown are recorded in
 [packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
-That acceptance does not establish acceptance for the current Guide v103 package;
+That acceptance does not establish acceptance for the Guide v103 package;
 its Help/practice acceptance is tracked under PR #473.
 
 The terminal-retry screenshots and result bundle were captured from product
@@ -133,14 +133,14 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v113 with a new
+historical review record. The current app resources use Guide v145 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
 record is in
 [packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
-It does not establish acceptance for the current Guide v103 package. The
+It does not establish acceptance for the Guide v103 package. The
 previous iOS capture bundles are historical; refreshed simulator evidence is
 recorded separately under `doc/validation/`.
 
