@@ -40,6 +40,15 @@ extension AppSession {
             var updated = current
             try updated.assign(positionID: positionID, profile: profile, credential: credential,
                                authorization: authorization, at: Date())
+            if credential.certificateChain != nil {
+                try await guidedSigningCredentialStore.trustPublicCredential(credential)
+                guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
+                guard guidedSigningViewStateMatches(expectedLocation: expectedLocation,
+                                                     expectedContent: expectedContent,
+                                                     expectedSession: current) else {
+                    throw LeonardoSigningError.integrityFailure
+                }
+            }
             if saveOptions.saveIdentityDetails || saveOptions.saveRubric {
                 try await guidedSigningStore.saveProfile(profile, options: saveOptions)
                 guard guidedSigningViewStateMatches(
@@ -409,6 +418,7 @@ extension AppSession {
     func signGuidedPosition(
         positionID: String,
         password: String,
+        certificate: GuidedSigningCertificate? = nil,
         unlockKey: ((String, String) async throws -> LeonardoSigningKeyPair)? = nil
     ) async {
         guard var current = guidedSigningSession,
@@ -430,8 +440,11 @@ extension AppSession {
             )
             baselineLoaded = true
             guard guidedSigningConflictAllowsProgress() else { return }
-            let keyPair: LeonardoSigningKeyPair
-            if let unlockKey {
+            let keyPair: LeonardoSigningKeyPair?
+            if let certificate {
+                guard certificate.id == assignment.credentialID else { throw LeonardoSigningError.credentialMismatch }
+                keyPair = nil
+            } else if let unlockKey {
                 keyPair = try await unlockKey(assignment.credentialID, password)
             } else {
                 keyPair = try await guidedSigningCredentialStore.keyPair(
@@ -447,8 +460,18 @@ extension AppSession {
             guard await guidedSigningSourceCanCommit(location: expectedLocation, content: expectedContent,
                                                       session: viewBaseline, snapshot: expectedSnapshot) else { return }
             let resources = try guidedSigningResources()
-            _ = try current.sign(positionID: positionID, keyPair: keyPair, document: document,
-                                  resources: resources, trustStore: trustStore, at: Date())
+            if let certificate {
+                guard resources.allSatisfy({ LeonardoLocalImagePolicy.portableSigningImagePath($0.reference)?.hasPrefix("assets/") == true }) else {
+                    guidedSigningActionProblem = L10n.text("Place referenced images under assets/ before signing this Leonardo document.")
+                    return
+                }
+                _ = try current.signWithCertificate(positionID: positionID, identity: certificate.identity,
+                                                    document: document, resources: resources,
+                                                    trustStore: trustStore, at: Date())
+            } else if let keyPair {
+                _ = try current.sign(positionID: positionID, keyPair: keyPair, document: document,
+                                     resources: resources, trustStore: trustStore, at: Date())
+            }
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,
@@ -492,7 +515,11 @@ extension AppSession {
                     current, replacing: baseline, expectedSession: viewBaseline
                 )
             }
-            reportGuidedSigningActionFailure(error)
+            if certificate != nil, current.state != .invalidated {
+                guidedSigningActionProblem = L10n.text("Certificate signing did not finish. Check the certificate and try again.")
+            } else {
+                reportGuidedSigningActionFailure(error)
+            }
         }
     }
 }

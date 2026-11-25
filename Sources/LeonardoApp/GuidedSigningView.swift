@@ -29,6 +29,12 @@ struct GuidedSigningView: View {
     @State private var enrollmentInProgress = false
     @State private var enrollmentProblem: String?
     @State private var showPassword = false
+    @State private var selectedCertificate: GuidedSigningCertificate?
+    @State private var signingCertificate = false
+
+    private var certificateMode: Bool {
+        session.guidedSigningSession?.declaration.method == .certificate
+    }
     @State private var rubricEditor: RubricEditorRequest?
     @State private var selectedCredentialID = ""
     @State private var selectedPassword = ""
@@ -128,7 +134,10 @@ struct GuidedSigningView: View {
     }
 
     private var selectedCredential: LeonardoSigningCredential? {
-        session.guidedSigningTrustStore?.credential(id: selectedCredentialID)
+        if certificateMode {
+            return selectedCertificate?.credential
+        }
+        return session.guidedSigningTrustStore?.credential(id: selectedCredentialID)
     }
 
     private var assignmentCanBeSubmitted: Bool {
@@ -206,7 +215,9 @@ struct GuidedSigningView: View {
             Button(L10n.text("Authorize and assign")) { assignSigner() }
             Button(L10n.text("Cancel"), role: .cancel) {}
         } message: {
-            Text(L10n.text("The profile and personal credential are distinct records. This approval does not claim independent identity verification."))
+            Text(L10n.text(certificateMode
+                ? "The profile contains declared information. The certificate identifies the signing key."
+                : "The profile and personal credential are distinct records. This approval does not claim independent identity verification."))
         }
         .sheet(isPresented: $showCredentialEnrollment) {
             GuidedSigningCredentialEnrollment(inProgress: enrollmentInProgress, problem: enrollmentProblem) { password in
@@ -333,6 +344,7 @@ struct GuidedSigningView: View {
     }
 
     private func selectedPositionChanged() {
+        selectedCertificate = nil
         session.guidedSigningActionProblem = nil
         if selectedProgress?.assignment == nil {
             creatingProfile = true
@@ -385,18 +397,26 @@ struct GuidedSigningView: View {
                 .accessibilityLabel(L10n.format("%d of %d positions complete", completedPositionCount, positions.count))
             }
             HStack(spacing: 8) {
-                Menu {
-                    Button(L10n.text("Export signing copy"), systemImage: "square.and.arrow.up") {
+                if certificateMode {
+                    Button(L10n.text("Save signed Leonardo document…"), systemImage: "square.and.arrow.down") {
                         Task { await session.exportGuidedSigningExchange() }
                     }
-                    Button(L10n.text("Import signed copy"), systemImage: "square.and.arrow.down") {
-                        session.importGuidedSigningExchange()
+                    .buttonStyle(PremiumButtonStyle(compact: true))
+                    .disabled(completedPositionCount == 0 || session.guidedSigningError != nil)
+                } else {
+                    Menu {
+                        Button(L10n.text("Export signing copy"), systemImage: "square.and.arrow.up") {
+                            Task { await session.exportGuidedSigningExchange() }
+                        }
+                        Button(L10n.text("Import signed copy"), systemImage: "square.and.arrow.down") {
+                            session.importGuidedSigningExchange()
+                        }
+                    } label: {
+                        Label(L10n.text("Exchange"), systemImage: "arrow.left.arrow.right")
                     }
-                } label: {
-                    Label(L10n.text("Exchange"), systemImage: "arrow.left.arrow.right")
+                    .buttonStyle(PremiumButtonStyle(compact: true))
+                    .disabled(!session.guidedSigningReady || session.guidedSigningError != nil)
                 }
-                .buttonStyle(PremiumButtonStyle(compact: true))
-                .disabled(!session.guidedSigningReady || session.guidedSigningError != nil)
                 Spacer(minLength: 0)
             }
             Text(L10n.text("The first confirmed location seals form data, assignments and referenced resources."))
@@ -438,7 +458,8 @@ struct GuidedSigningView: View {
                     .filter { session.guidedSigningSession?.positions[$0.id]?.state == .signed }
                     .allSatisfy { positionIsVerified($0.id) }
                 Label(valid
-                      ? L10n.text("Signatures verified against the local trust registry.")
+                      ? L10n.text(certificateMode ? "Signatures verified against macOS certificate trust."
+                                               : "Signatures verified against the local trust registry.")
                       : L10n.text("One or more signatures need trust or integrity review."),
                       systemImage: valid ? "checkmark.shield" : "exclamationmark.shield")
                     .font(.caption.weight(.semibold))
@@ -495,8 +516,17 @@ struct GuidedSigningView: View {
                 Text(L10n.format("Declared identity · %@ · %@", documentTypeLabel(assignment.identity.documentType),
                                  assignment.identity.redactedDocumentNumber))
                     .font(.caption).foregroundStyle(.secondary)
-                Text(L10n.format("Credential %@", assignment.credentialID.suffix(12).description))
-                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                if certificateMode,
+                   let credential = session.guidedSigningTrustStore?.credential(id: assignment.credentialID),
+                   let subject = LeonardoCertificateSignature.subject(of: credential) {
+                    Label(subject, systemImage: "checkmark.seal")
+                        .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                    Text("SHA-256 \(credential.id)")
+                        .font(.caption2.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                } else {
+                    Text(L10n.format("Credential %@", assignment.credentialID.suffix(12).description))
+                        .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                }
                 Label(L10n.text("Identity declared; independent verification is not claimed."), systemImage: "person.badge.clock")
                     .font(.caption).foregroundStyle(.orange)
             }
@@ -543,17 +573,19 @@ struct GuidedSigningView: View {
     private var newProfileForm: some View {
         VStack(alignment: .leading, spacing: 7) {
             declaredIdentityForm
-            HStack {
-                Text(draftProfileRubric == nil ? L10n.text("No profile rubric") : L10n.text("Profile rubric ready"))
-                    .font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                Button(L10n.text("Draw profile rubric…")) {
-                    rubricEditor = RubricEditorRequest(purpose: .profile)
+            if !certificateMode {
+                HStack {
+                    Text(draftProfileRubric == nil ? L10n.text("No profile rubric") : L10n.text("Profile rubric ready"))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button(L10n.text("Draw profile rubric…")) {
+                        rubricEditor = RubricEditorRequest(purpose: .profile)
+                    }
+                    .buttonStyle(PremiumButtonStyle(compact: true))
                 }
-                .buttonStyle(PremiumButtonStyle(compact: true))
+                Toggle(L10n.text("Save this profile rubric separately"), isOn: $saveRubric)
+                    .disabled(draftProfileRubric == nil)
             }
-            Toggle(L10n.text("Save this profile rubric separately"), isOn: $saveRubric)
-                .disabled(draftProfileRubric == nil)
         }
         .textFieldStyle(.roundedBorder)
     }
@@ -563,7 +595,7 @@ struct GuidedSigningView: View {
             Text(L10n.text("This profile contains a rubric only. Declare the signer identity for this assignment."))
                 .font(.caption).foregroundStyle(.secondary)
             declaredIdentityForm
-            if let rubric = selectedProfile?.rubric {
+            if !certificateMode, let rubric = selectedProfile?.rubric {
                 HStack(spacing: 8) {
                     Image(nsImage: RubricDrawing.thumbnail(rubric))
                         .resizable().aspectRatio(3, contentMode: .fit).frame(height: 40)
@@ -588,7 +620,16 @@ struct GuidedSigningView: View {
         }
     }
 
+    @ViewBuilder
     private var credentialPicker: some View {
+        if certificateMode {
+            GuidedSigningCertificatePicker(selection: $selectedCertificate)
+        } else {
+            personalCredentialPicker
+        }
+    }
+
+    private var personalCredentialPicker: some View {
         VStack(alignment: .leading, spacing: 6) {
             if session.guidedSigningCredentialIDs.isEmpty {
                 Text(L10n.text("No personal credential is enrolled on this device."))
@@ -654,9 +695,15 @@ struct GuidedSigningView: View {
                         }
                         .buttonStyle(PremiumButtonStyle(compact: true))
                         Spacer()
-                        Button(L10n.text("Sign")) { showPassword = true }
+                        Button(L10n.text("Sign")) {
+                            if certificateMode {
+                                signWithCertificate(positionID: position.id)
+                            } else {
+                                showPassword = true
+                            }
+                        }
                             .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
-                            .disabled(progress.state != .readyToSign || !session.guidedSigningWorkflowOperable)
+                            .disabled(progress.state != .readyToSign || !session.guidedSigningWorkflowOperable || signingCertificate)
                     }
                 }
             }
@@ -747,31 +794,33 @@ struct GuidedSigningView: View {
                     set: { reviewedOccurrence = $0 ? currentOccurrence : nil }
                 ))
                 .font(.caption)
-                Picker(L10n.text("Rubric for this occurrence"), selection: $reuse) {
-                    Text(L10n.text("New rubric")).tag(LeonardoRubricReuse.new)
-                    if session.guidedSigningSession?.rubricByPosition[target.positionID] != nil {
-                        Text(L10n.text("Reuse in this signer session")).tag(LeonardoRubricReuse.session)
+                if !certificateMode {
+                    Picker(L10n.text("Rubric for this occurrence"), selection: $reuse) {
+                        Text(L10n.text("New rubric")).tag(LeonardoRubricReuse.new)
+                        if session.guidedSigningSession?.rubricByPosition[target.positionID] != nil {
+                            Text(L10n.text("Reuse in this signer session")).tag(LeonardoRubricReuse.session)
+                        }
+                        if progress.assignment?.profileRubric != nil {
+                            Text(L10n.text("Reuse saved profile rubric")).tag(LeonardoRubricReuse.profile)
+                        }
                     }
-                    if progress.assignment?.profileRubric != nil {
-                        Text(L10n.text("Reuse saved profile rubric")).tag(LeonardoRubricReuse.profile)
+                    if let rubric = rubricForCurrentChoice {
+                        Image(nsImage: RubricDrawing.thumbnail(rubric)).resizable().aspectRatio(3, contentMode: .fit)
+                            .frame(height: 55).accessibilityLabel(L10n.text("Selected rubric"))
                     }
-                }
-                if let rubric = rubricForCurrentChoice {
-                    Image(nsImage: RubricDrawing.thumbnail(rubric)).resizable().aspectRatio(3, contentMode: .fit)
-                        .frame(height: 55).accessibilityLabel(L10n.text("Selected rubric"))
-                }
-                if reuse == .new {
-                    Button(L10n.text(locationRubric == nil ? "Draw rubric…" : "Replace rubric…")) {
-                        guard let sessionID = session.guidedSigningSession?.id, currentTarget == target else { return }
-                        rubricEditor = RubricEditorRequest(purpose: .location(sessionID: sessionID, target: target))
+                    if reuse == .new {
+                        Button(L10n.text(locationRubric == nil ? "Draw rubric…" : "Replace rubric…")) {
+                            guard let sessionID = session.guidedSigningSession?.id, currentTarget == target else { return }
+                            rubricEditor = RubricEditorRequest(purpose: .location(sessionID: sessionID, target: target))
+                        }
+                        .buttonStyle(PremiumButtonStyle(compact: true))
+                    } else {
+                        Toggle(L10n.text("I explicitly confirm reusing this rubric"), isOn: Binding(
+                            get: { reuseConfirmed },
+                            set: { confirmedReuse = $0 ? currentReuse : nil }
+                        ))
+                        .font(.caption)
                     }
-                    .buttonStyle(PremiumButtonStyle(compact: true))
-                } else {
-                    Toggle(L10n.text("I explicitly confirm reusing this rubric"), isOn: Binding(
-                        get: { reuseConfirmed },
-                        set: { confirmedReuse = $0 ? currentReuse : nil }
-                    ))
-                    .font(.caption)
                 }
                 Button(L10n.text("Confirm exact occurrence")) {
                     Task {
@@ -780,7 +829,8 @@ struct GuidedSigningView: View {
                             return
                         }
                         await session.confirmGuidedLocation(target: target,
-                            rubric: rubricForCurrentChoice ?? LeonardoRubric(), reuse: reuse,
+                            rubric: certificateMode ? LeonardoRubric() : (rubricForCurrentChoice ?? LeonardoRubric()),
+                            reuse: certificateMode ? .new : reuse,
                             reuseConfirmed: reuse == .new ? true : reuseConfirmed,
                             contextRead: contextRead,
                             renderedPlanMatches: { counts, source in
@@ -791,8 +841,9 @@ struct GuidedSigningView: View {
                     }
                 }
                 .buttonStyle(PremiumButtonStyle(prominent: true))
-                .disabled(nextTargetIndex != selectedTargetIndex || !contextRead || rubricForCurrentChoice?.isValid != true
-                          || (reuse != .new && !reuseConfirmed))
+                .disabled(nextTargetIndex != selectedTargetIndex || !contextRead
+                          || (!certificateMode && (rubricForCurrentChoice?.isValid != true
+                              || (reuse != .new && !reuseConfirmed))))
             }
         } else if currentTarget != nil {
             Label(L10n.text("This exact occurrence is not available in the rendered document; confirmation is blocked."),
@@ -886,6 +937,15 @@ struct GuidedSigningView: View {
         .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
     }
 
+    private func signWithCertificate(positionID: String) {
+        guard !signingCertificate else { return }
+        signingCertificate = true
+        Task {
+            defer { signingCertificate = false }
+            await GuidedSigningCertificate.authorizeSigning(positionID: positionID, session: session)
+        }
+    }
+
     private func assignSigner() {
         guard let positionID = selectedPosition?.id,
               let profile = profileForAssignment,
@@ -894,14 +954,14 @@ struct GuidedSigningView: View {
             await session.assignGuidedSigner(positionID: positionID, profile: profile, credential: credential,
                                              saveOptions: LeonardoProfileSaveOptions(
                                                 saveIdentityDetails: needsDeclaredIdentityInput && saveIdentityDetails,
-                                                saveRubric: creatingProfile && saveRubric))
+                                                saveRubric: !certificateMode && creatingProfile && saveRubric))
         }
     }
 
     private func assignedFieldLabels(for positionID: String) -> [String] {
         guard let document = session.leonardoDocument else { return [] }
         return document.metadata.fields.compactMap { fieldID, field in
-            guard field.type == .rubric, field.signerPosition == positionID else { return nil }
+            guard field.signerPosition == positionID else { return nil }
             return field.label ?? fieldID
         }.sorted()
     }
@@ -928,6 +988,7 @@ struct GuidedSigningView: View {
     private func signedPositionLabel(for positionID: String) -> String {
         if positionIsVerified(positionID) { return L10n.text("Signed and verified") }
         switch session.guidedSigningVerification[positionID] {
+        case .untrustedCertificate: return L10n.text("Signing certificate not trusted")
         case .unknownCredential: return L10n.text("Signing key not trusted")
         case .invalidSignature: return L10n.text("Signature verification failed")
         case .modifiedSnapshot: return L10n.text("Signed document changed")

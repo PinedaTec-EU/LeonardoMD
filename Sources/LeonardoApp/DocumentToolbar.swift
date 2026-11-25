@@ -50,7 +50,14 @@ struct DocumentToolbar: View {
             Spacer(minLength: 8)
             InstanceSwitcher(session: session)
             if session.documentURL != nil {
-                if session.isGuidedSigningDocument {
+                if let embedded = session.packageWorkspace?.embeddedSigning {
+                    Button {
+                        Task { await session.showEmbeddedSignatures(embedded) }
+                    } label: {
+                        Label(L10n.text("View certificate signatures"), systemImage: "signature")
+                    }
+                    .accessibilityIdentifier("embedded-signatures")
+                } else if session.isGuidedSigningDocument {
                     Button {
                         let location = session.guidedSigningLocation
                         Task {
@@ -167,7 +174,7 @@ struct DocumentToolbar: View {
                 Button(L10n.text("Export Markdown…")) { session.exportMarkdown() }
                 Button(L10n.text("Export Leonardo package")) { session.exportLeonardoPackage() }
             }
-            if session.documentStorage == .package {
+            if session.documentStorage == .package && session.packageWorkspace?.embeddedSigning == nil {
                 Button(L10n.text("Extract and work in a folder…")) { session.extractLeonardoPackageToFolder() }
             }
             if session.leonardoDocument?.isForm == true {

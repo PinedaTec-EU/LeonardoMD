@@ -246,9 +246,9 @@ public enum LeonardoFormatValidator {
             if !matches(position.id, pattern: fieldIDPattern) || position.label.isEmpty || position.label.count > 120 {
                 diagnostics.append(.init(severity: .error, code: "signing.position", message: "Signer position identifiers and labels are invalid."))
             }
-            let hasField = metadata.fields.values.contains { $0.type == .rubric && $0.signerPosition == position.id }
+            let hasField = metadata.fields.values.contains { $0.signerPosition == position.id }
             if !hasField {
-                diagnostics.append(.init(severity: .error, code: "signing.assignment", message: "Every signer position must have a rubric field assigned."))
+                diagnostics.append(.init(severity: .error, code: "signing.assignment", message: "Every signer position must have a signing field assigned."))
             }
         }
     }
@@ -300,8 +300,8 @@ public enum LeonardoFormatValidator {
             if let signerPosition = definition.signerPosition {
                 if metadata.formatVersion < LeonardoFormat.signingVersion {
                     diagnostics.append(.init(severity: .error, code: "field.signingVersion", message: "Signer assignments require MDLF v2.", fieldID: fieldID))
-                } else if definition.type != .rubric {
-                    diagnostics.append(.init(severity: .error, code: "field.signerPosition", message: "Only rubric fields can be assigned to a signer position.", fieldID: fieldID))
+                } else if (definition.type == .rubric) == (metadata.document.signing?.method == .certificate) {
+                    diagnostics.append(.init(severity: .error, code: "field.signerPosition", message: "The assigned field does not match the signing method.", fieldID: fieldID))
                 } else if metadata.document.signing?.positions.contains(where: { $0.id == signerPosition }) != true {
                     diagnostics.append(.init(severity: .error, code: "field.signerPosition", message: "The signer position is not declared in the document header.", fieldID: fieldID))
                 }

@@ -188,11 +188,11 @@ not silently change its field identifier or invalidate previous answers.
 
 Documents that declare format version 2 can show a **Sign** button in the
 document toolbar. The header lists every required signer position and the
-rubric fields assigned to it, together with a stable document ID and positive
+review fields assigned to it, together with a stable document ID and positive
 semantic revision. Version 1 documents keep the ordinary Fill form flow; Little
 Leonardo can preview both versions. The normal shared preview is read-only.
 
-Before a position can review a location, choose an existing local profile or
+For the default rubric method, before a position can review a location, choose an existing local profile or
 create one with the signer’s full name, identity-document type and number.
 Then choose that signer’s personal credential and explicitly authorize the
 assignment. Saving identity details and saving a profile rubric are separate
@@ -261,6 +261,33 @@ start the new revision and choose **Save copy…** before signing again. This
 preserves the external file. If Leonardo cannot determine the sealed source,
 restore the original document and resources from a trusted copy. Verify an
 unknown signing key against its fingerprint through a separate trusted channel.
+
+
+#### Sign with a certificate on Mac
+
+To configure a form for certificate signing, set `document.signing.method` to
+`"certificate"` in the MDLF v2 header and assign a non-rubric field to each
+position with `signerPosition`. For example, assign the text field displaying
+the terms to the position that must review them. The certificate route uses the
+same saved-revision and field confirmation steps described above.
+
+1. In the signing inspector, choose a profile and select **Load Keychain
+   certificates**. Choose the signer’s certificate and authorize the assignment.
+2. Begin review, read the context and confirm each occurrence. Select **Sign**
+   and check the certificate name and SHA-256 fingerprint before confirming.
+3. Choose **Save signed Leonardo document…**. Share the resulting `.mdlz`.
+   The recipient opens the document normally in LeonardoMD and clicks
+   **View certificate signatures** to inspect each certificate subject,
+   fingerprint and verification result.
+
+The signature covers the saved document and its referenced local images.
+Place those images under `assets/` before signing. The signed package opens
+read-only and includes the public certificates and declared signer details.
+macOS retains control of the private key. Verification uses current macOS
+certificate trust and locally available revocation information. The certificate
+subject identifies the key holder as stated by the issuer. This check alone
+cannot establish qualified electronic signature status.
+
 
 ## 5. Export and share
 

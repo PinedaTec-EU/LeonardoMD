@@ -17,10 +17,16 @@ public struct LeonardoSignerPosition: Codable, Equatable, Sendable, Identifiable
 /// The only signing vocabulary stored in the MDLF v2 header. Detached
 /// signatures, private key material and trust records never live in the form.
 public struct LeonardoSigningDeclaration: Codable, Equatable, Sendable {
-    public let positions: [LeonardoSignerPosition]
+    public enum Method: String, Codable, Sendable {
+        case certificate
+    }
 
-    public init(positions: [LeonardoSignerPosition]) {
+    public let positions: [LeonardoSignerPosition]
+    public let method: Method?
+
+    public init(positions: [LeonardoSignerPosition], method: Method? = nil) {
         self.positions = positions
+        self.method = method
     }
 }
 
@@ -137,16 +143,19 @@ public struct LeonardoProfileSaveOptions: Codable, Equatable, Sendable {
 public struct LeonardoSigningCredential: Codable, Equatable, Sendable, Identifiable {
     public let id: String
     public let publicKey: Data
+    public let certificateChain: [Data]?
 
-    public init(id: String, publicKey: Data) {
+    public init(id: String, publicKey: Data, certificateChain: [Data]? = nil) {
         self.id = id.trimmingCharacters(in: .whitespacesAndNewlines)
         self.publicKey = publicKey
+        self.certificateChain = certificateChain
     }
 
     public var isValid: Bool {
         !id.isEmpty && id.count <= 200
             && !id.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
-            && publicKey.count == 32
+            && (certificateChain.map { LeonardoCertificateSignature.validChain($0, id: id, key: publicKey) }
+                ?? (publicKey.count == 32))
     }
 }
 
@@ -478,16 +487,20 @@ public struct LeonardoSigningProof: Codable, Equatable, Sendable {
 public struct LeonardoDetachedSignature: Codable, Equatable, Sendable {
     public let proof: LeonardoSigningProof
     public let signature: Data
+    public let certificateAlgorithm: LeonardoCertificateSignature.Algorithm?
 
-    public init(proof: LeonardoSigningProof, signature: Data) {
+    public init(proof: LeonardoSigningProof, signature: Data,
+                certificateAlgorithm: LeonardoCertificateSignature.Algorithm? = nil) {
         self.proof = proof
         self.signature = signature
+        self.certificateAlgorithm = certificateAlgorithm
     }
 }
 
 public enum LeonardoSignatureVerification: Equatable, Sendable {
     case valid
     case unknownCredential(String)
+    case untrustedCertificate
     case invalidSignature
     case modifiedSnapshot
 }
@@ -502,8 +515,22 @@ public enum LeonardoSignatureVerifier {
         guard let credential = trustStore.credential(id: detached.proof.credentialID), credential.isValid else {
             return .unknownCredential(detached.proof.credentialID)
         }
+        let certificateMode = document.metadata.document.signing?.method == .certificate
+        guard certificateMode == (credential.certificateChain != nil),
+              certificateMode == (detached.certificateAlgorithm != nil),
+              let bytes = try? canonicalData(detached.proof) else { return .invalidSignature }
+        if let chain = credential.certificateChain, let algorithm = detached.certificateAlgorithm {
+            let evidence = LeonardoCertificateSignature(chain: chain, algorithm: algorithm, signature: detached.signature)
+            guard detached.proof.snapshot.matches(document: document, resources: resources) else {
+                return .modifiedSnapshot
+            }
+            switch evidence.verify(bytes) {
+            case .invalidSignature: return .invalidSignature
+            case .untrustedCertificate: return .untrustedCertificate
+            case .trustedCertificate: return .valid
+            }
+        }
         guard let publicKey = try? Curve25519.Signing.PublicKey(rawRepresentation: credential.publicKey),
-              let bytes = try? canonicalData(detached.proof),
               detached.signature.count == 64,
               publicKey.isValidSignature(detached.signature, for: bytes) else {
             return .invalidSignature

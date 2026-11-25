@@ -13,6 +13,30 @@ struct LeonardoPackageTests {
         try LeonardoFormatParser.serialize(LeonardoDocument(body: body))
     }
 
+    @Test func embeddedSigningEntryIsCheckedAndLocksPackageWithoutLocalState() throws {
+        let root = try temporary()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let package = root.appendingPathComponent("unverified.mdlz")
+        let entries = [
+            LeonardoZIPArchive.Entry(name: "document.mdlf", data: Data(try source().utf8)),
+            LeonardoZIPArchive.Entry(name: LeonardoEmbeddedSigning.entryName, data: Data("{}".utf8))
+        ]
+        try LeonardoZIPArchive.write(entries).write(to: package)
+        #expect(try LeonardoPackageTransport.carriesCertificateSignatures(package))
+        let workspace = try LeonardoPackageTransport.open(package)
+        defer { LeonardoPackageTransport.discard(workspace) }
+        guard case .invalidPackage = workspace.embeddedSigning else {
+            Issue.record("Malformed embedded signatures must surface failed verification")
+            return
+        }
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoPackageTransport.save(workspace)
+        }
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoPackageTransport.open(package, extractingTo: root.appendingPathComponent("extracted"))
+        }
+    }
+
     @Test func packageRoundTripPreservesAssetsAndRefreshesConflictFingerprint() throws {
         let root = try temporary()
         defer { try? FileManager.default.removeItem(at: root) }

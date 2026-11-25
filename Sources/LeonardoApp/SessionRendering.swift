@@ -126,6 +126,7 @@ extension AppSession {
               !guidedSigningSnapshotChanged, guidedSigningError == nil,
               let document = leonardoDocument,
               let current = guidedSigningSession,
+              current.declaration.method != .certificate,
               current.documentID == document.metadata.document.id,
               current.declaration == document.metadata.document.signing else { return [:] }
         var overlays: [String: LeonardoRubric] = [:]

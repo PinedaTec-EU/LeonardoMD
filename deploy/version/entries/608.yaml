@@ -1,0 +1,4 @@
+{
+  "build": 13,
+  "summary": "Sign a Leonardo document with a macOS Keychain certificate, save the signatures inside the MDLZ, and inspect them by opening the document in LeonardoMD."
+}

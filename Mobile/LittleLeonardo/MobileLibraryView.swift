@@ -679,7 +679,7 @@ struct MobileDocumentView: View {
                 Task { await library.synchronize() }
             }.disabled(library.connecting || liveProject?.isRecoveryArchive == true)
                 .accessibilityIdentifier("document-sync")
-            if guidedSigningDeclaration != nil {
+            if let declaration = guidedSigningDeclaration, declaration.method != .certificate {
                 Button(spanishErrors ? "Firmar copia" : "Sign copy", systemImage: "signature") {
                     Task { await prepareSigningCopy() }
                 }

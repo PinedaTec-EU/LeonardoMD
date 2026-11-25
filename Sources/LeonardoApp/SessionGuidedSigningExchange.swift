@@ -37,12 +37,22 @@ extension AppSession {
                 } ?? [],
                 at: Date()
             )
-            let data = try LeonardoSigningExchange.encoded(exchange)
             let panel = NSSavePanel()
-            panel.title = L10n.text("Export signing copy")
             let name = (identity.sourceURL ?? identity.documentURL).deletingPathExtension().lastPathComponent
-            panel.nameFieldStringValue = name + "-signing-copy.json"
-            panel.allowedContentTypes = [.json]
+            let data: Data
+            if current.declaration.method == .certificate {
+                let suffix = identity.documentURL.pathExtension.lowercased() == "mdlr" ? ".mdlr" : ".mdlf"
+                data = try LeonardoEmbeddedSigning.archive(exchange, documentName: name + suffix)
+                panel.title = L10n.text("Save signed Leonardo document…")
+                panel.message = L10n.text("The package includes public certificates and declared signer details.")
+                panel.nameFieldStringValue = name + "-signed.mdlz"
+                panel.allowedContentTypes = [UTType(filenameExtension: "mdlz") ?? .archive]
+            } else {
+                data = try LeonardoSigningExchange.encoded(exchange)
+                panel.title = L10n.text("Export signing copy")
+                panel.nameFieldStringValue = name + "-signing-copy.json"
+                panel.allowedContentTypes = [.json]
+            }
             let destination: URL?
             if let chooseDestination {
                 destination = await chooseDestination(panel)
@@ -282,7 +292,8 @@ extension AppSession {
             reportGuidedSigningActionFailure(error, blocksReview: false)
             return nil
         }
-        guard confirmImportedPublicKeys(unknown) else { return nil }
+        let personal = unknown.filter { $0.certificateChain == nil }
+        guard personal.isEmpty || confirmImportedPublicKeys(personal) else { return nil }
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
         return (effective, unknown)
     }

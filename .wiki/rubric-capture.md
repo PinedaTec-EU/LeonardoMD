@@ -192,3 +192,16 @@ retried; an ambiguous connection loss says sending is still pending and may be
 reconciled with the same frozen response. `MobileRubricCaptureFailure` owns this
 classification and the persistence path reuses it so copy and replay policy do
 not drift.
+
+## Certificate mode for guided signing
+
+[Issue #607](https://github.com/PinedaTec-EU/LeonardoMD/issues/607) introduces
+`document.signing.method: certificate` with non-rubric review targets. The
+existing guided session and native exchange continue to own persistence,
+snapshot/resource sealing, and multi-position proof chaining. Certificate
+records carry only public chain/key material. The MDLZ stores certificate
+proofs in `META-INF/leonardo-signatures.json`; recipient verification uses the
+archive document and exact asset set, independently of local sessions. macOS Security signs using a
+Keychain identity. Verification resolves trust independently of the exchange
+and the declared local profile. See the
+[certificate signing format](../doc/format/README.md#certificate-signing).

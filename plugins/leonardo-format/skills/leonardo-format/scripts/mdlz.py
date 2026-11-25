@@ -33,6 +33,7 @@ from mdlz_extract import (
 ARCHIVE_SUFFIX = ".mdlz"
 DOCUMENT_SUFFIXES = frozenset({".mdlf", ".mdlr"})
 ASSET_PREFIX = "assets/"
+SIGNATURE_ENTRY = "META-INF/leonardo-signatures.json"
 CHUNK_SIZE = 1024 * 1024
 MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
 MAX_ENTRIES = 2_048
@@ -211,7 +212,7 @@ def _validate_zip_members(
             if "/" in name:
                 raise ArchiveError(f"the document must be at the archive root: {name!r}")
             documents.append(name)
-        elif not is_directory and name.startswith(ASSET_PREFIX):
+        elif not is_directory and (name.startswith(ASSET_PREFIX) or name == SIGNATURE_ENTRY):
             pass
         elif not is_directory:
             raise ArchiveError(f"non-document archive members must be below assets/: {name!r}")

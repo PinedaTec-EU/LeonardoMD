@@ -652,7 +652,7 @@ struct MobileGuidedSigningView: View {
         case .valid: return spanish ? "Firma verificada" : "Signature verified"
         case .invalidSignature, .modifiedSnapshot:
             return spanish ? "Firma no válida" : "Invalid signature"
-        case .unknownCredential, nil:
+        case .unknownCredential, .untrustedCertificate, nil:
             return spanish ? "Firma pendiente de verificar" : "Signature awaiting verification"
         }
     }
