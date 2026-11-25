@@ -58,3 +58,9 @@ matching widths, authored page breaks, heading-boundary geometry, unsupported
 colspan/rowspan PDF rejection, PDFKit text and over-height row rejection.
 
 Packaged QA PIDs 92903 (23:00:10), 16898 (23:23:50) and 19646 (23:26:25) ran on 2026-11-25 CET from `leonardo-native-qa-y3b_93qo/LeonardoMDQA.app/Contents/MacOS/LeonardoMD`, bundle `eu.pinedatec.LeonardoMD.qa.1cabad2bee07437cac0b1c27ddbc8e70`. Each logged a fresh first window, quit gracefully and was verified absent. No Device Hub or simulator session was opened.
+
+### Guide v146 opened through Spanish Help
+
+The packaged candidate was relaunched with Spanish selected in a disposable home. Ayuda → Guía de Leonardo opened the v146 copy in that home. Chapter 7 rendered the remote-menu guidance and chapter 10 rendered table continuation guidance. The opened copy and bundled resource have SHA-256 `a063da2b8f0a6a30afecaeea56cdf8012bf2d0ef135a9110a9211e642577c480`. The extension prompt was dismissed with Ahora no.
+
+Owned QA PID 14776 started on 2026-11-26 at 00:44:28 CET from the same verified v146 QA bundle. It quit normally and process absence was verified. No Device Hub session was opened.
