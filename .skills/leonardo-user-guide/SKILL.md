@@ -22,9 +22,7 @@ components with synthetic data for UI screenshots; label diagrams as diagrams
 and illustrative states accurately. Keep original PNGs and capture context /
 canonical metadata in the locale's `assets/` directory. Do not edit screenshots
 in place or present a component test as fresh packaged-process acceptance.
-Use the shared PR delivery capture-metadata helper for new screenshots. The
-opt-in `UserGuideFeatureCaptureTests` fixture captures safe initial components;
-add a relevant fixture when the changed behavior needs another state. Never
+Use the shared PR delivery capture-metadata helper for new screenshots. Capture illustrative states from the running app using a synthetic document. Never
 pair real devices, share private documents or install updates to illustrate help.
 
 For optional rendered content, state the required built-in extension next to

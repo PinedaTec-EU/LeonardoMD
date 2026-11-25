@@ -144,7 +144,7 @@ final class AppSession {
     var searchQuery = ""
     var searchResults: [SearchResult] = []
     var searching = false
-    var globalPreferences = GlobalPreferences.default
+    var globalPreferences: GlobalPreferences
     var projectConfiguration = ProjectConfiguration.default
     var prepareRelatedFileOperation: ((URL) async -> Bool)?
     var relatedPathMoved: ((URL, URL) async -> Void)?
@@ -173,7 +173,7 @@ final class AppSession {
     let documents = DocumentStore()
     let files: LocalProjectRepository
     let configurations = ConfigurationStore.shared
-    var globalBaseline = GlobalPreferences.default
+    var globalBaseline: GlobalPreferences
     var projectBaseline = ProjectConfiguration.default
     var settingsTask: Task<Void, Never>?
     var settingsRevision = 0
@@ -208,6 +208,7 @@ final class AppSession {
 
     init(
         preferencesURL: URL = AppSession.preferencesURL,
+        initialGlobalPreferences: GlobalPreferences = .default,
         files: LocalProjectRepository = LocalProjectRepository(),
         extensionWarningPreferences: ExtensionWarningPreferences = .shared,
         signingCredentialStore: LeonardoSigningCredentialStore = LeonardoSigningCredentialStore(
@@ -218,6 +219,10 @@ final class AppSession {
         self.extensionRecommendations = ExtensionRecommendations(preferences: extensionWarningPreferences)
         self.files = files
         globalPreferencesURL = preferencesURL
+        globalPreferences = initialGlobalPreferences
+        globalBaseline = initialGlobalPreferences
+        showHidden = initialGlobalPreferences.showHiddenFiles
+        showNonDocumentFiles = initialGlobalPreferences.showNonDocumentFiles
         let signingDirectory = preferencesURL.deletingLastPathComponent()
             .appendingPathComponent("Signing", isDirectory: true)
         guidedSigningStore = LeonardoSigningStore(directoryURL: signingDirectory)

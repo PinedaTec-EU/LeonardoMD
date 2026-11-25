@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-23T16:11:09.314384+00:00",
+  "capture": {
+    "captured_at": "2026-11-23T16:10:16.944374+00:00",
+    "route": "/native/preferences/extensions",
+    "screen": "Preferences / extensions",
+    "browser_name": "Native AppKit / SwiftUI",
+    "browser_version": "Not applicable; macOS 27.2.1",
+    "state": "Packaged QA, 780 × 780 pt Preferences sheet, light appearance, English, extensions selected.",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "live-redacted"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "da0c8af943bfd1e17d21907b3efe6a3df87de2705dd0a4990cc5d0037a8a1027"
+  },
+  "source": {
+    "revision_at_collection": "4157bcb827d76129d98bedd17b21b161d7f3dfa1",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

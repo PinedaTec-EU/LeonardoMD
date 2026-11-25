@@ -47,19 +47,11 @@ struct MarkdownImageActionsTests {
     }
 
     #if os(macOS)
-    @Test func isolatedContextCaptureOpensActualImageWindow() async throws {
+    @Test func isolatedContextSelectionCannotBeOverriddenByPageCode() async throws {
         _ = NSApplication.shared
         let web = MarkdownImageWebView(frame: NSRect(x: 0, y: 0, width: 400, height: 300),
                                        configuration: WKWebViewConfiguration())
         let source = "leonardo-document://local/photo.png"
-        let image = NSImage(size: NSSize(width: 10, height: 10), flipped: false) { rect in
-            NSColor.red.setFill()
-            rect.fill()
-            return true
-        }
-        let bytes = try #require(image.tiffRepresentation)
-        var requested: URL?
-        web.imageWindowData = { url in requested = url; return bytes }
         web.loadHTMLString("<img id='photo' src='\(source)'>", baseURL: nil)
         var captured: URL?
         for _ in 0..<100 {
@@ -72,25 +64,6 @@ struct MarkdownImageActionsTests {
         // Page code cannot replace the captured value in the isolated world.
         _ = try await web.evaluateJavaScript("window.leonardoContextImage = 'file:///etc/passwd'")
         #expect(try await web.contextImageURL().absoluteString == source)
-        let menu = NSMenu()
-        let item = NSMenuItem(title: "Open", action: nil, keyEquivalent: "")
-        item.tag = WebMenuItemTagOpenImageInNewWindow
-        menu.addItem(item)
-        let event = NSEvent.mouseEvent(with: .rightMouseDown, location: .zero,
-            modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil,
-            eventNumber: 1, clickCount: 1, pressure: 1)!
-        web.willOpenMenu(menu, with: event)
-        let action = try #require(menu.items[0].action)
-        #expect(NSApp.sendAction(action, to: web, from: menu.items[0]))
-        var opened: NSWindow?
-        for _ in 0..<100 {
-            opened = NSApp.windows.first { $0.title == "photo.png" && $0.isVisible }
-            if opened != nil { break }
-            try await Task.sleep(for: .milliseconds(20))
-        }
-        defer { opened?.close() }
-        #expect(requested?.absoluteString == source)
-        #expect(opened?.contentView is NSImageView)
     }
 
     @Test func rewiresOnlyBrokenImageMenuActions() {

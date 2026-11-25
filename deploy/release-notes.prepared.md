@@ -2,6 +2,38 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2267
+
+- #593 Updated: run isolated macOS tests once ([#594](https://github.com/PinedaTec-EU/LeonardoMD/pull/594))
+
+<p>Run isolated macOS test cases once per CI job while retaining their diagnostics.</p>
+
+Source: `c83ca1f5664b2da83055881501333511cb6e26cb`. Delta: `{"build": 1}`.
+
+## 0.3.2266
+
+- #588 Fixed: use Leonardo Classic from startup ([#589](https://github.com/PinedaTec-EU/LeonardoMD/pull/589))
+
+<p>Leonardo Classic is the macOS default, and the first window opens with the saved palette when one is set.</p>
+
+Source: `96736158cf7ccb67eebcbc604e51e28c91adb22e`. Delta: `{"build": 22}`.
+
+## 0.3.2244
+
+- #582 Fixed: normalize the Extensions preferences background ([#583](https://github.com/PinedaTec-EU/LeonardoMD/pull/583))
+
+<p>The Extensions page now matches the heading and options backgrounds of the other Preferences pages.</p>
+
+Source: `e58e9e914694715538fd1b83d5675434d642c26b`. Delta: `{"build": 3}`.
+
+## 0.3.2241
+
+- #584 Removed: automated user interface tests and CI captures ([#585](https://github.com/PinedaTec-EU/LeonardoMD/pull/585))
+
+<p>Desktop and mobile interface review now uses evidence captured from the running app.</p>
+
+Source: `25047d0ee4bdc275d4c69f9c6aa574fd8ede9f95`. Delta: `{"build": 11}`.
+
 ## 0.3.2230
 
 - #586 Fixed: resume revoked workspace cleanup on startup ([#587](https://github.com/PinedaTec-EU/LeonardoMD/pull/587))

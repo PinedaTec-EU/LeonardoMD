@@ -57,22 +57,15 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(L10n.format("%d words", 42), "42 palabras")
     }
 
-    func testNativeMenusAndSuggestedFilenamesUseSelectedLanguage() {
-        _ = NSApplication.shared
-        let previousLanguage = LanguageSettings.shared.language
-        let previousMenu = NSApp.mainMenu
-        defer {
-            LanguageSettings.shared.language = previousLanguage
-            NSApp.mainMenu = previousMenu
-        }
-        let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(),
-            instance: SingleInstance(name: "LocalizationMenuTests"), role: .primary)
+    func testMenuLabelsAndSuggestedFilenamesUseSelectedLanguage() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
         for language in AppLanguage.allCases {
             LanguageSettings.shared.language = language
-            delegate.configureMenu()
-            let appMenu = NSApp.mainMenu?.items.first?.submenu
-            XCTAssertEqual(appMenu?.items[1].title, language == .english ? "Preferences…" : "Preferencias…")
-            XCTAssertEqual(NSApp.mainMenu?.items[1].title, language == .english ? "File" : "Archivo")
+            XCTAssertEqual(L10n.text("Preferences…"), language == .english ? "Preferences…" : "Preferencias…")
+            XCTAssertEqual(L10n.text("File"), language == .english ? "File" : "Archivo")
+            XCTAssertEqual(L10n.text("Move to Trash"), language == .english ? "Move to Trash" : "Mover a la Papelera")
+            XCTAssertEqual(L10n.text("Delete Permanently"), language == .english ? "Delete Permanently" : "Eliminar permanentemente")
             XCTAssertEqual(L10n.text("Copy filename suffix"), language == .english ? "-copy.md" : "-copia.md")
             XCTAssertEqual(L10n.text("New note filename"), language == .english ? "note.md" : "nota.md")
         }
@@ -103,26 +96,6 @@ final class LocalizationTests: XCTestCase {
                 XCTAssertNil(spanish.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)), file.lastPathComponent + ": " + text)
             }
         }
-    }
-
-    func testOpenAboutWindowTitleChangesWithLanguage() {
-        _ = NSApplication.shared
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        LanguageSettings.shared.language = .english
-        let controller = AboutWindow()
-        defer { controller.close() }
-        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),
-                              styleMask: [.titled], backing: .buffered, defer: false)
-        parent.isReleasedWhenClosed = false
-        parent.makeKeyAndOrderFront(nil)
-        defer { parent.close() }
-        controller.present(on: parent)
-        XCTAssertTrue(controller.window?.isVisible == true)
-        LanguageSettings.shared.language = .spanish
-        XCTAssertEqual(controller.window?.title, "Acerca de LeonardoMD")
-        LanguageSettings.shared.language = .english
-        XCTAssertEqual(controller.window?.title, "About LeonardoMD")
     }
 
     private func isolatedDefaults() -> (UserDefaults, String) {

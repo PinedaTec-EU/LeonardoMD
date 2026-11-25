@@ -13,14 +13,14 @@ SCRIPT = Path(__file__).resolve().parents[1] / "run-swift-test-with-timeout.py"
 
 
 class SwiftTestTimeoutTests(unittest.TestCase):
-    def run_fake_swift(self, directory, body):
+    def run_fake_swift(self, directory, body, *wrapper_arguments):
         fake = directory / "swift"
         fake.write_text("#!/bin/sh\n" + body, encoding="utf-8")
         fake.chmod(0o700)
         env = dict(os.environ, PATH=f"{directory}{os.pathsep}{os.environ['PATH']}")
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--seconds", "1",
-             "--diagnostics", str(directory / "diagnostics")],
+             "--diagnostics", str(directory / "diagnostics"), *wrapper_arguments],
             env=env, capture_output=True, text=True, timeout=15,
         )
 
@@ -31,6 +31,19 @@ class SwiftTestTimeoutTests(unittest.TestCase):
             self.assertEqual(result.returncode, 7)
             self.assertEqual(result.stdout.strip(), "test --verbose")
             self.assertFalse((directory / "diagnostics").exists())
+
+    def test_forwards_every_skip_pattern_as_a_separate_argument(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            patterns = ("Module[.]FirstTests/", "Module[.]OtherTests/testExample$")
+            result = self.run_fake_swift(
+                Path(tmp), 'printf "%s\\n" "$@"\n',
+                "--skip", patterns[0], "--skip", patterns[1],
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                result.stdout.splitlines(),
+                ["test", "--verbose", "--skip", patterns[0], "--skip", patterns[1]],
+            )
 
     def test_timeout_captures_group_and_reaps_child_holding_output_open(self):
         with tempfile.TemporaryDirectory() as tmp:

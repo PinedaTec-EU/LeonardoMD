@@ -285,7 +285,6 @@ final class MarkdownExtrasTests: XCTestCase {
         XCTAssertEqual(footnoteEditors, "0")
         XCTAssertEqual(calloutEditors, "0")
         XCTAssertEqual(currentSource, source)
-        try await capture(web, name: "markdown-extras")
     }
 
     func testAllCalloutKindsAndSanitizationRenderSafely() async throws {
@@ -412,40 +411,5 @@ final class MarkdownExtrasTests: XCTestCase {
         host.subviews.compactMap { $0 as? WKWebView }.first
     }
 
-    private func capture(_ web: WKWebView, name: String) async throws {
-        guard let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
-        let png: Data = try await withCheckedThrowingContinuation { continuation in
-            web.takeSnapshot(with: nil) { image, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-                guard let tiff = image?.tiffRepresentation,
-                      let bitmap = NSBitmapImageRep(data: tiff),
-                      let data = bitmap.representation(using: .png, properties: [:]) else {
-                    continuation.resume(throwing: CocoaError(.fileReadUnknown))
-                    return
-                }
-                continuation.resume(returning: data)
-            }
-        }
-        let root = URL(fileURLWithPath: directory, isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        try png.write(to: root.appendingPathComponent(name + ".png"))
-        let bitmap = NSBitmapImageRep(data: png)
-        let browser = try await evaluate("navigator.userAgent", in: web)
-        let metadata: [String: String] = [
-            "head": ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local working tree",
-            "surface": "Markdown extras preview",
-            "browser": browser,
-            "viewportPoints": "1000x800",
-            "imagePixels": "\(bitmap?.pixelsWide ?? 0)x\(bitmap?.pixelsHigh ?? 0)",
-            "captureMode": "viewport",
-            "capturedAtUTC": ISO8601DateFormatter().string(from: Date()),
-            "state": "enabled footnotes, repeated references, warning callout and table; synthetic data"
-        ]
-        let metadataData = try JSONSerialization.data(withJSONObject: metadata, options: [.prettyPrinted, .sortedKeys])
-        try metadataData.write(to: root.appendingPathComponent(name + ".json"))
-    }
 }
 #endif

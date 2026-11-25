@@ -62,40 +62,6 @@ final class MarkdownExportTests: XCTestCase {
         XCTAssertEqual(session.fileOperationCount, 0)
     }
 
-    func testCaptureMarkdownWarningInBothLanguages() async throws {
-        guard let path = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else {
-            throw XCTSkip("Set LEONARDO_VISUAL_EVIDENCE for native warning captures")
-        }
-        let directory = URL(fileURLWithPath: path).appendingPathComponent("markdown-export")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        for language in AppLanguage.allCases {
-            LanguageSettings.shared.language = language
-            let alert = AppSession.markdownExportWarning()
-            alert.layout()
-            let window = alert.window
-            window.orderFront(nil)
-            defer { window.orderOut(nil) }
-            try await Task.sleep(for: .milliseconds(150))
-            let view = try XCTUnwrap(window.contentView)
-            view.displayIfNeeded()
-            let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-            view.cacheDisplay(in: view.bounds, to: bitmap)
-            let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-            let output = directory.appendingPathComponent("warning-\(language.rawValue).png")
-            try png.write(to: output)
-            let capture = Process()
-            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            capture.arguments = ["-x", "-l", String(window.windowNumber), output.path]
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                capture.terminationHandler = { _ in continuation.resume() }
-                do { try capture.run() } catch { continuation.resume(throwing: error) }
-            }
-
-        }
-    }
-
     func testWarningExplainsLossAndAllowsCancellation() {
         let alert = AppSession.markdownExportWarning()
         XCTAssertEqual(alert.alertStyle, .warning)

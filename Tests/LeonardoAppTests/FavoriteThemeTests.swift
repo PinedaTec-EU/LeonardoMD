@@ -33,6 +33,17 @@ final class FavoriteThemeTests: XCTestCase {
         return url
     }
 
+    func testStartupKeepsClassicWhenSavedPaletteIsClassic() async throws {
+        let preferencesURL = root.appendingPathComponent("preferences.json")
+        try Data(#"{"palette":"leonardo-classic"}"#.utf8).write(to: preferencesURL)
+        let startup = AppSession(preferencesURL: preferencesURL)
+        sessions.append(startup)
+
+        XCTAssertEqual(startup.palette, PaletteCatalog.leonardoClassic)
+        await startup.initialize()
+        XCTAssertEqual(startup.palette, PaletteCatalog.leonardoClassic)
+    }
+
     func testRecentProjectUsesPersistedFavoriteAndClearsOnSwitch() async throws {
         let project = try folder("Project")
         let other = try folder("Other")
@@ -45,11 +56,11 @@ final class FavoriteThemeTests: XCTestCase {
         let opened1 = await reader.openProject(project.appendingPathComponent("", isDirectory: true))
         XCTAssertTrue(opened1)
         XCTAssertEqual(reader.resolved.palette, .graphiteGlass)
-        XCTAssertEqual(reader.globalPreferences.palette, .paperWhite)
+        XCTAssertEqual(reader.globalPreferences.palette, .leonardoClassic)
         XCTAssertNil(reader.projectConfiguration.palette)
         let opened2 = await reader.openProject(other)
         XCTAssertTrue(opened2)
-        XCTAssertEqual(reader.resolved.palette, .paperWhite)
+        XCTAssertEqual(reader.resolved.palette, .leonardoClassic)
         XCTAssertNil(reader.errorMessage)
     }
 
@@ -67,10 +78,10 @@ final class FavoriteThemeTests: XCTestCase {
         XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         await session.detachProject()
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         await session.openSavedItem(parent, kind: .workspace)
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
     }
 
     func testStandaloneOpeningAndSaveCopyLeaveProjectAppearance() async throws {
@@ -86,14 +97,14 @@ final class FavoriteThemeTests: XCTestCase {
         await session.open(file)
         XCTAssertEqual(session.documentURL, file)
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         _ = await session.openProject(project)
         XCTAssertEqual(session.resolved.palette, .graphiteGlass)
         let copy = root.appendingPathComponent("Copy.md")
         await session.saveCopyAndOpen(to: copy, sourceURL: file)
         XCTAssertEqual(session.documentURL, copy)
         XCTAssertNil(session.projectURL)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertEqual(session.resolved.palette, .leonardoClassic)
         XCTAssertNil(session.errorMessage)
     }
 
@@ -107,7 +118,7 @@ final class FavoriteThemeTests: XCTestCase {
         let opened5 = await first.openProject(project)
         XCTAssertTrue(opened5)
         XCTAssertEqual(first.resolved.palette, .graphiteGlass)
-        XCTAssertEqual(second.resolved.palette, .paperWhite)
+        XCTAssertEqual(second.resolved.palette, .leonardoClassic)
         first.projectConfiguration.palette = .leonardoClassic
         first.projectConfiguration.customTokens = PaletteTokenOverrides(accent: "#123456")
         XCTAssertEqual(first.resolved.paletteTokens, PaletteCatalog.graphiteGlass.tokens)
@@ -172,62 +183,4 @@ final class FavoriteThemeTests: XCTestCase {
         XCTAssertFalse(session.isFavorite(project, kind: .project))
     }
 
-    func testNativeFavoriteThemeCapture() async throws {
-        let environment = ProcessInfo.processInfo.environment
-        let destination = environment["LEONARDO_FAVORITE_THEME_CAPTURE"]
-            ?? environment["LEONARDO_VISUAL_EVIDENCE"].map { $0 + "/favorite-themes" }
-        guard let destination else {
-            throw XCTSkip("Opt-in native favorite theme capture")
-        }
-        _ = NSApplication.shared
-        let project = try folder("Example project")
-        let workspace = try folder("Example workspace")
-        let session = await session()
-        session.toggleFavorite(project, kind: .project)
-        session.toggleFavorite(workspace, kind: .workspace)
-        session.setFavoritePalette(.graphiteGlass, for: project, kind: .project)
-        session.setFavoritePalette(.leonardoClassic, for: workspace, kind: .workspace)
-        session.globalPreferences.recentProjectPaths = [project]
-        session.globalPreferences.recentWorkspacePaths = [workspace]
-        session.persistSettings()
-        await session.settingsTask?.value
-        let language = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = language }
-        let directory = URL(fileURLWithPath: destination, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        for (locale, width, palette, kind) in [
-            (AppLanguage.english, 900, PaletteID.paperWhite, FavoriteItem.Kind.project),
-            (.spanish, 900, .paperWhite, .project), (.spanish, 600, .graphiteGlass, .project)
-        ] {
-            LanguageSettings.shared.language = locale
-            session.globalPreferences.palette = palette
-            session.persistSettings()
-            await session.settingsTask?.value
-            let view = NSHostingView(rootView: SavedItemsView(session: session, favoriteKind: kind, recentKind: kind)
-                .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
-            let suffix = kind == .project ? "" : "-workspace"
-            let name = "favorite-themes-\(locale.rawValue)-\(width)" + suffix
-            try await NativeViewCaptureSupport.capture(view, size: NSSize(width: width, height: 620),
-                to: directory.appendingPathComponent(name + ".png"), title: "Favorite themes QA") { view in
-                    // Keep native host appearance light while the session can be dark.
-                    // This reproduces mixed-appearance rendering from the macOS CI host.
-                    view.appearance = NSAppearance(named: .aqua)
-                    view.window?.appearance = NSAppearance(named: .aqua)
-                    view.layoutSubtreeIfNeeded()
-                }
-            let metadata: [String: Any] = [
-                "head": environment["EVIDENCE_SHA"] ?? "unavailable; local source manifest required",
-                "captured_at": ISO8601DateFormatter().string(from: Date()),
-                "surface": "Native NSHostingView SavedItemsView; synthetic \(kind.rawValue) favorites and starred recent items",
-                "favorite_category": kind.rawValue,
-                "viewport_points": [width, 620], "pixel_dimensions": try NSBitmapImageRep(data: Data(contentsOf: directory.appendingPathComponent(name + ".png"))).map { [$0.pixelsWide, $0.pixelsHigh] } ?? [],
-                "language": locale.rawValue, "palette": palette.rawValue,
-                "native_host_appearance": "Aqua (including the dark session fixture)",
-                "capture_mode": "native component bitmap", "browser": "N/A; AppKit/SwiftUI",
-                "limitations": "Component evidence; no packaged startup or new-process claim"
-            ]
-            try JSONSerialization.data(withJSONObject: metadata, options: [.prettyPrinted, .sortedKeys])
-                .write(to: directory.appendingPathComponent(name + ".json"))
-        }
-    }
 }

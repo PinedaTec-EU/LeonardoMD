@@ -129,11 +129,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seconds", type=int, required=True)
     parser.add_argument("--diagnostics", type=Path, required=True)
+    parser.add_argument("--skip", action="append", default=[], help="Exclude a SwiftPM test filter")
     args = parser.parse_args()
     if args.seconds <= 0:
         parser.error("--seconds must be positive")
+    command = ["swift", "test", "--verbose"]
+    for pattern in args.skip:
+        command.extend(("--skip", pattern))
     process = subprocess.Popen(
-        ["swift", "test", "--verbose"], start_new_session=True,
+        command, start_new_session=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     )
     try:

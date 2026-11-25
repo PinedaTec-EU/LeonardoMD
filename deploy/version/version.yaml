@@ -1299,9 +1299,49 @@
       "pr": 587,
       "summary": "The receiving Mac resumes interrupted cleanup of revoked remote copies and queued changes on restart, even when the source Mac is unreachable.",
       "to_version": "0.3.2230"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.3.2230",
+      "merge_sha": "25047d0ee4bdc275d4c69f9c6aa574fd8ede9f95",
+      "pr": 585,
+      "summary": "Desktop and mobile interface review now uses evidence captured from the running app.",
+      "to_version": "0.3.2241"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.2241",
+      "merge_sha": "e58e9e914694715538fd1b83d5675434d642c26b",
+      "pr": 583,
+      "summary": "The Extensions page now matches the heading and options backgrounds of the other Preferences pages.",
+      "to_version": "0.3.2244"
+    },
+    {
+      "delta": {
+        "build": 22
+      },
+      "from_version": "0.3.2244",
+      "merge_sha": "96736158cf7ccb67eebcbc604e51e28c91adb22e",
+      "pr": 589,
+      "summary": "Leonardo Classic is the macOS default, and the first window opens with the saved palette when one is set.",
+      "to_version": "0.3.2266"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.2266",
+      "merge_sha": "c83ca1f5664b2da83055881501333511cb6e26cb",
+      "pr": 594,
+      "summary": "Run isolated macOS test cases once per CI job while retaining their diagnostics.",
+      "to_version": "0.3.2267"
     }
   ],
-  "current_version": "0.3.2230",
+  "current_version": "0.3.2267",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

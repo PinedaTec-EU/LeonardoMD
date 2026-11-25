@@ -1,12 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v136-en.mdlz` and `Guide-v136-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v138-en.mdlz` and `Guide-v138-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v136/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v138/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v136 explains migration of existing Mac pairing credentials.
+Guide v138 documents one-time import of Mac-to-Mac pairing tokens.
+Guide v138 EN SHA-256: `2c42dbcb36b35dde4bc881e6c13324832fb1f3a19e9b0ea07bef53b1a25f17a6`
+and ES SHA-256: `e3d995b45b7b044c661b3b79a8037157ce80399842a4ccef7c3e25b527f56d52`.
+
+Guide v137 documents Leonardo Classic as the default appearance.
 
 Guide v135 documents the macOS startup restoration switch in chapter 11. Package SHA-256: EN `c6a8c5455b10424145c2f74e05160630e1b72d9af042257e208eac71f84f9ef5`, ES `6e7b4e09d0cd4f95611683f29fced617b6c38342abc60084674814836822bbf6`.
 
