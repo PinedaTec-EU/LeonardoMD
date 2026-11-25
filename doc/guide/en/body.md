@@ -405,7 +405,7 @@ For example, if an instruction is separated from its field, ask the agent to cor
 
 *Home: isolated initial state; no favorites or recent documents.*
 
-Choose **Projects** or **Documents** at the top of Home to switch Favorites, Recents and Remote items together. The Open button opens a local folder or file for the selected type. A standalone file uses global preferences and does not expose its neighboring files. **Open folder as project** adds that folder’s navigation when you need it.
+Choose **Projects** or **Documents** at the top of Home to switch Favorites, Remote items and Recents together. Click a section’s disclosure arrow to collapse or expand it. The Open button opens a local folder or file for the selected type. A standalone file uses global preferences and does not expose its neighboring files. **Open folder as project** adds that folder’s navigation when you need it.
 
 In **Remote items**, select a project to browse its catalogue or a document to open its preview. The row identifies the source Mac. First add the shared project in **Preferences → Synchronization → Remote**. Files kept offline can be read when the source is unavailable. Other files may require reconnecting to their source.
 

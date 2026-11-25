@@ -1,12 +1,12 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v142-en.mdlz` and `Guide-v142-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v143-en.mdlz` and `Guide-v143-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v142/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v143/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v142 documents the shared Home selector and direct remote access in chapter 7.
+Guide v143 documents the shared Home selector, collapsible sections and direct remote access in chapter 7.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 

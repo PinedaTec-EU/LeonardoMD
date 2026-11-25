@@ -5,17 +5,27 @@ struct SavedItemsView: View {
     @Bindable var session: AppSession
     let kind: FavoriteItem.Kind
 
+    @State private var favoritesExpanded = true
+    @State private var remoteExpanded = true
+    @State private var recentsExpanded = true
+
     private static let visibleRowLimit = 5
     private static let rowHeight: CGFloat = 48
     private static let rowSpacing: CGFloat = 4
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            favorites
+            section("Favorites", isExpanded: $favoritesExpanded, identifier: "welcome-favorites") {
+                favorites
+            }
             Divider()
-            recentItems
+            section("Remote items", isExpanded: $remoteExpanded, identifier: "welcome-remote") {
+                WelcomeRemoteItemsView(kind: kind, showNonDocumentFiles: session.showNonDocumentFiles)
+            }
             Divider()
-            WelcomeRemoteItemsView(kind: kind, showNonDocumentFiles: session.showNonDocumentFiles)
+            section("Recent items", isExpanded: $recentsExpanded, identifier: "welcome-recent") {
+                recentItems
+            }
         }
         .padding(20)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -24,7 +34,6 @@ struct SavedItemsView: View {
 
     private var recentItems: some View {
         savedSection(
-            title: "Recent items",
             urls: session.recentItems(kind), emptyMessage: "No recent items",
             identifier: "welcome-recent"
         )
@@ -32,26 +41,33 @@ struct SavedItemsView: View {
 
     private var favorites: some View {
         savedSection(
-            title: "Favorites",
             urls: session.globalPreferences.favorites.filter { $0.kind == kind }.map(\.url),
             emptyMessage: "No favorites yet", identifier: "welcome-favorites"
         )
     }
 
-    private func savedSection(
-        title: String, urls: [URL],
-        emptyMessage: String, identifier: String
+    private func section<Content: View>(
+        _ title: String, isExpanded: Binding<Bool>, identifier: String,
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text(title)).font(.title2.weight(.semibold))
-            if urls.isEmpty {
-                Text(L10n.text(emptyMessage))
-                    .font(.caption).foregroundStyle(.secondary)
-            } else {
-                savedList(urls, kind: kind)
-                    .id(kind)
-                    .accessibilityIdentifier(identifier + "-list")
-            }
+        DisclosureGroup(isExpanded: isExpanded) {
+            content().padding(.top, 12)
+        } label: {
+            Text(L10n.text(title))
+                .font(.title2.weight(.semibold))
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    @ViewBuilder
+    private func savedSection(urls: [URL], emptyMessage: String, identifier: String) -> some View {
+        if urls.isEmpty {
+            Text(L10n.text(emptyMessage))
+                .font(.caption).foregroundStyle(.secondary)
+        } else {
+            savedList(urls, kind: kind)
+                .id(kind)
+                .accessibilityIdentifier(identifier + "-list")
         }
     }
 

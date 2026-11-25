@@ -1,4 +1,4 @@
 {
-  "build": 4,
-  "summary": "Switch between projects and documents on Home and open shared project catalogues or remote document previews directly."
+  "build": 6,
+  "summary": "Switch between projects and documents on Home, collapse Favorites, Remote items or Recents, and open shared catalogues and document previews directly."
 }

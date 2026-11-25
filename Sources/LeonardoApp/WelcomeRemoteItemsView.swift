@@ -12,7 +12,6 @@ struct WelcomeRemoteItemsView: View {
     var body: some View {
         let items = remoteItems
         VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text("Remote items")).font(.title2.weight(.semibold))
             if items.isEmpty {
                 Text(L10n.text("Add a shared project in Synchronization preferences to see its remote items here."))
                     .font(.caption).foregroundStyle(.secondary)
@@ -28,7 +27,6 @@ struct WelcomeRemoteItemsView: View {
                 .id(kind)
             }
         }
-        .accessibilityIdentifier("welcome-remote")
         .sheet(item: $destination) { item in
             DesktopDownloadBrowser(library: controller.downloads, projectID: item.projectID,
                                    initialPath: item.path, showNonDocumentFiles: showNonDocumentFiles)
