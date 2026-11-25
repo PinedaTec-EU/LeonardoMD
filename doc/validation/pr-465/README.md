@@ -58,27 +58,17 @@ metadata, and increments only successful builds.
   scripts/tests/test_release_ledger.py`: 7 tests pass against the pinned
   central engine.
 
-## Hosted linked-document test
+## Historical linked-document test
 
-The focused linked-document diagnostic test passes locally on macOS 27.0.1,
-Xcode 27.1 with the original synthetic DOM click (one test, 0.710 seconds;
-build delta 5). The earlier PR head `d00d6d804d5285b8f5dda240b95ffa3ec54ba6ec`
-failed the same assertions in both the push and pull-request GitHub Actions
-runs on macos-15/Xcode 26.3. The linked link was present in the WKWebView DOM,
-but the diagnostic presenter was not called on that runner. Issue
-[#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468) tracks the
-hosted-runner failure.
+The old PR included a linked-document diagnostic test tracked by issue
+[#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468). Its fixture was
+based on a renderer path that no longer exists on current `main`, so the
+reconciliation deliberately skipped that stale test commit. The current
+candidate retains the product integration coverage already present on `main`;
+no replacement UI/capture test was added. The old hosted-runner observations
+remain historical evidence only and do not establish a current-head failure.
 
-The candidate test now posts the same `leonardoLink` message used by the
-production renderer through the registered WKWebView bridge, then verifies the
-nested preview and diagnostic presenter. This avoids relying on a synthetic
-DOM click while keeping the production renderer, message handler and
-navigation path in the test. The revised test passes locally (one test, 0.592
-seconds; build delta 6). Exact-head GitHub Actions on macos-15/Xcode 26.3 still
-needs to confirm the fix; this test failure does not establish a defect in a
-packaged app.
-
-## Packaged macOS Help smoke
+## Historical packaged macOS Help smoke (Guide v94)
 
 Date: 2026-11-17. `./launch.sh --qa` produced a fresh native app with version
 0.3.1884 (build 1884), macOS 27.0.1 (26A434), Xcode 27.1 (27A9275). Bundle:
@@ -163,11 +153,11 @@ the document-extension section.
 | [English frequency settings](ios-frequency-english.png) | English section, selected interval and all frequency choices in the native picker. |
 | [Spanish frequency settings](ios-frequency-spanish.png) | Spanish section and all six localized choices in the native picker. |
 
-## Refreshed Guide v94 packaged Help smoke — pending
+## Reconciled Guide v147 packaged Help smoke — pending coordinator run
 
-The regenerated candidate packages are EN SHA-256
-`0e1b1353b7f9e7811daf14e6c497284ee11b38ff9cf33c6ce72092d29184a9bb` and ES
-`ce50a6c316e437a84b74a4bb97522c532624fa04928cddec79acd3703945b8de`. Packaged
+The reconciled candidate packages are EN SHA-256
+`668ef33e68c489ebcfdfba211671f95dbf23ae0979755ede47207a44f3e0e54a` and ES
+`29307cabb13e8cae29ca924c32769f580109004805fe801449de70ff75c79b6e`. Packaged
 Help still needs a fresh native macOS process that opens both package copies.
 
 At the pre-launch process check on 2026-11-17, PID 16139 was already running
@@ -176,7 +166,7 @@ At the pre-launch process check on 2026-11-17, PID 16139 was already running
 build 1884; started 18:21:04 CET). It is not an instance created by this
 validation, and LeonardoMD uses product-wide single-instance ownership. It was
 left running; no new Help smoke or first-window readiness is claimed for the
-regenerated hashes.
+reconciled hashes.
 
 ## Release cleanup gate
 

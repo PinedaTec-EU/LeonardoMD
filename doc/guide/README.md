@@ -1,14 +1,17 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v144-en.mdlz` and `Guide-v144-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v147-en.mdlz` and `Guide-v147-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v144/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v147/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v144 documents the shared Home selector, collapsible sections and direct remote access in chapter 7.
-It also carries the reconciled Little Leonardo extension settings, consent flow and bundled Demo
-coverage in both locales; the current package remains v144 rather than the obsolete PR-v94 copy.
+Guide v147 carries forward Guide v144's shared Home selector, collapsible sections and direct remote access,
+and adds the reconciled Little Leonardo extension settings, consent flow, synchronization frequency and
+bundled Demo coverage in both locales. Guide v144 remains a prior user-owned copy; the obsolete PR-v94
+resources are not restored.
+Guide v147 EN SHA-256: `668ef33e68c489ebcfdfba211671f95dbf23ae0979755ede47207a44f3e0e54a`
+and ES SHA-256: `29307cabb13e8cae29ca924c32769f580109004805fe801449de70ff75c79b6e`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 

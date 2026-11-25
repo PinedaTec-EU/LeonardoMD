@@ -371,8 +371,8 @@ not claimed in this source-only handoff.
 PR #465 reconciliation (25 Nov 2026): the five device-local built-in
 extensions, consent recommendations and Demo v2 were retained while the old
 Guide-v94 resources and UI-capture XCTest were removed in favor of the current
-main Guide package and product tests. The source branch's simulator and Help
-records remain historical; this reconciliation made no device or GUI claim.
+main Guide v147 package and product tests. The source branch's simulator and
+Help records remain historical; this reconciliation made no device or GUI claim.
 The recorder correction for nested release-ledger deltas is retained under
 [#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467), and the separate
 hosted preview CI issue remains [#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468).

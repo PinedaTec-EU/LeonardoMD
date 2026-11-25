@@ -613,10 +613,6 @@ These extensions are included with Leonardo, work locally and are initially disa
 
 On iPhone and iPad, Little Leonardo uses a device-local sheet for the same consent choice. The switch list includes only detected built-in extensions; select what to enable or choose **Not now**.
 
-![Little Leonardo asks which detected document extensions to enable](guide/en/assets/mobile-extension-recommendation.jpg)
-
-*English Little Leonardo recommendation for the local Demo document. All five detected extensions are off until selected; preferences apply on this device.*
-
 Detection recommends only Leonardo's five built-in extensions. It is a recommendation, not a full syntax validator: code examples that merely describe syntax do not require activation. Each switch selects one extension for **Enable selected**; **Not now** discards those selections and prevents another recommendation during the current opening. The separate global switch hides recommendations across documents. **Preferences → Extensions → Reset extension warnings** restores them and clears older per-extension suppressions without changing enabled extensions. Check the scope shown in the dialog before enabling.
 
 ![Extensions preferences with the warning reset action](guide/en/assets/warnings.png)
