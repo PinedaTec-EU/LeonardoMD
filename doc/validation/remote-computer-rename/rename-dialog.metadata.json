@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-25T21:58:19.726726+00:00",
+  "capture": {
+    "captured_at": "2026-11-25T21:57:36.147909+00:00",
+    "route": "Preferences → Synchronization → Remote → Rename computer",
+    "screen": "LeonardoMD native SwiftUI on macOS 27.2.1",
+    "browser_name": "Native SwiftUI (no browser)",
+    "browser_version": "N/A",
+    "state": "English, Classic light, focused rename field, primary Save, reopened after Return",
+    "viewport_css": {
+      "width": 502,
+      "height": 245
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1004,
+    "height_px": 490,
+    "sha256": "42a5de3db45281533d6ef4790e96e9df55f207cefdb8ef8468ea4b6b44fe8835"
+  },
+  "source": {
+    "revision_at_collection": "00bda2c0c23f5605ce0a51b4388f61591a00f630",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}
