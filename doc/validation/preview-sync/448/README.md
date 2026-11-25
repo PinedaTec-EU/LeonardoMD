@@ -83,12 +83,12 @@ This follow-up validates the final renderer snapshot changes against the same pa
 - The full compile produced non-failing warnings in unrelated existing code, including a `.wifiAware` exhaustiveness warning in `Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift`; none is in this PR's source changes.
 - Exact-head GitHub CI and a strict independent review are separate merge gates; both require a result for the published PR head.
 
-The four sidecars and this report are linked from the [PR #448 validation thread](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The machine-readable acceptance record is [native-acceptance.json](native-acceptance.json).
+The four sidecars and this report are linked from the [PR #448 validation thread](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The [machine-readable record](native-acceptance.json) separates the historical pre-integration candidate from the merged Beta acceptance.
 
 
 ## Merged Beta acceptance — 2026-11-17
 
-PR [#448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448) merged as `76740ee0f0017609978557241115a81872d2ad71`; current `main` is `63ec49278932ec558dd436ed3aa38e7b72d89ce2`. Signed and notarized Beta [v0.3.1884](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1884) contains Guide v93 and the Preview close recovery. Exact-head [pull_request CI](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44099382827), retried [push CI](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44099367411), [validation](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44120116858) and [evidence-count check](https://github.com/PinedaTec-EU/LeonardoMD/runs/134169597849) passed. The native captures bound to `8f93584b5d6f5ed8e5ef121959539bd7c6a72102` show one Retry action and the close choices Keep Open / Discard Preview Changes.
+PR [#448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448) merged as `76740ee0f0017609978557241115a81872d2ad71`. The Beta tag points to `63ec49278932ec558dd436ed3aa38e7b72d89ce2`. Signed and notarized Beta [v0.3.1884](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1884) contains Guide v93 and the Preview close recovery. Exact-head [pull_request CI](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44099382827), retried [push CI](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44099367411), [validation](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/44120116858) and [evidence-count check](https://github.com/PinedaTec-EU/LeonardoMD/runs/134169597849) passed. The native captures bound to `8f93584b5d6f5ed8e5ef121959539bd7c6a72102` show one Retry action and the close choices Keep Open / Discard Preview Changes.
 
 ### Failure and recovery behavior
 
