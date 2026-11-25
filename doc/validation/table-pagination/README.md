@@ -1,8 +1,35 @@
 # Table pagination acceptance
 
-The [native Preview](pagination.png) shows the first fragment ending at Record 05 and the next fragment starting with a repeated header and Record 06. The synthetic MDLF has a 420 × 360 point custom page, 28 body rows and an authored page break after the table. See [capture metadata](pagination.metadata.json).
+The [native Preview](pagination.png) shows the first fragment ending at Record 05 and the next fragment starting with a repeated header and Record 06. The synthetic MDLF has a 420 × 360 point custom page, 28 body rows and an authored page break after the table. See [capture metadata](pagination.metadata.json). The checked-in PNG captures and their metadata are the earlier v145 visual record; the current v146 packaged Help smoke is recorded below.
 
-The native Help menu opened the packaged v145 editions. The updated passages rendered in [English](chapter-en.png) and [Spanish](chapter-es.png). Both Help-created copies in the isolated home match the bundled resources byte for byte. [English metadata](chapter-en.metadata.json) · [Spanish metadata](chapter-es.metadata.json).
+## Current candidate revalidation
+
+On 2026-11-26 CET, the reconciled candidate was validated from source SHA
+`940948e76c7e0eb06a553f657cb5e857d0f6da6e` after rebasing onto
+`ca526517fe5b48bc00b2c9edbc5f57943e2b713e` (`origin/main`). The five focused
+`TablePaginationTests` passed, including the meaningful heading boundary and
+unsupported `colspan`/`rowspan` PDF rejection regressions. The packaged QA
+build was produced with `./launch.sh --qa`; its executable was `LeonardoMD`
+and `otool -L` showed no XCTest linkage.
+
+The fresh QA process was PID 888, started at 00:32:53 CET, from
+`LeonardoMDQA.app` with bundle identifier
+`eu.pinedatec.LeonardoMD.qa.ccf07e4a52344c348d7705c1df09cb36`. It reached its
+first window after dismissing the existing restored-document metadata warning
+(`unknownMetadataKey("document.signing.method")`) and release-notes window.
+The English Help menu opened the v146 user-owned copy; its chapter 7 and
+chapter 10 passages rendered and its SHA-256 matched the bundled
+`3b863449ff6fe5cbc1051b7fe57bb3fb823b0ae818c234aa61c97030274a1489` copy.
+The Spanish v146 resource was opened directly from the QA worktree because the
+English QA instance does not switch Help locale; its chapter 7 and chapter 10
+passages rendered and its bundled SHA-256 is
+`a063da2b8f0a6a30afecaeea56cdf8012bf2d0ef135a9110a9211e642577c480`.
+The owned process quit via the app command and PID 888 was verified absent;
+the pre-existing XCTest process in worktree #514 was left untouched.
+
+The current Help text includes the #605 chapter 7 remote-menu sentence and the
+table continuation guidance in both locales. Existing guide copies and
+practice answers were not overwritten.
 
 The prior packaged-equivalence record is pinned to the full source SHA
 `07f6e12f080f6c68670c271464e6c901b58ffcc6` and reports `0.3.2298 / 2298`.
