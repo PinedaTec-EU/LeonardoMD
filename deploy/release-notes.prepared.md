@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2307
+
+- #604 Fixed: separate opening and managing remote projects ([#605](https://github.com/PinedaTec-EU/LeonardoMD/pull/605))
+
+<p>Favorites, Remote items and Recents have illustrated headings. Open a shared project from its row or use its separate menu to manage offline availability and temporary downloads.</p>
+
+Source: `ca526517fe5b48bc00b2c9edbc5f57943e2b713e`. Delta: `{"build": 4}`.
+
 ## 0.3.2303
 
 - #577 Added: shared form reservation protocol and host adapter ([#578](https://github.com/PinedaTec-EU/LeonardoMD/pull/578))

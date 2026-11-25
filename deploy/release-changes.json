@@ -1379,6 +1379,16 @@
       "pr": 578,
       "summary": "Adds the protocol and host-side persistence for reserving shared Leonardo forms, validating revisions and responses, and revoking an exact session. The editor and mobile controls are pending.",
       "to_version": "0.3.2303"
+    },
+    {
+      "delta": {
+        "build": 4
+      },
+      "from_version": "0.3.2303",
+      "merge_sha": "ca526517fe5b48bc00b2c9edbc5f57943e2b713e",
+      "pr": 605,
+      "summary": "Favorites, Remote items and Recents have illustrated headings. Open a shared project from its row or use its separate menu to manage offline availability and temporary downloads.",
+      "to_version": "0.3.2307"
     }
   ],
   "initial_version": "0.1.56",
@@ -1389,5 +1399,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.2303"
+  "version": "0.3.2307"
 }
