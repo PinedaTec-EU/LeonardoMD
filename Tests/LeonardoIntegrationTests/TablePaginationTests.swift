@@ -80,7 +80,7 @@ final class TablePaginationTests: XCTestCase {
     }
 
     func testHeadingBoundaryDoesNotCreateBlankPageWhenPairCannotFitTogether() async throws {
-        let body = "## Table heading\n\n| Key | Detail |\n| --- | --- |\n| First | Row |\n| Second | Row |"
+        let body = "## Table heading\n\n| Key | Detail |\n| --- | --- |\n| First | Row |\n| Second | Row |\n\n<!-- leonardo:page-break -->\n\nAfter the table"
         // The heading plus the first 50-point row is larger than this page's
         // remaining area, while the table fragment fits on a fresh page.
         try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 50, 24])], height: 180) { _, web in
@@ -112,6 +112,7 @@ final class TablePaginationTests: XCTestCase {
     func testUnsupportedSpanTableMarksOverflowAndRejectsPDF() async throws {
         let body = "| Header | Detail |\n| --- | --- |\n"
             + String(repeating: "| Record | Description |\n", count: 3)
+            + "\n<!-- leonardo:page-break -->\n\nAfter the table"
         for attribute in ["colspan", "rowspan"] {
             try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 80, 80, 80])], height: 180) { host, web in
                 let probe = try await web.evaluateJavaScript("""
