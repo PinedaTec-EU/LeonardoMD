@@ -14,12 +14,50 @@ final class LeonardoSigningCredentialStoreTests: XCTestCase {
         }
 
         let initial = interactionAllowed()
-        XCTAssertFalse(SecurityKeychainBackend.withInteractionPolicy(prompt: nil, interactionAllowed))
+        XCTAssertFalse(LoginKeychainInteraction.perform(allowed: false, failure: { _ in true }, interactionAllowed))
         XCTAssertEqual(
-            SecurityKeychainBackend.withInteractionPolicy(prompt: "Authorize signing", interactionAllowed),
+            LoginKeychainInteraction.perform(allowed: true, failure: { _ in !initial }, interactionAllowed),
             initial
         )
         XCTAssertEqual(interactionAllowed(), initial)
+    }
+    func testBackgroundReadDefersWhileExplicitAuthorizationIsInFlight() {
+        let status = LoginKeychainInteraction.perform(allowed: true, failure: { $0 }) {
+            LoginKeychainInteraction.perform(allowed: false, failure: { $0 }) {
+                XCTFail("Background access must not enter the Keychain during authorization")
+                return errSecSuccess
+            }
+        }
+        XCTAssertEqual(status, errSecInteractionNotAllowed)
+    }
+    func testOverlappingSilentReadsBothComplete() {
+        let firstEntered = DispatchSemaphore(value: 0)
+        let releaseFirst = DispatchSemaphore(value: 0)
+        let secondStarted = DispatchSemaphore(value: 0)
+        let firstFinished = expectation(description: "First silent read finished")
+        let secondFinished = expectation(description: "Second silent read finished")
+        DispatchQueue.global().async {
+            let result = LoginKeychainInteraction.perform(allowed: false, failure: { $0 }) {
+                firstEntered.signal()
+                XCTAssertEqual(releaseFirst.wait(timeout: .now() + 5), .success)
+                return errSecSuccess
+            }
+            XCTAssertEqual(result, errSecSuccess)
+            firstFinished.fulfill()
+        }
+        XCTAssertEqual(firstEntered.wait(timeout: .now() + 5), .success)
+        DispatchQueue.global().async {
+            let result = LoginKeychainInteraction.perform(allowed: false, failure: { $0 }) {
+                secondStarted.signal()
+                return errSecSuccess
+            }
+            if result != errSecSuccess { secondStarted.signal() }
+            XCTAssertEqual(result, errSecSuccess)
+            secondFinished.fulfill()
+        }
+        XCTAssertEqual(secondStarted.wait(timeout: .now() + 0.1), .timedOut)
+        releaseFirst.signal()
+        wait(for: [firstFinished, secondFinished], timeout: 5)
     }
 #endif
 

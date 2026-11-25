@@ -76,7 +76,9 @@ final class DesktopPeerController {
             self.library = DesktopPeerLibrary(
                 connections: FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections", isDirectory: true)),
                 copies: copies, workspace: DesktopPeerWorkspace(root: workingRoot, copies: copies),
-                credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers"),
+                credentials: FileDesktopPeerCredentialStore(
+                    directory: root.appendingPathComponent("Credentials", isDirectory: true),
+                    legacy: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers")),
                 remote: HelperGatedPeerRemote(requireOnline: { try await sharedHelper.requireReadyHelper() }), revoker: revoker,
                 outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox", isDirectory: true)),
                 receiptApplier: DesktopPeerReceiptApplier(workingRoot: workingRoot, copies: copies,
@@ -85,6 +87,12 @@ final class DesktopPeerController {
     }
 
     func initialize() async {
+        await loadConnections()
+    }
+
+    private(set) var needsConnectionReload = false
+
+    private func loadConnections() async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         do {
@@ -95,8 +103,19 @@ final class DesktopPeerController {
                 return try await self.fetchDownload(id: id, entry: entry)
             }
             try await restoreDownloads()
+            needsConnectionReload = false
             startAutomaticSync()
-        } catch { self.error = PeerSyncErrorMessage.text(error) }
+        } catch {
+            needsConnectionReload = true
+            present(error)
+        }
+    }
+
+    private func present(_ error: Error) {
+        if (error as? DesktopPeerCredentialError) == .legacyAuthorizationUnavailable {
+            return
+        }
+        self.error = PeerSyncErrorMessage.text(error)
     }
 
     func updateInterval(_ minutes: Int) {
@@ -113,19 +132,21 @@ final class DesktopPeerController {
         guard syncIntervalMinutes > 0 else { return }
         let seconds = syncIntervalMinutes * 60
         automaticTask = Task { [weak self] in
-            while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
-                guard let self else { return }
-                guard !self.busy else { continue }
-                for id in self.connections.filter({ !$0.revoked }).map(\.id) {
-                    guard !Task.isCancelled else { return }
-                    await self.refresh(id)
-                }
-                for id in self.copies.map(\.id) {
-                    guard !Task.isCancelled else { return }
-                    await self.compare(id)
-                    guard !Task.isCancelled else { return }
-                    if self.copies.contains(where: { $0.id == id }) { await self.send(id) }
+            await FileDesktopPeerCredentialStore.$allowsLegacyAuthorization.withValue(false) {
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
+                    guard let self else { return }
+                    guard !self.busy else { continue }
+                    for id in self.connections.filter({ !$0.revoked && !$0.credentialDeferred }).map(\.id) {
+                        guard !Task.isCancelled else { return }
+                        await self.refresh(id)
+                    }
+                    for id in self.copies.map(\.id) {
+                        guard !Task.isCancelled else { return }
+                        await self.compare(id)
+                        guard !Task.isCancelled else { return }
+                        if self.copies.contains(where: { $0.id == id }) { await self.send(id) }
+                    }
                 }
             }
         }
@@ -141,15 +162,34 @@ final class DesktopPeerController {
             let input = address.trimmingCharacters(in: .whitespacesAndNewlines)
             let normalized = input.contains("://") ? input : "https://" + input
             guard let url = URL(string: normalized) else { throw TransportError.invalidEndpoint }
+            let connection: DesktopPeerConnection
             if url.scheme == "littleleonardo" {
                 let qr = try DirectPairingQR.decode(url, now: Date())
-                _ = try await library.enroll(endpoint: qr.endpoint, fingerprint: qr.certificateFingerprint, invitation: qr.invitation, name: name)
+                connection = try await library.enroll(endpoint: qr.endpoint, fingerprint: qr.certificateFingerprint, invitation: qr.invitation, name: name)
             } else {
-                _ = try await library.enroll(endpoint: url, fingerprint: nil, invitation: nil, name: name)
+                connection = try await library.enroll(endpoint: url, fingerprint: nil, invitation: nil, name: name)
             }
-            try await reload()
+            connections.append(connection)
+            do { try await reload() }
+            catch { present(error) }
             return true
-        } catch { self.error = PeerSyncErrorMessage.text(error); return false }
+        } catch { present(error); return false }
+    }
+
+    func refreshConnectionOnRequest(_ id: UUID) async {
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        do {
+            try authorizeStorage()
+            if connections.contains(where: { $0.id == id && $0.credentialDeferred }) {
+                guard !importingLegacyCredentials else { return }
+                try await authorizeLegacyCredentials([id])
+                await loadConnections()
+                guard helper.online else { return }
+            }
+            await refresh(id)
+        } catch {
+            self.error = PeerSyncErrorMessage.text(error)
+        }
     }
 
     func refresh(_ id: UUID) async {
@@ -184,15 +224,53 @@ final class DesktopPeerController {
                 }
                 reviewStore.reconcileFiles(currentPaths, connectionID: id, projectID: descriptor.id)
             }
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload(); try? await restoreDownloads() }
+        } catch { present(error); try? await reload(); try? await restoreDownloads() }
         for project in downloads.projects { await downloads.downloadRetained(id: project.id) }
     }
 
+    func refreshAllConnectionsInBackground() async {
+        await refreshConnections()
+    }
+
+    private var importingLegacyCredentials = false
+
     func refreshAllConnections() async {
-        guard !InstanceRuntime.isAdditional else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        if importingLegacyCredentials {
+            await refreshConnections()
+            return
+        }
+        do { try authorizeStorage() }
+        catch { present(error); return }
+
+        let deferredIDs = connections.filter(\.credentialDeferred).map(\.id)
+        var authorizationFailure: Error?
+        do { try await authorizeLegacyCredentials(deferredIDs) }
+        catch { authorizationFailure = error }
+
+        if !deferredIDs.isEmpty { await loadConnections() }
+        await refreshConnections()
+        if let authorizationFailure {
+            error = PeerSyncErrorMessage.text(authorizationFailure)
+        }
+    }
+
+    private func authorizeLegacyCredentials(_ ids: [UUID]) async throws {
+        guard !ids.isEmpty else { return }
+        importingLegacyCredentials = true
+        defer { importingLegacyCredentials = false }
+        for id in ids { try await library.authorizeLegacyCredential(connectionID: id) }
+    }
+
+    private func refreshConnections() async {
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        if needsConnectionReload {
+            await loadConnections()
+            guard !needsConnectionReload else { return }
+        }
         await helper.refresh()
         guard helper.online else { return }
-        for connection in connections where !connection.revoked {
+        for connection in connections where !connection.revoked && !connection.credentialDeferred {
             await refresh(connection.id)
         }
     }
@@ -231,7 +309,7 @@ final class DesktopPeerController {
             }
             reviewStore.acceptProject(connectionID: connectionID, projectID: projectID)
         } catch {
-            self.error = PeerSyncErrorMessage.text(error)
+            present(error)
             try? await restoreDownloads()
         }
     }
@@ -276,14 +354,14 @@ final class DesktopPeerController {
             try authorizeStorage()
             _ = try await library.importProject(connectionID: connectionID, projectID: projectID)
             try await reload()
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
+        } catch { present(error); try? await reload() }
     }
 
     func open(_ id: UUID) async -> URL? {
         guard !InstanceRuntime.isAdditional, !busy else { return nil }
         busy = true; defer { busy = false }
         do { try authorizeStorage(); return try await library.open(copyID: id) }
-        catch { self.error = PeerSyncErrorMessage.text(error); return nil }
+        catch { present(error); return nil }
     }
 
     func send(_ id: UUID) async {
@@ -305,7 +383,7 @@ final class DesktopPeerController {
             if try await library.send(copyID: id, buffers: selected) != nil { submitted.insert(id) }
             else { unchanged.insert(id) }
             try await reload()
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
+        } catch { present(error); try? await reload() }
     }
 
     func compare(_ id: UUID) async {
@@ -320,7 +398,7 @@ final class DesktopPeerController {
             let selectedBuffers = try await buffers(root).filter { selection?.contains($0.path) == true }
             comparisons[id] = try await library.compare(copyID: id, buffers: selectedBuffers)
             try await reload()
-        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
+        } catch { present(error); try? await reload() }
     }
 
     private func authorizePeerPath(_ url: URL) throws {
@@ -367,7 +445,7 @@ final class DesktopPeerController {
         let valid = Set(copies.map(\.id))
         submitted.formIntersection(valid); unchanged.formIntersection(valid)
         comparisons = comparisons.filter { valid.contains($0.key) }
-        let active = Set(connections.filter { !$0.revoked }.map(\.id))
+        let active = Set(connections.filter { !$0.revoked && !$0.credentialDeferred }.map(\.id))
         available = available.filter { active.contains($0.key) }
     }
 }

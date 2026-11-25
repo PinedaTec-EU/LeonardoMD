@@ -25,6 +25,30 @@ class QABundleTests(unittest.TestCase):
             'CFBundleExecutable': executable, 'CFBundlePackageType': 'APPL',
         }))
 
+    def test_registered_helper_qa_preserves_production_identifier(self):
+        metadata = {'CFBundleIdentifier': 'eu.pinedatec.LeonardoMD'}
+        with patch.object(qa_bundle, 'verify_bundle', return_value=metadata), \
+                patch.object(qa_bundle.bundle_dependencies, 'sign_bundle') as sign, \
+                patch.object(subprocess, 'run', wraps=subprocess.run) as run:
+            def copy_or_verify(command, **kwargs):
+                if command[0] == '/usr/bin/ditto':
+                    shutil.copytree(command[1], command[2])
+            run.side_effect = copy_or_verify
+            bundle = qa_bundle.prepare_bundle(self.bundle, 'Developer ID',
+                                              use_registered_sync_helper=True)
+            self.addCleanup(shutil.rmtree, bundle.parent)
+            info = plistlib.loads((bundle / 'Contents/Info.plist').read_bytes())
+            self.assertEqual(info['CFBundleIdentifier'], 'eu.pinedatec.LeonardoMD')
+            sign.assert_called_once_with(bundle, 'Developer ID')
+            self.assertIn('certificate leaf', run.call_args.args[0][-2])
+
+    def test_registered_helper_qa_requires_signing(self):
+        with patch.object(qa_bundle, 'verify_bundle', return_value={
+            'CFBundleIdentifier': 'eu.pinedatec.LeonardoMD',
+        }):
+            with self.assertRaisesRegex(ValueError, 'Developer ID'):
+                qa_bundle.prepare_bundle(self.bundle, use_registered_sync_helper=True)
+
     def test_original_test_runner_packaging_is_rejected(self):
         self.write_metadata('RecentsQA')
         with self.assertRaisesRegex(ValueError, 'real LeonardoMD'):

@@ -3,6 +3,8 @@ import Security
 
 /// Platform secure storage, scoped to this app and device; secrets never enter project files.
 public actor SecureSecretStore {
+    @TaskLocal public static var allowsAuthenticationUI = true
+
     private let service: String
     public init(service: String) { self.service = service }
 
@@ -11,7 +13,7 @@ public actor SecureSecretStore {
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        let status = Self.perform { SecItemCopyMatching(query as CFDictionary, &result) }
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess, let data = result as? Data,
               let credential = String(data: data, encoding: .utf8) else { throw CredentialStorageError(status: status) }
@@ -23,20 +25,30 @@ public actor SecureSecretStore {
         let query = baseQuery(id)
         let value: [String: Any] = [kSecValueData as String: Data(credential.utf8),
                                   kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly]
-        var status = SecItemUpdate(query as CFDictionary, value as CFDictionary)
+        var status = Self.perform { SecItemUpdate(query as CFDictionary, value as CFDictionary) }
         if status == errSecItemNotFound {
-            status = SecItemAdd(query.merging(value) { _, new in new } as CFDictionary, nil)
+            status = Self.perform { SecItemAdd(query.merging(value) { _, new in new } as CFDictionary, nil) }
         }
         guard status == errSecSuccess else { throw CredentialStorageError(status: status) }
     }
 
     public func remove(id: UUID) throws {
-        let status = SecItemDelete(baseQuery(id) as CFDictionary)
+        let status = Self.perform { SecItemDelete(baseQuery(id) as CFDictionary) }
         guard status == errSecSuccess || status == errSecItemNotFound else { throw CredentialStorageError(status: status) }
     }
 
     private func baseQuery(_ deviceID: UUID) -> [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-         kSecAttrAccount as String: deviceID.uuidString, kSecAttrSynchronizable as String: false]
+        [
+            kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+            kSecAttrAccount as String: deviceID.uuidString, kSecAttrSynchronizable as String: false
+        ]
+    }
+
+    private static func perform(_ operation: () -> OSStatus) -> OSStatus {
+        #if os(macOS)
+        LoginKeychainInteraction.perform(allowed: allowsAuthenticationUI, failure: { $0 }, operation)
+        #else
+        operation()
+        #endif
     }
 }
