@@ -15,15 +15,15 @@ struct SavedItemsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            section("Favorites", isExpanded: $favoritesExpanded, identifier: "welcome-favorites") {
+            section("Favorites", symbol: "star.fill", isExpanded: $favoritesExpanded, identifier: "welcome-favorites") {
                 favorites
             }
             Divider()
-            section("Remote items", isExpanded: $remoteExpanded, identifier: "welcome-remote") {
+            section("Remote items", symbol: "desktopcomputer", isExpanded: $remoteExpanded, identifier: "welcome-remote") {
                 WelcomeRemoteItemsView(kind: kind, showNonDocumentFiles: session.showNonDocumentFiles)
             }
             Divider()
-            section("Recent items", isExpanded: $recentsExpanded, identifier: "welcome-recent") {
+            section("Recent items", symbol: "clock", isExpanded: $recentsExpanded, identifier: "welcome-recent") {
                 recentItems
             }
         }
@@ -47,14 +47,20 @@ struct SavedItemsView: View {
     }
 
     private func section<Content: View>(
-        _ title: String, isExpanded: Binding<Bool>, identifier: String,
+        _ title: String, symbol: String, isExpanded: Binding<Bool>, identifier: String,
         @ViewBuilder content: @escaping () -> Content
     ) -> some View {
         DisclosureGroup(isExpanded: isExpanded) {
             content().padding(.top, 12)
         } label: {
-            Text(L10n.text(title))
-                .font(.title2.weight(.semibold))
+            HStack(spacing: 10) {
+                Image(systemName: symbol)
+                    .foregroundStyle(session.accentColor)
+                    .frame(width: 26)
+                    .accessibilityHidden(true)
+                Text(L10n.text(title))
+            }
+            .font(.title2.weight(.semibold))
         }
         .accessibilityIdentifier(identifier)
     }
