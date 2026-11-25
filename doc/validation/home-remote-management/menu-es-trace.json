@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-11-25T22:21:44.341Z",
+  "locale": "es",
+  "menu": [
+    "menu button More, Help: Gestionar proyecto remoto",
+    "Mantener proyecto sin conexión, ID: pin",
+    "Liberar descargas temporales del proyecto, ID: cloud"
+  ],
+  "recentProjectsBefore": {
+    "count": 10,
+    "orderedRowsSHA256": "2e9d41e7f92bed795ac5b4a062ef03cf1c07aa9fcc3c4763c81dc1e0eb273261",
+    "containsSyntheticProject": false
+  },
+  "recentProjectsAfterClosingMenu": {
+    "count": 10,
+    "orderedRowsSHA256": "2e9d41e7f92bed795ac5b4a062ef03cf1c07aa9fcc3c4763c81dc1e0eb273261",
+    "containsSyntheticProject": false
+  },
+  "buildSource": "72019596582a28c48b6a9f2758e26fae1190519c",
+  "version": "0.3.2298",
+  "build": 2298,
+  "qaPID": 12728,
+  "qaStartedAt": "2026-11-25T23:21:19+01:00",
+  "quitVerified": true
+}

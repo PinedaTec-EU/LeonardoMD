@@ -1,0 +1,30 @@
+{
+  "buildSource": "89b740b2d7314ed3fec171fecdfa011571381e56",
+  "version": "0.3.2298",
+  "build": 2298,
+  "bundle": "leonardo-native-qa-s3o9n5_a/LeonardoMDQA.app",
+  "checks": [
+    {
+      "locale": "en",
+      "chapter": 7,
+      "revision": 145,
+      "observedThrough": "Help menu",
+      "bundledSHA256": "d224c4ff73febb505856a25095c74fb5b5e83bdf4d8dda8bbdd5a6bb57ac9b90",
+      "workingCopySHA256": "d224c4ff73febb505856a25095c74fb5b5e83bdf4d8dda8bbdd5a6bb57ac9b90",
+      "pid": 71375,
+      "startedAt": "2026-11-25T22:44:16+01:00",
+      "quitVerified": true
+    },
+    {
+      "locale": "es",
+      "chapter": 7,
+      "revision": 145,
+      "observedThrough": "Help menu",
+      "bundledSHA256": "c37d47dfc9d6c95eb8a384701089a18cd8c109cf316d295caddf2b99f064c25b",
+      "workingCopySHA256": "c37d47dfc9d6c95eb8a384701089a18cd8c109cf316d295caddf2b99f064c25b",
+      "pid": 73284,
+      "startedAt": "2026-11-25T22:45:48+01:00",
+      "quitVerified": true
+    }
+  ]
+}

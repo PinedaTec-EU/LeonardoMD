@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-25T21:54:14.486602+00:00",
+  "collected_at": "2026-11-25T22:23:13.872266+00:00",
   "capture": {
     "captured_at": "2026-11-25T21:53:59+00:00",
     "route": "Home / Projects",
@@ -22,8 +22,8 @@
     "sha256": "00780d65e7f3b01e3ef5511f5ca2a9437762dce6a5d0540865ff4d848ab408f7"
   },
   "source": {
-    "revision_at_collection": "72019596582a28c48b6a9f2758e26fae1190519c",
+    "revision_at_collection": "46869ccb78b9fc9546e63d9f4560f926022dd2fd",
     "tracked_changes_present": true,
-    "untracked_files_present": false
+    "untracked_files_present": true
   }
 }
