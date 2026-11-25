@@ -28,6 +28,15 @@ enum DesktopConsentActionOutcome: Equatable {
     case failed
 }
 
+/// Separates the durable preferences write from the best-effort runtime restart.
+/// A persisted-but-unavailable result is safe for callers to use as the new
+/// configuration while leaving the existing Sync diagnostic visible.
+enum DesktopSyncUpdateOutcome: Equatable {
+    case notPersisted
+    case persisted
+    case persistedButUnavailable
+}
+
 enum RubricCaptureError: LocalizedError {
     case unavailable(RubricCaptureAvailability)
     case missingRequest
@@ -192,9 +201,14 @@ final class DesktopSyncController {
     }
 
     func update(_ updated: MobileSyncPreferences) async {
-        guard !InstanceRuntime.isAdditional, !busy else { return }
+        _ = await updateResult(updated)
+    }
+
+    private func updateResult(_ updated: MobileSyncPreferences) async -> DesktopSyncUpdateOutcome {
+        guard !InstanceRuntime.isAdditional, !busy else { return .notPersisted }
         busy = true
         defer { busy = false }
+        var persisted = false
         do {
             try InstancePathOwnership.shared.claim(storageRoot)
             var updated = updated
@@ -213,30 +227,36 @@ final class DesktopSyncController {
             var next = previous
             next.mobileSync = updated
             settings = try await configurations.mergeGlobalPreferences(updated: next, baseline: previous, at: preferencesURL).mobileSync
+            persisted = true
             projectSettingsLoaded = true
             running = nil; invitationURL = nil
             if usesHelper { await helper.refresh() }
-            if !usesHelper || helper.online {
-                try await runtime.stop()
-                if settings.enabled { try await start() }
-                consent = try await runtime.consentState()
+            guard !usesHelper || helper.online else {
+                error = L10n.text(RubricCaptureAvailability.helperOffline.messageKey)
+                return .persistedButUnavailable
             }
-        } catch { self.error = error.localizedDescription }
+            try await runtime.stop()
+            if settings.enabled { try await start() }
+            consent = try await runtime.consentState()
+            return .persisted
+        } catch {
+            self.error = error.localizedDescription
+            return persisted ? .persistedButUnavailable : .notPersisted
+        }
     }
 
-    func relocateSharedProject(_ project: MobileSharedProject, to destination: URL) async -> Bool {
+    func relocateSharedProject(_ project: MobileSharedProject, to destination: URL) async -> DesktopSyncUpdateOutcome {
         let path = destination.standardizedFileURL.resolvingSymlinksInPath().path
         guard !busy, !InstanceRuntime.isAdditional,
               let index = settings.projects.firstIndex(of: project),
               !settings.projects.contains(where: {
                   $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path == path
-              }) else { return false }
+              }) else { return .notPersisted }
         let replacement = MobileSharedProject(id: project.id, rootURL: destination, name: project.name,
                                               folders: project.folders, documents: project.documents)
         var updated = settings
         updated.projects[index] = replacement
-        await update(updated)
-        return settings.projects.contains(replacement)
+        return await updateResult(updated)
     }
 
     private func start() async throws {

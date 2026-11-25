@@ -67,7 +67,8 @@ extension AppSession {
         guard await NativeDialog.present(alert, on: presentationWindow) == .alertFirstButtonReturn else {
             throw CancellationError()
         }
-        guard await sharing.relocateSharedProject(project, to: destination) else {
+        let outcome = await sharing.relocateSharedProject(project, to: destination)
+        guard outcome != .notPersisted else {
             throw SavedItemRecoveryError(message: "The shared project location could not be updated.")
         }
     }
