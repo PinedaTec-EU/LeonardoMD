@@ -1349,6 +1349,16 @@
       "pr": 541,
       "summary": "Mac-to-Mac pairing tokens are stored in the user Library and survive app updates. Existing tokens can be imported from Keychain once.",
       "to_version": "0.3.2282"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.3.2282",
+      "merge_sha": "0b2b294a7125285912e956ece2c5f402a7528f22",
+      "pr": 602,
+      "summary": "The remote project catalogue matches Preferences, shows file availability in its own column, and marks cached documents with a blue icon.",
+      "to_version": "0.3.2288"
     }
   ],
   "initial_version": "0.1.56",
@@ -1359,5 +1369,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.2282"
+  "version": "0.3.2288"
 }
