@@ -25,6 +25,7 @@ public struct LeonardoCertificateSignature: Codable, Equatable, Sendable {
 
     public enum Failure: Error {
         case missingCertificate
+        case untrustedCertificate
         case missingKey
         case unsupportedKey
         case signingFailed
@@ -41,12 +42,10 @@ public struct LeonardoCertificateSignature: Codable, Equatable, Sendable {
               let keyBytes = SecKeyCopyExternalRepresentation(key, nil) as Data? else {
             throw Failure.missingCertificate
         }
-        var trust: SecTrust?
-        guard SecTrustCreateWithCertificates(certificate, SecPolicyCreateBasicX509(), &trust) == errSecSuccess,
-              let trust, SecTrustSetNetworkFetchAllowed(trust, false) == errSecSuccess,
-              SecTrustEvaluateWithError(trust, nil),
+        guard supportsSigning(key) else { throw Failure.unsupportedKey }
+        guard let trust = evaluateTrust([certificate]),
               let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate] else {
-            throw Failure.missingCertificate
+            throw Failure.untrustedCertificate
         }
         let chain = certificateChain.map { SecCertificateCopyData($0) as Data }
         let credential = LeonardoSigningCredential(
@@ -67,6 +66,45 @@ public struct LeonardoCertificateSignature: Codable, Equatable, Sendable {
             return false
         }
         return keyBytes == key
+    }
+
+    /// The certificate name is display-only and comes from the actual leaf.
+    public static func subject(of credential: LeonardoSigningCredential) -> String? {
+        guard let leaf = credential.certificateChain?.first,
+              let certificate = SecCertificateCreateWithData(nil, leaf as CFData),
+              let subject = SecCertificateCopySubjectSummary(certificate) as String? else { return nil }
+        return String(subject.unicodeScalars.filter {
+            !CharacterSet.controlCharacters.contains($0) && $0.properties.generalCategory != .format
+        }.prefix(200))
+    }
+
+    private static func supportsSigning(_ key: SecKey) -> Bool {
+        guard let attributes = SecKeyCopyAttributes(key) as? [String: Any],
+              let type = attributes[kSecAttrKeyType as String] as? String,
+              let bits = attributes[kSecAttrKeySizeInBits as String] as? Int else { return false }
+        if type == kSecAttrKeyTypeRSA as String { return bits >= 2048 }
+        return type == kSecAttrKeyTypeECSECPrimeRandom as String && [256, 384, 521].contains(bits)
+    }
+
+    private static func evaluateTrust(_ certificates: [SecCertificate]) -> SecTrust? {
+        let policy: SecPolicy
+        #if os(macOS)
+        let properties = [kSecPolicyKU_DigitalSignature as String: true]
+        guard let signingPolicy = SecPolicyCreateWithProperties(kSecPolicyAppleX509Basic, properties as CFDictionary)
+        else { return nil }
+        policy = signingPolicy
+        #else
+        policy = SecPolicyCreateBasicX509()
+        #endif
+        guard let revocation = SecPolicyCreateRevocation(kSecRevocationUseAnyAvailableMethod
+                                                         | kSecRevocationNetworkAccessDisabled) else { return nil }
+        var trust: SecTrust?
+        guard SecTrustCreateWithCertificates(certificates as CFArray, [policy, revocation] as CFArray,
+                                             &trust) == errSecSuccess,
+              let trust,
+              SecTrustSetNetworkFetchAllowed(trust, false) == errSecSuccess,
+              SecTrustEvaluateWithError(trust, nil) else { return nil }
+        return trust
     }
 
     private static func fingerprint(_ certificate: Data) -> String {
@@ -107,20 +145,14 @@ public struct LeonardoCertificateSignature: Codable, Equatable, Sendable {
         let certificates = chain.compactMap { SecCertificateCreateWithData(nil, $0 as CFData) }
         guard certificates.count == chain.count, let certificate = certificates.first,
               let key = SecCertificateCopyKey(certificate),
+              Self.supportsSigning(key),
               SecKeyIsAlgorithmSupported(key, .verify, algorithm.securityAlgorithm),
               SecKeyVerifySignature(key, algorithm.securityAlgorithm,
                                     Self.signedBytes(payload, certificate: leaf, algorithm: algorithm) as CFData,
                                     signature as CFData, nil) else {
             return .invalidSignature
         }
-        var trust: SecTrust?
-        guard SecTrustCreateWithCertificates(certificates as CFArray, SecPolicyCreateBasicX509(), &trust) == errSecSuccess,
-              let trust,
-              SecTrustSetNetworkFetchAllowed(trust, false) == errSecSuccess,
-              SecTrustEvaluateWithError(trust, nil) else {
-            return .untrustedCertificate
-        }
-        return .trustedCertificate
+        return Self.evaluateTrust(certificates) == nil ? .untrustedCertificate : .trustedCertificate
     }
 
     private static func signedBytes(_ payload: Data, certificate: Data, algorithm: Algorithm) -> Data {

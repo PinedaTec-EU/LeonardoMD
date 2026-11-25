@@ -382,6 +382,7 @@ extension LeonardoGuidedSigningSession {
     /// verification so an incomplete (zero-signature) session is still
     /// checked before it is accepted.
     public var isPersistable: Bool {
+        let certificateMode = declaration.method == .certificate
         guard !positions.isEmpty,
               id.uuidString != "00000000-0000-0000-0000-000000000000",
               identityCommitmentSalt.count == 32,
@@ -394,7 +395,8 @@ extension LeonardoGuidedSigningSession {
               positions.values.filter({ $0.signature != nil }).count == completionOrder.count,
               currentPositionID.map({ positions[$0] != nil }) ?? true,
               rubricByPosition.keys.allSatisfy({ positions[$0] != nil }),
-              rubricByPosition.values.allSatisfy(\.isValid),
+              (certificateMode ? rubricByPosition.values.allSatisfy { $0 == LeonardoRubric() }
+                               : rubricByPosition.values.allSatisfy(\.isValid)),
               positions.allSatisfy({ positionID, progress in
                   progress.positionID == positionID
                       && progress.updatedAt.timeIntervalSince1970.isFinite
@@ -406,7 +408,9 @@ extension LeonardoGuidedSigningSession {
                               && location.occurrence >= 0
                               && location.sourceOffset >= 0
                               && location.contextSHA256.count == 32
-                              && location.rubric.isValid
+                              && (certificateMode
+                                  ? location.rubric == LeonardoRubric() && location.reuse == .new
+                                  : location.rubric.isValid)
                               && location.confirmedAt.timeIntervalSince1970.isFinite
                       }
                       && Set(progress.locations.map { "\($0.fieldID)#\($0.occurrence)" }).count == progress.locations.count
@@ -430,7 +434,13 @@ extension LeonardoGuidedSigningSession {
                               && progress.signature?.proof.locationDigests.allSatisfy({ $0.count == 32 }) == true
                               && (progress.signature?.proof.completionIndex ?? -1) >= 0
                               && progress.signature?.proof.signedAt.timeIntervalSince1970.isFinite == true
-                              && progress.signature?.signature.count == 64
+                              && progress.signature.map { detached in
+                                  if certificateMode {
+                                      return detached.certificateAlgorithm != nil && !detached.signature.isEmpty
+                                          && detached.signature.count <= 16 * 1024
+                                  }
+                                  return detached.certificateAlgorithm == nil && detached.signature.count == 64
+                              } == true
                       ))
               }) else {
             return false

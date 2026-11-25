@@ -37,6 +37,9 @@ extension AppSession {
                 confirmedAt: Date(),
                 explicitlyConfirmed: true
             )
+            var updated = current
+            try updated.assign(positionID: positionID, profile: profile, credential: credential,
+                               authorization: authorization, at: Date())
             if credential.certificateChain != nil {
                 try await guidedSigningCredentialStore.trustPublicCredential(credential)
                 guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
@@ -46,9 +49,6 @@ extension AppSession {
                     throw LeonardoSigningError.integrityFailure
                 }
             }
-            var updated = current
-            try updated.assign(positionID: positionID, profile: profile, credential: credential,
-                               authorization: authorization, at: Date())
             if saveOptions.saveIdentityDetails || saveOptions.saveRubric {
                 try await guidedSigningStore.saveProfile(profile, options: saveOptions)
                 guard guidedSigningViewStateMatches(
@@ -511,7 +511,11 @@ extension AppSession {
                     current, replacing: baseline, expectedSession: viewBaseline
                 )
             }
-            reportGuidedSigningActionFailure(error)
+            if certificate != nil, current.state != .invalidated {
+                guidedSigningActionProblem = L10n.text("Certificate signing did not finish. Check the certificate and try again.")
+            } else {
+                reportGuidedSigningActionFailure(error)
+            }
         }
     }
 }

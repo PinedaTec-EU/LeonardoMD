@@ -371,8 +371,9 @@ same updated schema.
 ## Guided signing (MDLF v2)
 
 Version 2 is opt-in. A signed form declares every required signer position in
-`document.signing.positions`; each position must own at least one rubric field,
-and each assigned field uses `signerPosition`. It also declares a stable
+`document.signing.positions`; each position must own at least one review field,
+and each assigned field uses `signerPosition`. The default signing method
+requires rubric fields. It also declares a stable
 `document.id` and positive semantic `document.revision`. The editable document contains
 only this public plan. Profiles, declared name/document details, rubric reuse,
 credentials and detached signatures stay in protected local progress.
@@ -399,6 +400,42 @@ identity assertion. MDLF v1 remains unchanged and legacy readers reject v2
 instead of opening a signed form as editable content. Little Leonardo may
 preview v2 documents through its existing read-only corpus boundary; signing
 credentials and write permissions are not transferred by the format.
+
+### Certificate signing
+
+Set `document.signing.method` to `"certificate"` to use certificates for every
+position. Each position must have at least one assigned non-rubric field. See
+[`certificate-signing.mdlf`](examples/certificate-signing.mdlf). The assigned
+fields provide exact review locations. Their required values must be complete
+when the first location is confirmed. A certificate location records an empty
+rubric with reuse set to `new` in the signing session.
+
+Certificate signing copies use the native signing exchange envelope. The
+`trustedCredentials` entry for each assigned certificate carries the public key,
+a leaf-first array of DER X.509 certificates in `certificateChain`, and the
+lowercase hexadecimal SHA-256 of the leaf DER as the credential ID. The public
+key uses the Security external representation (PKCS #1 for RSA, ANSI X9.63
+uncompressed point for EC). The detached signature carries a
+`certificateAlgorithm` of `rsaPSSSHA256` or `ecdsaSHA256`. Its raw bytes are the
+RSA-PSS signature (SHA-256, MGF1-SHA-256, 32-byte salt) or the DER-encoded ECDSA
+signature (SHA-256), respectively.
+
+The signed message is the concatenation of these bytes, in order:
+
+1. UTF-8 `LeonardoMD certificate signature v1` followed by a zero byte.
+2. The UTF-8 algorithm identifier followed by a zero byte.
+3. The 32-byte SHA-256 of the leaf DER.
+4. The 32-byte SHA-256 of the canonical signing proof JSON. This is the full
+   proof after expanding any compacted snapshot, with lexicographically
+   sorted keys, no insignificant whitespace, unescaped slashes and ISO 8601
+   UTC dates to second precision.
+
+Verify the credential binding, complete signature chain, exact reviewed
+locations, document revision and resource digests. Resolve certificate trust
+using the recipient's trust policy. A root carried in the copy does not
+establish trust by itself. LeonardoMD evaluates the chain at the current
+date and can use locally available revocation information. The proof date
+is the signer's recorded time.
 
 ## Exporting a plain Markdown copy
 

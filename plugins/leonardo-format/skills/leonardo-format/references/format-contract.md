@@ -78,7 +78,8 @@ are draft data and are not rejected merely because an answer is invalid.
 
 Format version 2 is opt-in and adds only the guided-signing public header:
 `document.signing.positions` declares required signer positions and rubric
-fields may set `signerPosition` to one of those positions. A signing document
+fields may set `signerPosition` to one of those positions in the default rubric mode.
+When `document.signing.method` is `"certificate"`, assign non-rubric review fields instead. A signing document
 must also declare a stable `document.id` and positive `document.revision`.
 Profiles, identity
 details, credentials, trust records, resources and detached signatures stay in

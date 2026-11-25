@@ -521,12 +521,13 @@ public enum LeonardoSignatureVerifier {
               let bytes = try? canonicalData(detached.proof) else { return .invalidSignature }
         if let chain = credential.certificateChain, let algorithm = detached.certificateAlgorithm {
             let evidence = LeonardoCertificateSignature(chain: chain, algorithm: algorithm, signature: detached.signature)
+            guard detached.proof.snapshot.matches(document: document, resources: resources) else {
+                return .modifiedSnapshot
+            }
             switch evidence.verify(bytes) {
             case .invalidSignature: return .invalidSignature
             case .untrustedCertificate: return .untrustedCertificate
-            case .trustedCertificate:
-                return detached.proof.snapshot.matches(document: document, resources: resources)
-                    ? .valid : .modifiedSnapshot
+            case .trustedCertificate: return .valid
             }
         }
         guard let publicKey = try? Curve25519.Signing.PublicKey(rawRepresentation: credential.publicKey),

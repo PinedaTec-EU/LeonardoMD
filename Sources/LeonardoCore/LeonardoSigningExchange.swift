@@ -72,6 +72,7 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
                 throw LeonardoSigningError.unknownCredential(assignment.credentialID)
             }
             guard credential.isValid,
+                  (credential.certificateChain != nil) == (session.declaration.method == .certificate),
                   Data(SHA256.hash(data: credential.publicKey)) == assignment.publicKeyDigest else {
                 throw LeonardoSigningError.credentialMismatch
             }
@@ -134,6 +135,12 @@ public struct LeonardoSigningExchange: Codable, Equatable, Sendable {
             return Date(timeIntervalSinceReferenceDate: seconds)
         }
         let exchange = try decoder.decode(LeonardoSigningExchange.self, from: data)
+        if exchange.session.declaration.method == .certificate {
+            guard let text = String(data: data, encoding: .utf8) else {
+                throw LeonardoSigningError.integrityFailure
+            }
+            try LeonardoJSONDuplicateKeyValidator.validate(text)
+        }
         _ = try exchange.document()
         _ = try exchange.signingResources()
         _ = try LeonardoSigningTrustRegistry(credentials: exchange.trustedCredentials)

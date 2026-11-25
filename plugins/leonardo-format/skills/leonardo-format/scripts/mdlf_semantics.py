@@ -174,8 +174,6 @@ def _validate_field(definition: object, path: str) -> None:
         _fail(path, "rubricSize is only supported for rubric fields")
     if "appearance" in definition and definition.get("type") != "checkbox":
         _fail(f"{path}.appearance", "appearance is only supported for checkbox fields")
-    if "signerPosition" in definition and definition.get("type") != "rubric":
-        _fail(f"{path}.signerPosition", "signerPosition is only supported for rubric fields")
     minimum_length = definition.get("minLength")
     maximum_length = definition.get("maxLength")
     if isinstance(minimum_length, int) and isinstance(maximum_length, int) and minimum_length > maximum_length:
@@ -314,6 +312,8 @@ def _validate_signing(metadata: dict[str, object]) -> None:
             assigned_positions.add(position_id)
             if not isinstance(signing, dict):
                 _fail(f"fields.{field_id}.signerPosition", "a signing declaration is required")
+            if (definition.get("type") == "rubric") == (signing.get("method") == "certificate"):
+                _fail(f"fields.{field_id}.signerPosition", "the field does not match the signing method")
     if not isinstance(signing, dict):
         return
     document_id = document.get("id") if isinstance(document, dict) else None

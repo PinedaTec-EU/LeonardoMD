@@ -189,12 +189,12 @@ invalidar respuestas anteriores.
 
 Los documentos que declaran la versión de formato 2 pueden mostrar el botón
 **Firmar** en la barra del documento. La cabecera enumera todos los puestos de
-firma obligatorios y los campos de rúbrica asignados a cada uno, junto con una
+firma obligatorios y los campos de revisión asignados a cada uno, junto con una
 ID estable del documento y una revisión semántica positiva. Los documentos
 de la versión 1 mantienen el flujo normal de **Rellenar formulario**; Little
 Leonardo puede previsualizar ambas versiones. La vista compartida normal es de solo lectura.
 
-Antes de revisar un puesto, elige un perfil local o crea uno con el nombre
+En el método por defecto con rúbrica, antes de revisar un puesto, elige un perfil local o crea uno con el nombre
 completo de la persona, el tipo de documento de identidad y su número. Después
 elige su credencial personal y autoriza explícitamente la asignación. Guardar
 los datos de identidad y guardar una rúbrica de perfil son decisiones
@@ -268,6 +268,32 @@ de volver a firmar. Así se conserva el archivo externo. Si Leonardo no puede
 determinar el origen sellado, restaura el documento y los recursos originales
 desde una copia de confianza. Comprueba las huellas de las claves desconocidas
 por un canal de confianza independiente.
+
+
+#### Firmar con un certificado en el Mac
+
+Para configurar un formulario con firma por certificado, indica
+`"certificate"` en `document.signing.method` de la cabecera MDLF v2 y asigna un
+campo que no sea de rúbrica a cada puesto con `signerPosition`. Por ejemplo,
+asigna el campo de texto con las condiciones al puesto que debe revisarlas.
+El circuito conserva los pasos de guardado de la revisión y confirmación de los
+campos descritos arriba.
+
+1. En el inspector de firma, elige un perfil y pulsa **Cargar certificados del
+   Llavero**. Elige el certificado de la persona firmante y autoriza la asignación.
+2. Inicia la revisión, lee el contexto y confirma cada aparición. Pulsa
+   **Firmar** y comprueba el nombre y la huella SHA-256 antes de confirmar.
+3. Elige **Exportar copia de firma** en el inspector para compartir la copia de
+   firma Leonardo. En el Mac receptor, elige **Archivo > Verificar copia de firma
+   con certificado…** y selecciona el archivo para comprobar los puestos y
+   certificados.
+
+La firma cubre el documento guardado y las imágenes locales referenciadas. El
+Llavero da acceso a la clave privada para firmar. La copia contiene los
+certificados públicos y el progreso de firma, incluidos los datos de identidad
+declarados. Compártela con sus destinatarios. La verificación usa la confianza
+actual de macOS y los datos de revocación disponibles localmente. Una
+verificación sin conexión puede carecer de datos recientes de revocación.
 
 ## 5. Exportar y compartir
 

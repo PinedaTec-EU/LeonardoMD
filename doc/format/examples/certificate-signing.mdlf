@@ -1,0 +1,29 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 2,
+  "document": {
+    "id": "certificate-signing-example",
+    "title": "Certificate signing example",
+    "kind": "form",
+    "revision": 1,
+    "signing": {
+      "method": "certificate",
+      "positions": [
+        { "id": "reviewer", "label": "Reviewer" }
+      ]
+    }
+  },
+  "fields": {
+    "terms": { "type": "text", "label": "Terms to review", "required": true, "signerPosition": "reviewer" }
+  },
+  "values": {
+    "terms": "The reviewer confirms receipt of the example document."
+  }
+}
+---
+# Certificate signing example
+
+Review the following terms before signing.
+
+{{field:terms}}
