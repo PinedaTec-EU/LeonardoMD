@@ -370,6 +370,10 @@ public actor DirectSyncAuthority {
 
     public func completeForm(deviceID: UUID, credential: String, projectID: UUID,
                              command: RemoteFormCompletionCommand) throws -> RemoteFormCompletionReceipt {
+        // Form completion is an iOS/read-only capability. Desktop peers may
+        // access other granted project routes, but they must not reserve or
+        // submit a shared form through this endpoint.
+        try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
         guard let formCompletion else { throw RemoteFormCompletionError.unsupported }
         guard let source = projects[projectID], source.rootURL != nil else { throw PairingError.invalidProject }

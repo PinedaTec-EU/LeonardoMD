@@ -214,6 +214,51 @@ final class DirectSyncAuthorityTests: XCTestCase {
         catch { XCTAssertEqual(error as? SyncError, .revoked) }
     }
 
+    func testCompleteFormRejectsDesktopPeersBeforeHostInvocation() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64)
+        let now = Date(timeIntervalSince1970: 1_000)
+        let fingerprint = Data(repeating: 1, count: 32)
+        let project = try formCompletionProject()
+        let peer = try registry.requestPairing(deviceName: "Mac", credential: credential,
+            serverFingerprint: fingerprint, now: now, kind: .desktopPeer)
+        _ = try registry.approve(requestID: peer.id, comparisonCode: peer.comparisonCode,
+            projects: [project.id], now: now)
+        let host = FormCompletionTestHost()
+        let authority = try formCompletionAuthority(registry: registry, project: project,
+            fingerprint: fingerprint, host: host)
+
+        do {
+            _ = try await authority.completeForm(deviceID: peer.id, credential: credential,
+                projectID: project.id, command: formCompletionCommand())
+            XCTFail("Desktop peers must not complete shared forms")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .readOnly)
+        }
+        XCTAssertEqual(host.invocationCount, 0)
+    }
+
+    func testCompleteFormAllowsAuthorizedReadOnlyDevices() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "b", count: 64)
+        let now = Date(timeIntervalSince1970: 1_000)
+        let fingerprint = Data(repeating: 2, count: 32)
+        let project = try formCompletionProject()
+        let reader = try registry.requestPairing(deviceName: "iPhone", credential: credential,
+            serverFingerprint: fingerprint, now: now)
+        _ = try registry.approve(requestID: reader.id, comparisonCode: reader.comparisonCode,
+            projects: [project.id], now: now)
+        let host = FormCompletionTestHost()
+        let authority = try formCompletionAuthority(registry: registry, project: project,
+            fingerprint: fingerprint, host: host)
+
+        let receipt = try await authority.completeForm(deviceID: reader.id, credential: credential,
+            projectID: project.id, command: formCompletionCommand())
+
+        XCTAssertEqual(receipt.state, .active)
+        XCTAssertEqual(host.invocationCount, 1)
+    }
+
     func testOwnerApplicationBlocksConsentChangesAndServiceReadsUntilItFinishes() async throws {
         var registry = PairingRegistry(); registry.setEnabled(true)
         let credential = String(repeating: "a", count: 64), now = Date()
@@ -319,6 +364,38 @@ final class DirectSyncAuthorityTests: XCTestCase {
         await gate.finish()
         do { _ = try await fetch.value; XCTFail("Revoked device must not receive documents") }
         catch { XCTAssertEqual(error as? SyncError, .revoked) }
+    }
+}
+
+private func formCompletionProject() throws -> SharedProjectDescriptor {
+    SharedProjectDescriptor(id: UUID(), name: "Forms", scope: try CorpusScope(folder: ""),
+        selection: try CorpusSelection(folders: [], documents: ["forms/request.mdlf"]))
+}
+
+private func formCompletionCommand() -> RemoteFormCompletionCommand {
+    RemoteFormCompletionCommand(action: .acquire, sessionID: UUID(), path: "forms/request.mdlf",
+        revision: "source-revision")
+}
+
+private func formCompletionAuthority(
+    registry: PairingRegistry,
+    project: SharedProjectDescriptor,
+    fingerprint: Data,
+    host: FormCompletionTestHost
+) throws -> DirectSyncAuthority {
+    try DirectSyncAuthority(registry: registry,
+        projects: [SharedProjectSource(descriptor: project, rootURL: URL(fileURLWithPath: "/tmp/forms")) {
+            CorpusSnapshot(revision: "source-revision", files: [])
+        }], serverFingerprint: fingerprint, persist: { _ in }, formCompletion: host)
+}
+
+private final class FormCompletionTestHost: RemoteFormCompletionHosting, @unchecked Sendable {
+    private(set) var invocationCount = 0
+
+    func handle(_ command: RemoteFormCompletionCommand, deviceID: UUID,
+                source: SharedProjectSource) throws -> RemoteFormCompletionReceipt {
+        invocationCount += 1
+        return RemoteFormCompletionReceipt(sessionID: command.sessionID, state: .active)
     }
 }
 
