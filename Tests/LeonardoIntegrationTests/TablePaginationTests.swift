@@ -79,6 +79,67 @@ final class TablePaginationTests: XCTestCase {
         }
     }
 
+    func testHeadingBoundaryDoesNotCreateBlankPageWhenPairCannotFitTogether() async throws {
+        let body = "## Table heading\n\n| Key | Detail |\n| --- | --- |\n| First | Row |\n| Second | Row |"
+        // The heading plus the first 50-point row is larger than this page's
+        // remaining area, while the table fragment fits on a fresh page.
+        try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 50, 24])], height: 180) { _, web in
+            let probe = try await web.evaluateJavaScript("""
+            (() => {
+              const pages = Array.from(document.querySelectorAll('.leonardo-page'));
+              const headingPage = document.querySelector('h2').closest('.leonardo-page');
+              const tablePages = Array.from(document.querySelectorAll('.table-viewport'))
+                .map(table => Number(table.closest('.leonardo-page').dataset.page));
+              return {
+                pageCount: pages.length,
+                headingPage: Number(headingPage.dataset.page),
+                tablePages,
+                blankPage: pages.some(page => !page.innerText.trim()),
+                overflow: pages.some(page => page.dataset.overflow === 'true')
+              };
+            })()
+            """) as? [String: Any]
+            let result = try XCTUnwrap(probe)
+            let tablePages = try XCTUnwrap(result["tablePages"] as? [Int])
+            XCTAssertGreaterThanOrEqual(result["pageCount"] as? Int ?? 0, 2)
+            XCTAssertEqual(result["headingPage"] as? Int, 1)
+            XCTAssertTrue(tablePages.allSatisfy { $0 > 1 })
+            XCTAssertEqual(result["blankPage"] as? Bool, false)
+            XCTAssertEqual(result["overflow"] as? Bool, false)
+        }
+    }
+
+    func testUnsupportedSpanTableMarksOverflowAndRejectsPDF() async throws {
+        let body = "| Header | Detail |\n| --- | --- |\n"
+            + String(repeating: "| Record | Description |\n", count: 3)
+        for attribute in ["colspan", "rowspan"] {
+            try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 80, 80, 80])], height: 180) { host, web in
+                let probe = try await web.evaluateJavaScript("""
+                (() => {
+                  const cell = document.querySelector('table tbody tr td');
+                  cell.setAttribute('\(attribute)', '2');
+                  window.LeonardoObjects.refresh();
+                  return {
+                    attribute: cell.getAttribute('\(attribute)'),
+                    fragmented: document.querySelectorAll('.table-fragmented').length,
+                    overflow: document.querySelectorAll('.leonardo-page[data-overflow]').length
+                  };
+                })()
+                """) as? [String: Any]
+                let result = try XCTUnwrap(probe)
+                XCTAssertEqual(result["attribute"] as? String, "2")
+                XCTAssertEqual(result["fragmented"] as? Int, 0)
+                XCTAssertGreaterThan(result["overflow"] as? Int ?? 0, 0)
+                do {
+                    _ = try await host.exportPDF()
+                    XCTFail("Unsupported spanning tables must not be clipped silently")
+                } catch {
+                    XCTAssertTrue(error.localizedDescription.contains("Content exceeds page height"))
+                }
+            }
+        }
+    }
+
     func testOneOverHeightRowStopsPDFWithoutDroppingLaterRows() async throws {
         let body = "| Header |\n| --- |\n| Tall row |\n| Next row |\n\n<!-- leonardo:page-break -->\n\nAfterwards"
         try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 300, 24])]) { host, web in

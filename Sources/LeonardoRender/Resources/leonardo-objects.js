@@ -65,6 +65,10 @@
       if (content.childNodes.length === 1) return;
       const previous = content;
       const heading = node.previousElementSibling;
+      // A fresh page containing only this heading and table has the same
+      // available geometry after a move. Carry the heading only when the
+      // source page also has earlier content; otherwise retrying the pair
+      // would manufacture an empty/orphan page without changing the result.
       const canMoveHeading = previous.childNodes.length > 2 && heading === node.previousSibling &&
         heading?.matches("h1, h2, h3, h4, h5, h6");
       next();
