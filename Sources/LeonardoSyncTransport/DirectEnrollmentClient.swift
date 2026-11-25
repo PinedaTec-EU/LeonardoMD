@@ -186,6 +186,30 @@ public struct DirectEnrollmentClient: Sendable {
         }
     }
 
+    public func completeForm(_ command: RemoteFormCompletionCommand, projectID: UUID,
+                             deviceID: UUID, credential: String) async throws -> RemoteFormCompletionReceipt {
+        let body = try JSONEncoder().encode(command)
+        guard body.count <= HTTPRequestParser.maximumBodyBytes else {
+            throw RemoteFormCompletionError.invalidCommand
+        }
+        let path = "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/form-completion"
+        let response = try await client.request(method: "POST", path: path, credential: credential, body: body)
+        switch response.status {
+        case 200:
+            let receipt = try JSONDecoder().decode(RemoteFormCompletionReceipt.self, from: response.body)
+            guard receipt.sessionID == command.sessionID else { throw TransportError.unexpectedResponse }
+            return receipt
+        case 400, 413: throw RemoteFormCompletionError.invalidCommand
+        case 403: throw SyncError.accessDenied
+        case 404: throw RemoteFormCompletionError.unsupported
+        case 409: throw RemoteFormCompletionError.staleRevision
+        case 410: throw RemoteFormCompletionError.inactive
+        case 422: throw RemoteFormCompletionError.invalidResponse
+        case 423: throw RemoteFormCompletionError.busy
+        default: throw RemoteFormCompletionError.unexpectedStatus(response.status)
+        }
+    }
+
     public func rubricRequests(deviceID: UUID, credential: String) async throws -> [RubricRequest] {
         let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/rubrics/requests", credential: credential)
         guard response.status == 200 else { throw mapRubricResponse(response.status) }
