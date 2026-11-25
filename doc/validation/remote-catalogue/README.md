@@ -16,3 +16,9 @@ The same packaged executable (application source `6ff74f488f7d91b7fb9a10f9dba4c1
 QA processes in the two disposable bundles were quit and verified absent. The fixture connection and catalogue index were restored byte for byte. An earlier startup evicted the previous 51-byte synthetic cached blob. No Device Hub sessions were opened.
 
 Guide v140 package and opened-copy SHA-256: EN `04c0c5799c50d967990ae57124bed92752338a68d3347756288e7c987083dc1c`, ES `17b4f6dc8e604185b10cc1f11ad2a3ad132639608fc07fb0dad3107aab257dd1`.
+
+## Reconciliation with main
+
+The v141 guide combines the v139 pairing-token guidance already on main and the new catalogue instructions. The two catalogue view files are byte-for-byte unchanged from the visual QA build, and the upstream change did not alter the catalogue rows, table, or menu. The v141 app was built at `4ddd6152c67211b44556b1409a3d85838c08837c` and launched as PID 40452 at 13:23:16 CET in `leonardo-native-qa-kl02f5i7/LeonardoMDQA.app`. The updated section rendered through Help in both languages and both opened copies matched the bundled resources. The process exited normally and its absence was verified.
+
+Guide v141 SHA-256: EN `04cd377193af8a00b8697e7c419460b8997c2ce574283cc181430af803e3a202`, ES `e65e0c3d525c951c1bad7c24635a51a1f958413271740dca78b57c7147055d7f`. The focused seven Swift tests and three package tests passed on the reconciled source.
