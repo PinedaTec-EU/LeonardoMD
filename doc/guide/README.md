@@ -6,12 +6,14 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v147 carries forward Guide v144's shared Home selector, collapsible sections and direct remote access,
-and adds the reconciled Little Leonardo extension settings, consent flow, synchronization frequency and
-bundled Demo coverage in both locales. Guide v144 remains a prior user-owned copy; the obsolete PR-v94
+Guide v147 carries forward Guide v145's separate remote-project menu and offline
+actions, as well as Guide v144's shared Home selector, collapsible sections and
+direct remote access. It adds the reconciled Little Leonardo extension settings,
+consent flow, synchronization frequency and bundled Demo coverage in both locales.
+Guide v145 and Guide v144 remain prior user-owned revisions; the obsolete PR-v94
 resources are not restored.
-Guide v147 EN SHA-256: `668ef33e68c489ebcfdfba211671f95dbf23ae0979755ede47207a44f3e0e54a`
-and ES SHA-256: `29307cabb13e8cae29ca924c32769f580109004805fe801449de70ff75c79b6e`.
+Guide v147 EN SHA-256: `2dc961c482eb7443b499824c2ab1782a68d1dfdfa84d12bc0a6b2b30202a4cc3`
+and ES SHA-256: `c9aea2d1e54cb1bbd3b504a5a3e7d0d0d26efab92a30d79b0b0cfda1dcdef875`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
