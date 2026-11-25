@@ -24,7 +24,7 @@ extension AppSession {
     /// loaded successfully, so cancelling the destination panel or failing
     /// to read the extracted document leaves the current tab usable.
     func extractLeonardoPackageToFolder() {
-        guard documentStorage == .package,
+        guard documentStorage == .package, packageWorkspace?.embeddedSigning == nil,
               let packageURL = documentSourceURL,
               !stopped, !isClosing, !busy, !isSyncSuspended else { return }
 
@@ -58,6 +58,20 @@ extension AppSession {
         _ packageURL: URL,
         preference: LeonardoPackageOpenPreference
     ) async -> Bool {
+        if preference != .package {
+            do {
+                try await authorizePath(packageURL, .document)
+                let carriesSignatures = try await Task.detached {
+                    try LeonardoPackageTransport.carriesCertificateSignatures(packageURL)
+                }.value
+                if carriesSignatures {
+                    return await openLeonardoPackage(packageURL, extractingTo: nil)
+                }
+            } catch {
+                report(error)
+                return false
+            }
+        }
         let extraction: URL?
         switch preference {
         case .package:
@@ -130,7 +144,9 @@ extension AppSession {
 
             let kind = AppDocumentKind.classify(workspace.documentURL)
             let nextMode: DocumentMode
-            if kind == .leonardoResponse {
+            if workspace.embeddedSigning != nil {
+                nextMode = .preview
+            } else if kind == .leonardoResponse {
                 nextMode = .fill
             } else {
                 nextMode = kind.defaultMode(global: resolved.defaultMode)

@@ -21,6 +21,7 @@ public struct LeonardoPackageWorkspace: Sendable {
     public let packageURL: URL?
     public let directoryURL: URL
     public let documentURL: URL
+    public let embeddedSigning: LeonardoEmbeddedSigning?
     private let sourceDigest: Data?
     private let temporary: Bool
     fileprivate let extractionOwnership: LeonardoExtractionOwnership
@@ -31,13 +32,15 @@ public struct LeonardoPackageWorkspace: Sendable {
         documentURL: URL,
         digest: Data?,
         temporary: Bool,
-        extractionOwnership: LeonardoExtractionOwnership
+        extractionOwnership: LeonardoExtractionOwnership,
+        embeddedSigning: LeonardoEmbeddedSigning? = nil
     ) {
         self.packageURL = packageURL
         self.directoryURL = directoryURL
         self.documentURL = documentURL
         self.sourceDigest = digest
         self.temporary = temporary
+        self.embeddedSigning = embeddedSigning
         self.extractionOwnership = extractionOwnership
     }
 
@@ -59,7 +62,8 @@ public struct LeonardoPackageWorkspace: Sendable {
 
     fileprivate func relocated(to url: URL) -> Self {
         Self(packageURL: url, directoryURL: directoryURL, documentURL: documentURL,
-             digest: sourceDigest, temporary: temporary, extractionOwnership: extractionOwnership)
+             digest: sourceDigest, temporary: temporary, extractionOwnership: extractionOwnership,
+             embeddedSigning: embeddedSigning)
     }
 
     fileprivate func removeTemporaryFiles() {
@@ -79,6 +83,11 @@ public struct LeonardoPackageWorkspace: Sendable {
 public enum LeonardoPackageTransport {
     public static func open(_ packageURL: URL, extractingTo destination: URL? = nil) throws -> LeonardoPackageWorkspace {
         try open(packageURL, extractingTo: destination, hooks: nil)
+    }
+
+    public static func carriesCertificateSignatures(_ packageURL: URL) throws -> Bool {
+        let entries = try LeonardoZIPArchive.read(boundedRead(packageURL))
+        return entries.contains { $0.name == LeonardoEmbeddedSigning.entryName }
     }
 
     /// Reopens the existing user-owned extraction without reading its original archive.
@@ -112,6 +121,10 @@ public enum LeonardoPackageTransport {
         let bytes = try boundedRead(packageURL)
         let entries = try LeonardoZIPArchive.read(bytes)
         let main = try primaryDocument(entries)
+        let embeddedSigning = LeonardoEmbeddedSigning.read(entries: entries, document: main)
+        guard embeddedSigning == nil || destination == nil else {
+            throw LeonardoPackageError.invalidArchive("Open signed documents as packages to retain their signatures.")
+        }
         let temporary = destination == nil
         let folder = destination ?? FileManager.default.temporaryDirectory
             .appendingPathComponent("Leonardo-\(UUID().uuidString)", isDirectory: true)
@@ -123,7 +136,7 @@ public enum LeonardoPackageTransport {
         }
         return LeonardoPackageWorkspace(packageURL: temporary ? packageURL : nil, directoryURL: folder,
             documentURL: folder.appendingPathComponent(main.name), digest: temporary ? Data(SHA256.hash(data: bytes)) : nil,
-            temporary: temporary, extractionOwnership: ownership)
+            temporary: temporary, extractionOwnership: ownership, embeddedSigning: embeddedSigning)
     }
 
     /// Returns a refreshed fingerprint for subsequent conflict-aware saves.
@@ -132,6 +145,9 @@ public enum LeonardoPackageTransport {
         _ workspace: LeonardoPackageWorkspace,
         beforeArchiveCommit: (@Sendable () -> Void)? = nil
     ) throws -> LeonardoPackageWorkspace {
+        guard workspace.embeddedSigning == nil else {
+            throw LeonardoPackageError.invalidArchive("A signed document revision is read-only.")
+        }
         guard let packageURL = workspace.packageURL else { return workspace }
         try checkCancellation()
         try workspace.verifySource()
@@ -186,7 +202,7 @@ public enum LeonardoPackageTransport {
     private static func primaryDocument(_ entries: [LeonardoZIPArchive.Entry]) throws -> LeonardoZIPArchive.Entry {
         let documents = entries.filter { !$0.name.contains("/") && ["mdlf", "mdlr"].contains(($0.name as NSString).pathExtension.lowercased()) }
         guard documents.count == 1, let document = documents.first,
-              entries.allSatisfy({ $0.name == document.name || $0.name.hasPrefix("assets/") }),
+              entries.allSatisfy({ $0.name == document.name || $0.name == LeonardoEmbeddedSigning.entryName || $0.name.hasPrefix("assets/") }),
               let source = String(data: document.data, encoding: .utf8) else {
             throw LeonardoPackageError.invalidArchive("Expected one root MDLF/MDLR document and assets/ resources")
         }

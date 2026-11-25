@@ -275,16 +275,19 @@ same saved-revision and field confirmation steps described above.
    certificates**. Choose the signer’s certificate and authorize the assignment.
 2. Begin review, read the context and confirm each occurrence. Select **Sign**
    and check the certificate name and SHA-256 fingerprint before confirming.
-3. Choose **Export signing copy** in the inspector to share the native Leonardo
-   signing copy. On the receiving Mac, choose **File > Verify certificate signing
-   copy…** and select that file to check the positions and certificates.
+3. Choose **Save signed Leonardo document…**. Share the resulting `.mdlz`.
+   The recipient opens the document normally in LeonardoMD and clicks
+   **View certificate signatures** to inspect each certificate subject,
+   fingerprint and verification result.
 
 The signature covers the saved document and its referenced local images.
-The Keychain provides access to the private key for signing. The copy contains
-the public certificates and the signing progress, including declared identity
-details. Share it with the intended recipients. Verification uses current macOS
-certificate trust and locally available revocation information. An offline
-verification may have no recent revocation information.
+Place those images under `assets/` before signing. The signed package opens
+read-only and includes the public certificates and declared signer details.
+macOS retains control of the private key. Verification uses current macOS
+certificate trust and locally available revocation information. The certificate
+subject identifies the key holder as stated by the issuer. This check alone
+cannot establish qualified electronic signature status.
+
 
 ## 5. Export and share
 

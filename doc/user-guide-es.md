@@ -279,17 +279,20 @@ campos descritos arriba.
    Llavero**. Elige el certificado de la persona firmante y autoriza la asignación.
 2. Inicia la revisión, lee el contexto y confirma cada aparición. Pulsa
    **Firmar** y comprueba el nombre y la huella SHA-256 antes de confirmar.
-3. Elige **Exportar copia de firma** en el inspector para compartir la copia de
-   firma Leonardo. En el Mac receptor, elige **Archivo > Verificar copia de firma
-   con certificado…** y selecciona el archivo para comprobar los puestos y
-   certificados.
+3. Elige **Guardar documento Leonardo firmado…** y comparte el `.mdlz`.
+   El destinatario lo abre normalmente en LeonardoMD y pulsa **Ver firmas con
+   certificado** para consultar el titular del certificado, la huella y el
+   resultado de cada firma.
 
-La firma cubre el documento guardado y las imágenes locales referenciadas. El
-Llavero da acceso a la clave privada para firmar. La copia contiene los
-certificados públicos y el progreso de firma, incluidos los datos de identidad
-declarados. Compártela con sus destinatarios. La verificación usa la confianza
-actual de macOS y los datos de revocación disponibles localmente. Una
-verificación sin conexión puede carecer de datos recientes de revocación.
+La firma cubre el documento guardado y sus imágenes locales referenciadas.
+Coloca esas imágenes bajo `assets/` antes de firmar. El paquete firmado se abre
+en solo lectura e incluye los certificados públicos y los datos declarados de
+los firmantes. macOS conserva el control de la clave privada. La verificación
+usa la confianza actual de macOS y los datos de revocación disponibles
+localmente. El titular que se muestra es el que consta en el certificado
+emitido. Esta comprobación por sí sola no acredita una firma electrónica
+cualificada.
+
 
 ## 5. Exportar y compartir
 

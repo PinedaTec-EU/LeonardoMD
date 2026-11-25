@@ -1,4 +1,4 @@
 {
-  "build": 9,
-  "summary": "Use a macOS Keychain certificate instead of a rubric in supported guided forms, and verify native signing copies with their document and resources intact."
+  "build": 13,
+  "summary": "Sign a Leonardo document with a macOS Keychain certificate, save the signatures inside the MDLZ, and inspect them by opening the document in LeonardoMD."
 }

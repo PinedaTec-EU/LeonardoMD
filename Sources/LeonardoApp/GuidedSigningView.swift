@@ -397,18 +397,26 @@ struct GuidedSigningView: View {
                 .accessibilityLabel(L10n.format("%d of %d positions complete", completedPositionCount, positions.count))
             }
             HStack(spacing: 8) {
-                Menu {
-                    Button(L10n.text("Export signing copy"), systemImage: "square.and.arrow.up") {
+                if certificateMode {
+                    Button(L10n.text("Save signed Leonardo document…"), systemImage: "square.and.arrow.down") {
                         Task { await session.exportGuidedSigningExchange() }
                     }
-                    Button(L10n.text("Import signed copy"), systemImage: "square.and.arrow.down") {
-                        session.importGuidedSigningExchange()
+                    .buttonStyle(PremiumButtonStyle(compact: true))
+                    .disabled(completedPositionCount == 0 || session.guidedSigningError != nil)
+                } else {
+                    Menu {
+                        Button(L10n.text("Export signing copy"), systemImage: "square.and.arrow.up") {
+                            Task { await session.exportGuidedSigningExchange() }
+                        }
+                        Button(L10n.text("Import signed copy"), systemImage: "square.and.arrow.down") {
+                            session.importGuidedSigningExchange()
+                        }
+                    } label: {
+                        Label(L10n.text("Exchange"), systemImage: "arrow.left.arrow.right")
                     }
-                } label: {
-                    Label(L10n.text("Exchange"), systemImage: "arrow.left.arrow.right")
+                    .buttonStyle(PremiumButtonStyle(compact: true))
+                    .disabled(!session.guidedSigningReady || session.guidedSigningError != nil)
                 }
-                .buttonStyle(PremiumButtonStyle(compact: true))
-                .disabled(!session.guidedSigningReady || session.guidedSigningError != nil)
                 Spacer(minLength: 0)
             }
             Text(L10n.text("The first confirmed location seals form data, assignments and referenced resources."))

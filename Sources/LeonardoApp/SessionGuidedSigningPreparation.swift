@@ -21,6 +21,7 @@ extension AppSession {
     /// resources. A correction is an explicit new revision, never an inline
     /// edit that silently keeps old signatures.
     var guidedSigningContentLocked: Bool {
+        if packageWorkspace?.embeddedSigning != nil { return true }
         // The correction path briefly opens the editor for one exact,
         // precomputed replacement. No await occurs while this flag is true;
         // ordinary editor actions cannot observe an open window.
@@ -128,7 +129,7 @@ extension AppSession {
 
     func prepareGuidedSigning() async {
         let expectedLocation = guidedSigningLocation
-        guard let expectedLocation else { return }
+        guard packageWorkspace?.embeddedSigning == nil, let expectedLocation else { return }
         let expectedContent = content
         var expectedSession = guidedSigningSession
         let preparationToken = UUID()
@@ -287,7 +288,8 @@ extension AppSession {
     func prepareGuidedSigningIfNeeded() async {
         // Plain Markdown cannot have signing history. Keep the recovery
         // probe for Leonardo files even when their signing header is missing.
-        guard documentKind.isLeonardo, guidedSigningLocation != nil else { return }
+        guard packageWorkspace?.embeddedSigning == nil,
+              documentKind.isLeonardo, guidedSigningLocation != nil else { return }
         if !isGuidedSigningDocument {
             let expectedLocation = guidedSigningLocation
             let expectedContent = content

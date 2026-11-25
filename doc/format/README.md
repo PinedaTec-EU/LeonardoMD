@@ -410,8 +410,14 @@ fields provide exact review locations. Their required values must be complete
 when the first location is confirmed. A certificate location records an empty
 rubric with reuse set to `new` in the signing session.
 
-Certificate signing copies use the native signing exchange envelope. The
-`trustedCredentials` entry for each assigned certificate carries the public key,
+The signed MDLZ includes one reserved entry,
+`META-INF/leonardo-signatures.json`, containing the native proof envelope.
+The root document and every `assets/` file must exactly match the portable
+revision and resources inside that envelope. Extra files invalidate verification.
+A package without this entry supplies no certificate evidence. The archive is
+read-only in LeonardoMD when the signature entry is present.
+
+The `trustedCredentials` entry for each assigned certificate carries the public key,
 a leaf-first array of DER X.509 certificates in `certificateChain`, and the
 lowercase hexadecimal SHA-256 of the leaf DER as the credential ID. The public
 key uses the Security external representation (PKCS #1 for RSA, ANSI X9.63

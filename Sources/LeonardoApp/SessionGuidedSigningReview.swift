@@ -461,6 +461,10 @@ extension AppSession {
                                                       session: viewBaseline, snapshot: expectedSnapshot) else { return }
             let resources = try guidedSigningResources()
             if let certificate {
+                guard resources.allSatisfy({ LeonardoLocalImagePolicy.portableSigningImagePath($0.reference)?.hasPrefix("assets/") == true }) else {
+                    guidedSigningActionProblem = L10n.text("Place referenced images under assets/ before signing this Leonardo document.")
+                    return
+                }
                 _ = try current.signWithCertificate(positionID: positionID, identity: certificate.identity,
                                                     document: document, resources: resources,
                                                     trustStore: trustStore, at: Date())
