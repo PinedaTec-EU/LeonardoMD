@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2298
+
+- #598 Added: direct remote access on Home ([#599](https://github.com/PinedaTec-EU/LeonardoMD/pull/599))
+
+<p>Switch between projects and documents on Home, collapse Favorites, Remote items or Recents, and open shared catalogues and document previews directly.</p>
+
+Source: `883597044b250dbfc6d136009fecd59b76887029`. Delta: `{"build": 10}`.
+
 ## 0.3.2288
 
 - #600 Fixed: style the remote catalogue sheet ([#602](https://github.com/PinedaTec-EU/LeonardoMD/pull/602))
