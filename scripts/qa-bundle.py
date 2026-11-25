@@ -87,13 +87,19 @@ def release_changes_report(bundle, source_root, checkout_sha):
     }
 
 
-def prepare_bundle(source, identity=None):
+def prepare_bundle(source, identity=None, *, use_registered_sync_helper=False):
     metadata = verify_bundle(source)
+    if use_registered_sync_helper:
+        if not identity:
+            raise ValueError('Registered Sync helper QA requires a Developer ID signing identity')
+        if metadata.get('CFBundleIdentifier') != 'eu.pinedatec.LeonardoMD':
+            raise ValueError('Registered Sync helper QA requires the LeonardoMD application identifier')
     directory = Path(tempfile.mkdtemp(prefix='leonardo-native-qa-'))
     bundle = directory / 'LeonardoMDQA.app'
     try:
         subprocess.run(['/usr/bin/ditto', str(source), str(bundle)], check=True)
-        metadata['CFBundleIdentifier'] = 'eu.pinedatec.LeonardoMD.qa.' + uuid.uuid4().hex
+        if not use_registered_sync_helper:
+            metadata['CFBundleIdentifier'] = 'eu.pinedatec.LeonardoMD.qa.' + uuid.uuid4().hex
         metadata['CFBundleName'] = 'LeonardoMD QA'
         metadata['CFBundleDisplayName'] = 'LeonardoMD QA'
         with (bundle / 'Contents/Info.plist').open('wb') as stream:
@@ -103,6 +109,12 @@ def prepare_bundle(source, identity=None):
         else:
             subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(bundle)], check=True)
         verify_bundle(bundle)
+        if use_registered_sync_helper:
+            subprocess.run([
+                '/usr/bin/codesign', '--verify', '--strict',
+                '-R=anchor apple generic and certificate leaf[field.1.2.840.113635.100.6.1.13] exists',
+                str(bundle),
+            ], check=True)
         return bundle
     except BaseException:
         shutil.rmtree(directory)
@@ -114,8 +126,12 @@ def main():
     parser.add_argument('source', type=Path, help='Packaged LeonardoMD.app from scripts/build-app.sh')
     parser.add_argument('--verify-only', action='store_true')
     parser.add_argument('--sign-identity', help='Sign the disposable QA copy inside out with this Developer ID')
+    parser.add_argument('--use-registered-sync-helper', action='store_true',
+                        help='Keep the production bundle ID in a Developer ID signed QA copy')
     parser.add_argument('--report', type=Path, help='Write package inspection evidence; requires --verify-only')
     arguments = parser.parse_args()
+    if arguments.use_registered_sync_helper and (arguments.verify_only or not arguments.sign_identity):
+        parser.error('--use-registered-sync-helper requires --sign-identity and prepares a QA copy')
     if arguments.report and not arguments.verify_only:
         parser.error('--report requires --verify-only')
     if arguments.sign_identity and arguments.verify_only:
@@ -132,7 +148,8 @@ def main():
         elif arguments.verify_only:
             verify_bundle(arguments.source)
         else:
-            print(prepare_bundle(arguments.source, arguments.sign_identity))
+            print(prepare_bundle(arguments.source, arguments.sign_identity,
+                                 use_registered_sync_helper=arguments.use_registered_sync_helper))
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'QA bundle rejected: {error}\n')
 

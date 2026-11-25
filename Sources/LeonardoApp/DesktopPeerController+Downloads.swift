@@ -10,7 +10,7 @@ extension DesktopPeerController {
     /// Accepted projects remain browseable from their last saved catalogue while
     /// the host is unavailable. A successful refresh replaces this fallback.
     func acceptedProjectDescriptors(for connection: DesktopPeerConnection) -> [SharedProjectDescriptor] {
-        guard !connection.revoked else { return [] }
+        guard !connection.revoked, !connection.credentialDeferred else { return [] }
         let live = (available[connection.id] ?? []).filter { descriptor in
             connection.grants[descriptor.id] != nil
                 && !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(descriptor.id)
@@ -44,7 +44,7 @@ extension DesktopPeerController {
             try await downloads.restore(allowedIDs: granted,
                                         authorizations: downloadAuthorizations(for: granted),
                                         quarantinedIDs: quarantined)
-            for connection in connections where !connection.revoked {
+            for connection in connections where !connection.revoked && !connection.credentialDeferred {
                 let copiedProjectIDs = Set(copies.filter { $0.connectionID == connection.id }.map(\.remoteProjectID))
                 let cachedProjectIDs = Set(connection.grants.keys.filter { projectID in
                     guard !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(projectID) else {
@@ -56,7 +56,9 @@ extension DesktopPeerController {
                 })
                 reviewStore.acceptExistingProjects(cachedProjectIDs, connectionID: connection.id)
             }
-            reviewStore.finishExistingProjectMigration()
+            if !connections.contains(where: \.credentialDeferred) {
+                reviewStore.finishExistingProjectMigration()
+            }
         }
 
         let allowed = Set(connections.filter { !$0.revoked }.flatMap { connection in
@@ -66,7 +68,7 @@ extension DesktopPeerController {
                     ? Self.downloadID(connectionID: connection.id, projectID: projectID) : nil
             }
         })
-        let denied = downloads.projects.filter { !allowed.contains($0.id) }.map(\.id)
+        let denied = downloads.projects.filter { !allowed.contains($0.id) && !quarantined.contains($0.id) }.map(\.id)
         for id in denied { try await downloads.remove(id: id) }
         try await downloads.restore(allowedIDs: allowed,
                                     authorizations: downloadAuthorizations(for: allowed),
@@ -75,7 +77,9 @@ extension DesktopPeerController {
 
     func downloadQuarantineIDs() -> Set<UUID> {
         Set(connections.filter { !$0.revoked }.flatMap { connection in
-            reviewStore.authorizationRequiredProjects(connectionID: connection.id).map {
+            var projects = reviewStore.authorizationRequiredProjects(connectionID: connection.id)
+            if connection.credentialDeferred { projects.formUnion(connection.grants.keys) }
+            return projects.map {
                 Self.downloadID(connectionID: connection.id, projectID: $0)
             }
         })
@@ -83,7 +87,7 @@ extension DesktopPeerController {
 
     func downloadAuthorizations(for allowedIDs: Set<UUID>) -> [UUID: RemoteDownloadAuthorization] {
         var result: [UUID: RemoteDownloadAuthorization] = [:]
-        for connection in connections where !connection.revoked {
+        for connection in connections where !connection.revoked && !connection.credentialDeferred {
             for (projectID, selection) in connection.grants {
                 let id = Self.downloadID(connectionID: connection.id, projectID: projectID)
                 guard allowedIDs.contains(id),
@@ -96,7 +100,7 @@ extension DesktopPeerController {
 
     func fetchDownload(id: UUID, entry: RemoteFileEntry) async throws -> CorpusFile {
         try authorizeStorage()
-        for connection in connections where !connection.revoked {
+        for connection in connections where !connection.revoked && !connection.credentialDeferred {
             for projectID in connection.grants.keys where Self.downloadID(connectionID: connection.id, projectID: projectID) == id {
                 do {
                     let read = try await library.fileRead(connectionID: connection.id, projectID: projectID,

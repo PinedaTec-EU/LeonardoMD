@@ -42,6 +42,14 @@ The command prints the temporary bundle path. Existing LeonardoMD instances keep
 
 For preparation without launch, run `python3 scripts/qa-bundle.py output/LeonardoMD.app` after packaging. Tracking: [issue #80](https://github.com/PinedaTec-EU/LeonardoMD/issues/80).
 
+For live Sync QA, prepare the disposable copy with `scripts/qa-bundle.py`,
+`--sign-identity` and `--use-registered-sync-helper`. Use the same Developer ID
+team as the installed app. The disposable copy keeps the application identifier
+that the authenticated helper expects. Close the existing primary normally
+before opening the temporary bundle by its full path. After testing, quit the
+QA copy, reopen the installed app and verify the helper is healthy before
+removing any temporary bundle referenced by its registration.
+
 ## Distribution and versioning
 
 Local development signing does not establish public distribution acceptance. Follow [signed release preparation](releases.md) for Developer ID signing, Apple notarization, archive verification and publication gates. The [release ledger workflow](release-version-ledger.md) defines version allocation and compilation accounting; its historical baseline is not the latest published version. See [GitHub Releases](https://github.com/PinedaTec-EU/LeonardoMD/releases) for published packages.

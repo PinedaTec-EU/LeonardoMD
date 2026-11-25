@@ -952,6 +952,8 @@ En **Sincronización → Almacenamiento y caché**, escribe el límite temporal 
 
 La actualización automática inicial es cada minuto mientras la app receptora está activa; se conserva un intervalo previamente elegido. iOS actualiza también al entrar en primer plano y pausa durante la suspensión. Las transferencias requieren un Mac origen accesible. Sin conexión solo se abre contenido previamente descargado. La revocación confirmada retira el acceso a la caché de consulta gestionada.
 
+Leonardo guarda las credenciales de los vínculos entre Mac en su carpeta Application Support de la Biblioteca del usuario, por lo que tus conexiones se conservan al actualizar la app. Si una conexión de una versión anterior necesita permiso para importar su credencial del llavero, pulsa **Actualizar lista** en las preferencias de sincronización y autoriza la importación. La actualización automática no muestra avisos del llavero.
+
 En Mac, **Crear copia editable** descarga explícitamente una copia completa para editar y utilizar el flujo existente de propuestas y revisión. Estas copias están separadas de la caché de consulta que se limpia automáticamente. Explorar o mantener archivos offline no envía cambios.
 
 

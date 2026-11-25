@@ -10,6 +10,8 @@ public struct DesktopPeerConnection: Codable, Equatable, Sendable, Identifiable 
     public private(set) var grants: [UUID: CorpusSelection]
     public private(set) var copies: [UUID: UUID]
     public private(set) var revoked: Bool
+    /// A transient projection. A deferred credential never changes the saved grant.
+    public var credentialDeferred = false
 
     public init(id: UUID = UUID(), remoteDeviceID: UUID, endpoint: URL, fingerprint: Data,
                 comparisonCode: String? = nil, grants: [UUID: CorpusSelection] = [:],

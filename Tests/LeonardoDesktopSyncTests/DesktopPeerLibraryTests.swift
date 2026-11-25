@@ -231,7 +231,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
 
             let proposalClient = try DesktopPeerProposalClient(endpoint: running.endpoint,
                 certificateFingerprint: running.certificateFingerprint)
-            let secretValue = await credentials.credential(deviceID: connection.id)
+            let secretValue = try await credentials.credential(deviceID: connection.id)
             let secret = try XCTUnwrap(secretValue)
             phase = "repeat receipt acknowledgment"
             try await proposalClient.acknowledge(queued.proposal, receipt: receipt,
@@ -376,9 +376,9 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertEqual(comparison.comparison.differences.map(\.path), ["docs/note.md"])
         XCTAssertEqual(comparison.copy.files.first?.content, Data("active draft".utf8))
         XCTAssertEqual(comparison.remote.files.first?.content, Data("remote".utf8))
-        let secret = await fixture.credentials.credential(deviceID: connection.id)
+        let secret = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(secret)
-        let wrongAccount = await fixture.credentials.credential(deviceID: connection.remoteDeviceID)
+        let wrongAccount = try await fixture.credentials.credential(deviceID: connection.remoteDeviceID)
         XCTAssertNil(wrongAccount)
         let metadata = try String(contentsOf: fixture.connectionRoot.appendingPathComponent(connection.id.uuidString).appendingPathExtension("json"), encoding: .utf8)
         XCTAssertFalse(metadata.contains(try XCTUnwrap(secret)))
@@ -412,7 +412,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
         let removedCopy = try await fixture.copies.load(id: existingCopy.id)
         XCTAssertNil(removedCopy)
-        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let removedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNil(removedCredential)
         let closedCopies = await fixture.revoker.closedIDs
         XCTAssertTrue(closedCopies.contains(existingCopy.id))
@@ -445,7 +445,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let storedBeforeRecovery = try await fixture.connections.load(id: connection.id)
         XCTAssertFalse(try XCTUnwrap(storedBeforeRecovery).revoked,
                        "The failure leaves the previous connection snapshot on disk")
-        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let removedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNil(removedCredential,
                      "Credential removal is the durable denial witness when the connection write fails")
         let deniedReaderProjects = await fixture.revoker.readerDeniedProjects(for: connection.id)
@@ -672,7 +672,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let revoked = try await fixture.connections.load(id: connection.id)
         XCTAssertTrue(try XCTUnwrap(revoked).revoked)
         let removedCopy = try await fixture.copies.load(id: copy.id)
-        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let removedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNil(removedCopy)
         XCTAssertNil(removedCredential)
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
@@ -699,7 +699,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let revoked = try await fixture.connections.load(id: connection.id)
         XCTAssertTrue(try XCTUnwrap(revoked).revoked)
         let removedCopy = try await fixture.copies.load(id: copy.id)
-        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let removedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNil(removedCopy)
         XCTAssertNil(removedCredential)
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
@@ -724,7 +724,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let updated = try await fixture.connections.load(id: connection.id)
         XCTAssertFalse(try XCTUnwrap(updated).revoked)
         XCTAssertTrue(try XCTUnwrap(updated).grants.isEmpty)
-        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let retainedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(retainedCredential)
         XCTAssertTrue(try XCTUnwrap(updated).copies.isEmpty)
         let deniedProjectCaches = await fixture.revoker.readerDeniedProjects(for: connection.id)
@@ -749,7 +749,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let updated = try await fixture.connections.load(id: connection.id)
         XCTAssertFalse(try XCTUnwrap(updated).revoked)
         XCTAssertTrue(try XCTUnwrap(updated).grants.isEmpty)
-        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let retainedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(retainedCredential)
         let deniedProjectCaches = await fixture.revoker.readerDeniedProjects(for: connection.id)
         XCTAssertEqual(deniedProjectCaches, [fixture.remote.project.id])
@@ -774,7 +774,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertFalse(try XCTUnwrap(updated).revoked, "A narrowed file selection must not revoke the device")
         XCTAssertEqual(try XCTUnwrap(updated).grants[fixture.remote.project.id],
                        try CorpusSelection(folders: [], documents: ["docs/other.md"]))
-        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let retainedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(retainedCredential)
         let deniedReaderProjects = await fixture.revoker.readerDeniedProjects(for: connection.id)
         XCTAssertEqual(deniedReaderProjects, [fixture.remote.project.id],
@@ -797,7 +797,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
 
         let stillAuthorized = try await fixture.connections.load(id: connection.id)
         XCTAssertFalse(try XCTUnwrap(stillAuthorized).revoked)
-        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        let retainedCredential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(retainedCredential)
     }
 
@@ -857,7 +857,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
         let removed = try await fixture.copies.load(id: copy.id)
         XCTAssertNil(removed)
-        let credential = await fixture.credentials.credential(deviceID: connection.id)
+        let credential = try await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNil(credential)
         let completed = try await fixture.connections.load(id: connection.id)
         XCTAssertTrue(try XCTUnwrap(completed).copies.isEmpty)
@@ -867,6 +867,71 @@ final class DesktopPeerLibraryTests: XCTestCase {
                        "Reader caches must be denied before the fallible workspace purge")
     }
 
+    func testDeferredLegacyPeerDoesNotBlockHealthyPeerOrNewEnrollment() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let legacy = try await fixture.library.enroll(
+            endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Legacy")
+        await fixture.remote.setAccess(.authorized)
+        _ = try await fixture.library.refresh(connectionID: legacy.id)
+        await fixture.credentials.deferRead(id: legacy.id)
+
+        let fresh = try await fixture.library.enroll(
+            endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "New")
+        let listed = try await fixture.library.connections()
+        let deferred = try XCTUnwrap(listed.first { $0.id == legacy.id })
+        XCTAssertTrue(deferred.credentialDeferred)
+        XCTAssertFalse(deferred.revoked)
+        XCTAssertFalse(deferred.grants.isEmpty)
+        XCTAssertEqual(listed.filter { !$0.credentialDeferred }.map(\.id), [fresh.id])
+        let healthy = try await fixture.library.refresh(connectionID: fresh.id)
+        XCTAssertEqual(healthy.access, .authorized)
+        let durable = try await fixture.connections.load(id: legacy.id)
+        XCTAssertFalse(try XCTUnwrap(durable).credentialDeferred)
+
+        do {
+            _ = try await fixture.library.refresh(connectionID: legacy.id)
+            XCTFail("Deferred peer must not reach the remote")
+        } catch DesktopPeerCredentialError.legacyAuthorizationUnavailable {}
+        await fixture.credentials.deferRead(id: nil)
+        let recovered = try await fixture.library.refresh(connectionID: legacy.id)
+        XCTAssertEqual(recovered.access, .authorized)
+    }
+
+    func testHeldLegacyAuthorizationLeavesHealthyRefreshAndEnrollmentUsable() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let locked = try await fixture.library.enroll(
+            endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Legacy")
+        let started = expectation(description: "Interactive import entered the legacy store")
+        await fixture.credentials.holdAuthorization(id: locked.id, started: started)
+        let migrated = FileDesktopPeerCredentialStore(directory: fixture.root.appendingPathComponent("Tokens"),
+                                                      legacy: fixture.credentials)
+        let library = DesktopPeerLibrary(connections: fixture.connections, copies: fixture.copies,
+            workspace: fixture.workspace, credentials: migrated, remote: fixture.remote, revoker: fixture.revoker)
+        let healthy = try await library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Healthy")
+        let authorization = Task { try await library.authorizeLegacyCredential(connectionID: locked.id) }
+        await fulfillment(of: [started], timeout: 5)
+        do {
+            let listed = try await library.connections()
+            XCTAssertTrue(listed.first { $0.id == locked.id }?.credentialDeferred == true)
+            await fixture.remote.setAccess(.authorized)
+            let refreshed = try await library.refresh(connectionID: healthy.id)
+            XCTAssertEqual(refreshed.access, .authorized)
+            let added = try await library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Added")
+            XCTAssertNotEqual(added.id, healthy.id)
+        } catch {
+            await fixture.credentials.finishAuthorization()
+            _ = try? await authorization.value
+            throw error
+        }
+        await fixture.credentials.finishAuthorization()
+        try await authorization.value
+        let listed = try await library.connections()
+        XCTAssertEqual(listed.count, 3)
+        XCTAssertFalse(listed.contains(where: \.credentialDeferred))
+    }
+
     func testServerDeviceIDReuseCannotReplaceAnotherConnectionsCredentialAccount() async throws {
         let fixture = try PeerLibraryFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -874,8 +939,8 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let second = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Two")
         XCTAssertEqual(first.remoteDeviceID, second.remoteDeviceID)
         XCTAssertNotEqual(first.id, second.id)
-        let firstSecret = await fixture.credentials.credential(deviceID: first.id)
-        let secondSecret = await fixture.credentials.credential(deviceID: second.id)
+        let firstSecret = try await fixture.credentials.credential(deviceID: first.id)
+        let secondSecret = try await fixture.credentials.credential(deviceID: second.id)
         XCTAssertNotNil(firstSecret); XCTAssertNotNil(secondSecret)
         XCTAssertNotEqual(firstSecret, secondSecret)
         let connections = try await fixture.library.connections()
@@ -947,7 +1012,35 @@ private actor PeerAuthorizationBarrierFixture {
 
 private actor PeerMemoryCredentials: DeviceCredentialStore {
     private var values: [UUID: String] = [:]
-    func credential(deviceID: UUID) -> String? { values[deviceID] }
+    private var deferredID: UUID?
+    private var authorizationStarted: XCTestExpectation?
+    private var authorizationResult: CheckedContinuation<Void, Never>?
+
+    func holdAuthorization(id: UUID, started: XCTestExpectation) {
+        deferredID = id
+        authorizationStarted = started
+    }
+
+    func finishAuthorization() {
+        deferredID = nil
+        authorizationStarted = nil
+        authorizationResult?.resume()
+        authorizationResult = nil
+    }
+
+    func deferRead(id: UUID?) { deferredID = id }
+    func credential(deviceID: UUID) async throws -> String? {
+        if deviceID == deferredID {
+            guard let started = authorizationStarted, SecureSecretStore.allowsAuthenticationUI else {
+                throw DesktopPeerCredentialError.legacyAuthorizationUnavailable
+            }
+            await withCheckedContinuation { continuation in
+                authorizationResult = continuation
+                started.fulfill()
+            }
+        }
+        return values[deviceID]
+    }
     func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }
     func remove(deviceID: UUID) { values[deviceID] = nil }
 }

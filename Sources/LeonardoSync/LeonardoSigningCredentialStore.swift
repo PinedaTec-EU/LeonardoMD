@@ -25,22 +25,6 @@ protocol LeonardoSigningCredentialKeychainBackend {
 }
 
 struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend {
-#if os(macOS)
-    private static let interactionLock = NSLock()
-
-    static func withInteractionPolicy<T>(prompt: String?, _ operation: () -> T) -> T {
-        interactionLock.withLock {
-            guard prompt == nil else { return operation() }
-            var priorInteractionAllowed = DarwinBoolean(true)
-            guard SecKeychainGetUserInteractionAllowed(&priorInteractionAllowed) == errSecSuccess else {
-                return operation()
-            }
-            _ = SecKeychainSetUserInteractionAllowed(false)
-            defer { _ = SecKeychainSetUserInteractionAllowed(priorInteractionAllowed.boolValue) }
-            return operation()
-        }
-    }
-#endif
     func add(service: String, account: String, data: Data,
              item: LeonardoSigningCredentialKeychainItem) -> OSStatus {
         var attributes: [String: Any] = [
@@ -114,7 +98,7 @@ struct SecurityKeychainBackend: LeonardoSigningCredentialKeychainBackend {
         // process-local legacy path for verification reads; `keyPair` passes a
         // non-nil prompt and therefore retains its explicit authorization
         // path.  Restore the caller's setting immediately after the query.
-        return Self.withInteractionPolicy(prompt: prompt, query)
+        return LoginKeychainInteraction.perform(allowed: prompt != nil, failure: { ($0, nil) }, query)
 #else
         return query()
 #endif
