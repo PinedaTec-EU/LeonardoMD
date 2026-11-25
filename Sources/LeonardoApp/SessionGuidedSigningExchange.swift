@@ -282,7 +282,8 @@ extension AppSession {
             reportGuidedSigningActionFailure(error, blocksReview: false)
             return nil
         }
-        guard confirmImportedPublicKeys(unknown) else { return nil }
+        let personal = unknown.filter { $0.certificateChain == nil }
+        guard personal.isEmpty || confirmImportedPublicKeys(personal) else { return nil }
         guard isCurrent() else { throw LeonardoSigningError.integrityFailure }
         return (effective, unknown)
     }

@@ -37,6 +37,15 @@ extension AppSession {
                 confirmedAt: Date(),
                 explicitlyConfirmed: true
             )
+            if credential.certificateChain != nil {
+                try await guidedSigningCredentialStore.trustPublicCredential(credential)
+                guidedSigningTrustStore = try await guidedSigningCredentialStore.trustStore()
+                guard guidedSigningViewStateMatches(expectedLocation: expectedLocation,
+                                                     expectedContent: expectedContent,
+                                                     expectedSession: current) else {
+                    throw LeonardoSigningError.integrityFailure
+                }
+            }
             var updated = current
             try updated.assign(positionID: positionID, profile: profile, credential: credential,
                                authorization: authorization, at: Date())
@@ -409,6 +418,7 @@ extension AppSession {
     func signGuidedPosition(
         positionID: String,
         password: String,
+        certificate: GuidedSigningCertificate? = nil,
         unlockKey: ((String, String) async throws -> LeonardoSigningKeyPair)? = nil
     ) async {
         guard var current = guidedSigningSession,
@@ -430,8 +440,11 @@ extension AppSession {
             )
             baselineLoaded = true
             guard guidedSigningConflictAllowsProgress() else { return }
-            let keyPair: LeonardoSigningKeyPair
-            if let unlockKey {
+            let keyPair: LeonardoSigningKeyPair?
+            if let certificate {
+                guard certificate.id == assignment.credentialID else { throw LeonardoSigningError.credentialMismatch }
+                keyPair = nil
+            } else if let unlockKey {
                 keyPair = try await unlockKey(assignment.credentialID, password)
             } else {
                 keyPair = try await guidedSigningCredentialStore.keyPair(
@@ -447,8 +460,14 @@ extension AppSession {
             guard await guidedSigningSourceCanCommit(location: expectedLocation, content: expectedContent,
                                                       session: viewBaseline, snapshot: expectedSnapshot) else { return }
             let resources = try guidedSigningResources()
-            _ = try current.sign(positionID: positionID, keyPair: keyPair, document: document,
-                                  resources: resources, trustStore: trustStore, at: Date())
+            if let certificate {
+                _ = try current.signWithCertificate(positionID: positionID, identity: certificate.identity,
+                                                    document: document, resources: resources,
+                                                    trustStore: trustStore, at: Date())
+            } else if let keyPair {
+                _ = try current.sign(positionID: positionID, keyPair: keyPair, document: document,
+                                     resources: resources, trustStore: trustStore, at: Date())
+            }
             guard guidedSigningViewStateMatches(
                 expectedLocation: expectedLocation,
                 expectedContent: expectedContent,

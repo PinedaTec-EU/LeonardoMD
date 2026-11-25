@@ -29,6 +29,13 @@ struct GuidedSigningView: View {
     @State private var enrollmentInProgress = false
     @State private var enrollmentProblem: String?
     @State private var showPassword = false
+    @State private var certificates: [GuidedSigningCertificate] = []
+    @State private var selectedCertificateID = ""
+    @State private var signingCertificate = false
+
+    private var certificateMode: Bool {
+        session.guidedSigningSession?.declaration.method == .certificate
+    }
     @State private var rubricEditor: RubricEditorRequest?
     @State private var selectedCredentialID = ""
     @State private var selectedPassword = ""
@@ -128,7 +135,10 @@ struct GuidedSigningView: View {
     }
 
     private var selectedCredential: LeonardoSigningCredential? {
-        session.guidedSigningTrustStore?.credential(id: selectedCredentialID)
+        if certificateMode {
+            return certificates.first { $0.id == selectedCertificateID }?.credential
+        }
+        return session.guidedSigningTrustStore?.credential(id: selectedCredentialID)
     }
 
     private var assignmentCanBeSubmitted: Bool {
@@ -543,6 +553,7 @@ struct GuidedSigningView: View {
     private var newProfileForm: some View {
         VStack(alignment: .leading, spacing: 7) {
             declaredIdentityForm
+            if !certificateMode {
             HStack {
                 Text(draftProfileRubric == nil ? L10n.text("No profile rubric") : L10n.text("Profile rubric ready"))
                     .font(.caption).foregroundStyle(.secondary)
@@ -554,6 +565,7 @@ struct GuidedSigningView: View {
             }
             Toggle(L10n.text("Save this profile rubric separately"), isOn: $saveRubric)
                 .disabled(draftProfileRubric == nil)
+            }
         }
         .textFieldStyle(.roundedBorder)
     }
@@ -563,7 +575,7 @@ struct GuidedSigningView: View {
             Text(L10n.text("This profile contains a rubric only. Declare the signer identity for this assignment."))
                 .font(.caption).foregroundStyle(.secondary)
             declaredIdentityForm
-            if let rubric = selectedProfile?.rubric {
+            if !certificateMode, let rubric = selectedProfile?.rubric {
                 HStack(spacing: 8) {
                     Image(nsImage: RubricDrawing.thumbnail(rubric))
                         .resizable().aspectRatio(3, contentMode: .fit).frame(height: 40)
@@ -588,7 +600,27 @@ struct GuidedSigningView: View {
         }
     }
 
+    @ViewBuilder
     private var credentialPicker: some View {
+        if certificateMode {
+            Picker(L10n.text("Signing certificate"), selection: $selectedCertificateID) {
+                Text(L10n.text("Choose a certificate")).tag("")
+                ForEach(certificates) { certificate in
+                    Text("\(certificate.name) · \(certificate.id.suffix(12))").tag(certificate.id)
+                }
+            }
+            Button(L10n.text("Load Keychain certificates")) {
+                certificates = GuidedSigningCertificate.available()
+                if !certificates.contains(where: { $0.id == selectedCertificateID }) {
+                    selectedCertificateID = ""
+                }
+            }
+        } else {
+            personalCredentialPicker
+        }
+    }
+
+    private var personalCredentialPicker: some View {
         VStack(alignment: .leading, spacing: 6) {
             if session.guidedSigningCredentialIDs.isEmpty {
                 Text(L10n.text("No personal credential is enrolled on this device."))
@@ -654,9 +686,15 @@ struct GuidedSigningView: View {
                         }
                         .buttonStyle(PremiumButtonStyle(compact: true))
                         Spacer()
-                        Button(L10n.text("Sign")) { showPassword = true }
+                        Button(L10n.text("Sign")) {
+                            if certificateMode {
+                                signWithCertificate(positionID: position.id)
+                            } else {
+                                showPassword = true
+                            }
+                        }
                             .buttonStyle(PremiumButtonStyle(prominent: true, compact: true))
-                            .disabled(progress.state != .readyToSign || !session.guidedSigningWorkflowOperable)
+                            .disabled(progress.state != .readyToSign || !session.guidedSigningWorkflowOperable || signingCertificate)
                     }
                 }
             }
@@ -747,6 +785,7 @@ struct GuidedSigningView: View {
                     set: { reviewedOccurrence = $0 ? currentOccurrence : nil }
                 ))
                 .font(.caption)
+                if !certificateMode {
                 Picker(L10n.text("Rubric for this occurrence"), selection: $reuse) {
                     Text(L10n.text("New rubric")).tag(LeonardoRubricReuse.new)
                     if session.guidedSigningSession?.rubricByPosition[target.positionID] != nil {
@@ -773,6 +812,7 @@ struct GuidedSigningView: View {
                     ))
                     .font(.caption)
                 }
+                }
                 Button(L10n.text("Confirm exact occurrence")) {
                     Task {
                         guard await targetIsRendered(target), currentTarget == target else {
@@ -780,7 +820,8 @@ struct GuidedSigningView: View {
                             return
                         }
                         await session.confirmGuidedLocation(target: target,
-                            rubric: rubricForCurrentChoice ?? LeonardoRubric(), reuse: reuse,
+                            rubric: certificateMode ? LeonardoRubric() : (rubricForCurrentChoice ?? LeonardoRubric()),
+                            reuse: certificateMode ? .new : reuse,
                             reuseConfirmed: reuse == .new ? true : reuseConfirmed,
                             contextRead: contextRead,
                             renderedPlanMatches: { counts, source in
@@ -791,8 +832,9 @@ struct GuidedSigningView: View {
                     }
                 }
                 .buttonStyle(PremiumButtonStyle(prominent: true))
-                .disabled(nextTargetIndex != selectedTargetIndex || !contextRead || rubricForCurrentChoice?.isValid != true
-                          || (reuse != .new && !reuseConfirmed))
+                .disabled(nextTargetIndex != selectedTargetIndex || !contextRead
+                          || (!certificateMode && (rubricForCurrentChoice?.isValid != true
+                              || (reuse != .new && !reuseConfirmed))))
             }
         } else if currentTarget != nil {
             Label(L10n.text("This exact occurrence is not available in the rendered document; confirmation is blocked."),
@@ -886,6 +928,30 @@ struct GuidedSigningView: View {
         .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
     }
 
+    private func signWithCertificate(positionID: String) {
+        guard let current = session.guidedSigningSession,
+              let assignment = current.positions[positionID]?.assignment else { return }
+        signingCertificate = true
+        defer { signingCertificate = false }
+        guard let certificate = GuidedSigningCertificate.available().first(where: { $0.id == assignment.credentialID }) else {
+            session.guidedSigningActionProblem = L10n.text("The assigned signing certificate is unavailable or untrusted.")
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = L10n.text("Sign this Leonardo revision with a certificate?")
+        alert.informativeText = "\(certificate.name)\nSHA-256 \(certificate.id)"
+        alert.addButton(withTitle: L10n.text("Sign"))
+        alert.addButton(withTitle: L10n.text("Cancel"))
+        guard alert.runModal() == .alertFirstButtonReturn, session.guidedSigningSession == current else { return }
+        signingCertificate = true
+        Task {
+            signingCertificate = true
+            defer { signingCertificate = false }
+            guard session.guidedSigningSession == current else { return }
+            await session.signGuidedPosition(positionID: positionID, password: "", certificate: certificate)
+        }
+    }
+
     private func assignSigner() {
         guard let positionID = selectedPosition?.id,
               let profile = profileForAssignment,
@@ -901,7 +967,7 @@ struct GuidedSigningView: View {
     private func assignedFieldLabels(for positionID: String) -> [String] {
         guard let document = session.leonardoDocument else { return [] }
         return document.metadata.fields.compactMap { fieldID, field in
-            guard field.type == .rubric, field.signerPosition == positionID else { return nil }
+            guard field.signerPosition == positionID else { return nil }
             return field.label ?? fieldID
         }.sorted()
     }
@@ -928,6 +994,7 @@ struct GuidedSigningView: View {
     private func signedPositionLabel(for positionID: String) -> String {
         if positionIsVerified(positionID) { return L10n.text("Signed and verified") }
         switch session.guidedSigningVerification[positionID] {
+        case .untrustedCertificate: return L10n.text("Signing certificate not trusted")
         case .unknownCredential: return L10n.text("Signing key not trusted")
         case .invalidSignature: return L10n.text("Signature verification failed")
         case .modifiedSnapshot: return L10n.text("Signed document changed")

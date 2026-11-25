@@ -1,3 +1,4 @@
+import Security
 import CryptoKit
 import Foundation
 
@@ -207,7 +208,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
             throw LeonardoSigningError.integrityFailure
         }
         let fieldIDs = Set(document.metadata.fields.compactMap { fieldID, field in
-            field.type == .rubric && field.signerPosition == positionID ? fieldID : nil
+            field.signerPosition == positionID ? fieldID : nil
         })
         let locations = try Self.locationTargets(in: document.body, fieldIDs: fieldIDs, positionID: positionID)
         for fieldID in fieldIDs where !locations.contains(where: { $0.fieldID == fieldID }) {
@@ -315,7 +316,11 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         try ensureActive(positionID: positionID)
         try requireBoundDocument(document)
         guard contextRead else { throw LeonardoSigningError.contextConfirmationRequired }
-        guard rubric.isValid else { throw LeonardoSigningError.rubricRequired }
+        if declaration.method == .certificate {
+            guard rubric == LeonardoRubric(), reuse == .new else { throw LeonardoSigningError.integrityFailure }
+        } else {
+            guard rubric.isValid else { throw LeonardoSigningError.rubricRequired }
+        }
         guard at.timeIntervalSince1970.isFinite else { throw LeonardoSigningError.invalidTimestamp }
         guard var progress = positions[positionID] else { throw LeonardoSigningError.unknownPosition(positionID) }
         guard progress.state != .signed else {
@@ -411,6 +416,9 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         guard !consumedAuthorizationIDs.contains(authorization.id) else {
             throw LeonardoSigningError.authorizationMismatch
         }
+        guard (credential.certificateChain != nil) == (declaration.method == .certificate) else {
+            throw LeonardoSigningError.credentialMismatch
+        }
         try rejectAssignmentReuse(positionID: positionID, profile: profile, credential: credential)
         progress.assignment = try LeonardoSigningAssignment(
             positionID: positionID,
@@ -435,6 +443,32 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         trustStore: LeonardoSigningTrustStore,
         at: Date
     ) throws -> LeonardoDetachedSignature {
+        try sign(positionID: positionID, credential: keyPair.credential, document: document,
+                 resources: resources, trustStore: trustStore, at: at) { bytes in
+            (keyPair.sign(bytes), nil)
+        }
+    }
+
+    public mutating func signWithCertificate(
+        positionID: String, identity: SecIdentity, document: LeonardoDocument,
+        resources: [LeonardoSigningResource], trustStore: LeonardoSigningTrustStore, at: Date
+    ) throws -> LeonardoDetachedSignature {
+        let credential = try LeonardoCertificateSignature.credential(using: identity)
+        return try sign(positionID: positionID, credential: credential, document: document,
+                        resources: resources, trustStore: trustStore, at: at) { bytes in
+            let evidence = try LeonardoCertificateSignature.sign(bytes, using: identity)
+            return (evidence.signature, evidence.algorithm)
+        }
+    }
+
+    private mutating func sign(
+        positionID: String, credential: LeonardoSigningCredential, document: LeonardoDocument,
+        resources: [LeonardoSigningResource], trustStore: LeonardoSigningTrustStore, at: Date,
+        signBytes: (Data) throws -> (Data, LeonardoCertificateSignature.Algorithm?)
+    ) throws -> LeonardoDetachedSignature {
+        guard (credential.certificateChain != nil) == (declaration.method == .certificate) else {
+            throw LeonardoSigningError.credentialMismatch
+        }
         try ensureActive(positionID: positionID)
         guard at.timeIntervalSince1970.isFinite else { throw LeonardoSigningError.invalidTimestamp }
         guard let snapshot else { throw LeonardoSigningError.incompletePosition(positionID) }
@@ -445,12 +479,12 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         guard let assignment = progress.assignment else {
             throw LeonardoSigningError.assignmentRequired(positionID)
         }
-        guard assignment.credentialID == keyPair.credential.id,
-              assignment.publicKeyDigest == Data(SHA256.hash(data: keyPair.credential.publicKey)) else {
+        guard assignment.credentialID == credential.id,
+              assignment.publicKeyDigest == Data(SHA256.hash(data: credential.publicKey)) else {
             throw LeonardoSigningError.credentialMismatch
         }
-        guard let trusted = trustStore.credential(id: keyPair.credential.id), trusted == keyPair.credential else {
-            throw LeonardoSigningError.unknownCredential(keyPair.credential.id)
+        guard let trusted = trustStore.credential(id: credential.id), trusted == credential else {
+            throw LeonardoSigningError.unknownCredential(credential.id)
         }
         guard progress.state == .readyToSign else {
             throw LeonardoSigningError.incompletePosition(positionID)
@@ -482,10 +516,12 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
             completionIndex: completionOrder.count,
             signedAt: at
         )
-        let signature = LeonardoDetachedSignature(
-            proof: proof,
-            signature: keyPair.sign(try LeonardoSignatureVerifier.canonicalData(proof))
-        )
+        let (bytes, algorithm) = try signBytes(LeonardoSignatureVerifier.canonicalData(proof))
+        let signature = LeonardoDetachedSignature(proof: proof, signature: bytes, certificateAlgorithm: algorithm)
+        guard LeonardoSignatureVerifier.verify(signature, document: document, resources: resources,
+                                               trustStore: trustStore) == .valid else {
+            throw LeonardoSigningError.integrityFailure
+        }
         progress.signature = signature
         progress.state = .signed
         progress.updatedAt = at
@@ -638,8 +674,8 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         var assignedPositions = Set<String>()
         for (fieldID, field) in document.metadata.fields {
             guard let positionID = field.signerPosition else { continue }
-            guard field.type == .rubric else {
-                throw LeonardoSigningError.invalidDeclaration("field \(fieldID) is not a rubric")
+            guard (field.type == .rubric) != (declaration.method == .certificate) else {
+                throw LeonardoSigningError.invalidDeclaration("field \(fieldID) does not match the signing method")
             }
             guard ids.contains(positionID) else {
                 throw LeonardoSigningError.invalidDeclaration("field \(fieldID) names an unknown position")
@@ -647,7 +683,7 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
             assignedPositions.insert(positionID)
         }
         for position in declaration.positions where !assignedPositions.contains(position.id) {
-            throw LeonardoSigningError.invalidDeclaration("required position \(position.id) has no rubric field")
+            throw LeonardoSigningError.invalidDeclaration("required position \(position.id) has no signing field")
         }
     }
 
@@ -723,6 +759,11 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
         }
         var lastRubric: LeonardoRubric?
         for location in locations {
+            if declaration.method == .certificate {
+                guard location.rubric == LeonardoRubric(), location.reuse == .new else {
+                    throw LeonardoSigningError.integrityFailure
+                }
+            }
             switch location.reuse {
             case .new:
                 break
@@ -757,7 +798,9 @@ public struct LeonardoGuidedSigningSession: Codable, Equatable, Sendable, Identi
     private func validateRequiredSigningData(_ document: LeonardoDocument) throws {
         // Assigned rubrics are signing locations. All other required fields
         // use the same value rules as the rest of the form.
-        let requiredFields = document.metadata.fields.filter { $0.value.required && $0.value.signerPosition == nil }
+        let requiredFields = document.metadata.fields.filter {
+            $0.value.required && ($0.value.signerPosition == nil || declaration.method == .certificate)
+        }
         var missing: [String] = []
         var diagnostics: [LeonardoDiagnostic] = []
         for (fieldID, field) in requiredFields {
