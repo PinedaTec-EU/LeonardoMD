@@ -3,6 +3,22 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.2298</title>
+            <pubDate>Wed, 25 Nov 2026 19:54:39 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>2298</sparkle:version>
+            <sparkle:shortVersionString>0.3.2298</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## LeonardoMD 0.3.2298 Beta
+
+- Use one Projects / Documents selector on Home. Favorites, Remote items and Recents can be collapsed independently.
+- Open shared project catalogues and document previews directly from Home. Cached documents remain available when the source Mac is offline.
+- The remote catalogue shows file availability in its own column and marks cached documents with a blue icon.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.2298/LeonardoMD-0.3.2298.zip" length="27234189" type="application/octet-stream" sparkle:edSignature="6BfFshDE0lwDBW0fAF+B2MdrdQ+T9Ty6iBtq/VyMDnWggI5SP4XPtqJbX+8xpfdsXXOqiK4MNxWOYCy26xkJDQ==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.2282</title>
             <pubDate>Wed, 25 Nov 2026 13:30:47 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
