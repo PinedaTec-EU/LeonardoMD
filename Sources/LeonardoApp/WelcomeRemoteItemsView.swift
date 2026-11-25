@@ -108,7 +108,7 @@ struct WelcomeRemoteItemsView: View {
     }
 
     private func projectMenu(_ project: CachedRemoteProject) -> some View {
-        let keptOffline = project.keepsFolder("")
+        let keptOffline = project.retention.contains { $0.isFolder && $0.path.isEmpty && $0.keep }
         return Menu {
             Button(L10n.text(keptOffline ? "Stop keeping project offline" : "Keep project offline"),
                    systemImage: keptOffline ? "pin.slash" : "pin") {
@@ -121,7 +121,7 @@ struct WelcomeRemoteItemsView: View {
                     await controller.downloads.release(id: project.id, path: "", isFolder: true)
                 }
             }
-            .disabled(!project.catalogue.files.contains { !project.keeps($0.path) && project.isDownloaded($0) })
+            .disabled(!project.downloads.keys.contains { !project.keeps($0) })
         } label: {
             Image(systemName: "ellipsis.circle")
                 .imageScale(.large)
