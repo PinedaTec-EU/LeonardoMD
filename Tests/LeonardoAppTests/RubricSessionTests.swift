@@ -191,11 +191,20 @@ final class RubricSessionTests: XCTestCase {
         let object = LeonardoGraphic(label: "Inspection", rubric: ink)
         XCTAssertFalse(session.insertGraphic(object))
         session.isProtected = false
+        session.mode = .edit
         XCTAssertTrue(session.insertGraphic(object))
+        XCTAssertEqual(session.mode, .split)
+        XCTAssertEqual(session.selectedGraphic, object)
+        XCTAssertTrue(session.showsGraphicInspector)
         let inserted = session.content
-        var moved = object; moved.page = 2; moved.x = 99; moved.z = -1
+        var moved = object
+        moved.page = 2
+        moved.x = 99
+        moved.width = 90
+        moved.height = 35
+        moved.z = -1
         XCTAssertTrue(session.handleGraphicAction(expected: inserted, object: moved, remove: nil, fieldID: nil))
-        XCTAssertEqual(session.leonardoDocument?.metadata.layout?.objects.first?.x, 99)
+        XCTAssertEqual(session.selectedGraphic, moved)
         XCTAssertFalse(session.handleGraphicAction(expected: inserted, object: moved, remove: nil, fieldID: nil))
         await session.undoDocument()
         XCTAssertEqual(session.content, inserted)
