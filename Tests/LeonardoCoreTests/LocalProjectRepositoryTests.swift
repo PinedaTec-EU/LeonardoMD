@@ -430,6 +430,54 @@ final class LocalProjectRepositoryTests: XCTestCase {
         }
     }
 
+    func testBatchMoveAndCopySupportsMixedFilesAndFolders() async throws {
+        let directory = try TemporaryDirectory()
+        let repository = LocalProjectRepository()
+        let workspace = try await repository.createWorkspace(at: directory.url.appendingPathComponent("Workspace"))
+        let project = try await repository.createProject(named: "Notes", in: workspace)
+        let note = try await repository.createMarkdown(named: "note.md", in: project, contents: "note content")
+        let assets = try await repository.createFolder(named: "Assets", in: project)
+        _ = try await repository.createMarkdown(named: "logo.md", in: project, at: assets.relativePath, contents: "logo content")
+        let copyTarget = try await repository.createFolder(named: "Copies", in: project)
+        let moveTarget = try await repository.createFolder(named: "Moved", in: project)
+
+        let copied = try await repository.copy([note.relativePath, assets.relativePath], in: project, to: copyTarget.relativePath)
+        XCTAssertEqual(copied.map(\.relativePath), ["Copies/note.md", "Copies/Assets"])
+        XCTAssertEqual(try String(contentsOf: copyTarget.url.appendingPathComponent("note.md"), encoding: .utf8), "note content")
+        XCTAssertEqual(try String(contentsOf: copyTarget.url.appendingPathComponent("Assets/logo.md"), encoding: .utf8), "logo content")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: note.url.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: assets.url.appendingPathComponent("logo.md").path))
+
+        let moved = try await repository.move([note.relativePath, assets.relativePath], in: project, to: moveTarget.relativePath)
+        XCTAssertEqual(moved.map(\.relativePath), ["Moved/note.md", "Moved/Assets"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: note.url.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: assets.url.path))
+        XCTAssertEqual(try String(contentsOf: moveTarget.url.appendingPathComponent("Assets/logo.md"), encoding: .utf8), "logo content")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copyTarget.url.appendingPathComponent("Assets/logo.md").path))
+    }
+
+    func testBatchMoveCollisionLeavesEverySourceAndDestinationUntouched() async throws {
+        let directory = try TemporaryDirectory()
+        let repository = LocalProjectRepository()
+        let workspace = try await repository.createWorkspace(at: directory.url.appendingPathComponent("Workspace"))
+        let project = try await repository.createProject(named: "Notes", in: workspace)
+        let first = try await repository.createMarkdown(named: "first.md", in: project, contents: "first")
+        let collisionSource = try await repository.createMarkdown(named: "occupied.md", in: project, contents: "source")
+        let target = try await repository.createFolder(named: "Target", in: project)
+        let occupied = try await repository.createMarkdown(named: "occupied.md", in: project, at: target.relativePath, contents: "destination")
+
+        do {
+            _ = try await repository.move([first.relativePath, collisionSource.relativePath], in: project, to: target.relativePath)
+            XCTFail("A destination collision should reject the complete batch")
+        } catch let error as FileSystemRepositoryError {
+            XCTAssertEqual(error, .itemAlreadyExists(occupied.url))
+        }
+        XCTAssertEqual(try String(contentsOf: first.url, encoding: .utf8), "first")
+        XCTAssertEqual(try String(contentsOf: collisionSource.url, encoding: .utf8), "source")
+        XCTAssertEqual(try String(contentsOf: occupied.url, encoding: .utf8), "destination")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: target.url.appendingPathComponent("first.md").path))
+    }
+
     func testProjectRenameMoveAndDeleteOperateOnWorkspaceFolders() async throws {
         let directory = try TemporaryDirectory()
         let repository = LocalProjectRepository()

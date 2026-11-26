@@ -1,10 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v166-en.mdlz` and `Guide-v166-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v167-en.mdlz` and `Guide-v167-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v166/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v167/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v167 adds mixed selection and move/copy drop targets in the project
+sidebar and retains the preview, rubric, mobile, Finder and pagination
+guidance from v166.
+Guide v167 EN SHA-256: `32196c842e73f00787eea03e898d3b0d9ef713caedbd4899757c1e933e238be8`
+and ES SHA-256: `7be182212310ebaffa28f0196c21108d130a9eb80a771ad2af15cef4e6bd3585`.
 
 Guide v166 includes the local read-only Codex preview through Leonardo Sync,
 the v162 rubric move, size and rotation chapter, and the existing page-rubric,

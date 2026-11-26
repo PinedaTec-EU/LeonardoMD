@@ -59,6 +59,14 @@ final class MarkdownAssociationsTests: XCTestCase {
             + (try XCTUnwrap(plist["UTImportedTypeDeclarations"] as? [[String: Any]]))
         let handlers = try XCTUnwrap(plist["CFBundleDocumentTypes"] as? [[String: Any]])
             .flatMap { $0["LSItemContentTypes"] as? [String] ?? [] }
+        let projectTreeType = DocumentDropProviders.projectTreeItemTypeIdentifier
+        let projectTreeDeclaration = try XCTUnwrap(declarations.first {
+            $0["UTTypeIdentifier"] as? String == projectTreeType
+        })
+        let projectTreeParents = try XCTUnwrap(projectTreeDeclaration["UTTypeConformsTo"] as? [String])
+        XCTAssertTrue(projectTreeParents.contains("public.data"))
+        XCTAssertFalse(handlers.contains(projectTreeType), "Internal drag payload is not a document format")
+        XCTAssertEqual(DocumentDropProviders.projectTreeItemType.identifier, projectTreeType)
         for documentType in WorkspaceMarkdownAssociationDriver.documentTypes {
             let declaration = try XCTUnwrap(declarations.first {
                 $0["UTTypeIdentifier"] as? String == documentType.identifier
