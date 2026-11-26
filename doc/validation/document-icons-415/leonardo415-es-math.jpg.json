@@ -1,0 +1,16 @@
+{
+  "capture_time_utc": "2026-11-10T17:01:35.628Z",
+  "screen": "Native LeonardoMD QA, Spanish guide v50, Math and Charts enabled; displayed tagged equation and chart",
+  "capture_mode": "native-window",
+  "browser": "not applicable",
+  "viewport_css": null,
+  "image_pixels": {
+    "width": 2520,
+    "height": 1700
+  },
+  "image_sha256": "c5dad6d905e82b3d2e45a33d02597aa6ef2b4dca81595a7032937e03cfe4a446",
+  "build_source_sha": "91896cb9dc20d7353694f6b59b71d468b84b911f",
+  "build": "0.3.1233",
+  "data": "synthetic",
+  "instance_pid": 21587
+}
