@@ -1,0 +1,46 @@
+{
+  "captured_at": "2026-11-26T14:47:00+01:00",
+  "route": "/<token>/preview#document=62d16a03b68124822d8182124bddc9591b340fad59ccb65f7a9ea1c7462d7de7",
+  "screen": "Guide v168 English MDLZ; chapter 7 Home, recent items and favorites",
+  "browser_name": "Chromium",
+  "browser_version": "Chrome/159.0.0.0",
+  "viewport_css": {
+    "width": 1280,
+    "height": 900
+  },
+  "capture_mode": "viewport",
+  "state": "HTTP available; heading “7. Home, recent items and favorites” aligned at viewport top; Locate moved item and replacement-validation paragraph visible; read-only package content",
+  "data_provenance": "bundled Guide v168 package",
+  "main_css": {
+    "width": 920,
+    "height": 36309.515625,
+    "scroll_height": 36310
+  },
+  "scroll_y": 12434,
+  "heading_css": {
+    "text": "7. Home, recent items and favorites",
+    "top": -0.234375,
+    "bottom": 39.03125
+  },
+  "rendered_images": null,
+  "console": {
+    "errors": 1,
+    "warnings": 1,
+    "note": "One console error and one warning occurred during full guide load; target chapter rendered and the captured viewport has no visible failure."
+  },
+  "image_dimensions_px": {
+    "width": 1280,
+    "height": 900
+  },
+  "image_sha256": "36c0b2fa87b9666b63e55b2366ad57f0994d9f0a744f4c88cfde81b1b3c2a7fa",
+  "build_source_sha": "6c84f6ea040dcfa702dd6807eabf4a5c7240f1b2",
+  "exact_head_sha": "6c84f6ea040dcfa702dd6807eabf4a5c7240f1b2",
+  "input_name": "Guide-v168-en.mdlz",
+  "input_sha256": "e3d1a7dbca75cceee05b69b521278edb215ce8cb583a3b3e5104c1f118d9f87b",
+  "package_sha256": "e3d1a7dbca75cceee05b69b521278edb215ce8cb583a3b3e5104c1f118d9f87b",
+  "worker_pid": 92757,
+  "worker_started_at": "2026-11-26T14:46:29+01:00",
+  "worker_teardown": "verified exited",
+  "browser_session": "pr516-7b8a-evidence; verified closed",
+  "time_source": "PNG file modification time immediately after Playwright viewport screenshot"
+}

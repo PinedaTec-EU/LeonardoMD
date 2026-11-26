@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-26T14:47:18+01:00",
+  "capture": {
+    "captured_at": "2026-11-26T14:47:18+01:00",
+    "route": "/<token>/preview#document=c5b6188d5ca6fc34197d37b8f70be1efb452dcfdca4fe0c0b9134d8ed070acc9",
+    "screen": "Guía v168 en español MDLZ; capítulo 7 Inicio, recientes y favoritos",
+    "browser_name": "Chromium",
+    "browser_version": "Chrome/159.0.0.0",
+    "state": "HTTP available; encabezado “7. Inicio, recientes y favoritos” alineado en la parte superior; Localizar el elemento… y el párrafo de validación del reemplazo visibles; contenido del paquete en solo lectura",
+    "viewport_css": {
+      "width": 1280,
+      "height": 900
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "bundled Guide v168 package",
+    "main_css": {
+      "width": 920,
+      "height": 39131.234375,
+      "scroll_height": 39131
+    },
+    "scroll_y": 13269,
+    "heading_css": {
+      "text": "7. Inicio, recientes y favoritos",
+      "top": -0.234375,
+      "bottom": 39.03125
+    },
+    "rendered_images": null,
+    "console": {
+      "errors": 0,
+      "warnings": 1,
+      "note": "No browser console errors; one non-blocking renderer warning during guide load."
+    }
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1280,
+    "height_px": 900,
+    "sha256": "1e3a76b3574b365e995c7d72cafb39ad0f7d517d2a1628f9dcf8cca63a6687bc"
+  },
+  "source": {
+    "revision_at_collection": "6c84f6ea040dcfa702dd6807eabf4a5c7240f1b2",
+    "source_sha": "6c84f6ea040dcfa702dd6807eabf4a5c7240f1b2",
+    "tracked_changes_present": false,
+    "untracked_files_present": false,
+    "source_kind": "read-only git archive at exact commit",
+    "input_name": "Guide-v168-es.mdlz",
+    "input_sha256": "73350f82538554ec4ac4de1ef2394e1373562e1cb54e8fabbbde65b85aff5afb",
+    "package_sha256": "73350f82538554ec4ac4de1ef2394e1373562e1cb54e8fabbbde65b85aff5afb",
+    "worker_script": "plugins/leonardo-format/skills/leonardo-format/scripts/preview_service.py",
+    "worker_pid": 92757,
+    "worker_started_at": "2026-11-26T14:46:29+01:00",
+    "worker_teardown": "verified exited before sidecar generation",
+    "browser_session": "pr516-7b8a-evidence; verified closed",
+    "route_token": "redacted"
+  }
+}
