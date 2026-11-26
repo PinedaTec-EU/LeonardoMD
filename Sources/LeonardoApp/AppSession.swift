@@ -162,6 +162,15 @@ final class AppSession {
     /// The format owner supplies the canonical MD -> MDLF migration. The app
     /// owns the preference and prompt, but never invents a second serializer.
     var migrateMarkdownDocument: @MainActor () async -> Bool = { false }
+    /// Authorizes a replacement location without reserving it for an open
+    /// document. Home recovery only changes durable references; it does not
+    /// open the selected document, so the process-lifetime path ownership used
+    /// by normal document operations would otherwise leak on a failed repair.
+    var authorizeSavedItemPath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
+        try NativeReconciliationLease.shared.check(url, intent: intent)
+        try await DesktopPeerController.shared.authorize(url, intent: intent)
+        try NativeReconciliationLease.shared.check(url, intent: intent)
+    }
     var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
         try NativeReconciliationLease.shared.check(url, intent: intent)
         try await DesktopPeerController.shared.authorize(url, intent: intent)
@@ -176,6 +185,7 @@ final class AppSession {
     var globalBaseline: GlobalPreferences
     var projectBaseline = ProjectConfiguration.default
     var settingsTask: Task<Void, Never>?
+    @ObservationIgnored var settingsResultTask: Task<Bool, Never>?
     var settingsRevision = 0
     var git: GitRepository?
     var gitStatus: GitStatus?
@@ -228,7 +238,7 @@ final class AppSession {
         guidedSigningStore = LeonardoSigningStore(directoryURL: signingDirectory)
         guidedSigningCredentialStore = signingCredentialStore
         self.openSystemURL = openSystemURL
-        let existingAuthorization = authorizePath
+        let existingAuthorization = authorizeSavedItemPath
         authorizePath = { url, intent in
             // Suspended operations must not acquire path ownership as a side effect.
             try NativeReconciliationLease.shared.check(url, intent: intent)
@@ -458,7 +468,15 @@ final class AppSession {
             errorMessage = L10n.text("This item is outside the content selected on the source Mac.")
         } else if let syncError = error as? SyncError, syncError == .revoked {
             errorMessage = L10n.text("Access to this linked copy was revoked.")
-        } else { errorMessage = error.localizedDescription }
+        } else if let localized = error as? LocalizedError,
+                  let message = localized.errorDescription,
+                  !message.isEmpty {
+            errorMessage = message
+        } else {
+            // Preserve the detailed enum/path diagnostics for errors that do
+            // not yet provide a LocalizedError presentation.
+            errorMessage = String(describing: error)
+        }
         logger.error("operation_failed category=\(String(reflecting: type(of: error)), privacy: .public)")
     }
     func updateTitle() {

@@ -17,6 +17,8 @@ before favorites, Recents or sharing mutate; additional instances consult
 persisted sharing authority and only unshared local repairs proceed without the
 primary instance; recovery errors use the selected language.
 Guide v158 EN SHA-256: `9d10e0b71fac6eec128135add85a201d302d1092f090433f8df0d5655537be89` and ES SHA-256: `1e6dfd235aab23d60dba3483d171438505516372164aceebf8db84f58e35b1d7`.
+Guide v165 EN SHA-256: `2ce0213997f7c05ece09860097c8aeeb6ac4b4de1ab97ab5fc07d02d55859ca7`
+and ES SHA-256: `f8f68c9c3bbff9b71bb592295fa437a5b82801d4dbb70d4bc327089225d8334b`.
 
 Guide v156 carries forward the current shared Home selector, separate
 remote-project menu, offline actions, direct remote access and Markdown table
@@ -31,8 +33,8 @@ and reports those failures in the selected language.
 Guide v153 remains the previous packaged baseline and v147 remains the
 previous #465 mobile-help package; existing guide copies and practice answers
 are never overwritten.
-Guide v165 EN SHA-256: `2ce0213997f7c05ece09860097c8aeeb6ac4b4de1ab97ab5fc07d02d55859ca7`
-and ES SHA-256: `f8f68c9c3bbff9b71bb592295fa437a5b82801d4dbb70d4bc327089225d8334b`.
+Guide v156 EN SHA-256: `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
+and ES SHA-256: `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 

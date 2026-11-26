@@ -22,31 +22,71 @@ extension AppSession {
         let replacement = FavoriteItem(kind: item.kind, url: url)
         guard !item.matches(replacement) else { return }
         do {
-            try await authorizePath(url, item.kind == .project ? .directory : .document)
+            try await authorizeSavedItemPath(url, item.kind == .project ? .directory : .document)
             try await validateSavedItemReplacement(replacement)
             if item.kind == .project {
-                try await relocateSavedSharing(from: item.url, to: url, sharing: sharing)
-                globalPreferences.recentProjectPaths = SavedItemRecentPathRepair.replacing(
-                    source: item.url, with: url, in: globalPreferences.recentProjectPaths
-                )
+                if let persisted = try await relocateSavedSharing(
+                    item: item, replacement: replacement,
+                    sharing: sharing
+                ) {
+                    // The sync controller persisted the sharing move and the
+                    // Home fields in one global-preferences transaction.
+                    globalPreferences = persisted
+                    globalBaseline = persisted
+                } else {
+                    let beforePersistenceGlobal = globalPreferences
+                    let beforePersistenceBaseline = globalBaseline
+                    let updatedGlobalPreferences = replacingHomePreferences(
+                        item, with: replacement, in: globalPreferences
+                    )
+                    globalPreferences = updatedGlobalPreferences
+                    guard await persistSettingsAndWait(includeProject: false) else {
+                        globalPreferences = beforePersistenceGlobal
+                        globalBaseline = beforePersistenceBaseline
+                        throw SavedItemRecoveryError(message: "The saved item could not be updated.")
+                    }
+                }
             } else {
+                let beforePersistenceGlobal = globalPreferences
+                let beforePersistenceBaseline = globalBaseline
+                let updatedGlobalPreferences = replacingHomePreferences(
+                    item, with: replacement, in: globalPreferences
+                )
+                globalPreferences = updatedGlobalPreferences
+                guard await persistSettingsAndWait(includeProject: false) else {
+                    globalPreferences = beforePersistenceGlobal
+                    globalBaseline = beforePersistenceBaseline
+                    throw SavedItemRecoveryError(message: "The saved item could not be updated.")
+                }
                 SavedItemRecentPathRepair.replaceRecentDocument(
                     item.url, with: url, store: AppKitRecentDocumentStore()
                 )
             }
-            if let previous = favorite(item.url, kind: item.kind),
-               let index = globalPreferences.favorites.firstIndex(where: { $0.matches(item) }) {
-                globalPreferences.favorites[index] = FavoriteItem(kind: item.kind, url: url, palette: previous.palette)
-                globalPreferences.favorites = globalPreferences.favorites.enumerated().filter {
-                    $0.offset == index || !$0.element.matches(replacement)
-                }.map { $0.element }
-            }
-            persistSettings()
         } catch is CancellationError {
             return
         } catch {
             report(error)
         }
+    }
+
+    private func replacingHomePreferences(_ item: FavoriteItem, with replacement: FavoriteItem,
+                                          in preferences: GlobalPreferences) -> GlobalPreferences {
+        var updated = preferences
+        if item.kind == .project {
+            updated.recentProjectPaths = SavedItemRecentPathRepair.replacing(
+                source: item.url, with: replacement.url, in: updated.recentProjectPaths
+            )
+        }
+        if let previous = updated.favorites.first(where: { $0.matches(item) }),
+           let index = updated.favorites.firstIndex(where: { $0.matches(item) }) {
+            updated.favorites[index] = FavoriteItem(
+                kind: item.kind, url: replacement.url, palette: previous.palette
+            )
+            updated.favorites = updated.favorites.enumerated().filter {
+                $0.offset == index || !$0.element.matches(replacement)
+            }.map { $0.element }
+        }
+        return updated
     }
 
     private func validateSavedItemReplacement(_ replacement: FavoriteItem) async throws {
@@ -78,8 +118,10 @@ extension AppSession {
         }
     }
 
-    private func relocateSavedSharing(from source: URL, to destination: URL,
-                                      sharing: DesktopSyncController) async throws {
+    private func relocateSavedSharing(item: FavoriteItem, replacement: FavoriteItem,
+                                      sharing: DesktopSyncController) async throws -> GlobalPreferences? {
+        let source = item.url
+        let destination = replacement.url
         await sharing.initialize()
         let persistedSettings = try await configurations.loadGlobalPreferences(at: globalPreferencesURL).mobileSync
         guard sharing.projectSettingsLoaded else {
@@ -89,12 +131,12 @@ extension AppSession {
             }) else {
                 throw SavedItemRecoveryError(message: "Open the primary LeonardoMD instance to relocate a shared project.")
             }
-            return
+            return nil
         }
         let canonicalPath = source.standardizedFileURL.resolvingSymlinksInPath().path
         guard let persistedProject = persistedSettings.projects.first(where: {
             $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path == canonicalPath
-        }) else { return }
+        }) else { return nil }
         guard let project = sharing.settings.projects.first(where: {
             $0.id == persistedProject.id &&
                 $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path == canonicalPath
@@ -111,10 +153,20 @@ extension AppSession {
         guard await NativeDialog.present(alert, on: presentationWindow) == .alertFirstButtonReturn else {
             throw CancellationError()
         }
-        let outcome = await sharing.relocateSharedProject(project, to: destination)
-        guard outcome != .notPersisted else {
+        // The modal prompt can yield to other Home/session mutations. Build
+        // the transaction from the latest actor-owned snapshot after consent
+        // instead of committing the pre-prompt copy.
+        let updatedGlobal = replacingHomePreferences(item, with: replacement, in: globalPreferences)
+        let result = await sharing.relocateSharedProjectResult(
+            project, to: destination,
+            updatingGlobalPreferences: updatedGlobal,
+            baseline: globalBaseline
+        )
+        guard result.outcome != .notPersisted,
+              let persisted = result.persistedGlobalPreferences else {
             throw SavedItemRecoveryError(message: "The shared project location could not be updated.")
         }
+        return persisted
     }
 }
 

@@ -50,6 +50,37 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertNotNil(controller.error)
     }
 
+    func testRelocationPersistsSyncAndHomeChangesInOneGlobalSnapshot() async throws {
+        let fixture = try RecoveryPersistenceFixture()
+        defer { fixture.cleanup() }
+        let runtime = RecoveryPersistenceRuntime()
+        let controller = fixture.controller(runtime: runtime)
+        await controller.update(fixture.initialSettings)
+        XCTAssertNil(controller.error)
+
+        let store = ConfigurationStore()
+        let baseline = try await store.loadGlobalPreferences(at: fixture.preferences)
+        var requested = baseline
+        requested.favorites = [FavoriteItem(kind: .project, url: fixture.destination)]
+        requested.recentProjectPaths = [fixture.destination]
+
+        let result = await controller.relocateSharedProjectResult(
+            fixture.project, to: fixture.destination,
+            updatingGlobalPreferences: requested, baseline: baseline
+        )
+
+        XCTAssertEqual(result.outcome, .persisted)
+        XCTAssertEqual(result.persistedGlobalPreferences?.favorites,
+                       [FavoriteItem(kind: .project, url: fixture.destination)])
+        XCTAssertEqual(result.persistedGlobalPreferences?.recentProjectPaths, [fixture.destination])
+        XCTAssertEqual(result.persistedGlobalPreferences?.mobileSync.projects.first?.rootURL,
+                       fixture.destination)
+        let saved = try await store.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertEqual(saved.favorites, requested.favorites)
+        XCTAssertEqual(saved.recentProjectPaths, requested.recentProjectPaths)
+        XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, fixture.destination)
+    }
+
     func testAdditionalInstanceRepairsUnsharedProjectUsingPersistedSharingAuthority() async throws {
         let fixture = try SavedItemRecoveryFixture(kind: .project)
         defer { fixture.cleanup() }
@@ -60,7 +91,7 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         defer { InstanceRuntime.isAdditional = previous }
         let session = AppSession(preferencesURL: fixture.preferences)
         defer { session.stop() }
-        session.authorizePath = { _, _ in }
+        session.authorizeSavedItemPath = { _, _ in }
         let controller = DesktopSyncController(preferencesURL: fixture.preferences,
                                                 configurations: ConfigurationStore(), usesHelper: false)
 
@@ -84,7 +115,7 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         defer { InstanceRuntime.isAdditional = previous }
         let session = AppSession(preferencesURL: fixture.preferences)
         defer { session.stop() }
-        session.authorizePath = { _, _ in }
+        session.authorizeSavedItemPath = { _, _ in }
         let controller = DesktopSyncController(preferencesURL: fixture.preferences,
                                                 configurations: ConfigurationStore(), usesHelper: false)
 
@@ -114,7 +145,7 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         defer { InstanceRuntime.isAdditional = previous }
         let session = AppSession(preferencesURL: fixture.preferences)
         defer { session.stop() }
-        session.authorizePath = { _, _ in }
+        session.authorizeSavedItemPath = { _, _ in }
 
         await session.repairSavedItem(fixture.item, at: fixture.destination)
         await session.settingsTask?.value
@@ -136,7 +167,7 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         defer { InstanceRuntime.isAdditional = previous }
         let session = AppSession(preferencesURL: fixture.preferences)
         defer { session.stop() }
-        session.authorizePath = { _, _ in }
+        session.authorizeSavedItemPath = { _, _ in }
 
         await session.repairSavedItem(fixture.item, at: fixture.destination)
         await session.settingsTask?.value
@@ -144,6 +175,52 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertEqual(session.errorMessage, L10n.text("The selected Leonardo package cannot be opened."))
         let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
         XCTAssertEqual(saved.favorites, [fixture.item])
+    }
+
+    func testRejectedDocumentRecoveryDoesNotReserveTheReplacementPath() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .document)
+        defer { fixture.cleanup() }
+        try Data("not a Leonardo archive".utf8).write(to: fixture.destination)
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = true
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination)
+
+        let otherInstance = InstancePathOwnership()
+        XCTAssertNoThrow(try otherInstance.claim(fixture.destination))
+    }
+
+    func testRecoveryRestoresHomeSnapshotWhenPersistenceFails() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let oldPermissions = try FileManager.default.attributesOfItem(atPath: fixture.root.path)[.posixPermissions]
+        defer { try? FileManager.default.setAttributes([.posixPermissions: oldPermissions as Any], ofItemAtPath: fixture.root.path) }
+        try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: 0o500)], ofItemAtPath: fixture.root.path)
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = true
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        session.authorizeSavedItemPath = { _, _ in }
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination,
+                                      sharing: DesktopSyncController(preferencesURL: fixture.preferences,
+                                                                     configurations: ConfigurationStore(), usesHelper: false))
+        await session.settingsTask?.value
+
+        let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertEqual(saved.favorites, [fixture.item])
+        XCTAssertEqual(saved.recentProjectPaths, [fixture.source])
+        XCTAssertEqual(session.globalPreferences.favorites, [fixture.item])
+        XCTAssertEqual(session.globalPreferences.recentProjectPaths, [fixture.source])
     }
 
     func testSavedItemRecoveryErrorUsesSelectedLanguageWhenReported() throws {
@@ -160,6 +237,20 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         session.report(SavedItemRecoveryError(message: "The selected project cannot be opened."))
 
         XCTAssertEqual(session.errorMessage, "No se puede abrir el proyecto seleccionado.")
+    }
+
+    func testReportPreservesDetailsForNonLocalizedErrors() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let preferences = root.appendingPathComponent("preferences.json")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let session = AppSession(preferencesURL: preferences)
+        defer { session.stop() }
+
+        let missing = root.appendingPathComponent("MissingProject")
+        session.report(FileSystemRepositoryError.projectDoesNotExist(missing))
+
+        XCTAssertEqual(session.errorMessage, String(describing: FileSystemRepositoryError.projectDoesNotExist(missing)))
     }
 }
 
