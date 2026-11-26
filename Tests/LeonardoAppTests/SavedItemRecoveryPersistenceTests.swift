@@ -375,6 +375,69 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertNoThrow(try otherInstance.claim(fixture.destination))
     }
 
+    func testRecentOnlyDocumentRecoveryUsesNativeRecentsWithoutGlobalWrite() async throws {
+        let fixture = try RecentDocumentRecoveryFixture()
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        session.authorizeSavedItemPath = { _, _ in }
+        var persistenceCalled = false
+        session.beforeSavedItemPersistence = { persistenceCalled = true }
+        let recentStore = SavedItemRecoveryRecentDocumentStore([fixture.source])
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination,
+                                      recentDocuments: recentStore)
+
+        XCTAssertNil(session.errorMessage)
+        XCTAssertFalse(persistenceCalled)
+        XCTAssertEqual(recentStore.recentDocumentURLs, [fixture.destination])
+        let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(saved.favorites.isEmpty)
+    }
+
+    func testRecentOnlyDocumentRemovedDuringAuthorizationIsNotRecreated() async throws {
+        let fixture = try RecentDocumentRecoveryFixture()
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        let recentStore = SavedItemRecoveryRecentDocumentStore([fixture.source])
+        session.authorizeSavedItemPath = { _, _ in
+            await Task.yield()
+            recentStore.clear()
+        }
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination,
+                                      recentDocuments: recentStore)
+
+        XCTAssertNil(session.errorMessage)
+        XCTAssertTrue(recentStore.recentDocumentURLs.isEmpty)
+        let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(saved.favorites.isEmpty)
+    }
+
+    func testFavoriteAndRecentDocumentRecoveryKeepsGlobalCASAndNativeReplacement() async throws {
+        let fixture = try RecentDocumentRecoveryFixture()
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences(favorites: [fixture.item])
+
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        session.authorizeSavedItemPath = { _, _ in }
+        let recentStore = SavedItemRecoveryRecentDocumentStore([fixture.source])
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination,
+                                      recentDocuments: recentStore)
+
+        XCTAssertNil(session.errorMessage)
+        XCTAssertEqual(recentStore.recentDocumentURLs, [fixture.destination])
+        let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertEqual(saved.favorites, [FavoriteItem(kind: .document, url: fixture.destination)])
+    }
+
     func testRecoveryRestoresHomeSnapshotWhenPersistenceFails() async throws {
         let fixture = try SavedItemRecoveryFixture(kind: .project)
         defer { fixture.cleanup() }
@@ -572,6 +635,56 @@ private final class SavedItemRecoveryFixture {
         try? FileManager.default.setAttributes([.posixPermissions: NSNumber(value: 0o700)],
                                                 ofItemAtPath: root.path)
         try? FileManager.default.removeItem(at: root)
+    }
+}
+
+@MainActor
+private final class RecentDocumentRecoveryFixture {
+    let root: URL
+    let preferences: URL
+    let source: URL
+    let destination: URL
+    let item: FavoriteItem
+
+    init() throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        preferences = root.appendingPathComponent("preferences.json")
+        source = root.appendingPathComponent("old.mdlf")
+        destination = root.appendingPathComponent("new.mdlf")
+        item = FavoriteItem(kind: .document, url: source)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Data("# Old\n".utf8).write(to: source)
+        try Data("# New\n".utf8).write(to: destination)
+    }
+
+    func savePreferences(favorites: [FavoriteItem] = []) async throws {
+        var preferences = GlobalPreferences.default
+        preferences.favorites = favorites
+        try await ConfigurationStore().saveGlobalPreferences(preferences, at: self.preferences)
+    }
+
+    func cleanup() {
+        try? FileManager.default.setAttributes([.posixPermissions: NSNumber(value: 0o700)],
+                                                ofItemAtPath: root.path)
+        try? FileManager.default.removeItem(at: root)
+    }
+}
+
+@MainActor
+private final class SavedItemRecoveryRecentDocumentStore: RecentDocumentStore {
+    var recentDocumentURLs: [URL]
+
+    init(_ recentDocumentURLs: [URL]) {
+        self.recentDocumentURLs = recentDocumentURLs
+    }
+
+    func clear() {
+        recentDocumentURLs.removeAll()
+    }
+
+    func note(_ url: URL) {
+        recentDocumentURLs.removeAll { SavedItemRecentPathRepair.sameIdentity($0, url) }
+        recentDocumentURLs.insert(url, at: 0)
     }
 }
 

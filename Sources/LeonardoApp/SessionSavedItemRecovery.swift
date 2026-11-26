@@ -17,12 +17,14 @@ extension AppSession {
     }
 
     func repairSavedItem(_ item: FavoriteItem, at url: URL,
-                         sharing: DesktopSyncController = .shared) async {
+                         sharing: DesktopSyncController = .shared,
+                         recentDocuments: (any RecentDocumentStore)? = nil) async {
         guard !stopped, !isClosing else { return }
         await initialize()
         guard !stopped, !isClosing else { return }
         let replacement = FavoriteItem(kind: item.kind, url: url)
         guard !item.matches(replacement) else { return }
+        let recentDocuments = recentDocuments ?? AppKitRecentDocumentStore()
         do {
             try await authorizeSavedItemPath(url, item.kind == .project ? .directory : .document)
             try await validateSavedItemReplacement(replacement)
@@ -45,9 +47,16 @@ extension AppSession {
                     try await persistHomeReplacement(item: item, replacement: replacement)
                 }
             } else {
-                try await persistHomeReplacement(item: item, replacement: replacement)
+                if globalPreferences.favorites.contains(where: { $0.matches(item) }) {
+                    try await persistHomeReplacement(item: item, replacement: replacement)
+                }
+                guard !stopped, !isClosing else { throw CancellationError() }
+                // Standalone document recents are owned by AppKit rather than
+                // GlobalPreferences. Re-read that native list immediately
+                // before the synchronous replacement; no durable write is
+                // needed and a removed source must not be resurrected.
                 SavedItemRecentPathRepair.replaceRecentDocument(
-                    item.url, with: url, store: AppKitRecentDocumentStore()
+                    item.url, with: url, store: recentDocuments
                 )
             }
         } catch is CancellationError {
