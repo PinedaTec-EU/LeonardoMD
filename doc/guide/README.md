@@ -1,10 +1,12 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v146-en.mdlz` and `Guide-v146-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v152-en.mdlz` and `Guide-v152-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v146/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v152/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v152 adds the read-only Codex preview, its supported Python runtime and the boundary for managed Sync content. Package SHA-256: EN `d8121e8390210d6dc2806f8328d3b65f8a1435c2718affe96e26542e9831c437`, ES `7ebf5be993374e26413ff731da3057e7c65fa232c776becf46f48bdd10fe05e0`.
 
 Guide v146 documents the shared Home selector, the separate remote project menu,
 its offline actions and direct remote access in chapter 7, and explains Markdown

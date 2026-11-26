@@ -1,0 +1,12 @@
+{
+  "name": "pinedatec-leonardo",
+  "interface": { "displayName": "PinedaTec Leonardo" },
+  "plugins": [
+    {
+      "name": "leonardo-format",
+      "source": { "source": "local", "path": "./plugins/leonardo-format" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

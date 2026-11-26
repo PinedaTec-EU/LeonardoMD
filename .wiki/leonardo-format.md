@@ -15,6 +15,8 @@ Tracking: [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), impleme
 - Package save/reload orchestration is in `SessionSaving`/`SessionReloading`. Revalidate captured identity across authorization waits; reload the original ZIP into a new workspace, never its stale temporary file. Owner and related tabs remap package identity on path changes and discard only package-owned temporary workspaces on deletion.
 - `plugins/leonardo-format` contains shared Codex/Claude skill instructions and a Python transport CLI, including package creation. Follow the same versioned schema rather than inventing a separate dialect.
 - Core and the CLI validate the same bundled JSON Schema plus definition/layout safety rules on reading and writing. Shared acceptance/rejection fixtures live in `Tests/FormatContractFixtures`; keep invalid draft answers transportable while rejecting unsafe definitions. Schema copies must remain byte-identical.
+- The public Codex catalog lives at `.agents/plugins/marketplace.json`. The plugin preview launches a per-document read-only loopback session, parses the same validated snapshot as the transport helper, and serves a snapshot of the shared renderer, refreshed with `plugins/leonardo-format/package-renderer.py`. See the [installation and preview guide](../doc/plugins/leonardo-format.md).
+- The Codex-only trusted `Stop` hook checks the final response for local Leonardo file links and requests one continuation to add missing browser preview links. It does not read documents or start servers itself.
 - The CLI uses its bundled schema by default for direct documents and archive roots in every command. Its siblings `mdlf_schema.py` and `mdlf_semantics.py` are required runtime assets; include them in downloadable plugin ZIPs. External schemas are additional restrictions, not a replacement for the canonical contract.
 - Both transport implementations enforce 64 MiB archive, 32 MiB total expanded/member, and 2,048 entries. Collision keys use NFC plus full case folding; empty directory records are nonsemantic and omitted. Package/extracted rendering must use the workspace asset root even when another project is active.
 
@@ -159,3 +161,16 @@ Mac confirmation compares each served image digest with the bytes being sealed
 and requires the selected image to decode. Little Leonardo keeps embedded images
 in the full validated reader so the native text fallback cannot skip them.
 The signing parser uses the bundled WHATWG named-entity table and its license.
+
+Codex browser preview (#474) registers a local document with the Sync-owned
+loopback worker using a per-user, owner-only endpoint record. The plugin exits
+after obtaining its scoped URL. Worker lifetime follows the helper and does not
+require the editor or a shared project; the bundled MDLF v1/v2 validator and
+renderer are reused without writing the source document.
+The optional worker selects an already-installed real Python 3.9+ interpreter
+from supported macOS locations and never executes the `/usr/bin/python3`
+developer-tools installer shim; ordinary Sync remains independent. Preview
+registration rejects documents and canonical local resources below the managed
+`DesktopPeers` and `MobileSync` roots, so remote cache and revoked content stay
+behind the authorized native Sync access path. Guide v152 documents the
+prerequisite and recovery path in both locales.

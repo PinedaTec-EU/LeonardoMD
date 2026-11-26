@@ -17,6 +17,54 @@ descriptor-relative extraction boundary. The root
 and `.codex-plugin/plugin.json` supplies the Codex compatibility overlay. No
 MCP server, credentials, hooks, or network service are required.
 
+## Preview in Codex
+
+Add the public PinedaTec Leonardo marketplace using the Codex CLI:
+
+```bash
+codex plugin marketplace add PinedaTec-EU/LeonardoMD --sparse .agents/plugins --sparse plugins/leonardo-format
+```
+
+In Codex desktop, open **Plugins**, choose **PinedaTec Leonardo**, and install
+**Leonardo Format**. If the catalog is already installed, run
+`codex plugin marketplace upgrade pinedatec-leonardo` and refresh the app.
+With a real Python 3.9 or newer interpreter already installed on the same
+computer and Leonardo Sync enabled, open a chat with access to your file and
+ask **“Preview this Leonardo document in Codex”**, including its path. On
+macOS, `/usr/bin/python3` may be a developer-tools installation shim; the Sync
+helper never invokes it and never prompts to install it. If preview is
+unavailable, install Python 3.9+ from a trusted source such as Homebrew or
+python.org, restart Leonardo or its Sync helper, and retry. Ordinary Sync
+continues to work without Python. The plugin opens an in-app browser tab for
+any supported v1 or v2 `.mdlf`, `.mdlr` or `.mdlz`.
+
+The preview uses Leonardo's bundled renderer for form values, Mermaid,
+KaTeX, charts, citations, tables and local images. Standalone inputs resolve
+images below the document folder, while packages resolve them from their
+`assets/` entries. The viewer is read-only and blocks remote resources.
+Each preview is registered with the persistent Sync helper, runs on loopback
+for up to one hour, and serves only the document's referenced resources. Direct
+registration rejects files below Leonardo's managed `DesktopPeers` and
+`MobileSync` directories, including cached or revoked remote content. Use the
+authorized native Leonardo preview for managed remote documents; copying cache
+bytes to another path is not a way to bypass project access or revocation. Ask
+again after editing the document to open a fresh view.
+
+### Automatic preview links in chats
+
+After installing or updating Leonardo Format, review and trust its
+`Stop` hook in Codex. In the Codex CLI, use `/hooks` to review it.
+This is a one-time step for the current hook definition. When the plugin is enabled and a response delivers a local
+Leonardo file as a Markdown link, the hook can request one continuation
+to add **Vista previa de Leonardo** next to that file. Click the preview
+link while its local server is active. The source link still opens the
+ordinary Codex file viewer.
+
+This works in local Codex sessions that support trusted plugin hooks and can
+register the preview with the Sync helper on the computer with the browser. A
+remote, unavailable, or Sync-disabled file can still be delivered with its
+original link.
+
 ## Local installation
 
 For Claude Code development, load the directory directly:
@@ -229,6 +277,11 @@ authoritative for host rendering and body behavior. The helper stays
 dependency-free; `--schema` adds an explicit second schema constraint.
 
 ## Release discipline
+
+Refresh the offline renderer archive with
+`python3 plugins/leonardo-format/package-renderer.py` whenever the shared renderer
+resources change. Plugin tests compare the archive contents with the
+canonical renderer, including its license notices.
 
 Bump the plugin version when the skill, helper behavior, or supported format
 contract changes. Keep the root and compatibility manifests aligned. A plugin
