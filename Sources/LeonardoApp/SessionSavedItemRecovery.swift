@@ -69,8 +69,11 @@ extension AppSession {
         await beforeSavedItemPersistence()
         let persisted: GlobalPreferences
         do {
-            persisted = try await configurations.mergeGlobalPreferences(
-                updated: requested, baseline: beforeBaseline, at: globalPreferencesURL
+            persisted = try await configurations.mergeGlobalPreferencesIfCurrent(
+                updated: requested, baseline: beforeBaseline, at: globalPreferencesURL,
+                currentMatches: { current in
+                    SavedItemRecentPathRepair.contains(item, in: current)
+                }
             )
         } catch {
             throw SavedItemRecoveryError(message: "The saved item could not be updated.")
@@ -148,11 +151,7 @@ extension AppSession {
 
     private func savedItemStillCurrent(_ item: FavoriteItem,
                                        in preferences: GlobalPreferences) -> Bool {
-        guard item.kind == .project else { return true }
-        return preferences.favorites.contains(where: { $0.matches(item) })
-            || preferences.recentProjectPaths.contains {
-                SavedItemRecentPathRepair.sameIdentity($0, item.url)
-            }
+        SavedItemRecentPathRepair.contains(item, in: preferences)
     }
 
     private func savedItemStillCurrent(_ item: FavoriteItem) -> Bool {
@@ -244,7 +243,10 @@ extension AppSession {
         let result = await sharing.relocateSharedProjectResult(
             project, to: destination,
             updatingGlobalPreferences: updatedGlobal,
-            baseline: globalBaseline
+            baseline: globalBaseline,
+            currentPreferencesMatch: { current in
+                SavedItemRecentPathRepair.contains(item, in: current)
+            }
         )
         guard !stopped, !isClosing else { throw CancellationError() }
         guard result.outcome != .notPersisted,
@@ -283,6 +285,14 @@ struct AppKitRecentDocumentStore: RecentDocumentStore {
 /// `GlobalPreferences`; document recents are owned by AppKit and must be
 /// rebuilt because `NSDocumentController` has no per-URL removal API.
 enum SavedItemRecentPathRepair {
+    static func contains(_ item: FavoriteItem, in preferences: GlobalPreferences) -> Bool {
+        if item.kind == .project,
+           preferences.recentProjectPaths.contains(where: { sameIdentity($0, item.url) }) {
+            return true
+        }
+        return preferences.favorites.contains(where: { $0.matches(item) })
+    }
+
     static func replacing(source: URL, with destination: URL, in paths: [URL]) -> [URL] {
         let sourceIdentity = identity(of: source)
         let destinationIdentity = identity(of: destination)

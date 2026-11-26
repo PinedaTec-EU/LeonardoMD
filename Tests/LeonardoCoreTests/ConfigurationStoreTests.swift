@@ -179,6 +179,85 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertEqual(merged.markdown.defaultMode, .split)
     }
 
+    func testCompareAndCommitRejectsSavedItemRemovedAfterTheRecoveryRead() async throws {
+        let directory = try TemporaryDirectory()
+        let preferencesURL = directory.url.appendingPathComponent("preferences.json")
+        let source = directory.url.appendingPathComponent("OldProject", isDirectory: true)
+        let destination = directory.url.appendingPathComponent("NewProject", isDirectory: true)
+        let item = FavoriteItem(kind: .project, url: source)
+        let baseline = GlobalPreferences(favorites: [item], recentProjectPaths: [source])
+        let store = ConfigurationStore()
+        try await store.saveGlobalPreferences(baseline, at: preferencesURL)
+
+        var competing = baseline
+        competing.favorites = []
+        competing.recentProjectPaths = []
+        _ = try await store.mergeGlobalPreferences(
+            updated: competing, baseline: baseline, at: preferencesURL
+        )
+
+        var requested = baseline
+        requested.favorites = [FavoriteItem(kind: .project, url: destination)]
+        requested.recentProjectPaths = [destination]
+        do {
+            _ = try await store.mergeGlobalPreferencesIfCurrent(
+                updated: requested, baseline: baseline, at: preferencesURL,
+                currentMatches: { current in
+                    current.favorites.contains(where: { $0.matches(item) })
+                        || current.recentProjectPaths.contains(where: { $0 == source })
+                }
+            )
+            XCTFail("Expected the recovery compare-and-commit to reject a removed source")
+        } catch let error as ConfigurationError {
+            XCTAssertEqual(error, .concurrentModification)
+        }
+
+        let saved = try await store.loadGlobalPreferences(at: preferencesURL)
+        XCTAssertTrue(saved.favorites.isEmpty)
+        XCTAssertTrue(saved.recentProjectPaths.isEmpty)
+    }
+
+    func testCompareAndCommitRejectsCompetingSharedProjectMove() async throws {
+        let directory = try TemporaryDirectory()
+        let preferencesURL = directory.url.appendingPathComponent("preferences.json")
+        let source = directory.url.appendingPathComponent("OldProject", isDirectory: true)
+        let competingDestination = directory.url.appendingPathComponent("OtherProject", isDirectory: true)
+        let staleDestination = directory.url.appendingPathComponent("StaleProject", isDirectory: true)
+        let project = MobileSharedProject(rootURL: source, name: "OldProject")
+        let baseline = GlobalPreferences(mobileSync: MobileSyncPreferences(projects: [project]))
+        let store = ConfigurationStore()
+        try await store.saveGlobalPreferences(baseline, at: preferencesURL)
+
+        var competing = baseline
+        competing.mobileSync.projects = [MobileSharedProject(
+            id: project.id, rootURL: competingDestination, name: project.name,
+            folders: project.folders, documents: project.documents
+        )]
+        _ = try await store.mergeGlobalPreferences(
+            updated: competing, baseline: baseline, at: preferencesURL
+        )
+
+        var staleRequested = baseline
+        staleRequested.mobileSync.projects = [MobileSharedProject(
+            id: project.id, rootURL: staleDestination, name: project.name,
+            folders: project.folders, documents: project.documents
+        )]
+        do {
+            _ = try await store.mergeGlobalPreferencesIfCurrent(
+                updated: staleRequested, baseline: baseline, at: preferencesURL,
+                currentMatches: { current in
+                    current.mobileSync.projects.contains(where: { $0 == project })
+                }
+            )
+            XCTFail("Expected the stale shared-project relocation to be rejected")
+        } catch let error as ConfigurationError {
+            XCTAssertEqual(error, .concurrentModification)
+        }
+
+        let saved = try await store.loadGlobalPreferences(at: preferencesURL)
+        XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, competingDestination)
+    }
+
     func testLegacyGlobalPreferencesDoNotEnableMobileService() async throws {
         let directory = try TemporaryDirectory()
         let url = directory.url.appendingPathComponent("preferences.json")

@@ -81,6 +81,34 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, fixture.destination)
     }
 
+    func testRelocationRejectsACompetingDurableProjectMove() async throws {
+        let fixture = try RecoveryPersistenceFixture()
+        defer { fixture.cleanup() }
+        let runtime = RecoveryPersistenceRuntime()
+        let controller = fixture.controller(runtime: runtime)
+        await controller.update(fixture.initialSettings)
+        let store = ConfigurationStore()
+        let baseline = try await store.loadGlobalPreferences(at: fixture.preferences)
+        var competing = baseline
+        competing.mobileSync.projects = [MobileSharedProject(
+            id: fixture.project.id,
+            rootURL: fixture.root.appendingPathComponent("CompetingProject", isDirectory: true),
+            name: fixture.project.name,
+            folders: fixture.project.folders,
+            documents: fixture.project.documents
+        )]
+        _ = try await store.mergeGlobalPreferences(
+            updated: competing, baseline: baseline, at: fixture.preferences
+        )
+
+        let outcome = await controller.relocateSharedProject(fixture.project, to: fixture.destination)
+
+        XCTAssertEqual(outcome, .notPersisted)
+        let saved = try await store.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, competing.mobileSync.projects.first?.rootURL)
+        XCTAssertEqual(controller.settings.projects, [fixture.project])
+    }
+
     func testSharedRecoveryPreservesHomeChangeMadeWhileConfirmationIsOpen() async throws {
         let fixture = try SavedItemRecoveryFixture(kind: .project, shared: true)
         defer { fixture.cleanup() }
@@ -394,6 +422,36 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertFalse(session.globalPreferences.favorites.contains(where: {
             $0.matches(FavoriteItem(kind: .project, url: fixture.destination))
         }))
+        XCTAssertNotNil(session.errorMessage)
+    }
+
+    func testHomeRecoveryRejectsACompetingSourceRemovalAtCommit() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = true
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        session.authorizeSavedItemPath = { _, _ in }
+        let store = ConfigurationStore()
+        session.beforeSavedItemPersistence = {
+            guard var current = try? await store.loadGlobalPreferences(at: fixture.preferences) else { return }
+            current.favorites.removeAll { $0.matches(fixture.item) }
+            current.recentProjectPaths.removeAll { $0 == fixture.source }
+            try? await store.saveGlobalPreferences(current, at: fixture.preferences)
+        }
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+                                                configurations: ConfigurationStore(), usesHelper: false)
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination, sharing: controller)
+
+        let saved = try await store.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(saved.favorites.isEmpty)
+        XCTAssertTrue(saved.recentProjectPaths.isEmpty)
+        XCTAssertTrue(session.globalPreferences.favorites.contains(where: { $0.matches(fixture.item) }))
         XCTAssertNotNil(session.errorMessage)
     }
 

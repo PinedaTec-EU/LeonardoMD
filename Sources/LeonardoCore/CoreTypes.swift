@@ -366,6 +366,7 @@ public enum ConfigurationError: Error, Equatable, Sendable {
     case unsupportedSchemaVersion(Int)
     case invalidJSON
     case missingConfigurationDirectory
+    case concurrentModification
 }
 
 public enum FileSystemRepositoryError: Error, Equatable, Sendable {
