@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-25T22:26:14.513343+00:00",
+  "route": "Ayuda → Guía de Leonardo → Capítulo 10",
+  "screen": "LeonardoMD native window on macOS 27.2.1",
+  "browser_name": "Native WKWebView",
+  "browser_version": "not collected",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "element",
+  "data_provenance": "synthetic",
+  "state": "Spanish Guide v145, rendered passage on table continuations and PDF overflow"
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-25T22:27:59.871811+00:00",
+  "capture": {
+    "captured_at": "2026-11-25T22:25:28.820872+00:00",
+    "route": "Preview → Paginated-Rows.mdlf",
+    "screen": "LeonardoMD native window on macOS 27.2.1",
+    "browser_name": "Native WKWebView",
+    "browser_version": "not collected",
+    "state": "Classic light, synthetic 28-row table, first fragment and repeated header",
+    "viewport_css": {
+      "width": 1260,
+      "height": 850
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "c6b43d5588030dba74a6b1c81660ff11f42cde5273f0fb4cd736fb7955145521"
+  },
+  "source": {
+    "revision_at_collection": "27a7bca765e0972bd9b416c271b21a3fbd79ec32",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}
