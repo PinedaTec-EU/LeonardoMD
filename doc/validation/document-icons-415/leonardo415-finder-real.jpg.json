@@ -1,0 +1,16 @@
+{
+  "capture_time_utc": "2026-11-10T17:05:09.153Z",
+  "screen": "Finder icon view of synthetic files with real extensions; preview thumbnails enabled; MDLZ generic; installed version owns active type definitions",
+  "capture_mode": "native-window",
+  "browser": "not applicable",
+  "viewport_css": null,
+  "image_pixels": {
+    "width": 1840,
+    "height": 984
+  },
+  "image_sha256": "cc3bab620da463d65158054ecef32e8923eac769ce713e22ba8705d8b77d5650",
+  "build_source_sha": "91896cb9dc20d7353694f6b59b71d468b84b911f",
+  "build": "0.3.1233",
+  "data": "synthetic",
+  "instance_pid": null
+}

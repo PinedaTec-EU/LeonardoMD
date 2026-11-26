@@ -106,6 +106,8 @@ Check the format, storage and mode indicators before saving:
 
 Use **Save** (⌘S) to persist changes. Undo and Redo apply to document edits. Closing or navigating with pending changes invokes the normal save decisions. Saving an incomplete draft does not mean its answers are complete or correct.
 
+Finder can display Leonardo’s icon for Markdown and Leonardo files. The icon may differ when another app is the default, Finder shows a preview, or macOS has cached an older registration. To choose the default app, select a file in Finder, choose File → Get Info, select Leonardo under Open with, and use Change All if you want that choice for the type. Leonardo does not change your default app automatically.
+
 ## 2. Choose a format
 
 | Format | Contents | Choose it for |
