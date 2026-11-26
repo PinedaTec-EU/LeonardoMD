@@ -1,0 +1,41 @@
+{
+  "pr": 516,
+  "issue": 514,
+  "sourceRevision": "017636506dbdfc6f12df7c5330e47b659b567a08",
+  "version": "0.3.2307",
+  "build": 2307,
+  "compilationLedgerDelta": 15,
+  "bundlePath": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-80p8igvh/LeonardoMDQA.app",
+  "bundleIdentifier": "eu.pinedatec.LeonardoMD.qa.0656a57a00b44edcb26965ad1335b52b",
+  "freshProcess": {
+    "pid": 32201,
+    "startupReady": "application_ready",
+    "disposableHome": "/tmp/leonardo-516-qa.gajRv4/home",
+    "teardown": "normal application-menu quit; no QA bundle or task-owned helper remained"
+  },
+  "syntheticFixture": {
+    "base": "/tmp/leonardo-516-qa.gajRv4",
+    "missingPath": "/tmp/leonardo-516-qa.gajRv4/Old Project",
+    "recoveredPath": "/tmp/leonardo-516-qa.gajRv4/New Project",
+    "cancel": "native folder chooser Cancel preserved the disabled row and old path",
+    "success": "native Use this location changed the row and opened New Project"
+  },
+  "guides": {
+    "en": {
+      "workingCopy": "/tmp/leonardo-516-qa.gajRv4/home/Library/Application Support/LeonardoMD/User Guides/v150/en/Guide-v150-en.mdlz",
+      "sha256": "5a1f977777180d52b40d5d577b7f212fcc7b120b54bf98dab1dde6d3edb7fd83",
+      "heading": "7. Home, recent items and favorites"
+    },
+    "es": {
+      "workingCopy": "/tmp/leonardo-516-qa.gajRv4/home/Library/Application Support/LeonardoMD/User Guides/v150/es/Guide-v150-es.mdlz",
+      "sha256": "22c7954087c889d48faa6e3b5acb00643ecfa1e68b87df7a1c7ec119a03ac197",
+      "heading": "7. Inicio, recientes y favoritos"
+    }
+  },
+  "scope": {
+    "realProjectsTouched": false,
+    "realSyncGrantsChanged": false,
+    "realPreferencesChanged": false,
+    "practiceFormRerun": false
+  }
+}
