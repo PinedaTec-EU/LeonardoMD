@@ -40,6 +40,30 @@
   the native application menu and the exact executable/helper path check at
   `2026-11-26T10:07:43+01:00` found no task-owned process.
 
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) strict
+  correction on current `origin/main` `bb0f1fab`: Home recovery now consults
+  persisted sharing authority when an additional instance has no loaded Sync
+  cache, permits only an unshared local repair there, and refuses a shared move
+  without the primary instance while preserving the project UUID and explicit
+  consent boundary. Replacement projects and `.mdlz` packages are validated by
+  the canonical open contracts before favorites, Recents or sharing mutate;
+  recovery errors use the selected language. Focused Home/Help tests pass 11/11
+  at PR build delta 22; package tests pass 3/3. Guide v159 hashes are EN
+  `897e3177416a818688d6eba1e5761a7b13d78a611042702e3864beb8f191104f` and ES
+  `c1b370b4b12e3724cf270d341f3f6caa358b3a7df3ab547ef891ea282c0fef52`.
+  Existing scoped native captures remain historical evidence; no GUI retake is
+  claimed for this source-only correction.
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) was
+  reconciled onto current `origin/main` `dab6e5cf`, retaining merged #497's
+  Guide v158 rubric-selection/deletion guidance and the full bilingual Help
+  body. The corrected Home recovery source and focused regression tests remain
+  equivalent; deterministic packaging advances the active pair to Guide v165.
+  Invalid replacement validation was checked for temporary extraction cleanup;
+  the canonical package opener does not publish an application-support artifact
+  before validation succeeds, and failed opens do not return a workspace to
+  discard. No new GUI/native Help claim is made; current-head CI is required.
+
 - 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
 
 - 2026-11-20: [#502](https://github.com/PinedaTec-EU/LeonardoMD/issues/502) splits `.github/workflows/ci.yml` into concurrent macOS test, Little Leonardo simulator, and package jobs. The existing `test` check requires success in all three. Little Leonardo installs the test build and seeds recovery before running the selected unit and UI cases in one XCTest invocation.
@@ -396,3 +420,56 @@ action. `AppSessionTests` (49 cases), `RubricSessionTests` (10 cases), and
 `LocalizationTests` (8 cases) pass; the PR #520 compilation ledger is 110.
 Packaged Help/GUI smoke acceptance is
 not claimed in this source-only handoff.
+
+PR #465 reconciliation (25 Nov 2026): the five device-local built-in
+extensions, consent recommendations and Demo v2 were retained while the old
+Guide-v94 resources and UI-capture XCTest were removed in favor of the current
+main Guide v147 package and product tests. The source branch's simulator and
+Help records remain historical; this reconciliation made no device or GUI claim.
+The recorder correction for nested release-ledger deltas is retained under
+[#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467), and the separate
+hosted preview CI issue remains [#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468).
+
+# 2026-11-26: PR #465 evidence and context repair
+
+The evidence review kept the reconciled implementation at
+`fd7b8b116f36e2bec360ffccecf2d0992387a3cd` (based on `origin/main`
+`32efc6f211380c91944f17873993af27e406b67a`) and treated PR head
+`c626cbc6f67ebe5d67422179c515c95b62a63ccd` as the documentation/evidence
+head. The current iPhone 17 Simulator screenshots and the packaged macOS
+English/Spanish Help smoke are linked from
+`doc/validation/pr-465/current-ios-qa/README.md` and
+`doc/validation/pr-465/current-macos-qa/README.md`.
+
+Per-capture JSON sidecars record only observed route, state, viewport, image
+digest and source facts. The original screenshot event timestamp was not
+persisted, so each current iOS sidecar explicitly marks the capture time as
+unrecorded and labels the filesystem mtime as artifact metadata, not capture
+time. The #464 acceptance matrix in `doc/validation/pr-465/README.md` maps
+each criterion to implementation sources, focused tests, current captures and
+historical visuals; it keeps remote/on-demand, physical-device and TestFlight
+acceptance separate from the bundled local Demo evidence. No new GUI run was
+performed because the owner deferred repeated probes to beta/stable.
+
+# 2026-11-26: PR #465 refreshed after #415 reached main
+
+PR #465 was reconciled with `origin/main`
+`06a93b2ab252d7439236ff92ae9c31d1acd73ff5`, retaining the #465 mobile
+implementation and all prior simulator/macOS evidence while incorporating the
+#415 chapter-1 Finder/icon guidance. The bilingual guide was deliberately
+advanced to unused revision v156 (v155 is reserved by #497). Guide v156 hashes
+are EN `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
+and ES `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
+
+The v147 iOS/macOS runtime records remain explicitly historical/equivalence
+evidence for the unchanged Little Leonardo chapter; no GUI or simulator was
+repeated. #415's real Finder evidence remains linked from
+`doc/validation/document-icons-415/README.md`. Deterministic package tests and
+focused `BundledUserGuideTests` validate both v156 packages. Any later #497
+merge may require a fresh documentation-only reload if it changes the guide
+body; this handoff does not wait for or merge #497.
+
+- 2026-11-26: PR #497 was reconciled after #465. Combined Guide v158 retains
+  the Little Leonardo extension chapter and documents selection and confirmed
+  deletion of saved rubrics. The equivalent native rubric QA remains recorded
+  on [PR #497](https://github.com/PinedaTec-EU/LeonardoMD/pull/497).

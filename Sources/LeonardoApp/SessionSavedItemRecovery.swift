@@ -16,16 +16,16 @@ extension AppSession {
         }
     }
 
-    private func repairSavedItem(_ item: FavoriteItem, at url: URL) async {
+    func repairSavedItem(_ item: FavoriteItem, at url: URL,
+                         sharing: DesktopSyncController = .shared) async {
+        await initialize()
         let replacement = FavoriteItem(kind: item.kind, url: url)
         guard !item.matches(replacement) else { return }
         do {
             try await authorizePath(url, item.kind == .project ? .directory : .document)
-            if let issue = replacement.availabilityIssue {
-                throw SavedItemRecoveryError(message: issue)
-            }
+            try await validateSavedItemReplacement(replacement)
             if item.kind == .project {
-                try await relocateSavedSharing(from: item.url, to: url)
+                try await relocateSavedSharing(from: item.url, to: url, sharing: sharing)
                 globalPreferences.recentProjectPaths = SavedItemRecentPathRepair.replacing(
                     source: item.url, with: url, in: globalPreferences.recentProjectPaths
                 )
@@ -49,16 +49,58 @@ extension AppSession {
         }
     }
 
-    private func relocateSavedSharing(from source: URL, to destination: URL) async throws {
-        let sharing = DesktopSyncController.shared
+    private func validateSavedItemReplacement(_ replacement: FavoriteItem) async throws {
+        if let issue = replacement.availabilityIssue {
+            throw SavedItemRecoveryError(message: issue)
+        }
+        switch replacement.kind {
+        case .project:
+            do {
+                // Keep Home recovery on the same project-root contract as
+                // Open Project, including the no-symlink boundary.
+                _ = try await files.project(at: replacement.url)
+            } catch {
+                throw SavedItemRecoveryError(message: "The selected project cannot be opened.")
+            }
+        case .document where replacement.url.pathExtension.caseInsensitiveCompare("mdlz") == .orderedSame:
+            do {
+                // Validate the archive and its MDLF/MDLR payload before any
+                // favorite, recent-item or sharing mutation is persisted.
+                let workspace = try await Task.detached(priority: nil) {
+                    try LeonardoPackageTransport.open(replacement.url)
+                }.value
+                LeonardoPackageTransport.discard(workspace)
+            } catch {
+                throw SavedItemRecoveryError(message: "The selected Leonardo package cannot be opened.")
+            }
+        default:
+            break
+        }
+    }
+
+    private func relocateSavedSharing(from source: URL, to destination: URL,
+                                      sharing: DesktopSyncController) async throws {
         await sharing.initialize()
+        let persistedSettings = try await configurations.loadGlobalPreferences(at: globalPreferencesURL).mobileSync
         guard sharing.projectSettingsLoaded else {
-            throw SavedItemRecoveryError(message: "Sharing settings could not be loaded.")
+            guard !persistedSettings.projects.contains(where: {
+                $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path ==
+                    source.standardizedFileURL.resolvingSymlinksInPath().path
+            }) else {
+                throw SavedItemRecoveryError(message: "Open the primary LeonardoMD instance to relocate a shared project.")
+            }
+            return
         }
         let canonicalPath = source.standardizedFileURL.resolvingSymlinksInPath().path
-        guard let project = sharing.settings.projects.first(where: {
+        guard let persistedProject = persistedSettings.projects.first(where: {
             $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path == canonicalPath
         }) else { return }
+        guard let project = sharing.settings.projects.first(where: {
+            $0.id == persistedProject.id &&
+                $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path == canonicalPath
+        }) else {
+            throw SavedItemRecoveryError(message: "Sharing settings could not be loaded.")
+        }
 
         let alert = NSAlert()
         alert.messageText = L10n.text("Move the shared project to this location?")
@@ -147,7 +189,7 @@ enum SavedItemRecentPathRepair {
     }
 }
 
-private struct SavedItemRecoveryError: LocalizedError {
+struct SavedItemRecoveryError: LocalizedError {
     let errorDescription: String?
 
     @MainActor init(message: String) {

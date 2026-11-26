@@ -418,6 +418,7 @@ En **Remotos**, selecciona un proyecto para explorar su catálogo o un documento
 
 - Marca la estrella para conservar un elemento fuera del historial reciente. Archivo → Favoritos ofrece otra forma de abrirlo.
 - Sitúa el puntero sobre un triángulo de aviso para saber por qué un elemento guardado no está disponible y qué ruta comprobó Leonardo. Abre el menú del triángulo y elige **Reintentar la ubicación guardada** si se ha restablecido el disco o el acceso, o **Localizar el elemento…** para elegir el archivo o la carpeta del proyecto. El favorito y su tema se conservan. Si compartes el proyecto desde este Mac, confirma que los dispositivos vinculados deben mantener acceso al mismo contenido compartido en la nueva carpeta.
+- Leonardo valida la ubicación elegida con las mismas reglas que **Abrir proyecto** y **Abrir documento**. Rechaza un alias (enlace simbólico) del proyecto o un paquete `.mdlz` corrupto antes de cambiar favoritos, Recientes o la configuración de compartición; la fila guardada no cambia y el error usa el idioma seleccionado.
 - Comprueba la ruta superior cuando dos entradas tengan el mismo nombre. Los archivos no disponibles aparecen deshabilitados: conecta el volumen o abre la ubicación nueva.
 - Vacía cada lista de recientes desde su submenú de Archivo; esto no elimina documentos.
 - El selector **Tema** de un proyecto favorito asocia su apariencia en este Mac. **Heredar** recupera la apariencia del proyecto o global. No modifica la configuración compartida del proyecto.

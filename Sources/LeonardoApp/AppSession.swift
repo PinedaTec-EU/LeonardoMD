@@ -458,7 +458,7 @@ final class AppSession {
             errorMessage = L10n.text("This item is outside the content selected on the source Mac.")
         } else if let syncError = error as? SyncError, syncError == .revoked {
             errorMessage = L10n.text("Access to this linked copy was revoked.")
-        } else { errorMessage = String(describing: error) }
+        } else { errorMessage = error.localizedDescription }
         logger.error("operation_failed category=\(String(reflecting: type(of: error)), privacy: .public)")
     }
     func updateTitle() {

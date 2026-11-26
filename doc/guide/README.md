@@ -1,15 +1,21 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v158-en.mdlz` and `Guide-v158-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v165-en.mdlz` and `Guide-v165-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v158/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v165/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v158 adds automatic selection and inspection of inserted page rubrics
-and confirmation for saved-rubric deletion in chapter 10. It retains
-the v156 Little Leonardo guidance, v153 Finder guidance and v146
-table pagination guidance.
+Guide v165 carries forward Guide v158's automatic selection and inspection of
+inserted page rubrics and confirmation for saved-rubric deletion in chapter 10.
+It retains the v156 Little Leonardo guidance, v153 Finder guidance and v146
+table pagination guidance, together with the current mobile, remote-catalogue,
+offline-action and menu documentation.
+Guide v165 also documents the corrected Home recovery boundary: replacement
+projects and MDLZ packages are validated through the canonical open contracts
+before favorites, Recents or sharing mutate; additional instances consult
+persisted sharing authority and only unshared local repairs proceed without the
+primary instance; recovery errors use the selected language.
 Guide v158 EN SHA-256: `9d10e0b71fac6eec128135add85a201d302d1092f090433f8df0d5655537be89` and ES SHA-256: `1e6dfd235aab23d60dba3483d171438505516372164aceebf8db84f58e35b1d7`.
 
 Guide v156 carries forward the current shared Home selector, separate
@@ -18,12 +24,14 @@ continuation across paginated preview and PDF pages. It includes the #415
 Finder icon guidance without changing default applications, the #499 table
 pagination guidance, and the reconciled Little Leonardo extension settings,
 consent flow, synchronization frequency and bundled Demo coverage in both
-locales. The #465 mobile chapter remains in the current bilingual bodies.
+locales. The #465 mobile chapter remains in the current bilingual bodies. It
+also documents that Home recovery validates projects and MDLZ replacements
+with the same open constraints before changing favorites, Recents or sharing,
+and reports those failures in the selected language.
 Guide v153 remains the previous packaged baseline and v147 remains the
 previous #465 mobile-help package; existing guide copies and practice answers
 are never overwritten.
-Guide v156 EN SHA-256: `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
-and ES SHA-256: `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
+Guide v165 hashes are recorded below after deterministic package generation.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
@@ -148,8 +156,8 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. Current artifacts and their personal-copy directory
-are listed above.
+historical review record. The current app resources use Guide v165 with a new
+resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
