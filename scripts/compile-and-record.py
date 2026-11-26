@@ -11,21 +11,32 @@ from pathlib import Path
 SEGMENTS = {"release", "feature", "build"}
 
 
-def read_delta(path: Path) -> dict:
+def read_entry(path: Path, pr: int) -> dict | None:
     if not path.exists():
-        return {}
-    delta = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(delta, dict) or set(delta) - SEGMENTS - {"summary"}:
-        raise ValueError("Entry must contain only release, feature and build deltas and an optional summary")
-    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for key, value in delta.items() if key in SEGMENTS):
+        return None
+    entry = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(entry, dict) or set(entry) - SEGMENTS - {"delta", "pr", "summary"}:
+        raise ValueError("Entry contains fields not supported by the release ledger")
+    declared_pr = entry.get("pr")
+    if declared_pr is not None and (isinstance(declared_pr, bool) or not isinstance(declared_pr, int) or declared_pr != pr):
+        raise ValueError("Entry PR number must match the recorder PR")
+    if "delta" in entry:
+        if set(entry) & SEGMENTS:
+            raise ValueError("Entry must use either nested delta or top-level segment fields, not both")
+        delta = entry["delta"]
+    else:
+        delta = {key: value for key, value in entry.items() if key in SEGMENTS}
+    if not isinstance(delta, dict) or not delta or set(delta) - SEGMENTS:
+        raise ValueError("Entry must contain one or more release, feature or build deltas")
+    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in delta.values()):
         raise ValueError("Entry deltas must be positive integers")
-    if "summary" in delta:
+    if "summary" in entry:
         import unicodedata
-        text = delta["summary"]
+        text = entry["summary"]
         if (not isinstance(text, str) or not text or text != text.strip() or len(text) > 280
                 or any(unicodedata.category(char) in {"Cc", "Cs", "Zl", "Zp"} for char in text)):
             raise ValueError("Summary must be 1–280 single-line plain-text characters")
-    return delta
+    return entry
 
 
 def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
@@ -42,7 +53,7 @@ def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
     if not swift and not xcode:
         raise ValueError("Use a compiling swift build/test/run or xcodebuild build/test/archive command")
     entry = root / "deploy/version/entries" / f"{pr}.yaml"
-    read_delta(entry)  # Reject malformed existing data before compiling.
+    read_entry(entry, pr)  # Reject malformed existing data before compiling.
     result = subprocess.run(command, cwd=root)
     if result.returncode:
         return result.returncode
@@ -51,11 +62,12 @@ def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        delta = read_delta(entry)
+        recorded_entry = read_entry(entry, pr) or {"delta": {}}
+        delta = recorded_entry["delta"] if "delta" in recorded_entry else recorded_entry
         delta["build"] = delta.get("build", 0) + 1
         with tempfile.NamedTemporaryFile(mode="w", dir=entry.parent, delete=False) as output:
             temporary = Path(output.name)
-            json.dump(delta, output, indent=2)
+            json.dump(recorded_entry, output, indent=2)
             output.write("\n")
         try:
             os.replace(temporary, entry)

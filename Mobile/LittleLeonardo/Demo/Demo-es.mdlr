@@ -76,15 +76,17 @@ Texto con **negrita**, *cursiva*, ~~tachado~~ y `código`.
 
 | Capacidad | Ejemplo incluido |
 | --- | --- |
-| Markdown | Títulos, listas, citas y tablas |
-| Visualización | Mermaid, matemáticas y gráficos |
+| Markdown | Títulos, listas, citas, tablas, notas al pie y avisos |
+| Extensiones | Mermaid, matemáticas, gráficos y citas bibliográficas |
 | Leonardo | Campos tipados con respuestas separadas del texto |
 
 ![Portada local de la guía Leonardo](assets/demo.png)
 
+Estos ejemplos usan las mismas preferencias de extensiones de este dispositivo que los documentos recibidos. Si la vista previa detecta una extensión compatible desactivada, Little Leonardo ofrece activar las que elijas. Si las dejas desactivadas, conserva el texto y muestra su alternativa normal de Markdown o literal.
+
 ## Diagrama Mermaid
 
-El motor está activado en esta demo. Si está desactivado en otro visor, el bloque se conserva como código.
+Mermaid requiere la extensión Mermaid; mientras esté desactivada, el bloque permanece como código.
 
 ```mermaid
 flowchart LR
@@ -94,7 +96,7 @@ flowchart LR
 
 ## Matemáticas
 
-El motor Math está activado aquí. Fórmula en línea: $a^2+b^2=c^2$.
+Matemáticas requiere la extensión Math. Fórmula en línea: $a^2+b^2=c^2$.
 
 $$E = mc^2$$
 
@@ -104,11 +106,30 @@ $$
 
 ## Gráfico con datos locales
 
-Vega-Lite está activado en esta demo; los datos están incluidos y no se descargan. En un visor sin el motor, se conserva el bloque de código.
+Gráficos requiere la extensión Charts. Los datos están incluidos y no se descargan; mientras esté desactivada, la especificación permanece como código.
 
 ```vega-lite
 {"mark":"bar","data":{"values":[{"topic":"Markdown","examples":5},{"topic":"Leonardo","examples":4},{"topic":"Offline","examples":3}]},"encoding":{"x":{"field":"topic","type":"nominal"},"y":{"field":"examples","type":"quantitative"}},"width":"container","height":180}
 ```
+
+## Citas y Extras Markdown
+
+Esta fuente local ficticia se cita aquí [@demo2026].
+
+```bibtex
+@book{demo2026,
+  author = {Example, Alex},
+  title = {A Fictional Local Handbook},
+  year = {2026}
+}
+```
+
+Revisa los ejemplos locales antes de compartirlos.[^offline]
+
+[^offline]: Esta nota y su bibliografía forman parte de la Demo incluida.
+
+> [!TIP]
+> Activar una extensión cambia cómo se muestra este contenido, no su texto fuente.
 
 ## Prueba el formulario
 
@@ -136,4 +157,4 @@ Las solicitudes reales de rúbrica se inician desde el Mac y requieren un dispos
 
 ## Recorrido para App Review
 
-En una instalación limpia, abre **Demo y práctica / Demo & practice** y elige Español o English. Comprueba la tabla, la imagen local, el diagrama, las dos ecuaciones y el gráfico. Completa el formulario, pulsa **Guardar / Save**, sal y vuelve a entrar. Inspecciona **Ver texto / View source** y prueba **Restablecer / Reset**. Este recorrido funciona en modo avión y es el mismo para todos los usuarios. La conexión con un Mac es una función separada y no es necesaria para esta demo.
+En una instalación limpia, abre **Demo y práctica / Demo & practice** y elige Español o English. Si alguna extensión está desactivada, activa solo las detectadas que quieras cuando se te pregunte o continúa con la alternativa. Comprueba la tabla, la imagen local, el diagrama, las dos ecuaciones, el gráfico, la cita, la nota al pie y el aviso. Completa el formulario, pulsa **Guardar / Save**, sal y vuelve a entrar. Inspecciona **Ver texto / View source** y prueba **Restablecer / Reset**. Este recorrido funciona en modo avión y es el mismo para todos los usuarios. La conexión con un Mac es una función separada y no es necesaria para esta demo.

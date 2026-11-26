@@ -1,14 +1,14 @@
-import LeonardoCore
-
-/// The allowlist for recommendations. Document text can never name an arbitrary plugin.
-enum BuiltInExtension: String, CaseIterable, Identifiable {
-    case mermaid, math
+/// Renderer-owned document extensions shared by macOS and Little Leonardo.
+public enum BuiltInExtension: String, CaseIterable, Hashable, Identifiable {
+    case mermaid
+    case math
     case charts = "vega-lite"
     case citations
     case extras = "markdown-extensions"
 
-    var id: String { rawValue }
-    var title: String {
+    public var id: String { rawValue }
+
+    public var title: String {
         switch self {
         case .mermaid: "Mermaid"
         case .math: "Math"
@@ -17,7 +17,8 @@ enum BuiltInExtension: String, CaseIterable, Identifiable {
         case .extras: "Markdown extras"
         }
     }
-    var purpose: String {
+
+    public var purpose: String {
         switch self {
         case .mermaid: "Diagrams inside your documents"
         case .math: "Formulas with KaTeX"
@@ -26,7 +27,8 @@ enum BuiltInExtension: String, CaseIterable, Identifiable {
         case .extras: "Footnotes and GitHub-style callouts"
         }
     }
-    var flag: WritableKeyPath<MarkdownFeatures, Bool> {
+
+    public var flag: WritableKeyPath<MarkdownFeatures, Bool> {
         switch self {
         case .mermaid: \.mermaidEnabled
         case .math: \.mathEnabled

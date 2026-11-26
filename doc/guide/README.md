@@ -1,30 +1,29 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v155-en.mdlz` and `Guide-v155-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v158-en.mdlz` and `Guide-v158-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v155/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v158/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v155 documents automatic selection and inspection of inserted page rubrics
-and confirmation for saved-rubric deletion in chapter 10. It retains the
-Finder guidance from v153 and table pagination from v146.
-Guide v155 EN SHA-256: `072eba634f73234fb63e6f28b448028b6e97c04ae1d641e40b44ae13e3f22954` and ES SHA-256: `a687c3646646dbdef67b59bb20aa7ea0b6b9d5da5048b8f5066315e3eb754c54`.
+Guide v158 adds automatic selection and inspection of inserted page rubrics
+and confirmation for saved-rubric deletion in chapter 10. It retains
+the v156 Little Leonardo guidance, v153 Finder guidance and v146
+table pagination guidance.
+Guide v158 EN SHA-256: `9d10e0b71fac6eec128135add85a201d302d1092f090433f8df0d5655537be89` and ES SHA-256: `1e6dfd235aab23d60dba3483d171438505516372164aceebf8db84f58e35b1d7`.
 
-Guide v153 carries forward v145's separate remote project menu and its offline actions in chapter 7,
-and documents Finder icon behavior for Markdown and Leonardo files without changing default applications.
-It also includes the #499 Markdown table pagination guidance: rows continue across
-paginated preview and PDF pages with consistent column widths, and the header
-repeats unless its layout disables repetition.
-Guide v153 EN SHA-256: `af5cf369bfcecba6f6cceccda97c59d0246c3fb25570db71a97b423706b1b21d`
-and ES SHA-256: `02bbc73ab2dcf760df5c5597f2b548b16ae876c348e8d5f2cd8ec22df96f6a12`.
-
-Guide v153 is generated from the current bilingual bodies after the #499
-pagination change. Guide v145 remains the previous packaged baseline; the v146
-pagination guidance is preserved in the v153 package.
-
-Guide v145 is retained as the previous packaged baseline. Its chapter 7
-content is included in v153 together with the table-pagination guidance.
+Guide v156 carries forward the current shared Home selector, separate
+remote-project menu, offline actions, direct remote access and Markdown table
+continuation across paginated preview and PDF pages. It includes the #415
+Finder icon guidance without changing default applications, the #499 table
+pagination guidance, and the reconciled Little Leonardo extension settings,
+consent flow, synchronization frequency and bundled Demo coverage in both
+locales. The #465 mobile chapter remains in the current bilingual bodies.
+Guide v153 remains the previous packaged baseline and v147 remains the
+previous #465 mobile-help package; existing guide copies and practice answers
+are never overwritten.
+Guide v156 EN SHA-256: `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
+and ES SHA-256: `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
