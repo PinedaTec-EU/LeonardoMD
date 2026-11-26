@@ -86,6 +86,13 @@ final class AppSession {
     @ObservationIgnored weak var presentationWindow: NSWindow?
     var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
     var confirmDiscardForReload: @MainActor () async -> Bool = { false }
+    /// The shared-project recovery confirmation is injectable so the
+    /// re-entrant recovery boundary can be tested without presenting AppKit
+    /// UI. Production installs the native confirmation in `init`.
+    @ObservationIgnored var confirmSavedProjectRelocation: @MainActor (URL) async -> Bool = { _ in false }
+    /// Test-only synchronization point immediately before Home recovery's
+    /// awaited global merge. Production leaves this as a no-op.
+    @ObservationIgnored var beforeSavedItemPersistence: @MainActor () async -> Void = {}
     var hasRelatedFileOperation: @MainActor () -> Bool = { false }
 
     var mode: DocumentMode = .preview { didSet { if oldValue != mode { clearGraphicSelection() } } }
@@ -252,6 +259,15 @@ final class AppSession {
         }
         confirmDiscardForReload = { [weak self] in
             await NativeDialog.confirmReload(on: self?.presentationWindow)
+        }
+        confirmSavedProjectRelocation = { [weak self] destination in
+            let alert = NSAlert()
+            alert.messageText = L10n.text("Move the shared project to this location?")
+            alert.informativeText = L10n.text("Linked devices will have access to the existing share scope at this folder.")
+                + "\n" + destination.path
+            alert.addButton(withTitle: L10n.text("Use this location"))
+            alert.addButton(withTitle: L10n.text("Cancel"))
+            return await NativeDialog.present(alert, on: self?.presentationWindow) == .alertFirstButtonReturn
         }
     }
 

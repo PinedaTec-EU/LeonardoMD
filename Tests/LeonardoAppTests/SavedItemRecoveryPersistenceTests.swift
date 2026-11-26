@@ -81,6 +81,140 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, fixture.destination)
     }
 
+    func testSharedRecoveryPreservesHomeChangeMadeWhileConfirmationIsOpen() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project, shared: true)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = false
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        var authorizationCount = 0
+        session.authorizeSavedItemPath = { _, _ in authorizationCount += 1 }
+        let independent = FavoriteItem(kind: .project,
+                                       url: fixture.root.appendingPathComponent("IndependentProject"))
+        session.confirmSavedProjectRelocation = { _ in
+            session.globalPreferences.favorites.append(independent)
+            return true
+        }
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+                                                configurations: ConfigurationStore(), usesHelper: false)
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination, sharing: controller)
+
+        XCTAssertEqual(authorizationCount, 2, "Recovery must re-authorize after consent.")
+        XCTAssertNil(session.errorMessage)
+        let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(saved.favorites.contains(where: { $0.matches(independent) }))
+        XCTAssertTrue(saved.favorites.contains(where: {
+            $0.matches(FavoriteItem(kind: .project, url: fixture.destination))
+        }))
+        XCTAssertEqual(saved.recentProjectPaths, [fixture.destination])
+        XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, fixture.destination)
+    }
+
+    func testSharedRecoveryCancelsWhenTheSavedItemChangesAfterConfirmation() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project, shared: true)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = false
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        var authorizationCount = 0
+        session.authorizeSavedItemPath = { _, _ in authorizationCount += 1 }
+        session.confirmSavedProjectRelocation = { _ in
+            session.globalPreferences.favorites.removeAll()
+            session.globalPreferences.recentProjectPaths.removeAll()
+            return true
+        }
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+                                                configurations: ConfigurationStore(), usesHelper: false)
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination, sharing: controller)
+
+        XCTAssertEqual(authorizationCount, 2)
+        XCTAssertNil(session.errorMessage)
+        let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertEqual(saved.favorites, [fixture.item])
+        XCTAssertEqual(saved.recentProjectPaths, [fixture.source])
+        XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, fixture.source)
+    }
+
+    func testSharedRecoveryCancelsWhenTheSessionStopsAfterConfirmation() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project, shared: true)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = false
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        var authorizationCount = 0
+        session.authorizeSavedItemPath = { _, _ in authorizationCount += 1 }
+        session.confirmSavedProjectRelocation = { _ in
+            session.stop()
+            return true
+        }
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+                                                configurations: ConfigurationStore(), usesHelper: false)
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination, sharing: controller)
+
+        XCTAssertEqual(authorizationCount, 1)
+        let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertEqual(saved.favorites, [fixture.item])
+        XCTAssertEqual(saved.recentProjectPaths, [fixture.source])
+        XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, fixture.source)
+    }
+
+    func testSharedRecoveryPreservesHomeChangeDuringRuntimeAwait() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project, shared: true)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = false
+        defer { InstanceRuntime.isAdditional = previous }
+        let gate = RecoveryPersistenceGate()
+        let runtime = RecoveryPersistenceRuntime(startGate: gate)
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+                                                configurations: ConfigurationStore(), runtime: runtime,
+                                                usesHelper: false)
+        await controller.update(MobileSyncPreferences(
+            enabled: true, host: "127.0.0.1", port: 40882,
+            projects: [fixture.sharedProject!]
+        ))
+        await gate.arm()
+
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        session.authorizeSavedItemPath = { _, _ in }
+        session.confirmSavedProjectRelocation = { _ in true }
+        let independent = FavoriteItem(kind: .project,
+                                       url: fixture.root.appendingPathComponent("RuntimeProject"))
+        let repair = Task {
+            await session.repairSavedItem(fixture.item, at: fixture.destination, sharing: controller)
+        }
+        await gate.waitUntilEntered()
+        session.globalPreferences.favorites.append(independent)
+        await gate.release()
+        await repair.value
+
+        XCTAssertNil(session.errorMessage)
+        XCTAssertTrue(session.globalPreferences.favorites.contains(where: { $0.matches(independent) }))
+        XCTAssertTrue(session.globalPreferences.favorites.contains(where: {
+            $0.matches(FavoriteItem(kind: .project, url: fixture.destination))
+        }))
+        XCTAssertEqual(session.globalPreferences.recentProjectPaths, [fixture.destination])
+        XCTAssertEqual(session.globalBaseline.mobileSync.projects.first?.rootURL, fixture.destination)
+    }
+
     func testAdditionalInstanceRepairsUnsharedProjectUsingPersistedSharingAuthority() async throws {
         let fixture = try SavedItemRecoveryFixture(kind: .project)
         defer { fixture.cleanup() }
@@ -223,6 +357,46 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertEqual(session.globalPreferences.recentProjectPaths, [fixture.source])
     }
 
+    func testFailedRecoveryDoesNotRollbackAConcurrentHomeMutation() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = true
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        session.authorizeSavedItemPath = { _, _ in }
+        let gate = RecoveryPersistenceGate()
+        await gate.arm()
+        session.beforeSavedItemPersistence = {
+            await gate.waitIfArmed()
+        }
+        let independent = FavoriteItem(kind: .project,
+                                       url: fixture.root.appendingPathComponent("ConcurrentProject"))
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+                                                configurations: ConfigurationStore(), usesHelper: false)
+        let repair = Task {
+            await session.repairSavedItem(fixture.item, at: fixture.destination, sharing: controller)
+        }
+        await gate.waitUntilEntered()
+        session.globalPreferences.favorites.append(independent)
+        try FileManager.default.removeItem(at: fixture.preferences)
+        try FileManager.default.createDirectory(at: fixture.preferences, withIntermediateDirectories: true)
+        await gate.release()
+        await repair.value
+
+        XCTAssertTrue(session.globalPreferences.favorites.contains(where: { $0.matches(independent) }))
+        XCTAssertTrue(session.globalPreferences.favorites.contains(where: {
+            $0.matches(fixture.item)
+        }))
+        XCTAssertFalse(session.globalPreferences.favorites.contains(where: {
+            $0.matches(FavoriteItem(kind: .project, url: fixture.destination))
+        }))
+        XCTAssertNotNil(session.errorMessage)
+    }
+
     func testSavedItemRecoveryErrorUsesSelectedLanguageWhenReported() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let preferences = root.appendingPathComponent("preferences.json")
@@ -331,15 +505,57 @@ private enum RecoveryPersistenceError: Error {
     case unavailable
 }
 
+private actor RecoveryPersistenceGate {
+    private var armed = false
+    private var entered = false
+    private var released = false
+    private var entryWaiters: [CheckedContinuation<Void, Never>] = []
+    private var releaseWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func arm() {
+        armed = true
+        entered = false
+        released = false
+    }
+
+    func waitIfArmed() async {
+        guard armed else { return }
+        entered = true
+        entryWaiters.forEach { $0.resume() }
+        entryWaiters.removeAll()
+        if !released {
+            await withCheckedContinuation { releaseWaiters.append($0) }
+        }
+        armed = false
+    }
+
+    func waitUntilEntered() async {
+        guard !entered else { return }
+        await withCheckedContinuation { entryWaiters.append($0) }
+    }
+
+    func release() {
+        released = true
+        releaseWaiters.forEach { $0.resume() }
+        releaseWaiters.removeAll()
+    }
+}
+
 private actor RecoveryPersistenceRuntime: DesktopSyncRuntimeAccess {
+    private let startGate: RecoveryPersistenceGate?
     private var failNextStartRequest = false
     private var failNextStopRequest = false
     private var failNextConsentRequest = false
+
+    init(startGate: RecoveryPersistenceGate? = nil) {
+        self.startGate = startGate
+    }
 
     func failNextStart() { failNextStartRequest = true }
 
     func start(host: String, port: UInt16, projects: [SharedProjectSource],
                allowPrivateOverlay: Bool) async throws -> RunningDirectService {
+        await startGate?.waitIfArmed()
         guard !failNextStartRequest else {
             failNextStartRequest = false
             throw RecoveryPersistenceError.unavailable
