@@ -17,9 +17,9 @@ final class SidebarSelectionTests: XCTestCase {
                 session.globalPreferences.followActiveFile = follow
                 for colored in [false, true] {
                     session.globalPreferences.colorLeonardoFiles = colored
-                    XCTAssertTrue(row(source, session: session).selected, suffix)
-                    XCTAssertFalse(row(source.deletingLastPathComponent().appendingPathComponent("other.\(suffix)"), session: session).selected)
-                    XCTAssertFalse(row(source, session: session, directory: true).selected)
+                    XCTAssertTrue(row(source, session: session).isActiveDocument, suffix)
+                    XCTAssertFalse(row(source.deletingLastPathComponent().appendingPathComponent("other.\(suffix)"), session: session).isActiveDocument)
+                    XCTAssertFalse(row(source, session: session, directory: true).isActiveDocument)
                 }
             }
         }
@@ -39,16 +39,16 @@ final class SidebarSelectionTests: XCTestCase {
         session.documentStorage = .package
         session.documentSourceURL = source
         let entry = row(alias.appendingPathComponent("document.mdlz"), session: session)
-        XCTAssertTrue(entry.selected)
+        XCTAssertTrue(entry.isActiveDocument)
         session.documentSourceURL = actual.appendingPathComponent("other.mdlz")
-        XCTAssertFalse(entry.selected)
+        XCTAssertFalse(entry.isActiveDocument)
         session.documentSourceURL = nil
         session.documentURL = nil
-        XCTAssertFalse(entry.selected)
+        XCTAssertFalse(entry.isActiveDocument)
     }
 
     private func row(_ url: URL, session: AppSession, directory: Bool = false) -> FileTreeRow {
         FileTreeRow(entry: NavigationEntry(url: url, isDirectory: directory), session: session,
-                    depth: 0, expanded: false, toggle: {})
+                    tree: ProjectFileTree(), depth: 0, expanded: false, toggle: {})
     }
 }

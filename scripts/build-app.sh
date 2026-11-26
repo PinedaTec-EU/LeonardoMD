@@ -17,6 +17,11 @@ cp scripts/eu.pinedatec.LeonardoMD.sync-helper.plist "$app_dir/Contents/Library/
 codesign --force --sign - --identifier eu.pinedatec.LeonardoMD.sync-helper "$app_dir/Contents/MacOS/LeonardoSyncHelper"
 python3 scripts/package-version.py version.nfo scripts/Info.plist "$app_dir/Contents/Info.plist"
 python3 scripts/package-release-changes.py deploy/release-changes.json version.nfo "$app_dir/Contents/Resources/ReleaseChanges.json"
+preview="$app_dir/Contents/Resources/LeonardoPreview"
+mkdir -p "$preview/scripts" "$preview/references"
+cp plugins/leonardo-format/skills/leonardo-format/scripts/*.py "$preview/scripts/"
+cp plugins/leonardo-format/skills/leonardo-format/references/mdlf-v*.schema.json "$preview/references/"
+python3 plugins/leonardo-format/package-renderer.py --output "$preview/references/renderer.zip"
 cp assets/AppIcon/LeonardoMD.icns "$app_dir/Contents/Resources/"
 for resource in "$bin_dir"/*.bundle; do
   [ -e "$resource" ] || continue

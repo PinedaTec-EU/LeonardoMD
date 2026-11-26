@@ -484,6 +484,19 @@ final class AppSession {
             errorMessage = L10n.text("This item is outside the content selected on the source Mac.")
         } else if let syncError = error as? SyncError, syncError == .revoked {
             errorMessage = L10n.text("Access to this linked copy was revoked.")
+        } else if let fileError = error as? FileSystemRepositoryError {
+            switch fileError {
+            case .itemAlreadyExists(_):
+                errorMessage = L10n.text("An item with that name already exists in the destination.")
+            case .cannotMoveIntoDescendant, .cannotCopyIntoDescendant:
+                errorMessage = L10n.text("A folder cannot be moved or copied into itself or one of its subfolders.")
+            case .cannotDeleteProjectRoot, .cannotCopyProjectRoot:
+                errorMessage = L10n.text("The project root cannot be moved, copied, or deleted.")
+            case .pathEscapesProject:
+                errorMessage = L10n.text("This operation cannot use a path outside the project or through a symbolic link.")
+            default:
+                errorMessage = String(describing: error)
+            }
         } else if let localized = error as? LocalizedError,
                   let message = localized.errorDescription,
                   !message.isEmpty {

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/hooks/preview_delivery.py\"",
+            "commandWindows": "py -3 \"$env:PLUGIN_ROOT/hooks/preview_delivery.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

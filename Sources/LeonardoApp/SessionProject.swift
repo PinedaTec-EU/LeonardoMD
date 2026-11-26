@@ -221,27 +221,144 @@ extension AppSession {
     }
     @discardableResult
     func move(_ url: URL, into parent: URL) -> Task<Void, Never>? {
-        guard let root = projectURL else { return nil }
-        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
+        move([url], into: parent)
+    }
+
+    @discardableResult
+    func move(_ urls: [URL], into parent: URL) -> Task<Void, Never>? {
+        transfer(urls, into: parent, operation: .move)
+    }
+
+    @discardableResult
+    func copy(_ url: URL, into parent: URL) -> Task<Void, Never>? {
+        copy([url], into: parent)
+    }
+
+    @discardableResult
+    func copy(_ urls: [URL], into parent: URL) -> Task<Void, Never>? {
+        transfer(urls, into: parent, operation: .copy)
+    }
+
+    private enum ProjectItemTransferOperation: Equatable {
+        case move
+        case copy
+    }
+
+    private func transfer(
+        _ urls: [URL],
+        into parent: URL,
+        operation: ProjectItemTransferOperation
+    ) -> Task<Void, Never>? {
+        guard let root = projectURL, !urls.isEmpty else { return nil }
+        // Keep the supplied path components for the repository's symlink-aware resolver.
+        guard let parentPath = projectRelativePath(parent, in: root) else {
+            return Task { report(FileSystemRepositoryError.pathEscapesProject) }
+        }
+        let sourcePaths = urls.compactMap { projectRelativePath($0, in: root) }
+        guard sourcePaths.count == urls.count, sourcePaths.allSatisfy({ !$0.isEmpty }) else {
+            return Task { report(FileSystemRepositoryError.pathEscapesProject) }
+        }
+        // A move into the same parent is already satisfied. Compare resolved
+        // parent paths so an external symlink alias (for example, /tmp) does
+        // not turn that no-op into a repository collision. Internal symlink
+        // components still flow to repository preflight for rejection.
+        let destination = parent.resolvingSymlinksInPath().standardizedFileURL.path
+        let transferItems = zip(urls, sourcePaths).filter { url, _ in
+            guard operation == .move else { return true }
+            let sourceParent = url.deletingLastPathComponent()
+                .resolvingSymlinksInPath().standardizedFileURL.path
+            guard sourceParent == destination else {
+                return true
+            }
+            // A symlink must reach repository preflight even if its path looks
+            // like a same-folder move.
+            return containsSymbolicLinkComponent(in: parent, under: root)
+                || containsSymbolicLinkComponent(in: url, under: root)
+        }
+        let transferURLs = transferItems.map { $0.0 }
+        let transferPaths = transferItems.map { $0.1 }
+        guard !transferURLs.isEmpty else { return nil }
+        let operationName = operation == .copy ? "copy" : "move"
+        let identity = SessionFileOperationIdentity(sourceURL: transferURLs[0], session: self)
         return Task {
             guard identity.isCurrent(in: self) else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
-                  identity.isCurrent(in: self) else { return }
+            guard await prepareNavigation(), identity.isCurrent(in: self) else {
+                logger.info("Project-item transfer stopped during navigation preparation operation=\(operationName, privacy: .public)")
+                return
+            }
+            for url in transferURLs {
+                let canProceed = await prepareRelatedFileOperation?(url) ?? true
+                guard canProceed, identity.isCurrent(in: self) else {
+                    logger.info("Project-item transfer stopped by related-session preparation operation=\(operationName, privacy: .public)")
+                    return
+                }
+            }
             do {
-                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
-                try await authorizePath(url, intent)
-                guard identity.isCurrent(in: self) else { return }
-                try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
-                guard identity.isCurrent(in: self) else { return }
-                let node = try await files.move(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: relative(parent))
-                await updateMovedDocument(from: url, to: node.url)
-                await relatedPathMoved?(url, node.url)
+                let intents = try transferURLs.map { url -> DesktopPeerPathIntent in
+                    try url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true ? .directoryMutation : .document
+                }
+                for (url, intent) in zip(transferURLs, intents) {
+                    try await authorizePath(url, intent)
+                    guard identity.isCurrent(in: self) else { return }
+                    if operation == .move {
+                        try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
+                        guard identity.isCurrent(in: self) else { return }
+                    }
+                }
+                let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
+                let nodes: [FileNode]
+                switch operation {
+                case .move:
+                    nodes = try await files.move(transferPaths, in: project, to: parentPath)
+                case .copy:
+                    nodes = try await files.copy(transferPaths, in: project, to: parentPath) { @MainActor destinations in
+                        for (destination, intent) in zip(destinations, intents) {
+                            try Task.checkCancellation()
+                            guard identity.isCurrent(in: self) else { throw CancellationError() }
+                            try await self.authorizePath(destination, intent)
+                        }
+                        guard identity.isCurrent(in: self) else { throw CancellationError() }
+                    }
+                }
+                if operation == .move {
+                    for (source, node) in zip(transferURLs, nodes) {
+                        await updateMovedDocument(from: source, to: node.url)
+                        await relatedPathMoved?(source, node.url)
+                    }
+                }
+                projectFileTree.clearSelection()
                 await refreshTree()
-            } catch { report(error) }
+                logger.info("Project-item transfer completed operation=\(operationName, privacy: .public) items=\(nodes.count, privacy: .public)")
+            } catch is CancellationError {
+                return
+            } catch {
+                logger.error("Project-item transfer failed operation=\(operationName, privacy: .public): \(String(describing: error), privacy: .private)")
+                report(error)
+            }
         }
     }
+
+    private func containsSymbolicLinkComponent(in url: URL, under root: URL) -> Bool {
+        let root = root.standardizedFileURL
+        let candidate = url.standardizedFileURL
+        let rootPath = root.path
+        guard candidate.path == rootPath || candidate.path.hasPrefix(rootPath + "/") else {
+            return true
+        }
+
+        var current = root
+        let relative = String(candidate.path.dropFirst(rootPath.count))
+        for component in relative.split(separator: "/", omittingEmptySubsequences: true) {
+            current.appendPathComponent(String(component))
+            if (try? current.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true {
+                return true
+            }
+        }
+        return false
+    }
+
     func updateMovedDocument(from source: URL, to destination: URL) async {
         let previousMode = mode
         // Package tabs edit an extracted temporary document, so documentURL
@@ -257,25 +374,65 @@ extension AppSession {
         }
         mode = previousMode
     }
-    func acceptDrop(_ providers: [NSItemProvider], into parent: URL) -> Bool {
-        guard DocumentDropProviders.canLoad(providers) else { return false }
+    func acceptDrop(
+        _ providers: [NSItemProvider],
+        into parent: URL,
+        copy: Bool = false,
+        expectedProjectURLs: [URL]? = nil
+    ) -> Bool {
+        guard DocumentDropProviders.isSupportedFolderDrop(providers) else {
+            logger.warning("Folder drop rejected unsupported providers=\(providers.count, privacy: .public)")
+            return false
+        }
+        let isProjectTreeDrop = DocumentDropProviders.isProjectTreeDrop(providers)
+        let dropProject = projectURL
+        guard !isProjectTreeDrop || expectedProjectURLs != nil else { return false }
+        logger.info("Folder drop accepted providerCount=\(providers.count, privacy: .public) projectTree=\(isProjectTreeDrop, privacy: .public) copy=\(copy, privacy: .public)")
+        let urlLoad = isProjectTreeDrop
+            ? DocumentDropProviders.startLoadingProjectTreeURLs(providers)
+            : DocumentDropProviders.startLoadingURLs(providers)
         Task {
-            guard let urls = await DocumentDropProviders.urls(providers) else { return }
-            if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
+            guard let urls = await urlLoad.value else {
+                logger.error("Folder drop payload did not produce file URLs projectTree=\(isProjectTreeDrop, privacy: .public)")
+                return
+            }
+            if isProjectTreeDrop {
+                guard urls == expectedProjectURLs, let root = dropProject, root == projectURL else {
+                    logger.error("Folder drop payload or project context no longer matches the local drag")
+                    return
+                }
+                guard urls.allSatisfy({ DocumentDropProviders.isProjectMove($0, in: root) }) else {
+                    logger.error("Folder drop rejected out-of-project or root items count=\(urls.count, privacy: .public)")
+                    return
+                }
+                guard let operationTask = copy ? self.copy(urls, into: parent) : self.move(urls, into: parent) else {
+                    logger.debug("Folder move was a no-op because every item already belongs to the destination")
+                    return
+                }
+                await operationTask.value
+            } else if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
                 await openDroppedDocuments(urls)
-            } else if urls.count == 1, let url = urls.first, let root = projectURL,
-                      DocumentDropProviders.isProjectMove(url, in: root) {
-                move(url, into: parent)
+            } else {
+                logger.warning("External folder drop rejected URLs=\(urls.count, privacy: .public)")
             }
         }
         return true
     }
 
+    func projectRelativePath(_ url: URL, in root: URL) -> String? {
+        guard url.isFileURL, !url.pathComponents.contains(".."),
+              !url.pathComponents.contains(".") else { return nil }
+        let rootPath = root.standardizedFileURL.path
+        let path = url.standardizedFileURL.path
+        if path == rootPath { return "" }
+        let prefix = rootPath == "/" ? "/" : rootPath + "/"
+        guard path.hasPrefix(prefix) else { return nil }
+        return String(path.dropFirst(prefix.count))
+    }
+
     func relative(_ url: URL) -> String {
         guard let root = projectURL else { return url.path }
-        if url == root { return "" }
-        guard url.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path + "/") else { return "../" }
-        return String(url.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count + 1))
+        return projectRelativePath(url, in: root) ?? "../"
     }
     func prompt(title: String, initial: String) async -> String? {
         let alert = NSAlert()

@@ -290,7 +290,7 @@ Al abrir MDLZ, la preferencia de paquetes permite trabajar en el paquete, pregun
 
 ## 6. Plugins y agentes de IA
 
-El plugin **leonardo-format** enseña al agente el contrato abierto v1, la separación de estructura y respuestas y la inspección y reconstrucción de MDLZ. Incluye una skill, el esquema y herramientas Python. No necesita una cuenta Leonardo ni credenciales propias.
+El plugin **leonardo-format** enseña al agente el contrato abierto v1 y v2, la separación de estructura y respuestas y la inspección y reconstrucción de MDLZ. Incluye una skill, el esquema y herramientas Python. No necesita una cuenta Leonardo ni credenciales propias.
 
 **Leer archivos y controlar la aplicación son capacidades distintas.** Esta skill trabaja con los documentos entregados al agente. No concede acceso al documento abierto ni conecta automáticamente con Leonardo mediante MCP. Tampoco amplía los tipos de adjunto que acepte la interfaz del proveedor.
 
@@ -326,6 +326,16 @@ Esto lo carga para esa sesión. Para uso persistente, instala desde un marketpla
 Instala y activa el plugin `leonardo-format` desde el catálogo de plugins donde esté publicado. Si no aparece, utiliza el paquete local `plugins/leonardo-format` con el flujo de plugins locales que admita tu versión de Codex. La disponibilidad en un catálogo depende de su publicación y de tu cuenta; el documento no instala el plugin por sí mismo.
 
 Verifica que Codex dispone de la skill `leonardo-format`, su esquema y sus scripts antes de entregar un archivo. Las versiones y superficies de Codex pueden tener distintos mecanismos de instalación: consulta la [documentación de plugins](https://developers.openai.com/plugins/build/plugins).
+
+### Previsualizar un documento local en Codex
+
+Para una vista previa de solo lectura en el navegador, instala y activa `leonardo-format`, activa Leonardo Sync y pide a Codex que previsualice un archivo local `.mdlf`, `.mdlr` o `.mdlz`. El helper de Sync inicia la vista previa opcional en loopback solo cuando encuentra un Python real 3.9+ ya instalado en una ubicación compatible. Nunca invoca `/usr/bin/python3` de macOS, que puede ser un instalador de las herramientas de desarrollo; por eso la sincronización normal sigue funcionando aunque falte Python.
+
+Si la vista previa no está disponible, instala Python 3.9+ desde una fuente de confianza como Homebrew o [python.org](https://www.python.org/downloads/), reinicia Leonardo y su helper de Sync y vuelve a intentarlo. El helper no instala Python ni provoca el aviso de instalación de las herramientas de desarrollo de macOS. Usa esta petición:
+
+> Previsualiza este documento Leonardo local en Codex. Mantenlo en solo lectura e indica si Leonardo Sync o el Python compatible no están disponibles.
+
+La vista previa permanece en loopback, caduca después de una hora, sirve solo los recursos locales referenciados y nunca escribe la fuente. El registro acepta archivos locales ordinarios, pero rechaza las rutas bajo el almacenamiento gestionado `DesktopPeers` y `MobileSync` de Leonardo, incluido el contenido remoto en caché o revocado. Abre los documentos remotos gestionados con la vista previa nativa autorizada de Leonardo; no copies bytes de la caché para eludir una concesión de proyecto o una revocación.
 
 ### Instrucciones que puedes copiar
 
@@ -426,6 +436,12 @@ En **Remotos**, selecciona un proyecto para explorar su catálogo o un documento
 ## 8. Proyectos, navegación y pestañas
 
 Abre una carpeta con ⇧⌘O. Despliega sus carpetas en la barra lateral; sus hijos se cargan al expandirlas. Usa Nueva nota y Nueva carpeta, o el menú contextual para renombrar, mover o eliminar elementos. Revisa el destino antes de eliminar y conserva copias o historial Git del material importante. Con el foco en la fila de un archivo del árbol del proyecto, pulsa **Retroceso (⌫)** o **Supr (⌦)** para abrir la misma confirmación que **Mover a la Papelera…**.
+
+Haz clic en una fila para seleccionarla y conservar el comportamiento actual de abrir o desplegar. Con ⌘-clic añades o quitas una fila; con ⇧-clic seleccionas el tramo visible desde el último ancla. El tramo puede incluir carpetas y ficheros. Arrastra una fila seleccionada hasta una carpeta del mismo proyecto para mover juntos todos los elementos seleccionados. Si arrastras una fila que no está seleccionada, solo se mueve esa fila. Si una carpeta seleccionada contiene otra fila seleccionada, Leonardo mueve la carpeta una vez y omite ese descendiente.
+
+Al pie de la barra lateral se indica cuántas filas están seleccionadas y marca cada una cuando hay una selección múltiple. Pulsa **Limpiar selección**, junto al contador, para empezar de nuevo.
+
+Mantén ⌥ (Opción) al soltar para copiar los elementos seleccionados. El nombre del proyecto es la primera fila del árbol. Suelta sobre él o sobre el espacio vacío del árbol para usar la raíz. Suelta sobre una carpeta para usarla como destino o sobre un fichero para usar la carpeta que lo contiene. Usa el menú + junto a la búsqueda para crear una nota o carpeta, o para abrir otro proyecto. La imagen del arrastre muestra un contador cuando lleva varios elementos. La carpeta de destino se resalta y muestra **Mover** o **Copiar**. Al copiar se conservan todos los originales. Al mover, un elemento que ya esté directamente en la carpeta de destino se queda allí y el resto de elementos seleccionados puede moverse. Copiar un elemento en su propia carpeta crea un duplicado con un nombre libre, por ejemplo `Nota copy.md` o `Nota copy 2.md`. Si existe un elemento del mismo nombre en otra carpeta de destino, se considera una colisión. Antes de modificar nada, Leonardo comprueba todos los destinos efectivos: si un movimiento o una copia sobrescribiría un destino existente, dos elementos tendrían el mismo nombre o una carpeta entraría en sí misma o en una subcarpeta, rechaza el lote entero sin sobrescribir contenido. Si arrastras Markdown desde Finder, se sigue abriendo en una pestaña.
 
 Un clic abre un archivo compatible en la pestaña activa. Haz doble clic o elige **Abrir en nueva pestaña** para conservar la pestaña original y su borrador. Si ya está abierto, se selecciona su pestaña existente. Las pestañas del proyecto conservan la navegación, carpetas expandidas y filtros; ⌘T crea una pestaña vacía. ⌘W cierra la pestaña activa y ⇧⌘W la ventana. Las decisiones Guardar, Descartar y Cancelar protegen los cambios pendientes.
 
@@ -573,7 +589,16 @@ firmas criptográficas.
 
 *Sección real de rúbricas enlazadas con el asistente desconectado; no hay ningún dispositivo emparejado en esta ilustración.*
 
-En un campo de rúbrica, elige **Rellenar** y pulsa su área. El diálogo ampliado
+Para colocar un campo de rúbrica, desbloquea el formulario y selecciona el
+campo en **Previsualizar** o **Dividir**. Arrastra el campo para colocarlo en la
+página, usa el tirador de la esquina para cambiar el tamaño o pulsa la flecha
+circular para girarlo 90° en sentido horario. Mover o girar fija el campo a la
+página. Revisa posibles solapamientos si después cambias el texto. Si el
+marcador se repite, puedes colocar la primera aparición y las demás siguen en
+el texto. Guarda el formulario para conservar la colocación. El lienzo de
+dibujo sigue horizontal y el campo muestra los trazos con el giro guardado.
+
+En un campo de rúbrica, elige **Rellenar formulario** y pulsa su área. El diálogo ampliado
 permite elegir una guardada o dibujar una nueva; **Guardar en mis rúbricas**
 controla si la nueva también entra en la biblioteca. **Quitar rúbrica** vacía la respuesta de ese campo. La respuesta queda dentro
 del área del autor y se guarda con el formulario. El candado de fuente no

@@ -279,7 +279,7 @@ Package preferences allow working in the package, asking each time, or extractin
 
 ## 6. Plugins and AI agents
 
-The **leonardo-format** plugin teaches an agent the open v1 contract, separation of definitions and answers, and MDLZ inspection and reconstruction. It contains a skill, schema and Python tools. It needs no Leonardo account or dedicated credentials.
+The **leonardo-format** plugin teaches an agent the open v1 and v2 contract, separation of definitions and answers, and MDLZ inspection and reconstruction. It contains a skill, schema and Python tools. It needs no Leonardo account or dedicated credentials.
 
 **Reading files and controlling the application are different capabilities.** The skill works on documents supplied to the agent. It does not grant access to the currently open document or automatically connect to Leonardo through MCP. It cannot expand a provider's accepted attachment types.
 
@@ -315,6 +315,16 @@ This loads it for that session. For persistent use, install from a Claude market
 Install and enable `leonardo-format` from a plugin catalog where it is published. If it is absent, use the local `plugins/leonardo-format` package with your Codex version's local-plugin workflow. Catalog availability depends on publication and account; opening this guide does not install the plugin.
 
 Check that Codex has the skill, schema and scripts before handing it a file. Installation mechanisms vary across Codex versions and surfaces; consult the [plugin documentation](https://developers.openai.com/plugins/build/plugins).
+
+### Preview a local document in Codex
+
+For a read-only browser preview, install and enable `leonardo-format`, enable Leonardo Sync, and ask Codex to preview a local `.mdlf`, `.mdlr` or `.mdlz` file. The Sync helper starts the optional loopback preview only when it finds an already-installed real Python 3.9+ interpreter in a supported location. It never invokes macOS `/usr/bin/python3`, which can be a developer-tools installation shim, so ordinary Sync remains usable when Python is absent.
+
+If preview is unavailable, install Python 3.9+ from a trusted source such as Homebrew or [python.org](https://www.python.org/downloads/), restart Leonardo and its Sync helper, and retry. The helper does not install Python or trigger the macOS developer-tools prompt. Use this request:
+
+> Preview this local Leonardo document in Codex. Keep it read-only and report if Leonardo Sync or the supported Python runtime is unavailable.
+
+The preview stays on loopback, expires after one hour, serves only referenced local resources and never writes the source. Registration accepts ordinary local files but rejects paths below Leonardo's managed `DesktopPeers` and `MobileSync` storage, including cached or revoked remote content. Open managed remote documents through Leonardo's authorized native preview; do not copy cached bytes to bypass a project grant or revocation.
 
 ### Prompts to copy
 
@@ -414,6 +424,12 @@ In **Remote items**, select a project to browse its catalogue or a document to o
 ## 8. Projects, navigation and tabs
 
 Open a folder with ⇧⌘O. Expand its folders in the sidebar; children load as you expand them. Use New note and New folder, or an item's context menu to rename, move or delete. Check the target before deleting and keep a backup or Git history for valuable material. With a file row focused in the project tree, press **Delete (⌫)** or **Forward Delete (⌦)** to open the same confirmation as **Move to Trash…**.
+
+Click a row to select it and keep the current open/expand behavior. ⌘-click adds or removes a row; ⇧-click selects the visible range from the last selection anchor. A range can include both folders and files. Drag a selected row onto a folder in the same project to move the selected items together. If the dragged row is not selected, only that row moves. When a selected folder contains another selected row, Leonardo transfers the folder once and skips that descendant.
+
+The bottom of the sidebar shows how many rows are selected and marks each row in a multi-selection. Use **Clear selection** beside the count to start over.
+
+Hold ⌥ (Option) while releasing to copy the selected items instead. The project name is the first row of the tree. Drop on the project name or empty tree space to use the root. Drop on a folder to use that folder, or on a file to use its parent folder. Use the + menu next to search to create a note or folder or open another project. The drag image shows a count when it carries multiple items. The target folder highlights and shows **Move** or **Copy**. Copying keeps every original. When moving, an item already directly inside the target folder stays in place while the other selected items can move. Copying an item into its own folder creates a duplicate with a free name, for example `Note copy.md` or `Note copy 2.md`. A matching item in a different folder is a collision. Leonardo checks every actual destination before changing anything: if a move or copy would write over an existing destination, two selected items would have the same name, or a folder would enter itself or one of its subfolders, the whole batch is rejected without overwriting existing content. Dragging Markdown from Finder still opens it in a tab.
 
 A single click opens a supported file in the active tab. Double-click or choose **Open in new tab** to keep the original tab and its draft. An already open document selects its existing tab. New project tabs preserve navigation, expanded folders and file filters; ⌘T creates an empty tab. Close the active tab with ⌘W, or the window with ⇧⌘W. Save, Discard and Cancel decisions protect pending edits.
 
@@ -553,7 +569,16 @@ are visual rubrics, not digital certificates.
 
 *Production linked-rubric section showing an offline helper; no device is paired in this illustration.*
 
-For a rubric form field, use **Fill** and click its area. The expanded dialog
+To lay out a rubric field, unlock the form and select the field in **Preview**
+or **Split**. Drag the field to place it on the page. Drag its corner
+handle to change its size, or click the circular arrow to rotate it by 90°
+clockwise. Moving or rotating pins the field to the page, so check for overlaps
+after editing nearby text. If the marker is repeated, the first occurrence can
+be positioned and the others stay in the text. Save the form to keep the layout.
+The drawing canvas stays horizontal and the field displays the ink at its saved
+angle.
+
+For a rubric form field, use **Fill form** and click its area. The expanded dialog
 lets you choose saved ink or draw new ink; **Save in my rubrics** controls whether
 new form ink also enters the library. **Remove rubric** clears the current field answer. The answer stays inside the author's
 field area and is saved with the response. A source padlock does not prevent

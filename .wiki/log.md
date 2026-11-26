@@ -1,5 +1,9 @@
 # Changes
 
+- 2026-11-26: [#475](https://github.com/PinedaTec-EU/LeonardoMD/issues/475) preview follow-up selects only an installed real Python 3.9+ runtime from supported macOS paths, never invokes the `/usr/bin/python3` developer-tools shim, and reports an actionable preview-only recovery while ordinary Sync continues. The loopback registration boundary rejects managed `DesktopPeers`/`MobileSync` cache paths, including revoked remote content, and now rejects canonical local resources that resolve into those roots from an ordinary document. Bilingual Help advances to Guide v152. The local candidate builds and packages the helper; focused `BundledUserGuideTests` (4), `SyncHelperHostTests` (7), plugin tests (51) and guide package tests (3) pass. Native GUI acceptance remains intentionally outside this no-GUI handoff.
+
+- 2026-11-26: [#474](https://github.com/PinedaTec-EU/LeonardoMD/issues/474) / draft [PR #610](https://github.com/PinedaTec-EU/LeonardoMD/pull/610) correction: the Sync preview endpoint now lives in a dedicated owner-only `Preview` directory beneath Application Support, so a normal existing 0755 `LeonardoMD` directory is not rejected or rewritten. The endpoint credential remains 0600 and an insecure 0755 preview leaf is rejected. The unused Swift `previewEndpointURL` duplicate was removed; the bundled worker and installed plugin continue to share the Python service path. No GUI was used.
+
 - 2026-11-24: [#588](https://github.com/PinedaTec-EU/LeonardoMD/issues/588) uses Leonardo Classic for the initial session and preferences without a palette. Explicit preferences retain their saved palette. Bilingual Help v137 documents the default.
 
 - 2026-11-22: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) judge-blocker follow-up: macOS guided-signing actions now bind to the selected signer position, guard asynchronous target publication against selection races, advance through repeated occurrences, and give rubric-only profiles a transient declared-identity profile ID. Core treats unassigned rubric fields as ordinary required/optional data, compares complete rendered locations for readiness, and restores `readyToSign` after `resume` plus `begin` when the last location was already confirmed. Focused recorder validation passes 15 Core + 9 App tests; PR #520 build delta is 76. Packaged macOS/iOS QA remains owned by the parent task.
@@ -473,3 +477,22 @@ body; this handoff does not wait for or merge #497.
   the Little Leonardo extension chapter and documents selection and confirmed
   deletion of saved rubrics. The equivalent native rubric QA remains recorded
   on [PR #497](https://github.com/PinedaTec-EU/LeonardoMD/pull/497).
+
+# 2026-11-26: PR #610 reconciled after #497
+
+PR #610 was reconciled onto the #497 product changes from `031bcea28e1a82c4f65d76efe60f57e1bea83e73`; the current release-ledger descendant is
+`dab6e5cf4e5ebe6f573f4f73be36e2272bed14db`. Guide v164 combines the local
+Leonardo Format preview instructions with the current rubric, mobile extension,
+Finder icon and table-pagination help. EN and ES package hashes are recorded in
+`doc/guide/README.md`.
+
+Deterministic guide packaging (3 tests), the 52 plugin tests, four
+`BundledUserGuideTests`, and seven `SyncHelperHostTests` passed. The real
+`LeonardoSyncHelper` was also exercised from a Developer ID signed QA copy in
+an isolated `HOME`/`CFFIXED_USER_HOME`: `host=0.0.0.0` rejected desktop TLS
+startup before credential materialization, while the bundled Python worker
+published a loopback endpoint under a task-owned 0700 `Preview` leaf with a
+0600 endpoint. The exact helper and worker processes exited; the task-owned
+endpoint was removed, the user's real `Preview` leaf stayed absent, and no
+launchd registration, host setting or credential was changed. Browser, Stop-hook
+trust and installed-helper acceptance remain Beta scope.
