@@ -379,6 +379,8 @@ public enum FileSystemRepositoryError: Error, Equatable, Sendable {
     case itemAlreadyExists(URL)
     case cannotDeleteProjectRoot
     case cannotMoveIntoDescendant
+    case cannotCopyProjectRoot
+    case cannotCopyIntoDescendant
 }
 
 public enum DocumentStoreError: Error, Sendable {

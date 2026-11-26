@@ -3,6 +3,62 @@ import XCTest
 
 @MainActor
 final class ProjectFileTreeTests: XCTestCase {
+    func testCommandToggleAndShiftRangeSelectMixedVisibleRows() {
+        let tree = ProjectFileTree()
+        let firstFile = URL(fileURLWithPath: "/project/first.md")
+        let folder = URL(fileURLWithPath: "/project/assets", isDirectory: true)
+        let nestedFile = folder.appendingPathComponent("image.png")
+        let lastFile = URL(fileURLWithPath: "/project/last.md")
+        let rows = [
+            ProjectFileTree.Row(entry: NavigationEntry(url: firstFile, isDirectory: false), depth: 0),
+            ProjectFileTree.Row(entry: NavigationEntry(url: folder, isDirectory: true), depth: 0),
+            ProjectFileTree.Row(entry: NavigationEntry(url: nestedFile, isDirectory: false), depth: 1),
+            ProjectFileTree.Row(entry: NavigationEntry(url: lastFile, isDirectory: false), depth: 0)
+        ]
+
+        tree.select(firstFile, among: rows, gesture: .replace)
+        tree.select(lastFile, among: rows, gesture: .extend(additive: false))
+        XCTAssertEqual(tree.selection, Set([firstFile, folder, nestedFile, lastFile]))
+
+        tree.select(folder, among: rows, gesture: .toggle)
+        XCTAssertEqual(tree.selection, Set([firstFile, nestedFile, lastFile]))
+    }
+
+    func testDragPrunesSelectedDescendantsAndSelectsAnUnselectedDragSource() {
+        let tree = ProjectFileTree()
+        let folder = URL(fileURLWithPath: "/project/assets", isDirectory: true)
+        let nestedFolder = folder.appendingPathComponent("icons", isDirectory: true)
+        let nestedFile = nestedFolder.appendingPathComponent("logo.png")
+        let sibling = URL(fileURLWithPath: "/project/readme.md")
+        let rows = [
+            ProjectFileTree.Row(entry: NavigationEntry(url: folder, isDirectory: true), depth: 0),
+            ProjectFileTree.Row(entry: NavigationEntry(url: nestedFolder, isDirectory: true), depth: 1),
+            ProjectFileTree.Row(entry: NavigationEntry(url: nestedFile, isDirectory: false), depth: 2),
+            ProjectFileTree.Row(entry: NavigationEntry(url: sibling, isDirectory: false), depth: 0)
+        ]
+        tree.select(folder, among: rows, gesture: .replace)
+        tree.select(nestedFolder, among: rows, gesture: .toggle)
+        tree.select(nestedFile, among: rows, gesture: .toggle)
+        XCTAssertEqual(tree.dragSelection(startingAt: nestedFolder, rows: rows), [folder])
+
+        XCTAssertEqual(tree.dragSelection(startingAt: sibling, rows: rows), [sibling])
+        XCTAssertEqual(tree.selection, Set([sibling]))
+    }
+
+    func testDragKeepsFileAndFolderWithNoSelectedAncestor() {
+        let tree = ProjectFileTree()
+        let file = URL(fileURLWithPath: "/private/var/folders/project/assets-other/note.md")
+        let folder = URL(fileURLWithPath: "/private/var/folders/project/assets", isDirectory: true)
+        let rows = [
+            ProjectFileTree.Row(entry: NavigationEntry(url: file, isDirectory: false), depth: 0),
+            ProjectFileTree.Row(entry: NavigationEntry(url: folder, isDirectory: true), depth: 0)
+        ]
+
+        XCTAssertEqual(tree.dragSelection(startingAt: file, rows: rows), [file])
+        tree.select(folder, among: rows, gesture: .toggle)
+        XCTAssertEqual(tree.dragSelection(startingAt: file, rows: rows), [file, folder])
+    }
+
     func testOlderExpansionCannotOverwriteReopenedFoldersNewerLoad() async throws {
         let fixture = try await folderFixture(files: ["Old.md", "New.md"])
         let (root, folder, session, entry) = fixture
@@ -170,6 +226,8 @@ final class ProjectFileTreeTests: XCTestCase {
         let oldFolder = try XCTUnwrap(session.rootEntries.first(where: { $0.isDirectory }))
         await tree.toggle(oldFolder, session: session)
         XCTAssertTrue(tree.expanded.contains(oldFolder.url))
+        tree.select(oldFolder.url, among: tree.rows(roots: session.rootEntries), gesture: .replace)
+        XCTAssertEqual(tree.selection, Set([oldFolder.url]))
         let openedSecond = await session.openProject(second)
         XCTAssertTrue(openedSecond)
         session.errorMessage = nil
@@ -177,6 +235,7 @@ final class ProjectFileTreeTests: XCTestCase {
         await tree.toggle(oldFolder, session: session)
         XCTAssertNil(session.errorMessage)
         XCTAssertTrue(tree.expanded.isEmpty)
+        XCTAssertTrue(tree.selection.isEmpty)
         XCTAssertTrue(tree.rows(roots: session.rootEntries).isEmpty)
         await session.detachProject()
         _ = await tree.refreshAndReveal(nil, session: session)
