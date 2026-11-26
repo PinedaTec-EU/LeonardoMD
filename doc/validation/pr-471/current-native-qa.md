@@ -6,7 +6,7 @@ The QA app ran version 0.3.2318, build 2318, in a disposable profile and
 opened the synthetic local project's first window. The root, nested files,
 selected-row mark and count were visible in the project tree.
 
-English and Spanish Guide v149 opened from Help/Ayuda. The native document
+English and Spanish Guide v149 opened from Help/Ayuda in this recorded run. The native document
 showed the updated chapter 8 instructions for selection, moves, Option-copy,
 and root, empty-space and file-row targets. The disposable personal copies
 matched their bundled files byte for byte.
@@ -15,6 +15,11 @@ matched their bundled files byte for byte.
 | --- | --- |
 | EN | `9b82261833538bf8afeae3dd1ca02e8b3b4d50808a0d093a35047e9c1e1484c1` |
 | ES | `f7b0f5d0e49cf7852f32307cf8047b7c9bf96ee8dbcb9708efccacc37221b78f` |
+
+The later reconciliation advances the packaged resource and personal-copy
+directory to Guide v160 without claiming a new GUI run: EN
+`03aeef497d89f20826bf689c106064f26b7968371c39b9fe340ad6bcd4702241`, ES
+`2e165b15744ae41e7080bdf9808fa9554cb3eedff1d5d571d5a34f742d861729`.
 
 CUA's coordinate drag returned `noWindowsAvailable` and
 `windowNotFoundAtPosition` on two displays. The fixture tree was unchanged.
