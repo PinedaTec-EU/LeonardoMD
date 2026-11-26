@@ -618,7 +618,7 @@ Para compartir una entrada en el Dock y ⌘Tab, activa **Agrupar instancias en e
 
 ## 12. Las cinco extensiones incluidas
 
-Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivadas. Son distintas de la skill `leonardo-format` para agentes de IA externos. Activa lo que necesites en Preferencias → Extensiones, globalmente o para este proyecto; la herencia de proyecto sigue los valores globales.
+Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivadas. Son distintas de la skill `leonardo-format` para agentes de IA externos. En macOS, activa lo que necesites en Preferencias → Extensiones, globalmente o para este proyecto; la herencia de proyecto sigue los valores globales. Little Leonardo mantiene sus propias preferencias globales en el dispositivo.
 
 | Extensión | Contenido reconocido | Qué comprobar |
 | --- | --- | --- |
@@ -632,7 +632,9 @@ Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivad
 
 ![Leonardo pregunta qué extensiones integradas detectadas se quieren activar](guide/es/assets/activation-switch.png)
 
-*Componente de diálogo en español con Mermaid y Gráficos seleccionados en un documento ficticio. El diálogo de proyecto identifica su ámbito. No propone plugins de terceros.*
+*Componente de diálogo de macOS en español con Mermaid y Gráficos seleccionados en un documento ficticio. El diálogo de proyecto identifica su ámbito. No propone plugins de terceros.*
+
+En iPhone y iPad, Little Leonardo usa un panel del dispositivo para pedir el mismo consentimiento. La lista incluye solo extensiones propias detectadas; selecciona las que quieras activar o pulsa **Ahora no**.
 
 La detección recomienda solo las cinco extensiones propias de Leonardo. Es una recomendación, no una validación completa: los ejemplos de código que solo describen sintaxis no necesitan activación. Cada interruptor selecciona una extensión para **Activar seleccionadas**; **Ahora no** descarta la selección y evita repetir durante la apertura actual. El interruptor global oculta las recomendaciones para todos los documentos. **Preferencias → Extensiones → Restablecer avisos de extensiones** las recupera y elimina las antiguas supresiones por extensión, sin cambiar las extensiones activadas. Comprueba el ámbito indicado antes de activar.
 
@@ -809,6 +811,16 @@ La vista previa y **Enviar rúbrica** siguen siendo acciones explícitas; un
 borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando.
 
 ![Lienzo de rúbrica a pantalla completa en horizontal, con los colores Leonardo Classic. Captura real del simulador con una solicitud sintética; miniatura reducida.](guide/es/assets/ios-rubric-classic-landscape.png)
+
+### Extensiones incluidas en iPhone y iPad
+
+En Little Leonardo, abre **Ajustes de sincronización → Extensiones de documentos** para activar Mermaid, Matemáticas (KaTeX), Gráficos (Vega-Lite), Citas o Extras Markdown. Estos interruptores son globales para Little Leonardo en este dispositivo y se guardan en sus preferencias locales; no se envían al Mac. Se aplican a los documentos recibidos tanto si se abren bajo demanda como si se conservan para leer sin conexión. Los archivos siguen siendo de solo lectura. La Demo incluida también usa estas preferencias y muestra el mismo aviso de consentimiento para las extensiones detectadas desactivadas. Su revisión actual del contenido demuestra las cinco extensiones con datos e imágenes locales; la copia de práctica y las respuestas permanecen en este dispositivo.
+
+La sección **Frecuencia** de Ajustes de sincronización ofrece **Solo manual** o **Cada 1, 5, 15, 30 o 60 min**. La elección se guarda en este dispositivo. El intervalo repite la sincronización mientras Little Leonardo sigue activa; la app también sincroniza una vez cuando vuelve a estar activa.
+
+Al mostrar la Vista previa, si detecta una extensión compatible desactivada, Little Leonardo recomienda solo las extensiones incluidas que encuentra en ese documento, también en la Demo incluida. Selecciona las que quieras y pulsa **Activar seleccionadas**, o **Ahora no** para cerrar el aviso durante esta apertura. **No volver a mostrar este aviso** oculta las recomendaciones posteriores. Para volver a verlas, abre **Ajustes de sincronización → Extensiones de documentos → Restablecer avisos de extensiones**; restablecer avisos no cambia las extensiones activadas. El lector móvil mantiene bloqueadas las imágenes remotas y carga solo imágenes locales de proyectos autorizados.
+
+Los ejemplos del [capítulo 12](#12-las-cinco-extensiones-incluidas) muestran qué reconoce cada extensión y cómo se presenta el texto normal cuando está desactivada. Por ejemplo, un bloque `mermaid` requiere Mermaid y un bloque JSON `vega-lite` requiere Gráficos.
 
 ### Si se interrumpe la sincronización móvil
 
@@ -1017,9 +1029,9 @@ La guía cubre los flujos actuales de macOS. Los nombres de servicios externos s
 
 ## Little Leonardo: demo incluida y práctica local
 
-La biblioteca separa los **Mac conectados** de los elementos **En este dispositivo**. Despliega un Mac para revisar sus proyectos; despliega un proyecto para ver sus archivos y usa **…** para gestionar la caché. **Demo** aparece en **En este dispositivo**: ábrela y elige **Demo-es.mdlr · Español** o **Demo-en.mdlr · English**. Cada documento se convierte en una copia personal de práctica al abrirlo por primera vez. No requiere cuenta, Mac ni permisos de cámara/red local. Incluye una portada local, tabla, Mermaid, fórmulas y un gráfico con datos incluidos; estos motores están activados en la demo. El formulario usa campos Leonardo reales. Escribe datos ficticios, pulsa **Guardar / Save**, espera el aviso y vuelve a abrir para comprobar las respuestas. Se conservan en este dispositivo, separadas de los proyectos sincronizados de solo lectura. No se envían al Mac. Desinstalar elimina las copias.
+La biblioteca separa los **Mac conectados** de los elementos **En este dispositivo**. Despliega un Mac para revisar sus proyectos; despliega un proyecto para ver sus archivos y usa **…** para gestionar la caché. **Demo** aparece en **En este dispositivo**: ábrela y elige **Demo-es.mdlr · Español** o **Demo-en.mdlr · English**. Cada documento se convierte en una copia personal de práctica al abrirlo por primera vez. No requiere cuenta, Mac ni permisos de cámara/red local. La Demo incluye una portada local, tabla, diagrama Mermaid, fórmulas en línea y de bloque, un gráfico con datos incluidos, una cita y bibliografía locales, una nota al pie y un aviso de estilo GitHub. El documento usa las mismas preferencias de extensiones del dispositivo que los archivos recibidos: acepta activar las seleccionadas o déjalas desactivadas para ver el texto normal. El formulario usa campos Leonardo reales. Escribe datos ficticios, pulsa **Guardar / Save**, espera el aviso y vuelve a abrir para comprobar las respuestas. Se conservan en este dispositivo, separadas de los proyectos sincronizados de solo lectura. No se envían al Mac. Desinstalar elimina las copias.
 
 En **Opciones / Options**, **Ver texto / View source** muestra Markdown y metadatos; **Restablecer / Reset** pide confirmación y reinicia únicamente la práctica del idioma seleccionado. Si aparece un error de guardado, conserva la pantalla y reintenta; no des por guardadas las respuestas sin confirmación. Para conectar tus proyectos reales, vuelve a **Conectar** y sigue el capítulo de sincronización. La práctica no habilita edición general de los proyectos sincronizados ni sustituye las solicitudes de rúbrica del Mac.
 
 
-Para quitar cualquier proyecto de este dispositivo, desliza su fila hacia la izquierda y pulsa **Eliminar / Delete**. En un proyecto recibido, esto lo elimina de la biblioteca de este dispositivo y evita que vuelva a descargarse; no cambia el permiso ni los archivos del Mac. Deslizar por sí solo nunca elimina. El proyecto Demo desaparece igual que los demás. Puedes recuperarlo en **Ajustes de sincronización → Recuperar demo / Restore demo** en cualquier momento; conserva las respuestas guardadas. La eliminación persiste al reiniciar y al actualizar la app con la misma revisión del contenido de la demo. Una revisión nueva de ese contenido vuelve a mostrar Demo, con nuevas copias de práctica y conservando las anteriores. Recuperar no restablece respuestas; para eso usa **Restablecer / Reset** dentro del documento del idioma.
+Para quitar cualquier proyecto de este dispositivo, desliza su fila hacia la izquierda y pulsa **Eliminar / Delete**. En un proyecto recibido, esto lo elimina de la biblioteca de este dispositivo y evita que vuelva a descargarse; no cambia el permiso ni los archivos del Mac. Deslizar por sí solo nunca elimina. El proyecto Demo desaparece igual que los demás. Puedes recuperarlo en **Ajustes de sincronización → Recuperar demo / Restore demo** en cualquier momento; conserva las respuestas guardadas. La eliminación persiste al reiniciar y al actualizar la app con la misma revisión del contenido de la demo. Una revisión nueva del contenido vuelve a mostrar Demo. La revisión 2 crea copias de práctica nuevas para los ejemplos de extensiones y conserva en este dispositivo las copias y respuestas anteriores de la revisión 1. Recuperar no restablece respuestas; para eso usa **Restablecer / Reset** dentro del documento del idioma.

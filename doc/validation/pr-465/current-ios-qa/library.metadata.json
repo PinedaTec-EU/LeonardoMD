@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "capture_time_status": "not_recorded",
+    "capture_time_note": "The original XcodeBuildMCP screenshot event time was not persisted. artifact_mtime is an observed filesystem timestamp, not an asserted capture time.",
+    "artifact_mtime": "2026-11-26T09:51:38+01:00",
+    "route": "/native/ios/library",
+    "screen": "Little Leonardo Library",
+    "browser_name": "Little Leonardo native SwiftUI app on iPhone 17 Simulator",
+    "browser_version": "iOS 27.0, iPhone 17 Simulator",
+    "state": "Library route context for the current-head extension settings and bundled Demo flow.",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "4a21c0159231519550440624893d29cb97492a36f16488eba67ef376bc2bccc4"
+  },
+  "source": {
+    "implementation_revision": "fd7b8b116f36e2bec360ffccecf2d0992387a3cd",
+    "reviewed_head": "c626cbc6f67ebe5d67422179c515c95b62a63ccd",
+    "based_on_main": "32efc6f211380c91944f17873993af27e406b67a"
+  }
+}

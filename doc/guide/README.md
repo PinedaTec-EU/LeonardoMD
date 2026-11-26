@@ -1,25 +1,23 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v153-en.mdlz` and `Guide-v153-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v156-en.mdlz` and `Guide-v156-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v153/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v156/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v153 carries forward v145's separate remote project menu and its offline actions in chapter 7,
-and documents Finder icon behavior for Markdown and Leonardo files without changing default applications.
-It also includes the #499 Markdown table pagination guidance: rows continue across
-paginated preview and PDF pages with consistent column widths, and the header
-repeats unless its layout disables repetition.
-Guide v153 EN SHA-256: `af5cf369bfcecba6f6cceccda97c59d0246c3fb25570db71a97b423706b1b21d`
-and ES SHA-256: `02bbc73ab2dcf760df5c5597f2b548b16ae876c348e8d5f2cd8ec22df96f6a12`.
-
-Guide v153 is generated from the current bilingual bodies after the #499
-pagination change. Guide v145 remains the previous packaged baseline; the v146
-pagination guidance is preserved in the v153 package.
-
-Guide v145 is retained as the previous packaged baseline. Its chapter 7
-content is included in v153 together with the table-pagination guidance.
+Guide v156 carries forward the current shared Home selector, separate
+remote-project menu, offline actions, direct remote access and Markdown table
+continuation across paginated preview and PDF pages. It includes the #415
+Finder icon guidance without changing default applications, the #499 table
+pagination guidance, and the reconciled Little Leonardo extension settings,
+consent flow, synchronization frequency and bundled Demo coverage in both
+locales. The #465 mobile chapter remains in the current bilingual bodies.
+Guide v153 remains the previous packaged baseline and v147 remains the
+previous #465 mobile-help package; existing guide copies and practice answers
+are never overwritten.
+Guide v156 EN SHA-256: `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
+and ES SHA-256: `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
@@ -144,7 +142,7 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v153 with a new
+historical review record. The current app resources use Guide v156 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against

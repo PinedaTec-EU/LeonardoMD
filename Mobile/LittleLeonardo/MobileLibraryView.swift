@@ -179,7 +179,7 @@ struct MobileLibraryView: View {
             .navigationTitle("Biblioteca")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(item: $selectedRemoteFile) { route in
-                RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
+                MobileRemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
                     entry: route.entry, spanish: spanishErrors, appearance: .leonardoClassic,
                     compactFirstHeading: true,
                     failureDiagnosticPresentation: { error, identity, shouldRecord in
@@ -331,11 +331,25 @@ struct MobileLibraryView: View {
 
     private var syncFrequency: some View {
         Group {
-            Picker("Sincronización automática", selection: $syncInterval) {
-                Text("Solo manual").tag(0)
-                ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
+            Picker(
+                spanishErrors ? "Sincronización automática" : "Automatic synchronization",
+                selection: $syncInterval
+            ) {
+                Text(spanishErrors ? "Solo manual" : "Manual only")
+                    .tag(0)
+                    .accessibilityIdentifier("sync-frequency-option-0")
+                ForEach([1, 5, 15, 30, 60], id: \.self) { minutes in
+                    Text(spanishErrors ? "Cada \(minutes) min" : "Every \(minutes) min")
+                        .tag(minutes)
+                        .accessibilityIdentifier("sync-frequency-option-\(minutes)")
+                }
             }
-            Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
+            .accessibilityIdentifier("sync-frequency-picker")
+            Text(spanishErrors
+                 ? "La sincronización automática funciona mientras la app está activa."
+                 : "Automatic synchronization runs while the app is active.")
+                .font(.caption)
+                .accessibilityIdentifier("sync-frequency-note")
         }
     }
 
@@ -423,7 +437,9 @@ struct MobileLibraryView: View {
     private var synchronizationSettings: some View {
         NavigationStack {
             Form {
-                Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
+                MobileMarkdownExtensionsSettings(preferences: .shared, spanish: spanishErrors)
+                Section(spanishErrors ? "Frecuencia" : "Frequency") { syncFrequency }
+                    .listRowBackground(MobileClassic.inset)
                 Section("Proyectos / Projects") {
                     Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
                         do { try library.projectLifecycle.restoreDemo() }
@@ -463,7 +479,10 @@ struct MobileLibraryView: View {
             }
                 .classicSurface()
                 .navigationTitle(MobileErrorLogCopy.synchronizationTitle(spanish: spanishErrors))
-                .toolbar { Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil } }
+                .toolbar {
+                    Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil }
+                        .accessibilityIdentifier("close-sync-settings")
+                }
         }
     }
 }
@@ -579,7 +598,7 @@ struct MobileProjectView: View {
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            RemoteDocumentPreview(
+            MobileRemoteDocumentPreview(
                 library: library.downloads,
                 projectID: projectID,
                 entry: entry,
@@ -602,191 +621,6 @@ struct MobileProjectView: View {
                 library.presentError(error, operation: .export,
                                      message: "No se pudo exportar el archivo de recuperación.")
             }
-        }
-    }
-}
-
-struct MobileDocumentView: View {
-    private static let markdownPreviewExtensions: Set<String> = ["md", "markdown", "mdlf", "mdlr"]
-    private static let leonardoFormatExtensions: Set<String> = ["mdlf", "mdlr"]
-    private static let previewableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
-    let library: MobileLibrary
-    let projectID: UUID
-    let file: CorpusFile
-    var initialAnchor: String? = nil
-    @State private var text = ""
-    @State private var source = false
-    @State private var assets: MarkdownMemoryAssets?
-    @State private var linkedDocument: CachedDocumentLink?
-    @State private var unavailableLink = false
-    @State private var signingCopy: MobileSigningExchangeDocument?
-    @State private var didScrollToInitialAnchor = false
-    @StateObject private var previewController = MarkdownPreviewController()
-    private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
-    private var fileExtension: String { (file.path as NSString).pathExtension.lowercased() }
-    private var previewConfiguration: MarkdownPreviewConfiguration {
-        var configuration = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
-            appearance: .leonardoClassic,
-            localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
-        configuration.compactFirstHeading = true
-        configuration.allowsLeonardoFormat = Self.leonardoFormatExtensions.contains(fileExtension)
-        return configuration
-    }
-    private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
-    private var liveFile: CorpusFile? { library.currentFile(projectID: projectID, path: file.path) }
-    private var spanishErrors: Bool {
-        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
-    }
-    private var guidedSigningDeclaration: LeonardoSigningDeclaration? {
-        guard !source,
-              Self.leonardoFormatExtensions.contains(fileExtension),
-              let document = try? LeonardoFormatParser.parse(text),
-              document.metadata.formatVersion >= LeonardoFormat.signingVersion else { return nil }
-        return document.metadata.document.signing
-    }
-
-    var body: some View {
-        Group {
-            if liveProject == nil {
-                ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
-            } else if liveFile == nil {
-                ContentUnavailableView("Documento no disponible", systemImage: "doc", description: Text("El documento ya no está en la copia local."))
-            } else if !Self.previewableDocumentExtensions.contains(fileExtension) {
-                ContentUnavailableView("Archivo conservado", systemImage: "doc",
-                    description: Text("Este archivo se conserva en la copia de recuperación. Expórtala para abrirlo en un ordenador."))
-            } else if !source, Self.markdownPreviewExtensions.contains(fileExtension) {
-                VStack(alignment: .leading, spacing: 0) {
-                    if let guidedSigningDeclaration {
-                        LeonardoGuidedSigningReadOnlyBanner(
-                            declaration: guidedSigningDeclaration,
-                            spanish: MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first))
-                    }
-                    MarkdownPreview(content: text,
-                        baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
-                        configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)
-                }
-            } else {
-                ScrollView {
-                    Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading).padding()
-                }
-            }
-        }
-        .classicSurface()
-        .navigationTitle((file.path as NSString).lastPathComponent)
-        .toolbar {
-            Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
-                Task { await library.synchronize() }
-            }.disabled(library.connecting || liveProject?.isRecoveryArchive == true)
-                .accessibilityIdentifier("document-sync")
-            if guidedSigningDeclaration != nil {
-                Button(spanishErrors ? "Firmar copia" : "Sign copy", systemImage: "signature") {
-                    Task { await prepareSigningCopy() }
-                }
-                .accessibilityIdentifier("prepare-mobile-signing-copy")
-            }
-            Button(source ? "Ver documento" : "Ver texto", systemImage: "chevron.left.forwardslash.chevron.right") { source.toggle() }
-        }
-        .onAppear { updateContent() }
-        .onChange(of: library.projects) { _, _ in updateContent() }
-        .alert("Documento no disponible", isPresented: $unavailableLink) {
-            Button("Aceptar", role: .cancel) {}
-        } message: { Text("El enlace no corresponde a un documento descargado dentro de la carpeta autorizada.") }
-        .navigationDestination(isPresented: Binding(get: { linkedDocument != nil }, set: { if !$0 { linkedDocument = nil } })) {
-            if let target = linkedDocument {
-                MobileDocumentView(library: library, projectID: projectID, file: target.file, initialAnchor: target.anchor)
-            }
-        }
-        .navigationDestination(item: $signingCopy) { copy in
-            MobileGuidedSigningView(library: library, exchange: copy.exchange, localDocumentLocation: signingLocation)
-        }
-        .onChange(of: previewController.isReady) { _, ready in
-            if ready, !didScrollToInitialAnchor, let initialAnchor {
-                previewController.scroll(to: initialAnchor)
-                didScrollToInitialAnchor = true
-            }
-        }
-    }
-
-    private func updateContent() {
-        text = liveFile.flatMap { String(data: $0.content, encoding: .utf8) } ?? ""
-        assets = liveProject.map { MarkdownMemoryAssets(files: Dictionary(uniqueKeysWithValues: $0.files.map { ($0.path, $0.content) })) }
-    }
-
-    private func followLink(_ url: URL) {
-        guard let project = liveProject,
-              let target = CachedDocumentLink(url: url, virtualRoot: virtualRoot, scope: project.scope, files: project.files) else {
-            unavailableLink = true; return
-        }
-        if target.file.path == file.path {
-            if let anchor = target.anchor { previewController.scroll(to: anchor) }
-        } else { linkedDocument = target }
-    }
-
-    private var signingLocation: String { "mobile://\(projectID.uuidString)/\(file.path)" }
-
-    private func prepareSigningCopy() async {
-        guard let liveProject,
-              let document = try? LeonardoFormatParser.parse(text),
-              document.metadata.formatVersion >= LeonardoFormat.signingVersion,
-              document.metadata.document.signing != nil else {
-            unavailableLink = true
-            return
-        }
-        do {
-            let resources = try Self.signingResources(
-                source: text, documentPath: file.path, scope: liveProject.scope, files: liveProject.files
-            )
-            let stored = try await library.signingStore.sessions().last {
-                $0.documentLocation == signingLocation && $0.documentID == document.metadata.document.id
-                    && $0.initialRevision == document.metadata.document.revision
-            }
-            let session = try stored ?? LeonardoGuidedSigningSession(
-                document: document, at: Date(), documentLocation: signingLocation
-            )
-            let credentialIDs = Set(session.positions.values.compactMap { $0.assignment?.credentialID })
-            let trust = try await library.signingCredentialStore.trustStore()
-            let exchange = try LeonardoSigningExchange(
-                document: document,
-                resources: resources,
-                session: session,
-                trustedCredentials: trust.allCredentials.filter { credentialIDs.contains($0.id) },
-                at: Date()
-            )
-            signingCopy = MobileSigningExchangeDocument(exchange: exchange)
-        } catch LeonardoSigningError.remoteImagesNotSealable {
-            library.presentError(LeonardoSigningError.remoteImagesNotSealable, operation: .export,
-                                 message: spanishErrors
-                                 ? "Sustituye las imágenes en línea por archivos locales en el documento original."
-                                 : "Replace online images with local files in the original document.")
-        } catch {
-            library.presentError(error, operation: .export,
-                                 message: spanishErrors
-                                 ? "No se pudo preparar la copia de firma."
-                                 : "The signing copy could not be prepared.")
-        }
-    }
-
-    static func signingResources(
-        source: String, documentPath: String, scope: CorpusScope, files: [CorpusFile]
-    ) throws -> [LeonardoSigningResource] {
-        let base = URL(fileURLWithPath: "/" + documentPath).deletingLastPathComponent()
-        let document = try LeonardoFormatParser.parse(source)
-        return try LeonardoLocalImagePolicy.signingReferences(in: document).map { reference in
-            guard let parsed = URLComponents(string: reference),
-                  parsed.scheme == nil, parsed.host == nil,
-                  !parsed.path.hasPrefix("/"), !parsed.path.contains("\\"),
-                  !parsed.path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }),
-                  let resolved = parsed.url(relativeTo: base)?.standardizedFileURL,
-                  resolved.path.hasPrefix("/") else {
-                throw LeonardoSigningError.invalidResourceReference(reference)
-            }
-            let path = String(resolved.path.dropFirst())
-            guard (try? scope.validate(path)) != nil,
-                  let asset = files.first(where: { $0.path == path }) else {
-                throw LeonardoSigningError.invalidResourceReference(reference)
-            }
-            return LeonardoSigningResource(reference: reference, bytes: asset.content)
         }
     }
 }
