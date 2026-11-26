@@ -54,18 +54,24 @@ paths:
 
 ## Captures
 
-All PNG captures are native Simulator screenshots at 1206 × 2622 pixels.
+All PNG captures are native Simulator screenshots at 1206 × 2622 pixels. Each
+capture has a JSON sidecar with the observed route, state, viewport, image
+digest and source identity. The original XcodeBuildMCP screenshot event time
+was not persisted; the sidecars therefore mark `capture_time_status` as
+`not_recorded` and retain only the observed filesystem `artifact_mtime`. That
+timestamp is not presented as the capture time.
 
-| Capture | Assertion | SHA-256 |
+| Capture | Assertion | SHA-256 | Provenance |
 | --- | --- | --- |
-| [Extension settings](extension-settings-all-enabled.png) | All five extension switches on after independent changes. | `5060eea71e7ccc138044164d1d26b83ddfc4a1ee2b936c15a221d8cdecd1b243` |
-| [English Demo](demo-en-all-enabled-top.png) | Bundled offline English Demo opens with all five extensions enabled. | `71b80e8636f621beb1f1edeee5dc7582c899b8641117939343f81449eff0bd6c` |
-| [English Demo scrolled](demo-en-scrolled.png) | Read-only/offline instructions, Markdown formatting and callout remain rendered while scrolling. | `26f4df5702ebe79a567c4eb7be6fe6f152c0d8e0e24daadee9d3ab312d46f3a8` |
-| [Spanish Help](help-es-top.png) | Native Help route opens and renders the bundled bilingual guidance. | `450512768fac872ec8edf342e1c1f4b161ecf2c0ad99a4a27854387e398ca0a7` |
-| [Spanish Help extensions](help-es-extensions.png) | Current frequency and document-extension guidance is visible in the native Help view. | `f183e6a75e1d3a2493fe4d39633f0ee6c74f04b8a7ed60c942cec7a983b38f3a` |
+| [Extension settings](extension-settings-all-enabled.png) | All five extension switches on after independent changes. | `5060eea71e7ccc138044164d1d26b83ddfc4a1ee2b936c15a221d8cdecd1b243` | [sidecar](extension-settings-all-enabled.metadata.json) |
+| [English Demo](demo-en-all-enabled-top.png) | Bundled offline English Demo opens with all five extensions enabled. | `71b80e8636f621beb1f1edeee5dc7582c899b8641117939343f81449eff0bd6c` | [sidecar](demo-en-all-enabled-top.metadata.json) |
+| [English Demo scrolled](demo-en-scrolled.png) | Read-only/offline instructions, Markdown formatting and callout remain rendered while scrolling. | `26f4df5702ebe79a567c4eb7be6fe6f152c0d8e0e24daadee9d3ab312d46f3a8` | [sidecar](demo-en-scrolled.metadata.json) |
+| [Spanish Help](help-es-top.png) | Native Help route opens and renders the bundled bilingual guidance. | `450512768fac872ec8edf342e1c1f4b161ecf2c0ad99a4a27854387e398ca0a7` | [sidecar](help-es-top.metadata.json) |
+| [Spanish Help extensions](help-es-extensions.png) | Current frequency and document-extension guidance is visible in the native Help view. | `f183e6a75e1d3a2493fe4d39633f0ee6c74f04b8a7ed60c942cec7a983b38f3a` | [sidecar](help-es-extensions.metadata.json) |
 
 `library.png` (`4a21c0159231519550440624893d29cb97492a36f16488eba67ef376bc2bccc4`)
-is retained as the Library route context.
+is retained as the Library route context; its [sidecar](library.metadata.json)
+records the same timestamp limitation.
 
 ## Automated checks
 

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "capture_time_status": "not_recorded",
+    "capture_time_note": "The original XcodeBuildMCP screenshot event time was not persisted. artifact_mtime is an observed filesystem timestamp, not an asserted capture time.",
+    "artifact_mtime": "2026-11-26T09:51:14+01:00",
+    "route": "/native/ios/library/demo/local/Demo-en.mdlr",
+    "screen": "Little Leonardo bundled English Demo preview",
+    "browser_name": "Little Leonardo native SwiftUI app on iPhone 17 Simulator",
+    "browser_version": "iOS 27.0, iPhone 17 Simulator",
+    "state": "Bundled offline Demo-en.mdlr reopened after all five device-local built-in extensions were enabled; read-only preview.",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "71b80e8636f621beb1f1edeee5dc7582c899b8641117939343f81449eff0bd6c"
+  },
+  "source": {
+    "implementation_revision": "fd7b8b116f36e2bec360ffccecf2d0992387a3cd",
+    "reviewed_head": "c626cbc6f67ebe5d67422179c515c95b62a63ccd",
+    "based_on_main": "32efc6f211380c91944f17873993af27e406b67a"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "capture_time_status": "not_recorded",
+    "capture_time_note": "The original XcodeBuildMCP screenshot event time was not persisted. artifact_mtime is an observed filesystem timestamp, not an asserted capture time.",
+    "artifact_mtime": "2026-11-26T09:52:25+01:00",
+    "route": "/native/ios/help/es",
+    "screen": "Little Leonardo integrated Help",
+    "browser_name": "Little Leonardo native SwiftUI app on iPhone 17 Simulator",
+    "browser_version": "iOS 27.0, iPhone 17 Simulator",
+    "state": "Spanish Help route open; bundled bilingual headings and guidance rendered, including frequency and document-extension content.",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "450512768fac872ec8edf342e1c1f4b161ecf2c0ad99a4a27854387e398ca0a7"
+  },
+  "source": {
+    "implementation_revision": "fd7b8b116f36e2bec360ffccecf2d0992387a3cd",
+    "reviewed_head": "c626cbc6f67ebe5d67422179c515c95b62a63ccd",
+    "based_on_main": "32efc6f211380c91944f17873993af27e406b67a"
+  }
+}

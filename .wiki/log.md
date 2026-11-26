@@ -376,3 +376,24 @@ Help records remain historical; this reconciliation made no device or GUI claim.
 The recorder correction for nested release-ledger deltas is retained under
 [#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467), and the separate
 hosted preview CI issue remains [#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468).
+
+# 2026-11-26: PR #465 evidence and context repair
+
+The evidence review kept the reconciled implementation at
+`fd7b8b116f36e2bec360ffccecf2d0992387a3cd` (based on `origin/main`
+`32efc6f211380c91944f17873993af27e406b67a`) and treated PR head
+`c626cbc6f67ebe5d67422179c515c95b62a63ccd` as the documentation/evidence
+head. The current iPhone 17 Simulator screenshots and the packaged macOS
+English/Spanish Help smoke are linked from
+`doc/validation/pr-465/current-ios-qa/README.md` and
+`doc/validation/pr-465/current-macos-qa/README.md`.
+
+Per-capture JSON sidecars record only observed route, state, viewport, image
+digest and source facts. The original screenshot event timestamp was not
+persisted, so each current iOS sidecar explicitly marks the capture time as
+unrecorded and labels the filesystem mtime as artifact metadata, not capture
+time. The #464 acceptance matrix in `doc/validation/pr-465/README.md` maps
+each criterion to implementation sources, focused tests, current captures and
+historical visuals; it keeps remote/on-demand, physical-device and TestFlight
+acceptance separate from the bundled local Demo evidence. No new GUI run was
+performed because the owner deferred repeated probes to beta/stable.
