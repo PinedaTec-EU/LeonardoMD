@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.5.2476
+
+- #261 Added: mixed multi-item project-tree drag and drop ([#471](https://github.com/PinedaTec-EU/LeonardoMD/pull/471))
+
+<p>Select and drag multiple project files and folders together; hold Option to copy them.</p>
+
+Source: `eb39876f0bcd59f82604905822280f207158d613`. Delta: `{"build": 77, "feature": 1}`.
+
 ## 0.4.2399
 
 - #474 Added: serve Codex previews through Leonardo Sync ([#610](https://github.com/PinedaTec-EU/LeonardoMD/pull/610))
