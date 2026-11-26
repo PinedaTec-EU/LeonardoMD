@@ -1419,9 +1419,20 @@
       "pr": 415,
       "summary": "Leonardo document types and Markdown now declare a Leonardo icon for Finder; the displayed icon can depend on macOS and the chosen default app.",
       "to_version": "0.3.2336"
+    },
+    {
+      "delta": {
+        "build": 21,
+        "feature": 1
+      },
+      "from_version": "0.3.2336",
+      "merge_sha": "38c0a7841cbded7a0620ffe67fe364c23339a6ed",
+      "pr": 465,
+      "summary": "Little Leonardo now renders all five built-in Markdown extensions from device-local settings, offers detected disabled features for consent-based activation, and localizes sync-frequency controls in English and Spanish.",
+      "to_version": "0.4.2357"
     }
   ],
-  "current_version": "0.3.2336",
+  "current_version": "0.4.2357",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

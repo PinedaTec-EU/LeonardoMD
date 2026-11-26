@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.4.2357
+
+- #464 Added: enable built-in Markdown extensions in Little Leonardo ([#465](https://github.com/PinedaTec-EU/LeonardoMD/pull/465))
+
+<p>Little Leonardo now renders all five built-in Markdown extensions from device-local settings, offers detected disabled features for consent-based activation, and localizes sync-frequency controls in English and Spanish.</p>
+
+Source: `38c0a7841cbded7a0620ffe67fe364c23339a6ed`. Delta: `{"build": 21, "feature": 1}`.
+
 ## 0.3.2336
 
 - #414 Added: brand macOS document icons ([#415](https://github.com/PinedaTec-EU/LeonardoMD/pull/415))
