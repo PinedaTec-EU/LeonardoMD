@@ -362,6 +362,36 @@ final class LeonardoFormatTests: XCTestCase {
         XCTAssertEqual(signingCanonical, try LeonardoFormatMetadataSchema.bundledSchemaData(for: LeonardoFormat.signingVersion), "The Core resource must match the canonical MDLF v2 schema byte-for-byte.")
     }
 
+    func testSigningV2RubricPlacementRoundTripsWithSignerAssignment() throws {
+        let placement = LeonardoRubricPlacement(page: 2, x: 140.5, y: -22, rotation: 270)
+        let declaration = LeonardoSigningDeclaration(positions: [
+            LeonardoSignerPosition(id: "owner", label: "Owner")
+        ])
+        let document = LeonardoDocument(
+            body: "Approval: {{field:signature}}",
+            metadata: LeonardoMetadata(
+                formatVersion: LeonardoFormat.signingVersion,
+                document: LeonardoDocumentDescriptor(
+                    id: "placement-v2", kind: .form, revision: 1, signing: declaration
+                ),
+                fields: [
+                    "signature": LeonardoFieldDefinition(
+                        type: .rubric,
+                        rubricPlacement: placement,
+                        signerPosition: "owner"
+                    )
+                ]
+            )
+        )
+
+        let source = try LeonardoFormatParser.serialize(document)
+        let restored = try LeonardoFormatParser.parse(source)
+        XCTAssertEqual(restored.metadata.formatVersion, LeonardoFormat.signingVersion)
+        XCTAssertEqual(restored.metadata.fields["signature"]?.rubricPlacement, placement)
+        XCTAssertEqual(restored.metadata.fields["signature"]?.signerPosition, "owner")
+        XCTAssertTrue(LeonardoFormatValidator.validate(restored).filter { $0.severity == .error }.isEmpty)
+    }
+
     func testSharedContractFixturesMatchNativeAcceptanceRules() throws {
         let repository = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

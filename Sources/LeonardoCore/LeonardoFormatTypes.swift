@@ -173,6 +173,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
     /// The signer position responsible for this rubric field. It is only
     /// legal for rubric fields and is unavailable in legacy format v1.
     public var signerPosition: String?
+    public var rubricPlacement: LeonardoRubricPlacement?
 
     public var resolvedAppearance: LeonardoFieldAppearance { appearance ?? .checkbox }
     public var label: String?
@@ -194,6 +195,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
         type: LeonardoFieldType = .text,
         appearance: LeonardoFieldAppearance? = nil,
         rubricSize: LeonardoRubricSize? = nil,
+        rubricPlacement: LeonardoRubricPlacement? = nil,
         label: String? = nil,
         required: Bool = false,
         readOnly: Bool = false,
@@ -213,6 +215,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
         self.appearance = appearance
         self.rubricSize = rubricSize
         self.signerPosition = signerPosition
+        self.rubricPlacement = rubricPlacement
         self.label = label
         self.required = required
         self.readOnly = readOnly
@@ -229,7 +232,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case type, appearance, rubricSize, signerPosition, label, required, readOnly, minLength, maxLength, pattern
+        case type, appearance, rubricSize, signerPosition, rubricPlacement, label, required, readOnly, minLength, maxLength, pattern
         case minimum, maximum, options, placeholder, helpText, validationMessage, defaultValue
     }
 
@@ -239,6 +242,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
         appearance = try container.decodeIfPresent(LeonardoFieldAppearance.self, forKey: .appearance)
         rubricSize = try container.decodeIfPresent(LeonardoRubricSize.self, forKey: .rubricSize)
         signerPosition = try container.decodeIfPresent(String.self, forKey: .signerPosition)
+        rubricPlacement = try container.decodeIfPresent(LeonardoRubricPlacement.self, forKey: .rubricPlacement)
         label = try container.decodeIfPresent(String.self, forKey: .label)
         required = try container.decodeIfPresent(Bool.self, forKey: .required) ?? false
         readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? false

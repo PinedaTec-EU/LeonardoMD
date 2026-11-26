@@ -1,12 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v145-en.mdlz` and `Guide-v145-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v154-en.mdlz` and `Guide-v154-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v145/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v154/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v145 explains the separate remote project menu and its offline actions in chapter 7.
+Guide v154 carries forward v145's separate remote project menu and its offline actions in chapter 7,
+and explains placing, resizing and rotating rubric fields in an unlocked form,
+including repeated markers and saved page geometry.
 
 Guide v144 documents the shared Home selector, collapsible sections and direct remote access in chapter 7.
 

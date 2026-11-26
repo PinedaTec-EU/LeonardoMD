@@ -562,6 +562,15 @@ firmas criptográficas.
 
 *Sección real de rúbricas enlazadas con el asistente desconectado; no hay ningún dispositivo emparejado en esta ilustración.*
 
+Para colocar un campo de rúbrica, desbloquea el formulario y selecciona el
+campo en **Lectura** o **Dividir**. Arrastra el campo para colocarlo en la
+página, usa el tirador de la esquina para cambiar el tamaño o pulsa la flecha
+circular para girarlo 90° en sentido horario. Mover o girar fija el campo a la
+página. Revisa posibles solapamientos si después cambias el texto. Si el
+marcador se repite, puedes colocar la primera aparición y las demás siguen en
+el texto. Guarda el formulario para conservar la colocación. El lienzo de
+dibujo sigue horizontal y el campo muestra los trazos con el giro guardado.
+
 En un campo de rúbrica, elige **Rellenar** y pulsa su área. El diálogo ampliado
 permite elegir una guardada o dibujar una nueva; **Guardar en mis rúbricas**
 controla si la nueva también entra en la biblioteca. **Quitar rúbrica** vacía la respuesta de ese campo. La respuesta queda dentro
