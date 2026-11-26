@@ -551,7 +551,16 @@ are visual rubrics, not digital certificates.
 
 *Production linked-rubric section showing an offline helper; no device is paired in this illustration.*
 
-For a rubric form field, use **Fill** and click its area. The expanded dialog
+To lay out a rubric field, unlock the form and select the field in **Preview**
+or **Split**. Drag the field to place it on the page. Drag its corner
+handle to change its size, or click the circular arrow to rotate it by 90°
+clockwise. Moving or rotating pins the field to the page, so check for overlaps
+after editing nearby text. If the marker is repeated, the first occurrence can
+be positioned and the others stay in the text. Save the form to keep the layout.
+The drawing canvas stays horizontal and the field displays the ink at its saved
+angle.
+
+For a rubric form field, use **Fill form** and click its area. The expanded dialog
 lets you choose saved ink or draw new ink; **Save in my rubrics** controls whether
 new form ink also enters the library. **Remove rubric** clears the current field answer. The answer stays inside the author's
 field area and is saved with the response. A source padlock does not prevent

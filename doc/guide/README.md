@@ -1,10 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v158-en.mdlz` and `Guide-v158-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v162-en.mdlz` and `Guide-v162-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v158/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v162/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v162 documents moving, resizing and quarter-turn rotation of rubric
+fields on unlocked forms. Chapter 10 explains persisted page placement,
+the first-marker rule and the horizontal drawing canvas. The selected
+page-rubric and library deletion flows from v158 remain in place.
+Guide v162 EN SHA-256: `b4209d9417cbe0455ccea871652991a1cdadb5a687d6e9d3c193aaac436b9ac5` and ES SHA-256: `fab3d4d62a1f5106464ec905dd94a23e6172871592a63638c0a7a52d3b7b1418`.
 
 Guide v158 adds automatic selection and inspection of inserted page rubrics
 and confirmation for saved-rubric deletion in chapter 10. It retains

@@ -309,6 +309,10 @@ public enum LeonardoFormatValidator {
             if let size = definition.rubricSize, definition.type != .rubric || ![size.width, size.height].allSatisfy({ $0.isFinite && $0 > 0 && $0 <= 10000 }) {
                 diagnostics.append(.init(severity: .error, code: "field.rubricSize", message: "Rubric size requires a rubric field and positive bounded dimensions.", fieldID: fieldID))
             }
+            if let placement = definition.rubricPlacement, definition.type != .rubric || !placement.isValid {
+                diagnostics.append(.init(severity: .error, code: "field.rubricPlacement",
+                    message: "Rubric placement requires a rubric field, valid page coordinates and a quarter-turn rotation.", fieldID: fieldID))
+            }
             validateOptions(definition, fieldID: fieldID, into: &diagnostics)
             let value = metadata.values[fieldID] ?? definition.defaultValue
             if value == nil || value?.isNullOrEmpty == true {
