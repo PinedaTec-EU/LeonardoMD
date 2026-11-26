@@ -1,10 +1,12 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v146-en.mdlz` and `Guide-v146-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v151-en.mdlz` and `Guide-v151-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v146/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v151/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v151 adds the selected-after-insertion page-rubric flow and confirmed saved-rubric deletion in chapter 10. Package SHA-256: EN `a8935197322383b70316feaa8e8a4b127e1c9f7c7251860de6838192e3df76e4`, ES `27347e12f710e6b56d7fbe0fa036901b5c995ab5c33229aa24073a3725e0744f`.
 
 Guide v146 documents the shared Home selector, the separate remote project menu,
 its offline actions and direct remote access in chapter 7, and explains Markdown

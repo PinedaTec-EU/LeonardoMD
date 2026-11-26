@@ -368,3 +368,9 @@ action. `AppSessionTests` (49 cases), `RubricSessionTests` (10 cases), and
 `LocalizationTests` (8 cases) pass; the PR #520 compilation ledger is 110.
 Packaged Help/GUI smoke acceptance is
 not claimed in this source-only handoff.
+
+- 2026-11-26: [#496](https://github.com/PinedaTec-EU/LeonardoMD/issues/496) remains
+  relevant on current main: inserted page rubrics still need immediate selection
+  and confirmed saved-library deletion. Local reconciliation now replays the
+  prepared change onto current main `727a7446`; current-head packaged Help and
+  native UI acceptance remain pending. Guide v151 is reserved for this candidate.

@@ -18,6 +18,7 @@ struct RubricEditor: View {
     @State private var style = LeonardoInkStyle.solid
     @State private var saveToLibrary = true
     @State private var library: RubricLibrary
+    @State private var pendingDeletion: SavedRubric?
     @State private var error: String?
     @State private var remoteCapture: RubricCaptureRecord?
     @State private var remoteLabel = ""
@@ -49,9 +50,13 @@ struct RubricEditor: View {
                                 } label: {
                                     VStack { Image(nsImage: RubricDrawing.thumbnail(entry.rubric)); Text(entry.label).lineLimit(1) }
                                 }.help(L10n.text("Insert rubric"))
-                                Button(L10n.text("Delete"), role: .destructive) {
-                                    do { try library.remove(id: entry.id) } catch { self.error = error.localizedDescription }
-                                }.font(.caption)
+                                Button {
+                                    pendingDeletion = entry
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .accessibilityLabel(L10n.format("Delete saved rubric %@", entry.label))
+                                .help(L10n.text("Delete saved rubric"))
                             }
                         }
                     }
@@ -118,6 +123,22 @@ struct RubricEditor: View {
                 if existing.request?.state == .pending || existing.request?.state == .accepted {
                     pollRemote(syncController, requestID: existing.id)
                 }
+            }
+            .alert(L10n.text("Delete saved rubric?"), isPresented: Binding(
+                get: { pendingDeletion != nil },
+                set: { if !$0 { pendingDeletion = nil } }
+            ), presenting: pendingDeletion) { entry in
+                Button(L10n.text("Cancel"), role: .cancel) {}
+                Button(L10n.text("Delete"), role: .destructive) {
+                    do {
+                        try library.remove(id: entry.id)
+                        error = nil
+                    } catch {
+                        self.error = error.localizedDescription
+                    }
+                }
+            } message: { entry in
+                Text(L10n.format("“%@” will be permanently deleted from your library. Copies already inserted in documents will remain.", entry.label))
             }
             .onDisappear { remoteTask?.cancel() }
     }
