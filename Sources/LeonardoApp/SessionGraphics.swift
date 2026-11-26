@@ -30,6 +30,17 @@ extension AppSession {
         return accepted
     }
 
+    func applyRubricLayout(expected: String, edit: LeonardoRubricLayoutEdit) -> Bool {
+        let closing = canApplyCloseGraphicSnapshot
+        guard (canEditGraphics || closing), content == expected, edit.isValid,
+              var document = leonardoDocument, var field = document.metadata.fields[edit.fieldID],
+              field.type == .rubric else { return false }
+        field.rubricPlacement = edit.placement
+        field.rubricSize = edit.size
+        document.metadata.fields[edit.fieldID] = field
+        return commitGraphics(document, expected: expected, allowCloseSnapshot: closing)
+    }
+
     func requestRubric(fieldID: String? = nil) {
         if let fieldID {
             guard canFillLeonardoForm, let field = leonardoFieldDefinition(fieldID), field.type == .rubric,

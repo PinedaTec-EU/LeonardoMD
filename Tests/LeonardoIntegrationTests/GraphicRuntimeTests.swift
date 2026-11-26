@@ -61,6 +61,82 @@ final class GraphicRuntimeTests: XCTestCase {
         _ = try await web.evaluateJavaScript("document.querySelector('button.leonardo-rubric-field').click()")
         await fulfillment(of: [expected], timeout: 2)
     }
+    func testRubricFieldGesturesPreserveAnswerAndFillControl() async throws {
+        let ink = LeonardoRubric(strokes: [.init(color: "#112233", width: 3, style: .solid,
+            points: [.init(x: 20, y: 40), .init(x: 300, y: 100)])])
+        var document = LeonardoDocument(body: "# Approval\n\n{{field:approval}}\n\n{{field:approval}}",
+            metadata: .init(fields: ["approval": .init(type: .rubric)], values: ["approval": try XCTUnwrap(ink.jsonValue)]))
+        var source = try LeonardoFormatParser.serialize(document)
+        var config = MarkdownPreviewConfiguration()
+        config.allowsLeonardoFormat = true
+        config.allowsEditing = true
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 1000, height: 800))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        host.onRubricLayout = { expected, edit in
+            XCTAssertEqual(expected, source)
+            XCTAssertEqual(edit.fieldID, "approval")
+            XCTAssertTrue(edit.isValid)
+            document.metadata.fields["approval"]?.rubricPlacement = edit.placement
+            document.metadata.fields["approval"]?.rubricSize = edit.size
+            do { source = try LeonardoFormatParser.serialize(document) }
+            catch { XCTFail("Could not serialize layout edit: \(error)"); return false }
+            host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+            return true
+        }
+        host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        let web = try XCTUnwrap(host.subviews.first as? WKWebView)
+        try await wait("!!document.querySelector('.leonardo-page .leonardo-rubric-layout-editable')", web)
+        _ = try await web.evaluateJavaScript("""
+        window.testRubricGesture = (targetSelector, x, y) => {
+          const field = document.querySelector('.leonardo-rubric-layout-editable');
+          const target = targetSelector ? field.querySelector(targetSelector) : field;
+          field.setPointerCapture = () => {};
+          target.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, button:0, pointerId:1, clientX:100, clientY:100}));
+          field.dispatchEvent(new PointerEvent('pointermove', {pointerId:1, clientX:100+x, clientY:100+y}));
+          field.dispatchEvent(new PointerEvent('pointerup', {pointerId:1, clientX:100+x, clientY:100+y}));
+        };
+        window.testRubricGesture(null, 120, 80);
+        """)
+        try await wait("!!document.querySelector('.leonardo-page > .leonardo-rubric-positioned')", web)
+        let moved = try XCTUnwrap(document.metadata.fields["approval"]?.rubricPlacement)
+        XCTAssertGreaterThan(moved.x, 80)
+        XCTAssertGreaterThan(moved.y, 50)
+        _ = try await web.evaluateJavaScript("document.querySelector('.leonardo-rubric-positioned .leonardo-rubric-rotate').click()")
+        try await wait("document.querySelector('.leonardo-rubric-positioned').style.rotate === '90deg'", web)
+        _ = try await web.evaluateJavaScript("window.testRubricGesture('.leonardo-object-resize', 0, 80)")
+        try await wait("document.querySelector('.leonardo-rubric-positioned .leonardo-rubric-field').style.width === '240pt'", web)
+        XCTAssertEqual(document.metadata.fields["approval"]?.rubricSize, .init(width: 240, height: 80))
+        let persisted = try LeonardoFormatParser.parse(source)
+        XCTAssertEqual(persisted.metadata.fields["approval"]?.rubricPlacement?.rotation, 90)
+        XCTAssertEqual(LeonardoRubric.decode(persisted.metadata.values["approval"]), ink)
+
+        config.allowsEditing = false
+        config.allowsFormFilling = true
+        host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        try await wait("""
+            document.querySelector('.leonardo-rubric-positioned button.leonardo-rubric-field')?.disabled === false &&
+            document.querySelector('.leonardo-rubric-positioned').style.rotate === '90deg' &&
+            document.querySelectorAll('.leonardo-page-text button.leonardo-rubric-field').length === 1
+            """, web)
+        let request = expectation(description: "Moved field opens the original rubric request")
+        host.onObjectAction = { _, _, _, fieldID in
+            XCTAssertEqual(fieldID, "approval")
+            request.fulfill()
+            return true
+        }
+        _ = try await web.evaluateJavaScript("document.querySelector('.leonardo-rubric-positioned button.leonardo-rubric-field').click()")
+        await fulfillment(of: [request], timeout: 2)
+        _ = try await web.evaluateJavaScript("window.LeonardoForms.setExporting(true); window.LeonardoObjects.refresh()")
+        try await wait("""
+            document.querySelector('.leonardo-page > .leonardo-rubric-positioned').style.rotate === '90deg' &&
+            getComputedStyle(document.querySelector('.leonardo-rubric-positioned .leonardo-field-output')).display === 'inline-block'
+            """, web)
+    }
+
     func testInlineAndCodePageTokensStayLiteralAndMalformedDraftInkCannotBreakRendering() async throws {
         let document = LeonardoDocument(body: "# Safe document\n\nInline <!-- leonardo:page-break --> stays inline.\n\n```markdown\n<!-- leonardo:page-break -->\n```\n\n{{field:signature}}", metadata: .init(fields: ["signature": .init(type: .rubric)], values: ["signature": .object(["strokes": .string("<script>bad</script>")])]))
         let source = try LeonardoFormatParser.serialize(document)

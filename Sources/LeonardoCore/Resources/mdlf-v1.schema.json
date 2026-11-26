@@ -48,6 +48,17 @@
         "type": { "enum": ["text", "multiline", "number", "date", "checkbox", "select", "email", "url", "rubric"] },
         "appearance": { "enum": ["checkbox", "switch"] },
         "rubricSize": {"type": "object", "required": ["width", "height"], "properties": {"width": {"type": "number", "minimum": 0.001, "maximum": 10000}, "height": {"type": "number", "minimum": 0.001, "maximum": 10000}}, "additionalProperties": false},
+        "rubricPlacement": {
+          "type": "object",
+          "required": ["page", "x", "y", "rotation"],
+          "properties": {
+            "page": {"type": "integer", "minimum": 1, "maximum": 999},
+            "x": {"type": "number", "minimum": -10000, "maximum": 10000},
+            "y": {"type": "number", "minimum": -10000, "maximum": 10000},
+            "rotation": {"enum": [0, 90, 180, 270]}
+          },
+          "additionalProperties": false
+        },
         "label": { "type": "string" },
         "required": { "type": "boolean" },
         "readOnly": { "type": "boolean" },

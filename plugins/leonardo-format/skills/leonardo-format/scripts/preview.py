@@ -25,7 +25,8 @@ STYLES = ("preview", "leonardo-forms", "table-resizing", "katex.min", "markdown-
 SCRIPTS = (
     "marked.umd", "dompurify.min", "highlight.min", "mermaid.min", "katex.min",
     "preview-editing", "table-layout", "table-pagination", "table-resizing", "leonardo-calendar",
-    "leonardo-forms", "leonardo-layout", "leonardo-objects", "image-loading",
+    "leonardo-forms", "leonardo-layout", "leonardo-rubric-placement",
+    "leonardo-objects", "image-loading",
     "extension-engines", "vega-charts", "leonardo-citations", "markdown-extras",
     "extension-detection", "renderer-runtime",
 )

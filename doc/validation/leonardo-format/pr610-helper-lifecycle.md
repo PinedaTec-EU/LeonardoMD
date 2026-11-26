@@ -4,7 +4,8 @@ Date: 2026-11-26. Product inputs were reconciled from the #610 source head
 `7b79a630a81bad8fa6085d4a249a1172886201dd` onto the current release-ledger
 main descendant `dab6e5cf4e5ebe6f573f4f73be36e2272bed14db`. The resulting
 product tree is the merge commit `1581ea4446f81297ca03bbfd31e9b9d82a6f8983`.
-Guide v164 is the current bilingual package; its hashes are recorded in
+Guide v164 was the bilingual package in that product tree. The later #501
+reconciliation combines both features in the package recorded in
 [`doc/guide/README.md`](../../guide/README.md).
 
 ## Deterministic and package checks
@@ -47,5 +48,5 @@ removed after process exit, and the real user's Preview leaf remained absent.
 The direct process run therefore establishes the isolated helper/worker start,
 loopback publication and exact teardown boundary. Because the run deliberately
 used a direct process rather than launchd, it does not claim installed-helper,
-browser-link, Stop-hook trust or distribution-app acceptance; those remain
+installed browser-link, Stop-hook trust or distribution-app acceptance; those remain
 Beta validation scope.
