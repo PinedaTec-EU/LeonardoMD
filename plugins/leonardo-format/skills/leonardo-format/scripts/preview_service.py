@@ -28,6 +28,7 @@ from preview import (
     make_page,
     read_local_image,
 )
+from preview_policy import ManagedSyncPathError, is_managed_sync_path
 
 ENDPOINT = Path.home() / "Library/Application Support/LeonardoMD/preview-endpoint.json"
 MAX_PREVIEWS = 4
@@ -35,8 +36,6 @@ MAX_REQUEST = 16 * 1024
 MAX_ENDPOINT_BYTES = 4 * 1024
 MAX_DOCUMENT_PATH = 4 * 1024
 MAX_PREVIEW_BYTES = 32 * 1024 * 1024
-MANAGED_STORAGE = Path("Library/Application Support/LeonardoMD")
-MANAGED_SYNC_DIRECTORIES = ("DesktopPeers", "MobileSync")
 
 
 class PreviewUnavailable(RuntimeError):
@@ -65,20 +64,9 @@ def _regular_source(path: Path) -> Path:
     mode = canonical.lstat().st_mode
     if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
         raise ValueError("document must be a regular file and not a symlink")
-    if _is_managed_source(canonical):
+    if is_managed_sync_path(canonical):
         raise ValueError("managed Sync content is not available to Codex preview")
     return canonical
-
-
-def _managed_roots(home: Path | None = None) -> tuple[Path, ...]:
-    root = (home or Path.home()) / MANAGED_STORAGE
-    return tuple((root / name).resolve(strict=False) for name in MANAGED_SYNC_DIRECTORIES)
-
-
-def _is_managed_source(path: Path, roots: tuple[Path, ...] | None = None) -> bool:
-    canonical = path.resolve(strict=False)
-    protected = _managed_roots() if roots is None else roots
-    return any(root == canonical or root in canonical.parents for root in protected)
 
 
 class Preview:
@@ -99,6 +87,8 @@ class Preview:
             for name in sorted(self.allowed_images):
                 try:
                     data = read_local_image(self.root, name)
+                except ManagedSyncPathError:
+                    raise
                 except (OSError, ValueError):
                     continue
                 total += len(data)

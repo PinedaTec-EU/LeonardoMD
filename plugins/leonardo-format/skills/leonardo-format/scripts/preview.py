@@ -18,6 +18,7 @@ from mdlz import (
     ArchiveError, Limits, MAX_MEMBER_BYTES, _assert_archive_file,
     _validate_zip_members, read_document_bytes,
 )
+from preview_policy import ManagedSyncPathError, is_managed_sync_path
 
 RENDERER = Path(__file__).resolve().parent.parent / "references" / "renderer.zip"
 STYLES = ("preview", "leonardo-forms", "table-resizing", "katex.min", "markdown-extras")
@@ -86,6 +87,13 @@ def read_regular(fd: int) -> bytes:
 
 def read_local_image(root: Path, name: str) -> bytes:
     parts = safe_components(name)
+    candidate = root.joinpath(*parts)
+    try:
+        canonical = candidate.resolve(strict=True)
+    except OSError as error:
+        raise ValueError("asset must be a regular file below the document folder") from error
+    if is_managed_sync_path(canonical):
+        raise ManagedSyncPathError("managed Sync content is not available to Codex preview")
     if os.open in os.supports_dir_fd and hasattr(os, "O_NOFOLLOW"):
         with ExitStack() as stack:
             directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
@@ -98,8 +106,7 @@ def read_local_image(root: Path, name: str) -> bytes:
             stack.callback(os.close, fd)
             return read_regular(fd)
 
-    candidate = root.joinpath(*parts)
-    if candidate.resolve(strict=True) != candidate or not candidate.is_file():
+    if canonical != candidate or not candidate.is_file():
         raise ValueError("asset must be a regular file below the document folder")
     with candidate.open("rb") as handle:
         return read_regular(handle.fileno())

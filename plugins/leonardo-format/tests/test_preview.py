@@ -18,7 +18,8 @@ sys.path.insert(0, str(PLUGIN / "skills/leonardo-format/scripts"))
 
 from mdlz import ArchiveError
 from preview import RENDERER
-from preview_service import Preview, Service, _is_managed_source, _managed_roots
+from preview_policy import is_managed_sync_path, managed_sync_roots
+from preview_service import Preview, Service
 
 EXAMPLES = REPO / "doc/format/examples"
 GUIDE = next((REPO / "Sources/LeonardoApp/Resources").glob("Guide-v*-es.mdlz"))
@@ -166,9 +167,30 @@ class PreviewTests(unittest.TestCase):
             source = managed / "Downloads" / "invoice.mdlf"
             source.parent.mkdir()
             shutil.copyfile(EXAMPLES / "invoice/invoice.mdlf", source)
-            roots = _managed_roots(home)
-            self.assertTrue(_is_managed_source(source, roots))
-            with patch("preview_service._managed_roots", return_value=roots):
+            roots = managed_sync_roots(home)
+            self.assertTrue(is_managed_sync_path(source, roots))
+            with patch("preview_policy.managed_sync_roots", return_value=roots):
+                with self.assertRaisesRegex(ValueError, "managed Sync"):
+                    Preview(source)
+
+    def test_rejects_managed_sync_resource_from_an_ordinary_document_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            managed = home / "Library/Application Support/LeonardoMD/DesktopPeers/Downloads"
+            managed.mkdir(parents=True)
+            resource = managed / "cached.svg"
+            resource.write_text("<svg/>")
+            source = home / "ordinary.mdlf"
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_text(
+                '---\n{"format":"mdlf","formatVersion":1}\n---\n'
+                "# Ordinary local document\n\n"
+                "![Cached](<Library/Application Support/LeonardoMD/DesktopPeers/Downloads/cached.svg>)\n"
+            )
+            roots = managed_sync_roots(home)
+            self.assertFalse(is_managed_sync_path(source, roots))
+            self.assertTrue(is_managed_sync_path(resource, roots))
+            with patch("preview_policy.managed_sync_roots", return_value=roots):
                 with self.assertRaisesRegex(ValueError, "managed Sync"):
                     Preview(source)
 
