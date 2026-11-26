@@ -1,0 +1,43 @@
+{
+  "captured_at": "2026-11-26T13:58:07+01:00",
+  "route": "/<token>/preview#document=28bb2181b6bf1487901d4c0b11d09fb717d303f237c26a1abefb3ac8d96f5136",
+  "screen": "Synthetic MDLF invoice; read-only browser preview; bundled local letterhead loaded",
+  "browser_name": "Chromium",
+  "browser_version": "Chrome/159.0.0.0",
+  "viewport_css": {
+    "width": 1280,
+    "height": 900
+  },
+  "capture_mode": "viewport",
+  "state": "HTTP available; synthetic invoice rendered from MDLF; referenced local SVG loaded; no source writes",
+  "data_provenance": "synthetic",
+  "main_css": {
+    "width": 793.6953125,
+    "height": 1122.515625,
+    "scroll_height": 1123
+  },
+  "scroll_y": 0,
+  "heading_css": null,
+  "rendered_images": [
+    {
+      "alt": "",
+      "natural_width": 794,
+      "natural_height": 1123
+    }
+  ],
+  "image_dimensions_px": {
+    "width": 1280,
+    "height": 900
+  },
+  "image_sha256": "4c1287b20bac8b3674fef52f75e40d68287dc68c06a82c1593f51b2bdc2f25b1",
+  "build_source_sha": "7b8a3a9a3bb2665ce625999c495cb2860b15aa5d",
+  "exact_head_sha": "7b8a3a9a3bb2665ce625999c495cb2860b15aa5d",
+  "input_name": "synthetic.mdlf",
+  "input_sha256": "933d18f08a7f3e921fe0b98dc5be92d5125ddac1f78f495b1a3395bdd948a021",
+  "worker_pid": 27711,
+  "worker_started_at": "2026-11-26T13:53:38+01:00",
+  "worker_teardown": "verified exited",
+  "browser_session": "pr610-7b8a-evidence; verified closed",
+  "time_source": "PNG file modification time immediately after Playwright viewport screenshot",
+  "package_sha256": "933d18f08a7f3e921fe0b98dc5be92d5125ddac1f78f495b1a3395bdd948a021"
+}
