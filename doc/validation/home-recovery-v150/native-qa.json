@@ -46,6 +46,8 @@
     "missingRowScreenshotObserved": true,
     "relocatedRowScreenshotObserved": true,
     "method": "CUA native-window getScreenshot",
+    "durableArtifacts": [],
+    "durableArtifactNote": "Screenshot observations were made through CUA, but no image files or durable links were retained in this repository; no attachment claim is made.",
     "observations": [
       "Missing row was disabled and exposed the warning recovery menu.",
       "Locate moved item… followed by Use this location enabled the relocated row and removed the stale row.",

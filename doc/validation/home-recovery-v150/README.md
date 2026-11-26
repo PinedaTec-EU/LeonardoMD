@@ -46,12 +46,15 @@ resources.
 ## Focused visual retake and process identity reconciliation
 
 An authorized focused retake used the same packaged bundle and a synthetic
-fixture only. Through the native Home window, CUA screenshots captured both
-the disabled `Old Project (moved marker)` row with its warning menu (`Retry
-saved location` / `Locate moved item…`) and the enabled `Old Project (visual
-relocated)` row after choosing the moved folder. The project pane showed the
-synthetic `README.md` and `relocation-note.md`. The retake used no user data,
-projects, Sync grants or real preferences.
+fixture only. Through the native Home window, CUA screenshot observations
+covered both the disabled `Old Project (moved marker)` row with its warning
+menu (`Retry saved location` / `Locate moved item…`) and the enabled `Old
+Project (visual relocated)` row after choosing the moved folder. The project
+pane showed the synthetic `README.md` and `relocation-note.md`. The retake
+used no user data, projects, Sync grants or real preferences. No screenshot
+image files or durable links were retained in this repository, so this record
+claims the observed interaction only and does not present an attachable visual
+artifact.
 
 The final process reconciliation covered every exact-bundle PID present in
 the durable startup logs or observed during the task:
