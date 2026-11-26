@@ -21,6 +21,10 @@ directory to Guide v160 without claiming a new GUI run: EN
 `03aeef497d89f20826bf689c106064f26b7968371c39b9fe340ad6bcd4702241`, ES
 `2e165b15744ae41e7080bdf9808fa9554cb3eedff1d5d571d5a34f742d861729`.
 
+The subsequent rebase onto `031bcea28e1a82c4f65d76efe60f57e1bea83e73`
+retains this v160 native-equivalence record and advances only the bundled
+resource to v163; no native repetition is claimed.
+
 CUA's coordinate drag returned `noWindowsAvailable` and
 `windowNotFoundAtPosition` on two displays. The fixture tree was unchanged.
 This run establishes startup and bilingual Help. The native drop-target

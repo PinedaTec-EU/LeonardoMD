@@ -16,7 +16,8 @@ project-tree mixed selection, move/copy, root, empty-space, file-parent and
 same-folder duplication guidance. The package is generated from both current
 bilingual bodies, with one canonical resource and personal-copy revision for
 each locale.
-Guide v163 EN and ES hashes are recorded below after packaging.
+Guide v163 EN SHA-256: `748b7a34cfe0481e57d8d020a5dcd5b950601995838f2102febf41bdfe901fcb`
+and ES SHA-256: `2391b9171b3852dd8043777696ab21112545733ab55434a96055feb94b30cd06`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
