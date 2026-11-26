@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.4.2368
+
+- #496 Added: adjust inserted rubrics and confirm library deletion ([#497](https://github.com/PinedaTec-EU/LeonardoMD/pull/497))
+
+<p>Inserted rubrics open selected with positioning and sizing controls. The saved-rubric trash button asks for confirmation and preserves copies already placed in documents.</p>
+
+Source: `031bcea28e1a82c4f65d76efe60f57e1bea83e73`. Delta: `{"build": 11}`.
+
 ## 0.4.2357
 
 - #464 Added: enable built-in Markdown extensions in Little Leonardo ([#465](https://github.com/PinedaTec-EU/LeonardoMD/pull/465))
