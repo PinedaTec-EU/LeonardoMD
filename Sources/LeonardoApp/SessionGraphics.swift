@@ -80,7 +80,12 @@ extension AppSession {
         if document.metadata.layout == nil { document.metadata.layout = .init() }
         if document.metadata.layout?.page == nil { document.metadata.layout?.page = .init() }
         document.metadata.layout?.objects.append(graphic)
-        return commitGraphics(document)
+        guard commitGraphics(document) else { return false }
+        if graphic.rubric != nil {
+            if mode == .edit { mode = .split }
+            receiveGraphicSelection(expected: content, id: graphic.id, inspect: true)
+        }
+        return true
     }
 
     func handleGraphicAction(expected: String, object: LeonardoGraphic?, remove: String?, fieldID: String?) -> Bool {

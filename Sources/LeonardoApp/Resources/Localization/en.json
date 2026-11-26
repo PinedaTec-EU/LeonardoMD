@@ -115,6 +115,9 @@
   "Move %@ to Trash?": "Move %@ to Trash?",
   "Delete file": "Delete file",
   "Move project %@ to Trash?": "Move project %@ to Trash?",
+  "Delete saved rubric": "Delete saved rubric",
+  "Delete saved rubric %@": "Delete saved rubric %@",
+  "Delete saved rubric?": "Delete saved rubric?",
   "Deleted": "Deleted",
   "Delete…": "Delete…",
   "Desktop Mac · changes require review": "Desktop Mac · changes require review",
@@ -924,5 +927,6 @@
   "The document moved or changed while pausing. Reload it before continuing.": "The document moved or changed while pausing. Reload it before continuing.",
   "The document moved or changed while resuming. Reload it before continuing.": "The document moved or changed while resuming. Reload it before continuing.",
   "The document moved or changed while signing. Reload it before continuing.": "The document moved or changed while signing. Reload it before continuing.",
-  "The document moved while saving the new revision. Reload it before continuing.": "The document moved while saving the new revision. Reload it before continuing."
+  "The document moved while saving the new revision. Reload it before continuing.": "The document moved while saving the new revision. Reload it before continuing.",
+  "“%@” will be permanently deleted from your library. Copies already inserted in documents will remain.": "“%@” will be permanently deleted from your library. Copies already inserted in documents will remain."
 }

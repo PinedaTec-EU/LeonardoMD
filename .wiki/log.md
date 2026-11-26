@@ -415,3 +415,8 @@ repeated. #415's real Finder evidence remains linked from
 focused `BundledUserGuideTests` validate both v156 packages. Any later #497
 merge may require a fresh documentation-only reload if it changes the guide
 body; this handoff does not wait for or merge #497.
+
+- 2026-11-26: PR #497 was reconciled after #465. Combined Guide v158 retains
+  the Little Leonardo extension chapter and documents selection and confirmed
+  deletion of saved rubrics. The equivalent native rubric QA remains recorded
+  on [PR #497](https://github.com/PinedaTec-EU/LeonardoMD/pull/497).

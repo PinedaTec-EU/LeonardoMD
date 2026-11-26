@@ -1,10 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v156-en.mdlz` and `Guide-v156-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v158-en.mdlz` and `Guide-v158-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v156/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v158/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v158 adds automatic selection and inspection of inserted page rubrics
+and confirmation for saved-rubric deletion in chapter 10. It retains
+the v156 Little Leonardo guidance, v153 Finder guidance and v146
+table pagination guidance.
+Guide v158 EN SHA-256: `9d10e0b71fac6eec128135add85a201d302d1092f090433f8df0d5655537be89` and ES SHA-256: `1e6dfd235aab23d60dba3483d171438505516372164aceebf8db84f58e35b1d7`.
 
 Guide v156 carries forward the current shared Home selector, separate
 remote-project menu, offline actions, direct remote access and Markdown table
@@ -142,8 +148,8 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v156 with a new
-resource name and personal-copy directory; no existing guide copy is overwritten.
+historical review record. Current artifacts and their personal-copy directory
+are listed above.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
