@@ -575,9 +575,14 @@ al final; mueve este token exacto en Editar entre los párrafos que quieras:
 <!-- leonardo:page-break -->
 ```
 
-El texto fluye por bloques. Si una página tiene un contorno discontinuo porque
-un bloque supera su altura, divide ese bloque en la fuente; la exportación PDF
-rechaza ese desbordamiento. Revisa la colocación al cambiar texto o fuentes:
+El texto fluye por bloques. En la vista previa paginada y en PDF, si una tabla
+Markdown supera la altura de una página, continúa en la siguiente entre filas.
+Las columnas conservan su anchura y la cabecera se repite salvo que su diseño
+desactive la repetición. Ajusta el tamaño de la tabla en una vista continua antes
+de paginarla. Una fila demasiado alta o una tabla larga con una cabecera
+interactiva aún pueden desbordarse. Si ves un contorno discontinuo, acorta ese
+contenido o aumenta la altura útil de la página antes de exportar.
+Revisa la colocación al cambiar texto o fuentes:
 Leonardo no mueve las rúbricas con el texto. Los objetos fuera de la página se
 recortan en PDF. Markdown pierde los objetos y las rúbricas. Eliminar o deshacer
 una importación conserva su archivo de imagen local; comprueba referencias

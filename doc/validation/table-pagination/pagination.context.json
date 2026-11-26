@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-25T22:25:28.820872+00:00",
+  "route": "Preview → Paginated-Rows.mdlf",
+  "screen": "LeonardoMD native window on macOS 27.2.1",
+  "browser_name": "Native WKWebView",
+  "browser_version": "not collected",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "element",
+  "data_provenance": "synthetic",
+  "state": "Classic light, synthetic 28-row table, first fragment and repeated header"
+}

@@ -87,7 +87,7 @@
     }});
   }
   function start(event, state, kind, index) {
-    if (!enabled || event.button !== 0 || active) return;
+    if (!enabled || event.button !== 0 || active || state.table.parentElement.classList.contains("table-fragmented")) return;
     // Blur commits any composed inline text before taking the source snapshot.
     document.activeElement?.blur();
     const table = state.table;
@@ -131,6 +131,7 @@
     Array.from(table.rows).forEach((_, i) => handle("row", i, "Resize row"));
     handle("width", -1, "Resize table width"); handle("height", -1, "Resize table height"); handle("both", -1, "Resize table");
     function position() {
+      if (viewport.classList.contains("table-fragmented")) return;
       const rect = table.getBoundingClientRect(), parent = viewport.getBoundingClientRect();
       const left = rect.left - parent.left + viewport.scrollLeft;
       const top = rect.top - parent.top + viewport.scrollTop;

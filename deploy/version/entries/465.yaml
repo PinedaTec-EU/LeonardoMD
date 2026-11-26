@@ -1,7 +1,7 @@
 {
   "delta": {
     "feature": 1,
-    "build": 17
+    "build": 18
   },
   "summary": "Little Leonardo now renders all five built-in Markdown extensions from device-local settings, offers detected disabled features for consent-based activation, and localizes sync-frequency controls in English and Spanish."
 }

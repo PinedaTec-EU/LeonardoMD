@@ -6,14 +6,14 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v147 carries forward Guide v145's separate remote-project menu and offline
-actions, as well as Guide v144's shared Home selector, collapsible sections and
-direct remote access. It adds the reconciled Little Leonardo extension settings,
-consent flow, synchronization frequency and bundled Demo coverage in both locales.
-Guide v145 and Guide v144 remain prior user-owned revisions; the obsolete PR-v94
-resources are not restored.
-Guide v147 EN SHA-256: `2dc961c482eb7443b499824c2ab1782a68d1dfdfa84d12bc0a6b2b30202a4cc3`
-and ES SHA-256: `c9aea2d1e54cb1bbd3b504a5a3e7d0d0d26efab92a30d79b0b0cfda1dcdef875`.
+Guide v147 carries forward Guide v146's shared Home selector, separate remote-project
+menu, offline actions, direct remote access and Markdown table continuation across
+paginated preview and PDF pages. It adds the reconciled Little Leonardo extension
+settings, consent flow, synchronization frequency and bundled Demo coverage in both
+locales. Guide v146 remains the previous packaged baseline and Guide v145 remains
+an earlier user-owned revision; the obsolete PR-v94 resources are not restored.
+Guide v147 EN SHA-256: `69b9811c51634422a15a1a2ea0203ab21d0ed5b7ab5f10745260537a2b401a82`
+and ES SHA-256: `da3d046493102110c33bf334fdb707bcd1833231ca881dcb84dd71d9b88ea45a`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
@@ -123,7 +123,7 @@ Guide v87 previously passed packaged Help acceptance in a fresh macOS QA
 process. The bundle/opened-copy hashes, rendered examples, Math fallback,
 practice-form round trips and teardown are recorded in
 [packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
-That acceptance does not establish acceptance for the current Guide v103 package;
+That acceptance does not establish acceptance for the Guide v103 package;
 its Help/practice acceptance is tracked under PR #473.
 
 The terminal-retry screenshots and result bundle were captured from product
@@ -138,14 +138,14 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v113 with a new
+historical review record. The current app resources use Guide v146 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
 record is in
 [packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
-It does not establish acceptance for the current Guide v103 package. The
+It does not establish acceptance for the Guide v103 package. The
 previous iOS capture bundles are historical; refreshed simulator evidence is
 recorded separately under `doc/validation/`.
 
