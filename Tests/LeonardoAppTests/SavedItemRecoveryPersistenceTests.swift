@@ -8,6 +8,19 @@ import LeonardoDesktopSync
 
 @MainActor
 final class SavedItemRecoveryPersistenceTests: XCTestCase {
+    func testPendingClaimAdoptedByAChildRemainsOwnedAfterRollback() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PendingClaim-\(UUID().uuidString)", isDirectory: true)
+        let owner = InstancePathOwnership()
+        let pending = try XCTUnwrap(owner.reservePending(root))
+
+        try owner.claim(root.appendingPathComponent("child", isDirectory: true))
+        owner.rollbackPending([pending])
+
+        let competitor = InstancePathOwnership()
+        XCTAssertThrowsError(try competitor.claim(root))
+    }
+
     func testRelocationRejectsHomeChangesWhenTheSharedPathCannotBePersisted() async throws {
         let fixture = try RecoveryPersistenceFixture()
         defer { fixture.cleanup() }

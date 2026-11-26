@@ -29,7 +29,13 @@ final class InstancePathOwnership {
 
     func claim(_ url: URL) throws {
         let canonical = ProcessFileLock.canonicalURL(url)
-        if claims.values.contains(where: { Self.contains($0.url, canonical) }) { return }
+        if let existing = claims.first(where: { Self.contains($0.value.url, canonical) }) {
+            // An ordinary operation adopted a path covered by a pending
+            // reservation. Promote that reservation before a later rollback
+            // can release protection the adopting operation relies on.
+            pendingClaims.removeValue(forKey: existing.key)
+            return
+        }
         let registry = try ProcessFileLock(at: directory.appendingPathComponent("registry"), wait: true)
         try withExtendedLifetime(registry) {
             for entry in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
@@ -88,9 +94,11 @@ final class InstancePathOwnership {
     func rollbackPending(_ claims: [PendingClaim]) {
         for claim in claims where pendingClaims[claim.key] == claim.token {
             pendingClaims.removeValue(forKey: claim.key)
-            guard let owned = self.claims.removeValue(forKey: claim.key) else { continue }
-            _ = owned
-            try? FileManager.default.removeItem(at: directory.appendingPathComponent(claim.key))
+            // Drop our registry reference first so the kernel lock is
+            // released. Leave the unlocked claim file for the normal
+            // registry scavenger; unlinking while `Claim.lock` is alive can
+            // let a replacement inode race the still-held lock.
+            guard self.claims.removeValue(forKey: claim.key) != nil else { continue }
         }
     }
 
