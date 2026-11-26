@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -63,6 +64,12 @@ HEALTH_SCRIPT = b"""(() => {
         .catch(() => show(false))
         .finally(() => clearTimeout(timeout));
 })();"""
+
+
+def document_fingerprint(path: Path) -> str:
+    """Return the non-authoritative identity marker used in preview links."""
+    canonical = path.resolve(strict=True)
+    return hashlib.sha256(os.fsencode(str(canonical))).hexdigest()
 
 
 def safe_components(name: str) -> list[str]:
@@ -306,7 +313,8 @@ def main() -> int:
     from preview_service import PreviewUnavailable, register
 
     try:
-        print(register(arguments.document), flush=True)
+        url = register(arguments.document)
+        print(f"{url}#document={document_fingerprint(arguments.document)}", flush=True)
     except HTTPError as error:
         parser.exit(1, f"Leonardo preview: {error.reason}\n")
     except PreviewUnavailable:

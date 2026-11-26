@@ -190,6 +190,20 @@ class PreviewTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "managed Sync"):
                     Preview(source)
 
+    def test_managed_path_uses_filesystem_identity_for_case_variants(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            managed = root / "Managed"
+            managed.mkdir()
+            alternate = root / "managed" / "document.mdlf"
+
+            def samefile(left, right):
+                left, right = Path(left), Path(right)
+                return left.parent == right.parent and left.name.casefold() == right.name.casefold()
+
+            with patch("preview_policy.os.path.samefile", side_effect=samefile):
+                self.assertTrue(is_managed_sync_path(alternate, (managed,)))
+
     def test_rejects_managed_sync_resource_from_an_ordinary_document_root(self):
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp) / "home"
