@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-25T21:57:36.711868+00:00",
+  "route": "Preferences → Synchronization → Remote → Rename computer",
+  "screen": "LeonardoMD native SwiftUI on macOS 27.2.1",
+  "browser_name": "Native SwiftUI (no browser)",
+  "browser_version": "N/A",
+  "viewport_css": {
+    "width": 710,
+    "height": 130
+  },
+  "capture_mode": "element",
+  "data_provenance": "synthetic",
+  "state": "Synthetic connection with saved name unchanged after editing and pressing Escape"
+}
