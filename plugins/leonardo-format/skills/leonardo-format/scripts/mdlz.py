@@ -507,7 +507,10 @@ def read_document_bytes(path: Path, data: bytes) -> tuple[dict[str, object], str
         raise ArchiveError(f"document contains a NUL byte: {path}")
 
     metadata, body = _parse_format_front_matter(text)
-    _validate_metadata_schema(metadata, DEFAULT_SCHEMA_PATH)
+    version = metadata["formatVersion"]
+    if isinstance(version, bool) or not isinstance(version, int):
+        raise ArchiveError("document front matter must contain an integer formatVersion")
+    _validate_metadata_schema(metadata, SCHEMA_PATHS[version])
     _validate_metadata_semantics(metadata)
     return metadata, body
 

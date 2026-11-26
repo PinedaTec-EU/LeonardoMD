@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Serve a read-only Leonardo document to a local browser."""
+"""Register a read-only Leonardo document with the persistent local helper."""
 from __future__ import annotations
 
 import argparse
 import html
 import json
 import os
+import re
 from contextlib import ExitStack
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
-import secrets
 import stat
-import time
 from urllib.parse import unquote, urlsplit
-from zipfile import BadZipFile, ZipFile
+from zipfile import ZipFile
 
 from mdlz import (
     ArchiveError, Limits, MAX_MEMBER_BYTES, _assert_archive_file,
@@ -42,14 +41,31 @@ RESOURCE_TYPES = {
 LIFETIME_SECONDS = 60 * 60
 CSP = (
     "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-    "img-src 'self' data:; font-src 'self'; form-action 'none'; "
+    "connect-src 'self'; img-src 'self' data:; font-src 'self'; form-action 'none'; "
     "base-uri 'self'; frame-ancestors 'none'; sandbox allow-scripts allow-same-origin"
 )
+HEALTH_SCRIPT = b"""(() => {
+    const indicator = document.getElementById("leonardo-http-status");
+    const spanish = navigator.language.toLowerCase().startsWith("es");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    indicator.textContent = spanish ? "Comprobando HTTP..." : "Checking HTTP...";
+    function show(healthy) {
+        indicator.dataset.state = healthy ? "healthy" : "unavailable";
+        indicator.textContent = healthy
+            ? (spanish ? "HTTP operativo" : "HTTP available")
+            : (spanish ? "HTTP no disponible" : "HTTP unavailable");
+    }
+    fetch("/health", {cache: "no-store", signal: controller.signal, redirect: "error"})
+        .then(response => show(response.status === 200))
+        .catch(() => show(false))
+        .finally(() => clearTimeout(timeout));
+})();"""
 
 
 def safe_components(name: str) -> list[str]:
     parts = name.split("/")
-    if len(parts) > 64 or any(
+    if len(name) > 2048 or len(parts) > 64 or any(
         part in {"", ".", ".."} or any(ord(char) < 32 or char in "\\:" for char in part)
         for part in parts
     ):
@@ -105,20 +121,84 @@ def load_document(source: Path) -> tuple[dict, str, dict[str, bytes] | None]:
 
     if source.suffix.lower() not in {".mdlf", ".mdlr"} or not source.is_file():
         raise ArchiveError("select a local .mdlf, .mdlr or .mdlz file")
-    with source.open("rb") as handle:
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise ArchiveError("the host cannot safely open a local preview")
+    fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as handle:
         metadata, body = read_document_bytes(source, read_regular(handle.fileno()))
     return metadata, body, None
 
 
+def _asset_references(metadata: object, body: str) -> set[str]:
+    """Return only relative image references declared by the document."""
+    references: set[str] = set()
+
+    def add(value: object) -> None:
+        if not isinstance(value, str) or not value or "\x00" in value:
+            return
+        value = unquote(value).strip()
+        if value.startswith(("http://", "https://", "data:", "#")):
+            return
+        if value.startswith("./"):
+            value = value[2:]
+        if "/" not in value and Path(value).suffix.lower() not in IMAGE_TYPES:
+            return
+        try:
+            safe_components(value)
+        except ValueError:
+            return
+        references.add(value)
+
+    def walk(value: object, key: str | None = None) -> None:
+        if isinstance(value, dict):
+            for child_key, child in value.items():
+                if child_key in {"source", "image"}:
+                    add(child)
+                walk(child, child_key)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child, key)
+
+    walk(metadata)
+    # Markdown inline image destinations. The renderer's parser accepts the
+    # same ordinary relative paths; angle destinations preserve spaces.
+    for match in re.finditer(
+        r"!\[[^\]]*\]\(\s*(?:<([^>\r\n]+)>|([^\s)\r\n]+))", body
+    ):
+        add(match.group(1) or match.group(2))
+    for match in re.finditer(
+        r"<img\b[^>]*\bsrc\s*=\s*(?:\"([^\"]+)\"|'([^']+)'|([^\s>]+))",
+        body,
+        flags=re.IGNORECASE,
+    ):
+        add(match.group(1) or match.group(2) or match.group(3))
+    # Reference-style image definitions are intentionally restricted to the
+    # definition destination; an undeclared reference cannot reveal a file.
+    definitions = re.finditer(
+        r"(?m)^\s*\[[^\]]+\]:\s*(?:<([^>\r\n]+)>|([^\s]+))", body
+    )
+    for match in definitions:
+        add(match.group(1) or match.group(2))
+    return references
+
+
 def make_page(source: Path, prefix: str, metadata: dict, body: str) -> bytes:
+    fields = metadata.get("fields")
+    guided_fields = sorted(
+        field_id for field_id, field in (fields.items() if isinstance(fields, dict) else ())
+        if isinstance(field, dict) and isinstance(field.get("signerPosition"), str)
+    )
     payload = {
         "leonardo": metadata, "markdown": body, "source": "",
         "allowsEditing": False, "allowsFormFilling": False,
+        "allowsLeonardoFormat": True,
         "allowsMermaid": True, "allowsMath": True, "allowsVegaLite": True,
         "allowsCitations": True, "allowsMarkdownExtensions": True,
-        "frontMatter": {}, "tags": [],
+        "frontMatter": {}, "showFrontMatter": False, "tags": [],
+        "guidedSigningFieldIDs": guided_fields,
+        "guidedSigningRubricOverlays": {},
     }
-    data = json.dumps(payload).replace("<", r"\u003c")
+    data = json.dumps(payload, ensure_ascii=False).replace("<", r"\u003c")
     css = "\n".join(f'<link rel="stylesheet" href="{prefix}renderer/{name}.css">' for name in STYLES)
     js = "\n".join(f'<script src="{prefix}renderer/{name}.js"></script>' for name in SCRIPTS)
     return f"""<!doctype html>
@@ -129,8 +209,19 @@ def make_page(source: Path, prefix: str, metadata: dict, body: str) -> bytes:
 <title>{html.escape(source.name)} · Leonardo</title>
 <base href="{prefix}images/">
 {css}
+<style>
+#leonardo-http-status {{ margin: 1rem 1rem 0; font: .875rem system-ui; }}
+#leonardo-http-status::before {{
+    content: ""; display: inline-block; width: .65em; height: .65em;
+    border-radius: 50%; background: currentColor; margin-inline-end: .5em;
+}}
+#leonardo-http-status[data-state="healthy"]::before {{ background: #24a148; }}
+#leonardo-http-status[data-state="unavailable"]::before {{ background: #da1e28; }}
+</style>
 </head>
 <body>
+<p id="leonardo-http-status" role="status">Checking HTTP...</p>
+<script src="{prefix}health-status.js"></script>
 <main id="leonardo-markdown" class="markdown-body"></main>
 <script id="leonardo-payload" type="application/json">{data}</script>
 {js}
@@ -139,46 +230,24 @@ def make_page(source: Path, prefix: str, metadata: dict, body: str) -> bytes:
 """.encode()
 
 
-class PreviewServer(HTTPServer):
-    timeout = 0.5
-
-    def __init__(self, source: Path):
-        self.root = source.parent
-        self.prefix = f"/{secrets.token_urlsafe(24)}/"
-        self.page_path = self.prefix + "preview"
-        metadata, body, self.images = load_document(source)
-        self.page = make_page(source, self.prefix, metadata, body)
-        with ZipFile(RENDERER) as archive:
-            self.resources = {
-                name: archive.read(name)
-                for name in archive.namelist()
-                if Path(name).suffix in RESOURCE_TYPES
-            }
-        self.resources["extension-engines.js"] = self.resources["extension-engines.js"].replace(
-            b"leonardo-resource://bundle/", (self.prefix + "renderer/").encode()
-        )
-        super().__init__(("127.0.0.1", 0), PreviewRequest)
-
-    @property
-    def url(self) -> str:
-        return f"http://127.0.0.1:{self.server_port}{self.page_path}"
-
-
 class PreviewRequest(BaseHTTPRequestHandler):
-    server: PreviewServer
     timeout = 5
 
     def do_GET(self) -> None:
         try:
-            path = unquote(urlsplit(self.path).path, errors="strict")
+            parsed = urlsplit(self.path)
+            path = unquote(parsed.path, errors="strict")
             if self.headers.get("Host") != f"127.0.0.1:{self.server.server_port}":
                 raise ValueError("unexpected host")
-            if not path.startswith(self.server.prefix):
-                raise ValueError("unknown preview")
-            route = path.removeprefix(self.server.prefix)
-            content, content_type = self.resource(route)
-        except (KeyError, OSError, ValueError):
-            self.send_error(404)
+            if path == "/health":
+                route = "health"
+                content, content_type = b"ok\n", "text/plain; charset=utf-8"
+            else:
+                self.preview = self.select_preview(path)
+                route = path.removeprefix(self.preview.prefix)
+                content, content_type = self.resource(route)
+        except (KeyError, OSError, UnicodeDecodeError, ValueError):
+            self.send_error(404, "Preview or resource unavailable. Open the document again.")
             return
 
         self.send_response(200)
@@ -194,21 +263,30 @@ class PreviewRequest(BaseHTTPRequestHandler):
 
     def resource(self, route: str) -> tuple[bytes, str]:
         if route == "preview":
-            return self.server.page, "text/html; charset=utf-8"
+            return self.preview.page, "text/html; charset=utf-8"
+        if route == "health-status.js":
+            return HEALTH_SCRIPT, "text/javascript"
         kind, _, name = route.partition("/")
         safe_components(name)
         suffix = Path(name).suffix.lower()
         if kind == "renderer":
-            return self.server.resources[name], RESOURCE_TYPES[suffix]
+            content = self.server.resources[name]
+            if name == "extension-engines.js":
+                content = content.replace(
+                    b"leonardo-resource://bundle/", (self.preview.prefix + "renderer/").encode()
+                )
+            return content, RESOURCE_TYPES[suffix]
         if kind == "images":
             mime = IMAGE_TYPES[suffix]
-            if self.server.images is not None:
-                return self.server.images[name], mime
-            return read_local_image(self.server.root, name), mime
+            if name not in self.preview.allowed_images:
+                raise KeyError(name)
+            if self.preview.images is not None:
+                return self.preview.images[name], mime
+            return read_local_image(self.preview.root, name), mime
         raise KeyError(route)
 
     def log_message(self, *_args: object) -> None:
-        # Request paths contain the private preview URL or document asset names.
+        # Request paths contain the private preview URL and document assets.
         pass
 
 
@@ -216,16 +294,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("document", type=Path)
     arguments = parser.parse_args()
+    from urllib.error import HTTPError
+    from preview_service import register
+
     try:
-        with PreviewServer(arguments.document.resolve(strict=True)) as server:
-            print(server.url, flush=True)
-            deadline = time.monotonic() + LIFETIME_SECONDS
-            while time.monotonic() < deadline:
-                server.handle_request()
-    except KeyboardInterrupt:
-        return 0
-    except (ArchiveError, OSError, ValueError, BadZipFile, RuntimeError) as error:
-        parser.exit(1, f"Leonardo preview: {error}\n")
+        print(register(arguments.document), flush=True)
+    except HTTPError as error:
+        parser.exit(1, f"Leonardo preview: {error.reason}\n")
+    except (ArchiveError, OSError, ValueError, KeyError):
+        parser.exit(1, "Leonardo preview unavailable. Enable Leonardo Sync in Leonardo settings and retry.\n")
     return 0
 
 

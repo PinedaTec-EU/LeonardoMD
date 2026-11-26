@@ -57,6 +57,7 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
         let lock = try ProcessFileLock(at: SyncHelperContract.preferencesURL.deletingLastPathComponent()
             .appendingPathComponent("MobileSync/helper.lock"))
         let host = SyncHelperHost(buildIdentity: SyncHelperBuildIdentity(bundleURL: bundle))
+        let preview = SyncPreviewWorker(bundle: bundle)
         let delegate = HelperListener(host: host)
         let listener = NSXPCListener(machServiceName: SyncHelperContract.serviceName)
         listener.setConnectionCodeSigningRequirement(try SyncHelperSigning.requirement(for: bundle, identifier: SyncHelperContract.appIdentifier, matching: executable))
@@ -66,6 +67,13 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
         Task {
             while !Task.isCancelled {
                 do { try await host.reload() } catch { logger.error("sync_helper_recovery_pending") }
+                do {
+                    let settings = try await ConfigurationStore().loadGlobalPreferences(at: SyncHelperContract.preferencesURL)
+                    try await preview.reconcile(enabled: settings.mobileSync.helperEnabled && settings.mobileSync.enabled)
+                } catch {
+                    try? await preview.reconcile(enabled: false)
+                    logger.error("sync_preview_unavailable")
+                }
                 do { try await Task.sleep(for: .seconds(5)) } catch { return }
             }
         }

@@ -28,17 +28,18 @@ codex plugin marketplace add PinedaTec-EU/LeonardoMD --sparse .agents/plugins --
 In Codex desktop, open **Plugins**, choose **PinedaTec Leonardo**, and install
 **Leonardo Format**. If the catalog is already installed, run
 `codex plugin marketplace upgrade pinedatec-leonardo` and refresh the app.
-With Python 3.9 or newer on the same computer, open a chat with access to
-your file and ask **“Preview this Leonardo document in Codex”**, including
-its path. The plugin opens an in-app browser tab for any supported v1
-`.mdlf`, `.mdlr` or `.mdlz`.
+With Python 3.9 or newer on the same computer and Leonardo Sync enabled, open
+a chat with access to your file and ask **“Preview this Leonardo document in
+Codex”**, including its path. The plugin opens an in-app browser tab for any
+supported v1 or v2 `.mdlf`, `.mdlr` or `.mdlz`.
 
 The preview uses Leonardo's bundled renderer for form values, Mermaid,
 KaTeX, charts, citations, tables and local images. Standalone inputs resolve
 images below the document folder, while packages resolve them from their
 `assets/` entries. The viewer is read-only and blocks remote resources.
-Each preview runs on loopback for up to one hour. Ask again after editing
-the document to open a fresh view.
+Each preview is registered with the persistent Sync helper, runs on loopback
+for up to one hour, and serves only the document's referenced resources. Ask
+again after editing the document to open a fresh view.
 
 ### Automatic preview links in chats
 
@@ -50,9 +51,10 @@ to add **Vista previa de Leonardo** next to that file. Click the preview
 link while its local server is active. The source link still opens the
 ordinary Codex file viewer.
 
-This works in local Codex sessions that support trusted plugin hooks and
-can run the preview helper on the computer with the browser. A remote or
-unavailable file can still be delivered with its original link.
+This works in local Codex sessions that support trusted plugin hooks and can
+register the preview with the Sync helper on the computer with the browser. A
+remote, unavailable, or Sync-disabled file can still be delivered with its
+original link.
 
 ## Local installation
 

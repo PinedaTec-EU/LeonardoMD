@@ -12,6 +12,9 @@ public enum SyncHelperContract {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LeonardoMD/preferences.json")
     }
+    public static var previewEndpointURL: URL {
+        preferencesURL.deletingLastPathComponent().appendingPathComponent("preview-endpoint.json")
+    }
 }
 
 /// Only local, mutually code-authenticated XPC transports use this contract.

@@ -16,12 +16,12 @@ CONTINUATION = (
     "Complete the Leonardo file delivery before ending this turn. For each local "
     "MDLF, MDLR or MDLZ file you are delivering as a Markdown link and that lacks "
     "a preview, follow the Browser preview section of the installed Leonardo "
-    "Format skill. Start its preview.py in a long-running tool session on the "
-    "same machine as Codex, using the file path as a separate argument. Keep "
+    "Format skill. Run its preview.py on the same machine as Codex, using the "
+    "file path as a separate argument. Keep "
     "the original artifact links and include a clickable Markdown link labeled "
     "Vista previa de Leonardo beside each document, using the actual loopback "
     "URL printed by the helper. For this automatic delivery leave navigation "
-    "to the user's click. If an authorized local preview cannot be started, "
+    "to the user's click. If an authorized local preview cannot be registered, "
     "keep the original delivery and briefly explain why. Do not invent URLs."
 )
 

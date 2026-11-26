@@ -161,3 +161,9 @@ Mac confirmation compares each served image digest with the bytes being sealed
 and requires the selected image to decode. Little Leonardo keeps embedded images
 in the full validated reader so the native text fallback cannot skip them.
 The signing parser uses the bundled WHATWG named-entity table and its license.
+
+Codex browser preview (#474) registers a local document with the Sync-owned
+loopback worker using a per-user, owner-only endpoint record. The plugin exits
+after obtaining its scoped URL. Worker lifetime follows the helper and does not
+require the editor or a shared project; the bundled MDLF v1/v2 validator and
+renderer are reused without writing the source document.
