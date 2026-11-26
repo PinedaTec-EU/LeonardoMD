@@ -166,6 +166,44 @@ final class SessionPackageLifecycleTests: XCTestCase {
         XCTAssertNotNil(session.errorMessage)
     }
 
+    func testMoveBatchTreatsSameTargetItemAsNoOpThroughSymlinkAlias() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LeonardoAliasTransfer-\(UUID().uuidString)", isDirectory: true)
+        let physicalParent = root.appendingPathComponent("physical", isDirectory: true)
+        let aliasParent = root.appendingPathComponent("alias", isDirectory: true)
+        let projectRoot = aliasParent.appendingPathComponent("Project", isDirectory: true)
+        try FileManager.default.createDirectory(at: physicalParent, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: aliasParent, withDestinationURL: physicalParent)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        let session = tabs.activeSession
+        session.authorizePath = { _, _ in }
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+
+        let projectOpened = await session.openProject(projectRoot)
+        XCTAssertTrue(projectOpened)
+        session.monitorTask?.cancel()
+        let project = try await session.files.project(at: projectRoot)
+        let target = try await session.files.createFolder(named: "Target", in: project)
+        let sourceFolder = try await session.files.createFolder(named: "Source", in: project)
+        let alreadyInTarget = try await session.files.createMarkdown(
+            named: "already.md", in: project, at: target.relativePath, contents: "target"
+        )
+        let newItem = try await session.files.createMarkdown(
+            named: "new.md", in: project, at: sourceFolder.relativePath, contents: "new"
+        )
+
+        XCTAssertNil(session.move([alreadyInTarget.url], into: target.url))
+        let noOpAndMove = try XCTUnwrap(session.move([alreadyInTarget.url, newItem.url], into: target.url))
+        await noOpAndMove.value
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: alreadyInTarget.url.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: newItem.url.path))
+        XCTAssertEqual(try String(contentsOf: target.url.appendingPathComponent("new.md"), encoding: .utf8), "new")
+        XCTAssertNil(session.errorMessage)
+    }
+
     func testProjectTreeDropMovesAndCopiesMixedFileAndFolderSelection() async throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("LeonardoProjectTreeDrop-\(UUID().uuidString)", isDirectory: true)

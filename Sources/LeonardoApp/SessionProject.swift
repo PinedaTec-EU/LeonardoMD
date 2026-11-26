@@ -253,18 +253,22 @@ extension AppSession {
         guard sourcePaths.count == urls.count, sourcePaths.allSatisfy({ !$0.isEmpty }) else {
             return Task { report(FileSystemRepositoryError.pathEscapesProject) }
         }
-        // A move into the same parent is already satisfied. The repository
-        // still preflights every remaining destination as one batch.
-        let destination = parent.standardizedFileURL.path
-        let destinationIsCanonical = destination == parent.resolvingSymlinksInPath().standardizedFileURL.path
+        // A move into the same parent is already satisfied. Compare resolved
+        // parent paths so an external symlink alias (for example, /tmp) does
+        // not turn that no-op into a repository collision. Internal symlink
+        // components still flow to repository preflight for rejection.
+        let destination = parent.resolvingSymlinksInPath().standardizedFileURL.path
         let transferItems = zip(urls, sourcePaths).filter { url, _ in
-            if operation == .copy || !destinationIsCanonical ||
-                url.standardizedFileURL.deletingLastPathComponent().path != destination {
+            guard operation == .move else { return true }
+            let sourceParent = url.deletingLastPathComponent()
+                .resolvingSymlinksInPath().standardizedFileURL.path
+            guard sourceParent == destination else {
                 return true
             }
             // A symlink must reach repository preflight even if its path looks
             // like a same-folder move.
-            return (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
+            return containsSymbolicLinkComponent(in: parent, under: root)
+                || containsSymbolicLinkComponent(in: url, under: root)
         }
         let transferURLs = transferItems.map { $0.0 }
         let transferPaths = transferItems.map { $0.1 }
@@ -330,6 +334,26 @@ extension AppSession {
             }
         }
     }
+
+    private func containsSymbolicLinkComponent(in url: URL, under root: URL) -> Bool {
+        let root = root.standardizedFileURL
+        let candidate = url.standardizedFileURL
+        let rootPath = root.path
+        guard candidate.path == rootPath || candidate.path.hasPrefix(rootPath + "/") else {
+            return true
+        }
+
+        var current = root
+        let relative = String(candidate.path.dropFirst(rootPath.count))
+        for component in relative.split(separator: "/", omittingEmptySubsequences: true) {
+            current.appendPathComponent(String(component))
+            if (try? current.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true {
+                return true
+            }
+        }
+        return false
+    }
+
     func updateMovedDocument(from source: URL, to destination: URL) async {
         let previousMode = mode
         // Package tabs edit an extracted temporary document, so documentURL
