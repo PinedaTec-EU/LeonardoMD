@@ -76,15 +76,17 @@ Text with **bold**, *italics*, ~~strikethrough~~ and `code`.
 
 | Capability | Included example |
 | --- | --- |
-| Markdown | Headings, lists, quotes and tables |
-| Visualization | Mermaid, math and charts |
+| Markdown | Headings, lists, quotes, tables, footnotes and callouts |
+| Extensions | Mermaid, math, charts and citations |
 | Leonardo | Typed fields with answers separate from prose |
 
 ![Bundled Leonardo guide cover](assets/demo.png)
 
+These examples use the same device-local extension settings as received documents. When the preview finds a compatible disabled extension, Little Leonardo offers to enable the detected ones you choose. If you leave them disabled, the source remains intact and uses the normal Markdown or literal fallback.
+
 ## Mermaid diagram
 
-The engine is enabled in this demo. A viewer with the engine disabled preserves the block as code.
+Mermaid requires the Mermaid extension; while it is disabled, the fenced block remains code.
 
 ```mermaid
 flowchart LR
@@ -94,7 +96,7 @@ flowchart LR
 
 ## Mathematics
 
-The Math engine is enabled here. Inline formula: $a^2+b^2=c^2$.
+Math requires the Math extension. Inline formula: $a^2+b^2=c^2$.
 
 $$E = mc^2$$
 
@@ -104,11 +106,30 @@ $$
 
 ## Chart with local data
 
-Vega-Lite is enabled in this demo; data is bundled and never downloaded. A viewer without the engine preserves the code block.
+Charts requires the Charts extension. Data is bundled and never downloaded; while disabled, the specification remains code.
 
 ```vega-lite
 {"mark":"bar","data":{"values":[{"topic":"Markdown","examples":5},{"topic":"Leonardo","examples":4},{"topic":"Offline","examples":3}]},"encoding":{"x":{"field":"topic","type":"nominal"},"y":{"field":"examples","type":"quantitative"}},"width":"container","height":180}
 ```
+
+## Citations and Markdown extras
+
+This fictional local source is cited here [@demo2026].
+
+```bibtex
+@book{demo2026,
+  author = {Example, Alex},
+  title = {A Fictional Local Handbook},
+  year = {2026}
+}
+```
+
+Review the local examples before sharing.[^offline]
+
+[^offline]: This note and its bibliography stay with the bundled Demo.
+
+> [!TIP]
+> Enabling an extension changes how this content is displayed, not its source.
 
 ## Try the form
 
@@ -136,4 +157,4 @@ Real rubric requests start on the Mac and require a linked device. This form doe
 
 ## App Review walkthrough
 
-On a clean installation, open **Demo y práctica / Demo & practice** and choose Español or English. Check the table, local image, diagram, two equations and chart. Fill the form, tap **Guardar / Save**, leave and reopen. Inspect **Ver texto / View source** and try **Restablecer / Reset**. This walkthrough works in airplane mode and is the same for all users. Mac pairing is a separate feature and is not needed for this demo.
+On a clean installation, open **Demo y práctica / Demo & practice** and choose Español or English. If an extension is disabled, enable only the detected ones you want when prompted or continue with the fallback. Check the table, local image, diagram, two equations, chart, citation, footnote and callout. Fill the form, tap **Guardar / Save**, leave and reopen. Inspect **Ver texto / View source** and try **Restablecer / Reset**. This walkthrough works in airplane mode and is the same for all users. Mac pairing is a separate feature and is not needed for this demo.

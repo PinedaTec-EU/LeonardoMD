@@ -1409,9 +1409,19 @@
       "pr": 499,
       "summary": "Fixes overflowing Markdown tables in paginated preview and PDF by continuing whole rows across pages with consistent column widths and repeated headers.",
       "to_version": "0.3.2318"
+    },
+    {
+      "delta": {
+        "build": 18
+      },
+      "from_version": "0.3.2318",
+      "merge_sha": "06a93b2ab252d7439236ff92ae9c31d1acd73ff5",
+      "pr": 415,
+      "summary": "Leonardo document types and Markdown now declare a Leonardo icon for Finder; the displayed icon can depend on macOS and the chosen default app.",
+      "to_version": "0.3.2336"
     }
   ],
-  "current_version": "0.3.2318",
+  "current_version": "0.3.2336",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

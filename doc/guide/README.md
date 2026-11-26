@@ -1,21 +1,28 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v152-en.mdlz` and `Guide-v152-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v161-en.mdlz` and `Guide-v161-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v152/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v161/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v152 adds the read-only Codex preview, its supported Python runtime and the boundary for managed Sync content. Package SHA-256: EN `d8121e8390210d6dc2806f8328d3b65f8a1435c2718affe96e26542e9831c437`, ES `7ebf5be993374e26413ff731da3057e7c65fa232c776becf46f48bdd10fe05e0`.
+Guide v161 explains local Leonardo Format previews in Codex, the Leonardo Sync
+and Python requirements, temporary read-only links and optional Stop-hook trust.
+It retains the v156 mobile extensions, Finder and table pagination guidance.
+Guide v161 EN SHA-256: `df6013f69f0587764298deac4caf481acdfc1dba76b00dd6235901036681d9e2` and ES SHA-256: `19cfa3979f2eb364a7ff2125a2e5438bd00570acbaa394b0940c210217f2a185`.
 
-Guide v146 documents the shared Home selector, the separate remote project menu,
-its offline actions and direct remote access in chapter 7, and explains Markdown
-table continuation across paginated preview and PDF pages.
-Guide v146 EN SHA-256: `3b863449ff6fe5cbc1051b7fe57bb3fb823b0ae818c234aa61c97030274a1489`
-and ES SHA-256: `a063da2b8f0a6a30afecaeea56cdf8012bf2d0ef135a9110a9211e642577c480`.
-
-Guide v145 is retained as the previous packaged baseline. Its chapter 7
-content is included in v146 together with the table-pagination guidance.
+Guide v156 carries forward the current shared Home selector, separate
+remote-project menu, offline actions, direct remote access and Markdown table
+continuation across paginated preview and PDF pages. It includes the #415
+Finder icon guidance without changing default applications, the #499 table
+pagination guidance, and the reconciled Little Leonardo extension settings,
+consent flow, synchronization frequency and bundled Demo coverage in both
+locales. The #465 mobile chapter remains in the current bilingual bodies.
+Guide v153 remains the previous packaged baseline and v147 remains the
+previous #465 mobile-help package; existing guide copies and practice answers
+are never overwritten.
+Guide v156 EN SHA-256: `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
+and ES SHA-256: `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
@@ -140,8 +147,8 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v146 with a new
-resource name and personal-copy directory; no existing guide copy is overwritten.
+historical review record. Current artifacts and their personal-copy directory
+are listed above.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
