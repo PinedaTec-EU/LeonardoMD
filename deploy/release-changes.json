@@ -1471,6 +1471,16 @@
       "pr": 471,
       "summary": "Select and drag multiple project files and folders together; hold Option to copy them.",
       "to_version": "0.5.2476"
+    },
+    {
+      "delta": {
+        "build": 36
+      },
+      "from_version": "0.5.2476",
+      "merge_sha": "eb8fe7ce60bf64f46ed9162fa741727d2a0fa59a",
+      "pr": 516,
+      "summary": "Home explains unavailable saved items and lets you retry or locate a moved file or project.",
+      "to_version": "0.5.2512"
     }
   ],
   "initial_version": "0.1.56",
@@ -1481,5 +1491,5 @@
     "feature",
     "build"
   ],
-  "version": "0.5.2476"
+  "version": "0.5.2512"
 }

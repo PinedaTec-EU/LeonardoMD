@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.5.2512
+
+- #514 Fixed: explain and repair unavailable Home items ([#516](https://github.com/PinedaTec-EU/LeonardoMD/pull/516))
+
+<p>Home explains unavailable saved items and lets you retry or locate a moved file or project.</p>
+
+Source: `eb8fe7ce60bf64f46ed9162fa741727d2a0fa59a`. Delta: `{"build": 36}`.
+
 ## 0.5.2476
 
 - #261 Added: mixed multi-item project-tree drag and drop ([#471](https://github.com/PinedaTec-EU/LeonardoMD/pull/471))
