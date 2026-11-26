@@ -57,6 +57,7 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
         let lock = try ProcessFileLock(at: SyncHelperContract.preferencesURL.deletingLastPathComponent()
             .appendingPathComponent("MobileSync/helper.lock"))
         let host = SyncHelperHost(buildIdentity: SyncHelperBuildIdentity(bundleURL: bundle))
+        let preview = SyncPreviewWorker(bundle: bundle)
         let delegate = HelperListener(host: host)
         let listener = NSXPCListener(machServiceName: SyncHelperContract.serviceName)
         listener.setConnectionCodeSigningRequirement(try SyncHelperSigning.requirement(for: bundle, identifier: SyncHelperContract.appIdentifier, matching: executable))
@@ -64,8 +65,26 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
         listener.resume()
         logger.info("sync_helper_started")
         Task {
+            var previewWarningShown = false
             while !Task.isCancelled {
                 do { try await host.reload() } catch { logger.error("sync_helper_recovery_pending") }
+                do {
+                    let settings = try await ConfigurationStore().loadGlobalPreferences(at: SyncHelperContract.preferencesURL)
+                    let previewEnabled = settings.mobileSync.helperEnabled && settings.mobileSync.enabled
+                    let previewAvailable = try await preview.reconcile(enabled: previewEnabled)
+                    if previewEnabled && !previewAvailable && !previewWarningShown {
+                        logger.error("sync_preview_unavailable reason=python3_9_or_newer_not_found action=install_trusted_python_and_restart")
+                        previewWarningShown = true
+                    } else if !previewEnabled {
+                        previewWarningShown = false
+                    }
+                } catch {
+                    _ = try? await preview.reconcile(enabled: false)
+                    if !previewWarningShown {
+                        logger.error("sync_preview_unavailable reason=helper_start_failed")
+                        previewWarningShown = true
+                    }
+                }
                 do { try await Task.sleep(for: .seconds(5)) } catch { return }
             }
         }

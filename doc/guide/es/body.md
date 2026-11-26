@@ -290,7 +290,7 @@ Al abrir MDLZ, la preferencia de paquetes permite trabajar en el paquete, pregun
 
 ## 6. Plugins y agentes de IA
 
-El plugin **leonardo-format** enseña al agente el contrato abierto v1, la separación de estructura y respuestas y la inspección y reconstrucción de MDLZ. Incluye una skill, el esquema y herramientas Python. No necesita una cuenta Leonardo ni credenciales propias.
+El plugin **leonardo-format** enseña al agente el contrato abierto v1 y v2, la separación de estructura y respuestas y la inspección y reconstrucción de MDLZ. Incluye una skill, el esquema y herramientas Python. No necesita una cuenta Leonardo ni credenciales propias.
 
 **Leer archivos y controlar la aplicación son capacidades distintas.** Esta skill trabaja con los documentos entregados al agente. No concede acceso al documento abierto ni conecta automáticamente con Leonardo mediante MCP. Tampoco amplía los tipos de adjunto que acepte la interfaz del proveedor.
 
@@ -326,6 +326,16 @@ Esto lo carga para esa sesión. Para uso persistente, instala desde un marketpla
 Instala y activa el plugin `leonardo-format` desde el catálogo de plugins donde esté publicado. Si no aparece, utiliza el paquete local `plugins/leonardo-format` con el flujo de plugins locales que admita tu versión de Codex. La disponibilidad en un catálogo depende de su publicación y de tu cuenta; el documento no instala el plugin por sí mismo.
 
 Verifica que Codex dispone de la skill `leonardo-format`, su esquema y sus scripts antes de entregar un archivo. Las versiones y superficies de Codex pueden tener distintos mecanismos de instalación: consulta la [documentación de plugins](https://developers.openai.com/plugins/build/plugins).
+
+### Previsualizar un documento local en Codex
+
+Para una vista previa de solo lectura en el navegador, instala y activa `leonardo-format`, activa Leonardo Sync y pide a Codex que previsualice un archivo local `.mdlf`, `.mdlr` o `.mdlz`. El helper de Sync inicia la vista previa opcional en loopback solo cuando encuentra un Python real 3.9+ ya instalado en una ubicación compatible. Nunca invoca `/usr/bin/python3` de macOS, que puede ser un instalador de las herramientas de desarrollo; por eso la sincronización normal sigue funcionando aunque falte Python.
+
+Si la vista previa no está disponible, instala Python 3.9+ desde una fuente de confianza como Homebrew o [python.org](https://www.python.org/downloads/), reinicia Leonardo y su helper de Sync y vuelve a intentarlo. El helper no instala Python ni provoca el aviso de instalación de las herramientas de desarrollo de macOS. Usa esta petición:
+
+> Previsualiza este documento Leonardo local en Codex. Mantenlo en solo lectura e indica si Leonardo Sync o el Python compatible no están disponibles.
+
+La vista previa permanece en loopback, caduca después de una hora, sirve solo los recursos locales referenciados y nunca escribe la fuente. El registro acepta archivos locales ordinarios, pero rechaza las rutas bajo el almacenamiento gestionado `DesktopPeers` y `MobileSync` de Leonardo, incluido el contenido remoto en caché o revocado. Abre los documentos remotos gestionados con la vista previa nativa autorizada de Leonardo; no copies bytes de la caché para eludir una concesión de proyecto o una revocación.
 
 ### Instrucciones que puedes copiar
 
@@ -577,7 +587,16 @@ firmas criptográficas.
 
 *Sección real de rúbricas enlazadas con el asistente desconectado; no hay ningún dispositivo emparejado en esta ilustración.*
 
-En un campo de rúbrica, elige **Rellenar** y pulsa su área. El diálogo ampliado
+Para colocar un campo de rúbrica, desbloquea el formulario y selecciona el
+campo en **Previsualizar** o **Dividir**. Arrastra el campo para colocarlo en la
+página, usa el tirador de la esquina para cambiar el tamaño o pulsa la flecha
+circular para girarlo 90° en sentido horario. Mover o girar fija el campo a la
+página. Revisa posibles solapamientos si después cambias el texto. Si el
+marcador se repite, puedes colocar la primera aparición y las demás siguen en
+el texto. Guarda el formulario para conservar la colocación. El lienzo de
+dibujo sigue horizontal y el campo muestra los trazos con el giro guardado.
+
+En un campo de rúbrica, elige **Rellenar formulario** y pulsa su área. El diálogo ampliado
 permite elegir una guardada o dibujar una nueva; **Guardar en mis rúbricas**
 controla si la nueva también entra en la biblioteca. **Quitar rúbrica** vacía la respuesta de ese campo. La respuesta queda dentro
 del área del autor y se guarda con el formulario. El candado de fuente no

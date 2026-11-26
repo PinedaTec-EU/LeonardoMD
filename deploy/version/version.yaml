@@ -1430,9 +1430,29 @@
       "pr": 465,
       "summary": "Little Leonardo now renders all five built-in Markdown extensions from device-local settings, offers detected disabled features for consent-based activation, and localizes sync-frequency controls in English and Spanish.",
       "to_version": "0.4.2357"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.4.2357",
+      "merge_sha": "031bcea28e1a82c4f65d76efe60f57e1bea83e73",
+      "pr": 497,
+      "summary": "Inserted rubrics open selected with positioning and sizing controls. The saved-rubric trash button asks for confirmation and preserves copies already placed in documents.",
+      "to_version": "0.4.2368"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.4.2368",
+      "merge_sha": "5ce6513a04d9e457de029994978d218f965ebd4f",
+      "pr": 501,
+      "summary": "In an unlocked form, drag a rubric field to position it, resize it from a corner, or rotate it in 90\u00b0 steps. The drawing canvas stays horizontal and the page shows the resulting ink at the saved angle.",
+      "to_version": "0.4.2379"
     }
   ],
-  "current_version": "0.4.2357",
+  "current_version": "0.4.2379",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
