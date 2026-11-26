@@ -1,10 +1,16 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v162-en.mdlz` and `Guide-v162-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v166-en.mdlz` and `Guide-v166-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v162/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v166/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v166 includes the local read-only Codex preview through Leonardo Sync,
+the v162 rubric move, size and rotation chapter, and the existing page-rubric,
+mobile extension, Finder icon, and paginated Markdown table guidance.
+Guide v166 EN SHA-256: `d7ef79b74c5096e6b2142db847d27eb29072311abb49ee0544508160b1a1e0be`
+and ES SHA-256: `2d42184aff07463650b7a50d9070f5a554dc8a507a61ddcbea2e2ba42b8443e7`.
 
 Guide v162 documents moving, resizing and quarter-turn rotation of rubric
 fields on unlocked forms. Chapter 10 explains persisted page placement,
