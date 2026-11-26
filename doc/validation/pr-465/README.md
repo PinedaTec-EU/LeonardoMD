@@ -153,12 +153,16 @@ the document-extension section.
 | [English frequency settings](ios-frequency-english.png) | English section, selected interval and all frequency choices in the native picker. |
 | [Spanish frequency settings](ios-frequency-spanish.png) | Spanish section and all six localized choices in the native picker. |
 
-## Reconciled Guide v147 packaged Help smoke — pending coordinator run
+## Reconciled Guide v147 packaged Help and current-head iOS smoke
 
 The reconciled candidate packages are EN SHA-256
-`668ef33e68c489ebcfdfba211671f95dbf23ae0979755ede47207a44f3e0e54a` and ES
-`29307cabb13e8cae29ca924c32769f580109004805fe801449de70ff75c79b6e`. Packaged
-Help still needs a fresh native macOS process that opens both package copies.
+`69b9811c51634422a15a1a2ea0203ab21d0ed5b7ab5f10745260537a2b401a82` and ES
+`da3d046493102110c33bf334fdb707bcd1833231ca881dcb84dd71d9b88ea45a`. Current-
+head native iOS validation opened the integrated bilingual Help route and
+checked the document-extension and frequency guidance. The exact simulator
+flow, process teardown, screenshots and logs are in
+[current-ios-qa/README.md](current-ios-qa/README.md). A fresh native macOS
+process still needs to open both v147 package copies.
 
 At the pre-launch process check on 2026-11-17, PID 16139 was already running
 `/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-cjlxt5nj/LeonardoMDQA.app/Contents/MacOS/LeonardoMD`
@@ -175,6 +179,6 @@ but has a pre-existing user modification to `.wiki/document-extensions.md`.
 The release-cleanup workflow blocks merge and TestFlight publication until that
 user-owned file is reconciled. This task left the file and branch untouched.
 
-Current reconciliation intentionally has no simulator/UI-capture reproduction
-command. Product behavior remains covered by the retained logic and package
-tests; device and GUI validation require a separate coordinator-authorized run.
+Physical-device/TestFlight acceptance and the coordinator's fresh judge remain
+pending. The current-head iOS simulator smoke is complete; it did not modify
+the primary checkout, launch a macOS app, or merge the PR.
