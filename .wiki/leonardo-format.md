@@ -167,3 +167,10 @@ loopback worker using a per-user, owner-only endpoint record. The plugin exits
 after obtaining its scoped URL. Worker lifetime follows the helper and does not
 require the editor or a shared project; the bundled MDLF v1/v2 validator and
 renderer are reused without writing the source document.
+The optional worker selects an already-installed real Python 3.9+ interpreter
+from supported macOS locations and never executes the `/usr/bin/python3`
+developer-tools installer shim; ordinary Sync remains independent. Preview
+registration rejects documents below the managed `DesktopPeers` and `MobileSync`
+roots, so remote cache and revoked content stay behind the authorized native
+Sync access path. Guide v152 documents the prerequisite and recovery path in
+both locales.
