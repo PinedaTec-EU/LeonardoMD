@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum ProjectFolderDropState: Equatable {
     case idle
@@ -31,6 +32,8 @@ enum ProjectFolderDropState: Equatable {
 
 @MainActor
 struct ProjectFolderDropDelegate: DropDelegate {
+    static let acceptedTypes: [UTType] = [DocumentDropProviders.projectTreeItemType, .fileURL]
+
     let folder: URL
     let session: AppSession
     @Binding var state: ProjectFolderDropState
@@ -40,7 +43,7 @@ struct ProjectFolderDropDelegate: DropDelegate {
         guard (try? folder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else {
             return false
         }
-        if info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType]) {
+        if isProjectTreeDrop(info) {
             return localSelection != nil
         }
         return acceptsExternalFiles && info.hasItemsConforming(to: [.fileURL])
@@ -62,13 +65,13 @@ struct ProjectFolderDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         state = .idle
         guard validateDrop(info: info) else { return false }
-        let providers = providers(for: info)
-        let isCopy = DocumentDropProviders.isProjectTreeDrop(providers) && optionKeyIsDown
-        let selection = localSelection
-        if let selection, !Self.canTransfer(selection, into: folder) { return false }
-        let accepted = session.acceptDrop(providers, into: folder, copy: isCopy, expectedProjectURLs: selection)
-        session.logger.info("Folder drop callback providers=\(providers.count, privacy: .public) projectTree=\(DocumentDropProviders.isProjectTreeDrop(providers), privacy: .public) copy=\(isCopy, privacy: .public) accepted=\(accepted, privacy: .public)")
-        return accepted
+        if isProjectTreeDrop(info) {
+            guard let selection = localSelection, Self.canTransfer(selection, into: folder) else {
+                return false
+            }
+            return session.acceptProjectTreeDrop(selection, into: folder, copy: optionKeyIsDown)
+        }
+        return session.acceptExternalFolderDrop(info.itemProviders(for: [.fileURL]))
     }
 
     private func updateState(info: DropInfo) -> DropOperation {
@@ -76,7 +79,7 @@ struct ProjectFolderDropDelegate: DropDelegate {
             state = .forbidden
             return .forbidden
         }
-        guard info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType]) else {
+        guard isProjectTreeDrop(info) else {
             state = .open
             return .copy
         }
@@ -84,8 +87,9 @@ struct ProjectFolderDropDelegate: DropDelegate {
             state = .forbidden
             return .forbidden
         }
-        let operation: DropOperation = optionKeyIsDown ? .copy : .move
-        state = optionKeyIsDown ? .copy : .move
+        let copy = optionKeyIsDown
+        let operation: DropOperation = copy ? .copy : .move
+        state = copy ? .copy : .move
         if operation == .move, !supportsNativeMove { return .copy }
         return operation
     }
@@ -114,7 +118,7 @@ struct ProjectFolderDropDelegate: DropDelegate {
     }
 
     private var optionKeyIsDown: Bool {
-        NSApp.currentEvent?.modifierFlags.contains(.option) == true
+        NSEvent.modifierFlags.contains(.option)
     }
 
     private var supportsNativeMove: Bool {
@@ -122,13 +126,10 @@ struct ProjectFolderDropDelegate: DropDelegate {
         return false
     }
 
-    private func providers(for info: DropInfo) -> [NSItemProvider] {
-        // SwiftUI only permits querying providers during performDrop(info:).
-        let projectTreeProviders = info.itemProviders(for: [DocumentDropProviders.projectTreeItemType])
-        let fileURLProviders = acceptsExternalFiles ? info.itemProviders(for: [.fileURL]) : []
-        return DocumentDropProviders.preferredFolderDropProviders(
-            projectTreeProviders: projectTreeProviders,
-            fileURLProviders: fileURLProviders
-        )
+    private func isProjectTreeDrop(_ info: DropInfo) -> Bool {
+        // Some native drags arrive through SwiftUI with only the file URL
+        // exposed. The in-process source remains authoritative during the drop.
+        ProjectTreeDragSourceRegistry.shared.hasActiveDrag ||
+            info.hasItemsConforming(to: [DocumentDropProviders.projectTreeItemType])
     }
 }

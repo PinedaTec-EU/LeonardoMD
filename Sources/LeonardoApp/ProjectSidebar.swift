@@ -98,7 +98,7 @@ struct ProjectSidebar: View {
         .padding(6)
         .contentShape(Rectangle())
         .modifier(FileRowHighlight(accent: session.accentColor, dropTarget: rootDropState.isTarget))
-        .onDrop(of: [DocumentDropProviders.projectTreeItemType], delegate: ProjectFolderDropDelegate(
+        .onDrop(of: ProjectFolderDropDelegate.acceptedTypes, delegate: ProjectFolderDropDelegate(
             folder: root, session: session, state: $rootDropState, acceptsExternalFiles: false
         ))
         .accessibilityIdentifier("project-root-drop-target")

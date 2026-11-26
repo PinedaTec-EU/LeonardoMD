@@ -76,7 +76,7 @@ final class ProjectTreeDragSourceView: NSView, NSDraggingSource {
         let pasteboardItem = DocumentDropProviders.projectTreePasteboardItem(
             for: primaryURL, selecting: urls)
         let item = NSDraggingItem(pasteboardWriter: pasteboardItem)
-        let icon = NSWorkspace.shared.icon(forFile: primaryURL.path)
+        let icon = Self.previewIcon(for: primaryURL)
         let preview = dragPreview(icon: icon, count: urls.count)
         let size = preview.size
         let point = convert(event.locationInWindow, from: nil)
@@ -84,6 +84,19 @@ final class ProjectTreeDragSourceView: NSView, NSDraggingSource {
                                      width: size.width, height: size.height), contents: preview)
         draggingSession = beginDraggingSession(with: [item], event: event, source: self)
         draggingSession?.animatesToStartingPositionsOnCancelOrFail = true
+    }
+
+    static func previewSymbol(for url: URL) -> String {
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        return NavigationEntry(url: url, isDirectory: isDirectory).symbol
+    }
+
+    private static func previewIcon(for url: URL) -> NSImage {
+        let symbol = previewSymbol(for: url)
+        let configuration = NSImage.SymbolConfiguration(pointSize: 25, weight: .regular)
+            .applying(.init(paletteColors: [.labelColor]))
+        return NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration) ?? NSImage()
     }
 
     private func dragPreview(icon: NSImage, count: Int) -> NSImage {
@@ -138,6 +151,8 @@ final class ProjectTreeDragSourceRegistry {
     private var draggedRoot: URL?
     private var draggedURLs: [URL] = []
 
+    var hasActiveDrag: Bool { draggingView != nil }
+
     func begin(_ view: ProjectTreeDragSourceView, root: URL, urls: [URL]) {
         draggingView = view
         draggedRoot = root
@@ -152,7 +167,8 @@ final class ProjectTreeDragSourceRegistry {
     }
 
     func selection(for session: AppSession, destination: URL) -> [URL]? {
-        guard draggingView?.session === session, let draggedRoot,
+        guard let source = draggingView, source.session === session, source.isActiveTab,
+              !source.isHiddenOrHasHiddenAncestor, let draggedRoot,
               draggedRoot == session.projectURL else { return nil }
         let target = destination.standardizedFileURL.path
         guard !draggedURLs.contains(where: { url in

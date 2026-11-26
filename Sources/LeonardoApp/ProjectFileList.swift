@@ -57,7 +57,7 @@ struct ProjectFileList: View {
                                 .fill(.clear)
                                 .frame(height: max(0, viewport.size.height - rowStackHeight))
                                 .contentShape(Rectangle())
-                                .onDrop(of: [DocumentDropProviders.projectTreeItemType], delegate: ProjectFolderDropDelegate(
+                                .onDrop(of: ProjectFolderDropDelegate.acceptedTypes, delegate: ProjectFolderDropDelegate(
                                     folder: root, session: session, state: $rootDropState, acceptsExternalFiles: false
                                 ))
                         }

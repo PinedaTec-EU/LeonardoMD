@@ -499,55 +499,6 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertFalse(ProjectFolderDropDelegate.canTransfer([source, occupied], into: otherFolder))
     }
 
-    func testProjectTreeProviderLoadsMixedSelectionAsOneBatch() async throws {
-        let root = URL(fileURLWithPath: "/synthetic/project")
-        let first = root.appendingPathComponent("notes.md")
-        let folder = root.appendingPathComponent("assets", isDirectory: true)
-        let provider = DocumentDropProviders.projectTreeItemProvider(for: first, selecting: [first, folder])
-
-        XCTAssertTrue(DocumentDropProviders.isProjectTreeDrop([provider]))
-        let loaded = await DocumentDropProviders.startLoadingProjectTreeURLs([provider]).value
-        XCTAssertEqual(loaded, [first, folder])
-    }
-
-    func testProjectTreeFolderDropDoesNotRequireFileURLProvider() async throws {
-        let file = URL(fileURLWithPath: "/synthetic/project/notes.md")
-        let payload = try JSONEncoder().encode([file])
-        let provider = NSItemProvider()
-        provider.registerDataRepresentation(
-            forTypeIdentifier: DocumentDropProviders.projectTreeItemTypeIdentifier,
-            visibility: .ownProcess
-        ) { completion in
-            completion(payload, nil)
-            return nil
-        }
-
-        XCTAssertTrue(DocumentDropProviders.isProjectTreeItem(provider))
-        XCTAssertFalse(DocumentDropProviders.canLoad([provider]))
-        XCTAssertTrue(DocumentDropProviders.isSupportedFolderDrop([provider]))
-        let loaded = await DocumentDropProviders.startLoadingProjectTreeURLs([provider]).value
-        XCTAssertEqual(loaded, [file])
-
-        let externalProvider = NSItemProvider(object: URL(fileURLWithPath: "/external/note.md") as NSURL)
-        XCTAssertFalse(DocumentDropProviders.isSupportedFolderDrop([provider, externalProvider]))
-    }
-
-    func testFolderDropPrefersInternalBatchOverItsFileURLRepresentation() {
-        let file = URL(fileURLWithPath: "/project/notes.md")
-        let projectProvider = DocumentDropProviders.projectTreeItemProvider(
-            for: file,
-            selecting: [file]
-        )
-        let fileURLProvider = NSItemProvider(object: file as NSURL)
-
-        let providers = DocumentDropProviders.preferredFolderDropProviders(
-            projectTreeProviders: [projectProvider], fileURLProviders: [fileURLProvider]
-        )
-
-        XCTAssertTrue(DocumentDropProviders.isProjectTreeDrop(providers))
-        XCTAssertEqual(providers.count, 1)
-    }
-
     func testProjectTreePasteboardItemCarriesMixedSelectionBatch() throws {
         let root = URL(fileURLWithPath: "/synthetic/project", isDirectory: true)
         let file = root.appendingPathComponent("notes.md")
@@ -557,20 +508,6 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertEqual(item.string(forType: .fileURL), file.absoluteString)
         let data = try XCTUnwrap(item.data(forType: DocumentDropProviders.projectTreeItemPasteboardType))
         XCTAssertEqual(try JSONDecoder().decode([URL].self, from: data), [file, folder])
-    }
-
-    func testProjectTreeProviderPreservesBatchWhenDragSourceWasPruned() async throws {
-        let root = URL(fileURLWithPath: "/synthetic/project")
-        let selectedFolder = root.appendingPathComponent("assets", isDirectory: true)
-        let dragSource = selectedFolder.appendingPathComponent("icons", isDirectory: true)
-        let selectedSibling = root.appendingPathComponent("notes.md")
-        let provider = DocumentDropProviders.projectTreeItemProvider(
-            for: dragSource,
-            selecting: [selectedFolder, selectedSibling]
-        )
-
-        let loaded = await DocumentDropProviders.startLoadingProjectTreeURLs([provider]).value
-        XCTAssertEqual(loaded, [selectedFolder, selectedSibling])
     }
 
     func testCloseSavesInactiveDraftAndLeavesSiblingContentUntouched() async throws {

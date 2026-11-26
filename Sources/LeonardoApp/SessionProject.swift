@@ -374,47 +374,27 @@ extension AppSession {
         }
         mode = previousMode
     }
-    func acceptDrop(
-        _ providers: [NSItemProvider],
-        into parent: URL,
-        copy: Bool = false,
-        expectedProjectURLs: [URL]? = nil
-    ) -> Bool {
-        guard DocumentDropProviders.isSupportedFolderDrop(providers) else {
-            logger.warning("Folder drop rejected unsupported providers=\(providers.count, privacy: .public)")
+    func acceptProjectTreeDrop(_ urls: [URL], into parent: URL, copy: Bool) -> Bool {
+        guard let root = projectURL, !urls.isEmpty,
+              urls.allSatisfy({ DocumentDropProviders.isProjectMove($0, in: root) }) else {
             return false
         }
-        let isProjectTreeDrop = DocumentDropProviders.isProjectTreeDrop(providers)
-        let dropProject = projectURL
-        guard !isProjectTreeDrop || expectedProjectURLs != nil else { return false }
-        logger.info("Folder drop accepted providerCount=\(providers.count, privacy: .public) projectTree=\(isProjectTreeDrop, privacy: .public) copy=\(copy, privacy: .public)")
-        let urlLoad = isProjectTreeDrop
-            ? DocumentDropProviders.startLoadingProjectTreeURLs(providers)
-            : DocumentDropProviders.startLoadingURLs(providers)
+        if copy {
+            self.copy(urls, into: parent)
+        } else {
+            move(urls, into: parent)
+        }
+        logger.info("Project tree drop items=\(urls.count, privacy: .public) copy=\(copy, privacy: .public)")
+        return true
+    }
+
+    func acceptExternalFolderDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard DocumentDropProviders.canLoad(providers) else { return false }
+        let urlLoad = DocumentDropProviders.startLoadingURLs(providers)
         Task {
-            guard let urls = await urlLoad.value else {
-                logger.error("Folder drop payload did not produce file URLs projectTree=\(isProjectTreeDrop, privacy: .public)")
-                return
-            }
-            if isProjectTreeDrop {
-                guard urls == expectedProjectURLs, let root = dropProject, root == projectURL else {
-                    logger.error("Folder drop payload or project context no longer matches the local drag")
-                    return
-                }
-                guard urls.allSatisfy({ DocumentDropProviders.isProjectMove($0, in: root) }) else {
-                    logger.error("Folder drop rejected out-of-project or root items count=\(urls.count, privacy: .public)")
-                    return
-                }
-                guard let operationTask = copy ? self.copy(urls, into: parent) : self.move(urls, into: parent) else {
-                    logger.debug("Folder move was a no-op because every item already belongs to the destination")
-                    return
-                }
-                await operationTask.value
-            } else if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
-                await openDroppedDocuments(urls)
-            } else {
-                logger.warning("External folder drop rejected URLs=\(urls.count, privacy: .public)")
-            }
+            guard let urls = await urlLoad.value, DocumentTabs.acceptsDrop(urls),
+                  let openDroppedDocuments else { return }
+            await openDroppedDocuments(urls)
         }
         return true
     }
