@@ -341,14 +341,19 @@ struct DesktopPeerRemoteProjectsView: View {
             Text(L10n.text("This name is saved on this Mac and helps identify where its projects come from."))
                 .font(.callout).foregroundStyle(.secondary)
             TextField(L10n.text("Computer name"), text: $hostNameDraft)
+                .textFieldStyle(PremiumTextFieldStyle())
                 .accessibilityIdentifier("remote-host-name")
             HStack {
-                Button(L10n.text("Cancel")) { renamingConnection = nil }.keyboardShortcut(.cancelAction)
+                Button(L10n.text("Cancel")) { renamingConnection = nil }
+                    .keyboardShortcut(.cancelAction)
+                    .buttonStyle(PremiumButtonStyle())
                 Spacer()
                 Button(L10n.text("Save")) {
                     controller.setConnectionName(hostNameDraft, connectionID: connection.id)
                     renamingConnection = nil
-                }.keyboardShortcut(.defaultAction)
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(PremiumButtonStyle(prominent: true))
             }
         }
         .padding(24).frame(width: 440)
