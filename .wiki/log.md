@@ -15,6 +15,58 @@
 - 2026-11-21: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) adds the MDLF v2 guided-signing contract and protected sidecar foundation. The native and plugin validators select matching v1/v2 schemas; the session tracks exact source-order occurrences, per-position rubric reuse, late first assignment only for still-pending positions, salted identity commitments, external trust and chained detached proofs. Persistence uses locked CAS transactions, size/type checks before reads and 0600 atomic publication. Focused Swift verification is pending a source PR/ledger entry; plugin tests pass 39/39.
 
 - 2026-11-21: Follow-up for [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517), [#522](https://github.com/PinedaTec-EU/LeonardoMD/issues/522) and [#523](https://github.com/PinedaTec-EU/LeonardoMD/issues/523): macOS guided signing captures use a signing-only rubric canvas and assigned fields reject the generic insertion path. Verified completed positions render occurrence-keyed rubric overlays without mutating the source snapshot. Little Leonardo keeps credential enrollment as a separate, explicitly labeled control outside the credential picker hit target; bilingual Guide v109 documents the consent boundary and explicit exchange.
+- 2026-11-21: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) explains unavailable saved locations on Home and adds retry and path repair. Shared source relocation requires confirmation and retains the share identifier and scope. The English and Spanish guides describe the recovery; the reconciled candidate packages it as Guide v150 (EN `5a1f977777180d52b40d5d577b7f212fcc7b120b54bf98dab1dde6d3edb7fd83`, ES `22c7954087c889d48faa6e3b5acb00643ecfa1e68b87df7a1c7ec119a03ac197`).
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) CI triage: the
+  document-recent regression was coupled to the hosted process-global AppKit
+  `NSDocumentController` store. The production path remains native through an
+  AppKit adapter; the focused test now injects an in-memory store and covers
+  stale-source removal, destination deduplication and ordering without touching
+  host recents. The rebased candidate on `727a7446` passes the five focused Home
+  availability/persistence tests; full current-head CI remains pending.
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) was
+  reconciled again onto current `origin/main` `32efc6f2`, retaining merged #499's
+  exact Guide v146 table-pagination baseline and regenerating Guide v150 from
+  the combined table-pagination and Home-recovery sources. No new GUI/native
+  Help claim is made; regenerated v150 requires current-head packaged smoke.
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) final
+  packaged QA ran on exact draft source `724390f75e36e923866efee9857e8b9dc2c5e963`
+  (version `0.3.2318`, ledger build 20). Native Home smoke covered missing,
+  warning-menu, intentional Cancel and successful `Use this location` recovery
+  using only a synthetic project. Native Help opened Guide v150 chapter 7 in
+  English and Spanish; exact working-copy hashes are EN
+  `0e17463a0052718973fde8591255226bb9ec9f0e27d1f2ef2686e438b748e9f4` and ES
+  `2e344eb7e182afb2d44f02a3a077b459b6e003a9b4c8ba1e4da5c557cf6d8ddd`.
+  Durable scoped captures and metadata are in
+  `doc/validation/home-recovery-v150/captures/`. QA PID 94241 was quit through
+  the native application menu and the exact executable/helper path check at
+  `2026-11-26T10:07:43+01:00` found no task-owned process.
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) strict
+  correction on current `origin/main` `bb0f1fab`: Home recovery now consults
+  persisted sharing authority when an additional instance has no loaded Sync
+  cache, permits only an unshared local repair there, and refuses a shared move
+  without the primary instance while preserving the project UUID and explicit
+  consent boundary. Replacement projects and `.mdlz` packages are validated by
+  the canonical open contracts before favorites, Recents or sharing mutate;
+  recovery errors use the selected language. Focused Home/Help tests pass 11/11
+  at PR build delta 22; package tests pass 3/3. Guide v159 hashes are EN
+  `897e3177416a818688d6eba1e5761a7b13d78a611042702e3864beb8f191104f` and ES
+  `c1b370b4b12e3724cf270d341f3f6caa358b3a7df3ab547ef891ea282c0fef52`.
+  Existing scoped native captures remain historical evidence; no GUI retake is
+  claimed for this source-only correction.
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) was
+  reconciled onto current `origin/main` `dab6e5cf`, retaining merged #497's
+  Guide v158 rubric-selection/deletion guidance and the full bilingual Help
+  body. The corrected Home recovery source and focused regression tests remain
+  equivalent; deterministic packaging advances the active pair to Guide v165.
+  Invalid replacement validation was checked for temporary extraction cleanup;
+  the canonical package opener does not publish an application-support artifact
+  before validation succeeds, and failed opens do not return a workspace to
+  discard. No new GUI/native Help claim is made; current-head CI is required.
 
 - 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
 
@@ -336,6 +388,7 @@ head CI, exact-source alert captures and strict review are pending; Beta Help
 and tab/window/app-quit acceptance remain required after integration because
 local screen capture again returned `ScreenCaptureKit -3811`. See
 `doc/validation/preview-sync/448/README.md`.
+
 PR #473 visibility follow-up (18 Nov 2026): the strict review found local search
 and remote “New files” notices bypassed the shared non-document preference.
 Search now composes file visibility with the existing authorization filter and

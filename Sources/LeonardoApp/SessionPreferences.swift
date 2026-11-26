@@ -81,9 +81,14 @@ extension AppSession {
         settingsRevision += 1
         let revision = settingsRevision
         let previous = settingsTask
-        settingsTask = Task {
+        let resultTask = Task { () -> Bool in
             await previous?.value
-            defer { if settingsRevision == revision { settingsTask = nil } }
+            defer {
+                if settingsRevision == revision {
+                    settingsTask = nil
+                    settingsResultTask = nil
+                }
+            }
             do {
                 let merged = try await configurations.mergeGlobalPreferences(updated: global, baseline: oldGlobal, at: globalPreferencesURL)
                 if globalPreferences == global { globalPreferences = merged; globalBaseline = merged }
@@ -91,8 +96,27 @@ extension AppSession {
                     let mergedProject = try await configurations.mergeProjectConfiguration(updated: project, baseline: oldProject, for: root)
                     if projectURL == root, projectConfiguration == project { projectConfiguration = mergedProject; projectBaseline = mergedProject }
                 }
+                return true
             } catch { report(error) }
+            return false
         }
+        settingsResultTask = resultTask
+        settingsTask = Task {
+            _ = await resultTask.value
+        }
+    }
+
+    /// Persist the current Home/session snapshot and wait for the queued
+    /// merge to finish. Recovery uses the result to avoid leaving a durable
+    /// sync relocation paired with an unpersisted favorite or recent path.
+    @discardableResult
+    func persistSettingsAndWait(includeProject: Bool = true) async -> Bool {
+        persistSettings(includeProject: includeProject)
+        if let resultTask = settingsResultTask {
+            return await resultTask.value
+        }
+        await settingsTask?.value
+        return true
     }
     func jumpToHeading(_ line: Int) {
         guard headings.contains(where: { $0.line == line }) else { return }

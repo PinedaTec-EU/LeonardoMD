@@ -28,6 +28,20 @@ enum DesktopConsentActionOutcome: Equatable {
     case failed
 }
 
+/// Separates the durable preferences write from the best-effort runtime restart.
+/// A persisted-but-unavailable result is safe for callers to use as the new
+/// configuration while leaving the existing Sync diagnostic visible.
+enum DesktopSyncUpdateOutcome: Equatable {
+    case notPersisted
+    case persisted
+    case persistedButUnavailable
+}
+
+struct DesktopSyncUpdateResult {
+    let outcome: DesktopSyncUpdateOutcome
+    let persistedGlobalPreferences: GlobalPreferences?
+}
+
 enum RubricCaptureError: LocalizedError {
     case unavailable(RubricCaptureAvailability)
     case missingRequest
@@ -192,36 +206,137 @@ final class DesktopSyncController {
     }
 
     func update(_ updated: MobileSyncPreferences) async {
-        guard !InstanceRuntime.isAdditional, !busy else { return }
+        _ = await updateResult(updated)
+    }
+
+    private func updateResult(_ updated: MobileSyncPreferences) async -> DesktopSyncUpdateOutcome {
+        await updateResultWithPreferences(updated).outcome
+    }
+
+    private func updateResultWithPreferences(
+        _ updated: MobileSyncPreferences,
+        currentMatches: @Sendable @escaping (GlobalPreferences) -> Bool = { _ in true }
+    ) async -> DesktopSyncUpdateResult {
+        guard !InstanceRuntime.isAdditional, !busy else {
+            return DesktopSyncUpdateResult(outcome: .notPersisted, persistedGlobalPreferences: nil)
+        }
         busy = true
         defer { busy = false }
         do {
-            try InstancePathOwnership.shared.claim(storageRoot)
-            var updated = updated
-            if !updated.privateOverlayEnabled,
-               let host = updated.host,
-               LocalNetworkAddress.isPrivateOverlay(host) {
-                updated.host = nil
-            }
-            for project in updated.projects {
-                _ = try CorpusSelection(folders: project.folders, documents: project.documents)
-                try InstancePathOwnership.shared.claim(project.rootURL)
-            }
             let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
-            // The helper switch is owned by its lifecycle controller, not a stale sharing form.
-            updated.helperEnabled = previous.mobileSync.helperEnabled
             var next = previous
             next.mobileSync = updated
-            settings = try await configurations.mergeGlobalPreferences(updated: next, baseline: previous, at: preferencesURL).mobileSync
-            projectSettingsLoaded = true
-            running = nil; invitationURL = nil
-            if usesHelper { await helper.refresh() }
-            if !usesHelper || helper.online {
-                try await runtime.stop()
-                if settings.enabled { try await start() }
-                consent = try await runtime.consentState()
+            return try await applyGlobalUpdate(next, baseline: previous, currentMatches: currentMatches)
+        } catch {
+            self.error = error.localizedDescription
+            return DesktopSyncUpdateResult(outcome: .notPersisted, persistedGlobalPreferences: nil)
+        }
+    }
+
+    /// Applies a global snapshot in the same durable merge as the sync
+    /// settings. Home recovery uses this transaction so favorites/Recents and
+    /// a shared-project relocation cannot be persisted independently.
+    private func applyGlobalUpdate(_ requested: GlobalPreferences,
+                                   baseline: GlobalPreferences,
+                                   currentMatches: @Sendable @escaping (GlobalPreferences) -> Bool = { _ in true }) async throws -> DesktopSyncUpdateResult {
+        var pendingClaims: [InstancePathOwnership.PendingClaim] = []
+        var committed = false
+        defer {
+            if committed {
+                InstancePathOwnership.shared.promotePending(pendingClaims)
+            } else {
+                InstancePathOwnership.shared.rollbackPending(pendingClaims)
             }
-        } catch { self.error = error.localizedDescription }
+        }
+        var updated = requested
+        if let pending = try InstancePathOwnership.shared.reservePending(storageRoot) {
+            pendingClaims.append(pending)
+        }
+        if !updated.mobileSync.privateOverlayEnabled,
+           let host = updated.mobileSync.host,
+           LocalNetworkAddress.isPrivateOverlay(host) {
+            updated.mobileSync.host = nil
+        }
+        for project in updated.mobileSync.projects {
+            _ = try CorpusSelection(folders: project.folders, documents: project.documents)
+            if let pending = try InstancePathOwnership.shared.reservePending(project.rootURL) {
+                pendingClaims.append(pending)
+            }
+        }
+        let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
+        // The helper switch is owned by its lifecycle controller, not a stale sharing form.
+        updated.mobileSync.helperEnabled = previous.mobileSync.helperEnabled
+        let persisted = try await configurations.mergeGlobalPreferencesIfCurrent(
+            updated: updated, baseline: baseline, at: preferencesURL,
+            currentMatches: currentMatches
+        )
+        committed = true
+        settings = persisted.mobileSync
+        projectSettingsLoaded = true
+        running = nil; invitationURL = nil
+        if usesHelper { await helper.refresh() }
+        guard !usesHelper || helper.online else {
+            error = L10n.text(RubricCaptureAvailability.helperOffline.messageKey)
+            return DesktopSyncUpdateResult(outcome: .persistedButUnavailable,
+                                           persistedGlobalPreferences: persisted)
+        }
+        do {
+            try await runtime.stop()
+            if settings.enabled { try await start() }
+            consent = try await runtime.consentState()
+            return DesktopSyncUpdateResult(outcome: .persisted,
+                                           persistedGlobalPreferences: persisted)
+        } catch {
+            self.error = error.localizedDescription
+            return DesktopSyncUpdateResult(outcome: .persistedButUnavailable,
+                                           persistedGlobalPreferences: persisted)
+        }
+    }
+
+    func relocateSharedProject(_ project: MobileSharedProject, to destination: URL,
+                               updatingGlobalPreferences requestedGlobal: GlobalPreferences? = nil,
+                               baseline: GlobalPreferences? = nil) async -> DesktopSyncUpdateOutcome {
+        await relocateSharedProjectResult(project, to: destination,
+                                          updatingGlobalPreferences: requestedGlobal,
+                                          baseline: baseline).outcome
+    }
+
+    func relocateSharedProjectResult(_ project: MobileSharedProject, to destination: URL,
+                                     updatingGlobalPreferences requestedGlobal: GlobalPreferences? = nil,
+                                     baseline: GlobalPreferences? = nil,
+                                     currentPreferencesMatch: @Sendable @escaping (GlobalPreferences) -> Bool = { _ in true }) async -> DesktopSyncUpdateResult {
+        let path = destination.standardizedFileURL.resolvingSymlinksInPath().path
+        guard !busy, !InstanceRuntime.isAdditional,
+              let index = settings.projects.firstIndex(of: project),
+              !settings.projects.contains(where: {
+                  $0.rootURL.standardizedFileURL.resolvingSymlinksInPath().path == path
+              }) else {
+            return DesktopSyncUpdateResult(outcome: .notPersisted, persistedGlobalPreferences: nil)
+        }
+        let replacement = MobileSharedProject(id: project.id, rootURL: destination, name: project.name,
+                                              folders: project.folders, documents: project.documents)
+        var updated = settings
+        updated.projects[index] = replacement
+        let expectedProjects = baseline?.mobileSync.projects ?? settings.projects
+        let currentMatches: @Sendable (GlobalPreferences) -> Bool = { current in
+            current.mobileSync.projects == expectedProjects
+                && currentPreferencesMatch(current)
+        }
+        if var requestedGlobal,
+           let baseline {
+            requestedGlobal.mobileSync = updated
+            busy = true
+            defer { busy = false }
+            do {
+                return try await applyGlobalUpdate(
+                    requestedGlobal, baseline: baseline, currentMatches: currentMatches
+                )
+            } catch {
+                self.error = error.localizedDescription
+                return DesktopSyncUpdateResult(outcome: .notPersisted, persistedGlobalPreferences: nil)
+            }
+        }
+        return await updateResultWithPreferences(updated, currentMatches: currentMatches)
     }
 
     private func start() async throws {

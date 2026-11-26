@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-26T08:56:31Z",
+  "route": "Home",
+  "screen": "Home recent-items missing saved project",
+  "browser_name": "LeonardoMD QA (macOS native)",
+  "browser_version": "0.3.2318 / macOS native",
+  "state": "Disposable synthetic fixture; Old Project row disabled; saved path not found; warning icon visible.",
+  "viewport_css": {"width": 2520, "height": 1700},
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic"
+}

@@ -86,6 +86,13 @@ final class AppSession {
     @ObservationIgnored weak var presentationWindow: NSWindow?
     var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
     var confirmDiscardForReload: @MainActor () async -> Bool = { false }
+    /// The shared-project recovery confirmation is injectable so the
+    /// re-entrant recovery boundary can be tested without presenting AppKit
+    /// UI. Production installs the native confirmation in `init`.
+    @ObservationIgnored var confirmSavedProjectRelocation: @MainActor (URL) async -> Bool = { _ in false }
+    /// Test-only synchronization point immediately before Home recovery's
+    /// awaited global merge. Production leaves this as a no-op.
+    @ObservationIgnored var beforeSavedItemPersistence: @MainActor () async -> Void = {}
     var hasRelatedFileOperation: @MainActor () -> Bool = { false }
 
     var mode: DocumentMode = .preview { didSet { if oldValue != mode { clearGraphicSelection() } } }
@@ -162,6 +169,15 @@ final class AppSession {
     /// The format owner supplies the canonical MD -> MDLF migration. The app
     /// owns the preference and prompt, but never invents a second serializer.
     var migrateMarkdownDocument: @MainActor () async -> Bool = { false }
+    /// Authorizes a replacement location without reserving it for an open
+    /// document. Home recovery only changes durable references; it does not
+    /// open the selected document, so the process-lifetime path ownership used
+    /// by normal document operations would otherwise leak on a failed repair.
+    var authorizeSavedItemPath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
+        try NativeReconciliationLease.shared.check(url, intent: intent)
+        try await DesktopPeerController.shared.authorize(url, intent: intent)
+        try NativeReconciliationLease.shared.check(url, intent: intent)
+    }
     var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
         try NativeReconciliationLease.shared.check(url, intent: intent)
         try await DesktopPeerController.shared.authorize(url, intent: intent)
@@ -176,6 +192,7 @@ final class AppSession {
     var globalBaseline: GlobalPreferences
     var projectBaseline = ProjectConfiguration.default
     var settingsTask: Task<Void, Never>?
+    @ObservationIgnored var settingsResultTask: Task<Bool, Never>?
     var settingsRevision = 0
     var git: GitRepository?
     var gitStatus: GitStatus?
@@ -228,7 +245,7 @@ final class AppSession {
         guidedSigningStore = LeonardoSigningStore(directoryURL: signingDirectory)
         guidedSigningCredentialStore = signingCredentialStore
         self.openSystemURL = openSystemURL
-        let existingAuthorization = authorizePath
+        let existingAuthorization = authorizeSavedItemPath
         authorizePath = { url, intent in
             // Suspended operations must not acquire path ownership as a side effect.
             try NativeReconciliationLease.shared.check(url, intent: intent)
@@ -242,6 +259,15 @@ final class AppSession {
         }
         confirmDiscardForReload = { [weak self] in
             await NativeDialog.confirmReload(on: self?.presentationWindow)
+        }
+        confirmSavedProjectRelocation = { [weak self] destination in
+            let alert = NSAlert()
+            alert.messageText = L10n.text("Move the shared project to this location?")
+            alert.informativeText = L10n.text("Linked devices will have access to the existing share scope at this folder.")
+                + "\n" + destination.path
+            alert.addButton(withTitle: L10n.text("Use this location"))
+            alert.addButton(withTitle: L10n.text("Cancel"))
+            return await NativeDialog.present(alert, on: self?.presentationWindow) == .alertFirstButtonReturn
         }
     }
 
@@ -471,7 +497,15 @@ final class AppSession {
             default:
                 errorMessage = String(describing: error)
             }
-        } else { errorMessage = String(describing: error) }
+        } else if let localized = error as? LocalizedError,
+                  let message = localized.errorDescription,
+                  !message.isEmpty {
+            errorMessage = message
+        } else {
+            // Preserve the detailed enum/path diagnostics for errors that do
+            // not yet provide a LocalizedError presentation.
+            errorMessage = String(describing: error)
+        }
         logger.error("operation_failed category=\(String(reflecting: type(of: error)), privacy: .public)")
     }
     func updateTitle() {

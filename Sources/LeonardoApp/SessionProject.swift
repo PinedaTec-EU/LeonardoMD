@@ -6,6 +6,10 @@ import LeonardoCore
 
 extension AppSession {
     func chooseDocument() {
+        let panel = Self.documentOpenPanel()
+        presentFilePanel(panel) { [weak self] url in Task { await self?.open(url) } }
+    }
+    static func documentOpenPanel() -> NSOpenPanel {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.plainText] + AppDocumentKind.allCases.compactMap { kind in
             switch kind {
@@ -18,8 +22,9 @@ extension AppSession {
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
-        presentFilePanel(panel) { [weak self] url in Task { await self?.open(url) } }
+        return panel
     }
+
     func chooseProject() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false

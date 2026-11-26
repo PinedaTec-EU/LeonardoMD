@@ -83,8 +83,28 @@ public actor ConfigurationStore {
         baseline: GlobalPreferences,
         at fileURL: URL
     ) throws -> GlobalPreferences {
+        try mergeGlobalPreferencesIfCurrent(
+            updated: updated, baseline: baseline, at: fileURL,
+            currentMatches: { _ in true }
+        )
+    }
+
+    /// Compares the latest on-disk snapshot and merges it while holding the
+    /// same writer lock used for the save. Callers use the predicate to keep a
+    /// recovery identity (for example, a source favorite or shared project)
+    /// from being resurrected or overwritten after an earlier read.
+    @discardableResult
+    public func mergeGlobalPreferencesIfCurrent(
+        updated: GlobalPreferences,
+        baseline: GlobalPreferences,
+        at fileURL: URL,
+        currentMatches: @Sendable @escaping (GlobalPreferences) -> Bool
+    ) throws -> GlobalPreferences {
         return try ProcessFileLock.transaction(for: fileURL) {
             let current = try loadGlobalPreferences(at: fileURL)
+            guard currentMatches(current) else {
+                throw ConfigurationError.concurrentModification
+            }
             let merged = mergeGlobalPreferences(current: current, updated: updated, baseline: baseline)
             try saveGlobalPreferences(merged, at: fileURL)
             return merged
