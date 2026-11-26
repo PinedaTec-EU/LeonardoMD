@@ -28,17 +28,26 @@ codex plugin marketplace add PinedaTec-EU/LeonardoMD --sparse .agents/plugins --
 In Codex desktop, open **Plugins**, choose **PinedaTec Leonardo**, and install
 **Leonardo Format**. If the catalog is already installed, run
 `codex plugin marketplace upgrade pinedatec-leonardo` and refresh the app.
-With Python 3.9 or newer on the same computer and Leonardo Sync enabled, open
-a chat with access to your file and ask **“Preview this Leonardo document in
-Codex”**, including its path. The plugin opens an in-app browser tab for any
-supported v1 or v2 `.mdlf`, `.mdlr` or `.mdlz`.
+With a real Python 3.9 or newer interpreter already installed on the same
+computer and Leonardo Sync enabled, open a chat with access to your file and
+ask **“Preview this Leonardo document in Codex”**, including its path. On
+macOS, `/usr/bin/python3` may be a developer-tools installation shim; the Sync
+helper never invokes it and never prompts to install it. If preview is
+unavailable, install Python 3.9+ from a trusted source such as Homebrew or
+python.org, restart Leonardo or its Sync helper, and retry. Ordinary Sync
+continues to work without Python. The plugin opens an in-app browser tab for
+any supported v1 or v2 `.mdlf`, `.mdlr` or `.mdlz`.
 
 The preview uses Leonardo's bundled renderer for form values, Mermaid,
 KaTeX, charts, citations, tables and local images. Standalone inputs resolve
 images below the document folder, while packages resolve them from their
 `assets/` entries. The viewer is read-only and blocks remote resources.
 Each preview is registered with the persistent Sync helper, runs on loopback
-for up to one hour, and serves only the document's referenced resources. Ask
+for up to one hour, and serves only the document's referenced resources. Direct
+registration rejects files below Leonardo's managed `DesktopPeers` and
+`MobileSync` directories, including cached or revoked remote content. Use the
+authorized native Leonardo preview for managed remote documents; copying cache
+bytes to another path is not a way to bypass project access or revocation. Ask
 again after editing the document to open a fresh view.
 
 ### Automatic preview links in chats

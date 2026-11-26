@@ -9,6 +9,7 @@ import threading
 import unittest
 from pathlib import Path
 from urllib.parse import quote
+from unittest.mock import patch
 from zipfile import ZipFile
 
 REPO = Path(__file__).resolve().parents[3]
@@ -17,7 +18,7 @@ sys.path.insert(0, str(PLUGIN / "skills/leonardo-format/scripts"))
 
 from mdlz import ArchiveError
 from preview import RENDERER
-from preview_service import Preview, Service
+from preview_service import Preview, Service, _is_managed_source, _managed_roots
 
 EXAMPLES = REPO / "doc/format/examples"
 GUIDE = next((REPO / "Sources/LeonardoApp/Resources").glob("Guide-v*-es.mdlz"))
@@ -156,6 +157,20 @@ class PreviewTests(unittest.TestCase):
                 archive.writestr("assets/../escape.svg", "<svg/>")
             with self.assertRaises(ArchiveError):
                 Preview(package)
+
+    def test_rejects_managed_sync_content_even_when_the_path_is_local(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            managed = home / "Library/Application Support/LeonardoMD/DesktopPeers"
+            managed.mkdir(parents=True)
+            source = managed / "Downloads" / "invoice.mdlf"
+            source.parent.mkdir()
+            shutil.copyfile(EXAMPLES / "invoice/invoice.mdlf", source)
+            roots = _managed_roots(home)
+            self.assertTrue(_is_managed_source(source, roots))
+            with patch("preview_service._managed_roots", return_value=roots):
+                with self.assertRaisesRegex(ValueError, "managed Sync"):
+                    Preview(source)
 
 
 if __name__ == "__main__":

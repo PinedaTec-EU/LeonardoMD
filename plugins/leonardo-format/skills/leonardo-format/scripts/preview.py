@@ -295,14 +295,22 @@ def main() -> int:
     parser.add_argument("document", type=Path)
     arguments = parser.parse_args()
     from urllib.error import HTTPError
-    from preview_service import register
+    from preview_service import PreviewUnavailable, register
 
     try:
         print(register(arguments.document), flush=True)
     except HTTPError as error:
         parser.exit(1, f"Leonardo preview: {error.reason}\n")
+    except PreviewUnavailable:
+        parser.exit(
+            1,
+            "Leonardo preview unavailable. Enable Leonardo Sync and install a supported "
+            "Python 3.9+ interpreter from a trusted source (for example Homebrew or "
+            "python.org); macOS /usr/bin/python3 is not used. Restart Leonardo Sync "
+            "and retry.\n",
+        )
     except (ArchiveError, OSError, ValueError, KeyError):
-        parser.exit(1, "Leonardo preview unavailable. Enable Leonardo Sync in Leonardo settings and retry.\n")
+        parser.exit(1, "Leonardo preview rejected this file. Use a local .mdlf, .mdlr or .mdlz with supported resources.\n")
     return 0
 
 

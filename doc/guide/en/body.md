@@ -281,7 +281,7 @@ Package preferences allow working in the package, asking each time, or extractin
 
 ## 6. Plugins and AI agents
 
-The **leonardo-format** plugin teaches an agent the open v1 contract, separation of definitions and answers, and MDLZ inspection and reconstruction. It contains a skill, schema and Python tools. It needs no Leonardo account or dedicated credentials.
+The **leonardo-format** plugin teaches an agent the open v1 and v2 contract, separation of definitions and answers, and MDLZ inspection and reconstruction. It contains a skill, schema and Python tools. It needs no Leonardo account or dedicated credentials.
 
 **Reading files and controlling the application are different capabilities.** The skill works on documents supplied to the agent. It does not grant access to the currently open document or automatically connect to Leonardo through MCP. It cannot expand a provider's accepted attachment types.
 
@@ -317,6 +317,16 @@ This loads it for that session. For persistent use, install from a Claude market
 Install and enable `leonardo-format` from a plugin catalog where it is published. If it is absent, use the local `plugins/leonardo-format` package with your Codex version's local-plugin workflow. Catalog availability depends on publication and account; opening this guide does not install the plugin.
 
 Check that Codex has the skill, schema and scripts before handing it a file. Installation mechanisms vary across Codex versions and surfaces; consult the [plugin documentation](https://developers.openai.com/plugins/build/plugins).
+
+### Preview a local document in Codex
+
+For a read-only browser preview, install and enable `leonardo-format`, enable Leonardo Sync, and ask Codex to preview a local `.mdlf`, `.mdlr` or `.mdlz` file. The Sync helper starts the optional loopback preview only when it finds an already-installed real Python 3.9+ interpreter in a supported location. It never invokes macOS `/usr/bin/python3`, which can be a developer-tools installation shim, so ordinary Sync remains usable when Python is absent.
+
+If preview is unavailable, install Python 3.9+ from a trusted source such as Homebrew or [python.org](https://www.python.org/downloads/), restart Leonardo and its Sync helper, and retry. The helper does not install Python or trigger the macOS developer-tools prompt. Use this request:
+
+> Preview this local Leonardo document in Codex. Keep it read-only and report if Leonardo Sync or the supported Python runtime is unavailable.
+
+The preview stays on loopback, expires after one hour, serves only referenced local resources and never writes the source. Registration accepts ordinary local files but rejects paths below Leonardo's managed `DesktopPeers` and `MobileSync` storage, including cached or revoked remote content. Open managed remote documents through Leonardo's authorized native preview; do not copy cached bytes to bypass a project grant or revocation.
 
 ### Prompts to copy
 

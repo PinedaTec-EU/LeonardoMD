@@ -13,6 +13,7 @@ import threading
 import time
 from http.server import HTTPServer
 from urllib.parse import urlsplit
+from urllib.error import HTTPError
 from urllib.request import build_opener, ProxyHandler, Request
 from zipfile import BadZipFile, ZipFile
 
@@ -34,6 +35,12 @@ MAX_REQUEST = 16 * 1024
 MAX_ENDPOINT_BYTES = 4 * 1024
 MAX_DOCUMENT_PATH = 4 * 1024
 MAX_PREVIEW_BYTES = 32 * 1024 * 1024
+MANAGED_STORAGE = Path("Library/Application Support/LeonardoMD")
+MANAGED_SYNC_DIRECTORIES = ("DesktopPeers", "MobileSync")
+
+
+class PreviewUnavailable(RuntimeError):
+    """The optional Sync-owned preview service is not reachable."""
 
 
 def _unique_pairs(pairs):
@@ -58,7 +65,20 @@ def _regular_source(path: Path) -> Path:
     mode = canonical.lstat().st_mode
     if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
         raise ValueError("document must be a regular file and not a symlink")
+    if _is_managed_source(canonical):
+        raise ValueError("managed Sync content is not available to Codex preview")
     return canonical
+
+
+def _managed_roots(home: Path | None = None) -> tuple[Path, ...]:
+    root = (home or Path.home()) / MANAGED_STORAGE
+    return tuple((root / name).resolve(strict=False) for name in MANAGED_SYNC_DIRECTORIES)
+
+
+def _is_managed_source(path: Path, roots: tuple[Path, ...] | None = None) -> bool:
+    canonical = path.resolve(strict=False)
+    protected = _managed_roots() if roots is None else roots
+    return any(root == canonical or root in canonical.parents for root in protected)
 
 
 class Preview:
@@ -200,7 +220,10 @@ def register(source: Path, endpoint: Path = ENDPOINT) -> str:
     document = Path(source)
     if not document.is_absolute():
         document = Path(os.path.abspath(document))
-    config = _read_endpoint(endpoint)
+    try:
+        config = _read_endpoint(endpoint)
+    except (OSError, TypeError, ValueError) as error:
+        raise PreviewUnavailable("Leonardo Sync preview endpoint is unavailable") from error
     port = config["port"]
     request = Request(
         f"http://127.0.0.1:{port}/register",
@@ -211,8 +234,13 @@ def register(source: Path, endpoint: Path = ENDPOINT) -> str:
         },
         method="POST",
     )
-    with build_opener(ProxyHandler({})).open(request, timeout=10) as response:
-        value = response.read(1024).decode("utf-8")
+    try:
+        with build_opener(ProxyHandler({})).open(request, timeout=10) as response:
+            value = response.read(1024).decode("utf-8")
+    except HTTPError:
+        raise
+    except (OSError, ValueError) as error:
+        raise PreviewUnavailable("Leonardo Sync preview service is unavailable") from error
     if not value.startswith(f"http://127.0.0.1:{port}/"):
         raise ValueError("helper returned an invalid preview URL")
     return value
