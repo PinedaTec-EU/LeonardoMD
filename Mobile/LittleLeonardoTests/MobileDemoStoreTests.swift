@@ -10,7 +10,7 @@ final class MobileDemoStoreTests: XCTestCase {
         let store = MobileDemoStore(root: root)
         let spanish = try store.load(.es)
         let english = try store.load(.en)
-        for marker in ["```mermaid", "$$", "```vega-lite", "[@demo2026]", "[^offline]", "![Bundled Leonardo guide cover]"] {
+        for marker in ["```mermaid", "$$", "```vega-lite", "[@demo2026]", "[^offline]", "](assets/demo.png)"] {
             XCTAssertTrue(english.contains(marker), "The bundled Demo is missing extension example: \(marker)")
             XCTAssertTrue(spanish.contains(marker), "The bundled Demo is missing extension example: \(marker)")
         }
