@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2318
+
+- #495 Fixed: paginate oversized Markdown tables by row ([#499](https://github.com/PinedaTec-EU/LeonardoMD/pull/499))
+
+<p>Fixes overflowing Markdown tables in paginated preview and PDF by continuing whole rows across pages with consistent column widths and repeated headers.</p>
+
+Source: `bd5a25dc931716474b9915280442e1039593ec55`. Delta: `{"build": 9}`.
+
 ## 0.3.2309
 
 - #596 Fixed: style the remote computer rename dialog ([#597](https://github.com/PinedaTec-EU/LeonardoMD/pull/597))

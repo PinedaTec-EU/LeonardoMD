@@ -1399,6 +1399,16 @@
       "pr": 597,
       "summary": "The remote computer rename dialog now uses the same field and button styles as the rest of LeonardoMD.",
       "to_version": "0.3.2309"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.3.2309",
+      "merge_sha": "bd5a25dc931716474b9915280442e1039593ec55",
+      "pr": 499,
+      "summary": "Fixes overflowing Markdown tables in paginated preview and PDF by continuing whole rows across pages with consistent column widths and repeated headers.",
+      "to_version": "0.3.2318"
     }
   ],
   "initial_version": "0.1.56",
@@ -1409,5 +1419,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.2309"
+  "version": "0.3.2318"
 }
