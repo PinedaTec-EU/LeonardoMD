@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import http.client
 import json
+import os
 import shutil
+import stat
 import sys
 import tempfile
 import threading
@@ -19,7 +21,7 @@ sys.path.insert(0, str(PLUGIN / "skills/leonardo-format/scripts"))
 from mdlz import ArchiveError
 from preview import RENDERER
 from preview_policy import is_managed_sync_path, managed_sync_roots
-from preview_service import Preview, Service
+from preview_service import Preview, Service, _ensure_endpoint_parent
 
 EXAMPLES = REPO / "doc/format/examples"
 GUIDE = next((REPO / "Sources/LeonardoApp/Resources").glob("Guide-v*-es.mdlz"))
@@ -122,6 +124,21 @@ class PreviewTests(unittest.TestCase):
         registered.deadline = 0
         self.assertEqual(self.get(server, registered.prefix + "preview")[0], 404)
         self.assertEqual(self.get(server, "/health")[0], 200)
+
+    def test_preview_endpoint_keeps_normal_app_support_and_rejects_insecure_leaf(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app_support = Path(tmp) / "Library/Application Support/LeonardoMD"
+            app_support.mkdir(parents=True)
+            os.chmod(app_support, 0o755)
+            endpoint = app_support / "Preview/preview-endpoint.json"
+
+            _ensure_endpoint_parent(endpoint)
+            self.assertEqual(stat.S_IMODE(app_support.stat().st_mode), 0o755)
+            self.assertEqual(stat.S_IMODE(endpoint.parent.stat().st_mode), 0o700)
+
+            os.chmod(endpoint.parent, 0o755)
+            with self.assertRaisesRegex(ValueError, "invalid Leonardo Sync endpoint directory permissions"):
+                _ensure_endpoint_parent(endpoint)
 
     def test_local_asset_routes_confine_requests(self):
         with tempfile.TemporaryDirectory() as tmp:

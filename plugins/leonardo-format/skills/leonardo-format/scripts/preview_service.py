@@ -30,7 +30,8 @@ from preview import (
 )
 from preview_policy import ManagedSyncPathError, is_managed_sync_path
 
-ENDPOINT = Path.home() / "Library/Application Support/LeonardoMD/preview-endpoint.json"
+PREVIEW_DIRECTORY = Path.home() / "Library/Application Support/LeonardoMD/Preview"
+ENDPOINT = PREVIEW_DIRECTORY / "preview-endpoint.json"
 MAX_PREVIEWS = 4
 MAX_REQUEST = 16 * 1024
 MAX_ENDPOINT_BYTES = 4 * 1024

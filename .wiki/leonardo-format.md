@@ -167,6 +167,9 @@ loopback worker using a per-user, owner-only endpoint record. The plugin exits
 after obtaining its scoped URL. Worker lifetime follows the helper and does not
 require the editor or a shared project; the bundled MDLF v1/v2 validator and
 renderer are reused without writing the source document.
+The 0600 endpoint credential is kept under the helper-owned
+`~/Library/Application Support/LeonardoMD/Preview/` directory (0700); an
+existing Application Support directory may retain its ordinary permissions.
 The optional worker selects an already-installed real Python 3.9+ interpreter
 from supported macOS locations and never executes the `/usr/bin/python3`
 developer-tools installer shim; ordinary Sync remains independent. Preview
