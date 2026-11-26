@@ -41,6 +41,7 @@ struct ProjectFileList: View {
                             if session.searchQuery.isEmpty {
                                 ForEach(visibleRows) { row in
                                     FileTreeRow(entry: row.entry, session: session, tree: tree, rows: visibleRows,
+                                                isActiveTab: isActiveTab,
                                                 depth: row.depth + 1, expanded: tree.expanded.contains(row.id)) {
                                         Task { await tree.toggle(row.entry, session: session) }
                                     }.id(row.id)

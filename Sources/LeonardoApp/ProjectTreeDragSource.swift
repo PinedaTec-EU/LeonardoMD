@@ -4,6 +4,7 @@ import SwiftUI
 struct ProjectTreeDragSource: NSViewRepresentable {
     let url: URL
     let session: AppSession
+    let isActiveTab: Bool
     let selectedURLs: () -> [URL]
     let onMouseDown: (NSEvent.ModifierFlags, Int) -> Void
     let onMouseUp: (NSEvent.ModifierFlags, Int) -> Void
@@ -12,6 +13,7 @@ struct ProjectTreeDragSource: NSViewRepresentable {
         let view = ProjectTreeDragSourceView(frame: .zero)
         view.url = url
         view.session = session
+        view.isActiveTab = isActiveTab
         view.selectedURLs = selectedURLs
         view.onMouseDown = onMouseDown
         view.onMouseUp = onMouseUp
@@ -21,6 +23,7 @@ struct ProjectTreeDragSource: NSViewRepresentable {
     func updateNSView(_ view: ProjectTreeDragSourceView, context: Context) {
         view.url = url
         view.session = session
+        view.isActiveTab = isActiveTab
         view.selectedURLs = selectedURLs
         view.onMouseDown = onMouseDown
         view.onMouseUp = onMouseUp
@@ -37,6 +40,7 @@ struct ProjectTreeDragSource: NSViewRepresentable {
 final class ProjectTreeDragSourceView: NSView, NSDraggingSource {
     var url = URL(fileURLWithPath: "/")
     weak var session: AppSession?
+    var isActiveTab = true
     var selectedURLs: () -> [URL] = { [] }
     var onMouseDown: ((NSEvent.ModifierFlags, Int) -> Void)?
     var onMouseUp: ((NSEvent.ModifierFlags, Int) -> Void)?
@@ -181,13 +185,16 @@ final class ProjectTreeDragSourceRegistry {
         self.monitor = nil
     }
 
+    static func canCapture(_ view: ProjectTreeDragSourceView, event: NSEvent) -> Bool {
+        guard view.isActiveTab, !view.isHidden, view.window === event.window else { return false }
+        return view.bounds.contains(view.convert(event.locationInWindow, from: nil))
+    }
+
     private func capture(_ event: NSEvent) {
         views = views.filter { $0.value.value != nil }
         switch event.type {
         case .leftMouseDown:
-            let target = views.values.compactMap(\.value).first { view in
-                view.window === event.window && view.bounds.contains(view.convert(event.locationInWindow, from: nil))
-            }
+            let target = views.values.compactMap(\.value).first { Self.canCapture($0, event: event) }
             activeView = target
             dragStartPoint = target?.convert(event.locationInWindow, from: nil)
             dragStartEvent = target == nil ? nil : event

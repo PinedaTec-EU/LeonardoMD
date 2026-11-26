@@ -6,6 +6,7 @@ struct FileTreeRow: View {
     @Bindable var session: AppSession
     let tree: ProjectFileTree
     var rows: [ProjectFileTree.Row]? = nil
+    var isActiveTab = true
     let depth: Int
     let expanded: Bool
     let toggle: () -> Void
@@ -95,7 +96,7 @@ struct FileTreeRow: View {
         }
         .padding(.leading, CGFloat(depth) * 16)
         .overlay {
-            ProjectTreeDragSource(url: entry.url, session: session, selectedURLs: {
+            ProjectTreeDragSource(url: entry.url, session: session, isActiveTab: isActiveTab, selectedURLs: {
                 tree.dragSelection(startingAt: entry.url, rows: rows ?? tree.rows(roots: session.rootEntries))
             }, onMouseDown: { modifiers, _ in
                 ProjectTreeRowClickDelay.cancel(in: tree)
