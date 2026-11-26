@@ -1,10 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v168-en.mdlz` and `Guide-v168-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v169-en.mdlz` and `Guide-v169-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v168/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v169/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v169 explains the file and folder symbols shown during project-tree drags.
+Guide v169 EN SHA-256: `8ac09cc57846d0b822f73fc30fdbcaafc34103488fc9571530f4036b5ae19f42`
+and ES SHA-256: `29ff9700de497e58cee77672b6636c97ac9021b56abfb5f68489944afbbf1305`.
 
 Guide v168 adds unavailable Home items, retry and local relocation in both
 languages. It retains the project transfer, preview, rubric, mobile, Finder

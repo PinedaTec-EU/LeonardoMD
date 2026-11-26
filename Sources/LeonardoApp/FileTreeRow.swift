@@ -111,7 +111,7 @@ struct FileTreeRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        .onDrop(of: [DocumentDropProviders.projectTreeItemType, .fileURL], delegate: ProjectFolderDropDelegate(
+        .onDrop(of: ProjectFolderDropDelegate.acceptedTypes, delegate: ProjectFolderDropDelegate(
             folder: entry.isDirectory ? entry.url : entry.url.deletingLastPathComponent(),
             session: session,
             state: $dropState,

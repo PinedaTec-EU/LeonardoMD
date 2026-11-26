@@ -226,12 +226,20 @@ final class SessionPackageLifecycleTests: XCTestCase {
         _ = try await session.files.createMarkdown(
             named: "Nested.md", in: project, at: moveFolder.relativePath, contents: "nested"
         )
-        let moveProvider = DocumentDropProviders.projectTreeItemProvider(
-            for: moveFile.url, selecting: [moveFile.url, moveFolder.url]
-        )
-
-        XCTAssertFalse(session.acceptDrop([moveProvider], into: target.url))
-        XCTAssertTrue(session.acceptDrop([moveProvider], into: target.url, expectedProjectURLs: [moveFile.url, moveFolder.url]))
+        let source = ProjectTreeDragSourceView(frame: .zero)
+        source.session = session
+        let drag = ProjectTreeDragSourceRegistry()
+        let moveSelection = [moveFile.url, moveFolder.url]
+        drag.begin(source, root: try XCTUnwrap(session.projectURL), urls: moveSelection)
+        XCTAssertNil(drag.selection(for: session, destination: moveFolder.url))
+        source.isActiveTab = false
+        XCTAssertNil(drag.selection(for: session, destination: target.url))
+        source.isActiveTab = true
+        let droppedMove = try XCTUnwrap(drag.selection(for: session, destination: target.url))
+        XCTAssertEqual(droppedMove, moveSelection)
+        XCTAssertTrue(session.acceptProjectTreeDrop(droppedMove, into: target.url, copy: false))
+        drag.end(source)
+        XCTAssertNil(drag.selection(for: session, destination: target.url))
         let moved = try await waitForFileSystemChange {
             FileManager.default.fileExists(atPath: target.url.appendingPathComponent("MoveSource.md").path) &&
             FileManager.default.fileExists(atPath: target.url.appendingPathComponent("MoveFolder/Nested.md").path)
@@ -247,11 +255,11 @@ final class SessionPackageLifecycleTests: XCTestCase {
         _ = try await session.files.createMarkdown(
             named: "NestedCopy.md", in: project, at: copyFolder.relativePath, contents: "nested copy"
         )
-        let copyProvider = DocumentDropProviders.projectTreeItemProvider(
-            for: copyFile.url, selecting: [copyFile.url, copyFolder.url]
-        )
-
-        XCTAssertTrue(session.acceptDrop([copyProvider], into: target.url, copy: true, expectedProjectURLs: [copyFile.url, copyFolder.url]))
+        let copySelection = [copyFile.url, copyFolder.url]
+        drag.begin(source, root: try XCTUnwrap(session.projectURL), urls: copySelection)
+        let droppedCopy = try XCTUnwrap(drag.selection(for: session, destination: target.url))
+        XCTAssertTrue(session.acceptProjectTreeDrop(droppedCopy, into: target.url, copy: true))
+        drag.end(source)
         let copied = try await waitForFileSystemChange {
             FileManager.default.fileExists(atPath: target.url.appendingPathComponent("CopySource.md").path) &&
             FileManager.default.fileExists(atPath: target.url.appendingPathComponent("CopyFolder/NestedCopy.md").path)
@@ -261,10 +269,7 @@ final class SessionPackageLifecycleTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: copyFolder.url.path))
 
         let movedFile = target.url.appendingPathComponent("MoveSource.md")
-        let rootProvider = DocumentDropProviders.projectTreeItemProvider(
-            for: movedFile, selecting: [movedFile]
-        )
-        XCTAssertTrue(session.acceptDrop([rootProvider], into: projectRoot, copy: true, expectedProjectURLs: [movedFile]))
+        XCTAssertTrue(session.acceptProjectTreeDrop([movedFile], into: projectRoot, copy: true))
         let copiedBack = try await waitForFileSystemChange {
             FileManager.default.fileExists(atPath: moveFile.url.path)
         }
@@ -272,10 +277,7 @@ final class SessionPackageLifecycleTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: movedFile.path))
 
         let movedFolder = target.url.appendingPathComponent("MoveFolder", isDirectory: true)
-        let folderProvider = DocumentDropProviders.projectTreeItemProvider(
-            for: movedFolder, selecting: [movedFolder]
-        )
-        XCTAssertTrue(session.acceptDrop([folderProvider], into: projectRoot, expectedProjectURLs: [movedFolder]))
+        XCTAssertTrue(session.acceptProjectTreeDrop([movedFolder], into: projectRoot, copy: false))
         let movedBack = try await waitForFileSystemChange {
             FileManager.default.fileExists(atPath: moveFolder.url.appendingPathComponent("Nested.md").path)
         }
@@ -285,12 +287,7 @@ final class SessionPackageLifecycleTests: XCTestCase {
         let existingCopy = try await session.files.createMarkdown(
             named: "CopySource copy.md", in: project, contents: "existing"
         )
-        let duplicateProvider = DocumentDropProviders.projectTreeItemProvider(
-            for: copyFile.url, selecting: [copyFile.url]
-        )
-        XCTAssertTrue(session.acceptDrop(
-            [duplicateProvider], into: projectRoot, copy: true, expectedProjectURLs: [copyFile.url]
-        ))
+        XCTAssertTrue(session.acceptProjectTreeDrop([copyFile.url], into: projectRoot, copy: true))
         let duplicate = projectRoot.appendingPathComponent("CopySource copy 2.md")
         let duplicated = try await waitForFileSystemChange {
             FileManager.default.fileExists(atPath: duplicate.path)

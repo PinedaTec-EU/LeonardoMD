@@ -34,6 +34,19 @@ final class ProjectTreeDragSourceTests: XCTestCase {
         XCTAssertFalse(ProjectTreeDragSourceRegistry.canReceiveMouseEvent(view, event: event))
     }
 
+    func testDragPreviewUsesExistingTreeSymbols() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let document = folder.appendingPathComponent("Note.md")
+        try Data().write(to: document)
+        XCTAssertEqual(ProjectTreeDragSourceView.previewSymbol(for: folder),
+                       NavigationEntry(url: folder, isDirectory: true).symbol)
+        XCTAssertEqual(ProjectTreeDragSourceView.previewSymbol(for: document),
+                       NavigationEntry(url: document, isDirectory: false).symbol)
+    }
+
     private func makeVisibleSource() throws -> (NSWindow, ProjectTreeDragSourceView, NSEvent) {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
                               styleMask: [.borderless], backing: .buffered, defer: false)
