@@ -1,11 +1,13 @@
-# PR #465 · current packaged macOS Help smoke
+# PR #465 · preserved packaged macOS Help smoke
 
-Date: 2026-11-26 CET. This is the fresh native macOS validation of the
+Date: 2026-11-26 CET. This is the preserved native macOS validation of the
 reconciled Guide v147 package. The implementation source used to build the
 package was `613c24c31e1a83560ea4654175b452ab3b192f25`; the later
 `c80f4c03b132f11e46b9287ab82ff7bad400c856` head records the packaging ledger
 delta only. The PR head and the QA branch were clean and identical at the
-time of validation.
+time of validation. After #415 merged, the bilingual sources were reconciled
+and repackaged as Guide v156 without repeating this GUI run; this record remains
+runtime evidence for the unchanged Little Leonardo chapter only.
 
 ## Package identity
 
@@ -54,6 +56,14 @@ The personal copies were byte-identical to the bundled resources:
 The package and personal paths were both under the isolated QA home; no
 production Help copy was modified.
 
+The reconciled Guide v156 package also contains the #415 chapter-1 Finder/icon
+guidance. Its deterministic package hashes are EN
+`3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32` and ES
+`7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`. The
+real-Finder visual evidence supplied by #415 remains in
+`doc/validation/document-icons-415/README.md`; no new desktop launch was made
+for this reconciliation.
+
 ## Ownership and teardown
 
 The preflight confirmed that the coordinator's earlier QA PID 94241 was
@@ -68,6 +78,7 @@ and `Termination complete. Exiting without sudden termination.` No Device Hub
 session, simulator or other task-owned app instance was started. No crash was
 observed during the fresh-process check or the Help smoke.
 
-This evidence establishes the packaged macOS Help gate for the changed Guide
-v147 content. Physical-device/TestFlight acceptance and the coordinator's
-fresh judge remain separate gates.
+This evidence establishes the preserved packaged macOS Help gate for the
+Little Leonardo chapter in Guide v147 and the process teardown. It does not
+claim a fresh Guide v156 GUI run, Finder acceptance beyond the linked #415
+record, physical-device/TestFlight acceptance or the coordinator's fresh judge.

@@ -153,32 +153,40 @@ the document-extension section.
 | [English frequency settings](ios-frequency-english.png) | English section, selected interval and all frequency choices in the native picker. |
 | [Spanish frequency settings](ios-frequency-spanish.png) | Spanish section and all six localized choices in the native picker. |
 
-## Reconciled Guide v147 packaged Help and current-head iOS smoke
+## Guide v156 package and preserved #465 runtime evidence
 
-The reconciled candidate packages are EN SHA-256
-`69b9811c51634422a15a1a2ea0203ab21d0ed5b7ab5f10745260537a2b401a82` and ES
-`da3d046493102110c33bf334fdb707bcd1833231ca881dcb84dd71d9b88ea45a`. Current-
-head native iOS validation opened the integrated bilingual Help route and
-checked the document-extension and frequency guidance. The exact simulator
-flow, process teardown, screenshots and logs are in
+The reconciled Guide v156 packages combine the current `main` Guide v153
+Finder/icon chapter from #415 with the #465 Little Leonardo chapter. Their
+EN/ES SHA-256 values are
+`3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32` and
+`7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
+Deterministic packaging and focused native `BundledUserGuideTests` validate
+both locales and the package revision; no new GUI run was made after #415
+merged. The preserved current-head native iOS validation opened the
+integrated bilingual Help route and checked the document-extension and
+frequency guidance. The exact simulator flow, process teardown, screenshots
+and logs are in
 [current-ios-qa/README.md](current-ios-qa/README.md). The fresh native macOS
 v147 Help smoke, including English and Spanish routes, isolated personal-copy
-hashes and exact process teardown, is in
+hashes and exact process teardown, is preserved in
 [current-macos-qa/README.md](current-macos-qa/README.md).
 
-The earlier 2026-11-17 process note is historical only. The current v147
+The earlier 2026-11-17 process note is historical only. The preserved v147
 validation created and closed its own PID 13267 from the fresh QA bundle; see
 [current-macos-qa/README.md](current-macos-qa/README.md) for the exact path,
-hashes and termination log evidence.
+hashes and termination log evidence. The #415 Finder visual record is in
+[document-icons-415/README.md](../document-icons-415/README.md); this PR does
+not duplicate that GUI run.
 
 ## Current-head criterion matrix for #464
 
-The implementation under review is `fd7b8b116f36e2bec360ffccecf2d0992387a3cd`,
-reconciled from `origin/main`
-`32efc6f211380c91944f17873993af27e406b67a`. The iOS and macOS evidence was
-observed at PR head `c626cbc6f67ebe5d67422179c515c95b62a63ccd`; the present
-documentation refresh does not change the implementation exercised by that
-run. The matrix below separates source and automated coverage from the runtime
+The mobile implementation under review remains
+`fd7b8b116f36e2bec360ffccecf2d0992387a3cd`; the branch is now reconciled with
+the newly merged `origin/main` `06a93b2ab252d7439236ff92ae9c31d1acd73ff5`.
+The iOS and macOS runtime evidence was observed before that merge at PR head
+`c626cbc6f67ebe5d67422179c515c95b62a63ccd`; the current source/package
+validation proves the unchanged #465 mobile chapter remains in Guide v156.
+The matrix below separates source and automated coverage from runtime
 acceptance that still belongs to beta/stable.
 
 | #464 criterion | Current implementation and automated evidence | Observed visual evidence and remaining boundary |
@@ -187,14 +195,15 @@ acceptance that still belongs to beta/stable.
 | On-demand and offline previews remain read-only | `Mobile/LittleLeonardo/MobileDocumentView.swift`, `Mobile/LittleLeonardo/MobileRemoteDocumentPreview.swift`, `Mobile/LittleLeonardo/MobileDemoView.swift` and `Sources/LeonardoSyncUI/RemoteDocumentPreview.swift` feed the same feature configuration to received and bundled documents. `MobileReaderSpacingTests.testLeonardoDocumentsRenderReadOnlyInLittleLeonardo` remains the repository regression; the 9 Demo-store cases cover offline Demo copies and recovery. | [English Demo captures](current-ios-qa/demo-en-all-enabled-top.png) and [scrolled preview](current-ios-qa/demo-en-scrolled.png) show the bundled local, read-only flow. This run did not claim a remote transfer or physical/TestFlight session; fresh remote/on-demand runtime acceptance is deferred to beta/stable. |
 | Grouped consent offers only detected disabled features; Not now/suppression/reset are safe | `Mobile/LittleLeonardo/MobileExtensionRecommendations.swift` and `Mobile/LittleLeonardo/MobileExtensionRecommendationDialog.swift` enforce allowlisted detection, exact-source context and explicit selection. `MobileExtensionRecommendationsTests.testRecommendationIsNotRepeatedForFormChangesAndResetsOnReopen` and `.testNotNowDoesNotEnableAndResetRestoresRecommendation` (2 focused cases) passed locally. | The current iOS run observed the grouped consent before enabling the Demo, but no prompt screenshot was retained. The older [English](../little-leonardo/mobile-extension-recommendation-full/mobile-extension-recommendation-en.metadata.json) and [Spanish](../little-leonardo/mobile-extension-recommendation-full/mobile-extension-recommendation-es.metadata.json) sidecars are valid historical visuals from source `d00d6d804d5285b8f5dda240b95ffa3ec54ba6ec`, not current-head proof. A fresh beta/stable prompt capture remains optional runtime follow-up. |
 | Allowlisted engines, literal fallback, blocked remote content and read-only behavior remain intact | `Sources/LeonardoCore/BuiltInExtension.swift`, `Mobile/LittleLeonardo/MobileExtensionRecommendations.swift`, `Mobile/LittleLeonardo/MobileDocumentView.swift`, `Sources/LeonardoRender/MarkdownResourceCatalog.swift` and `Sources/LeonardoSyncUI/RemoteDocumentPreview.swift` preserve the five allowlisted IDs, disabled-engine fallback, `externalLinkPolicy: .blocked`/`.callbackOnly` and `allowsRemoteImages: false`. Existing renderer/mobile tests, including the read-only test above, provide regression coverage; no new current-head UI test was added. | The current Demo and Help captures show the selected feature state and local rendering only. Remote-resource authorization and physical-device behavior are not visually claimed here; beta/stable remains the acceptance boundary. |
-| English and Spanish bundled Help document the workflow and remain package-identical | `doc/guide/en/body.md`, `doc/guide/es/body.md` and Guide v147 resources are packaged as EN `69b9811c51634422a15a1a2ea0203ab21d0ed5b7ab5f10745260537a2b401a82` / ES `da3d046493102110c33bf334fdb707bcd1833231ca881dcb84dd71d9b88ea45a`. `python3 -m unittest scripts.tests.test_package_user_guide` passed (3); package and macOS checks passed. | Current iOS Spanish Help screenshots and sidecars are in [current-ios-qa](current-ios-qa/README.md); [current-macos-qa](current-macos-qa/README.md) records both native routes, personal-copy `cmp`, package identity and PID teardown. No new GUI was run during this repair. Physical/TestFlight Help acceptance remains a beta/stable gate. |
+| English and Spanish bundled Help document the workflow and remain package-identical | `doc/guide/en/body.md`, `doc/guide/es/body.md` now contain both #415 chapter-1 Finder guidance and the #465 mobile chapter. Guide v156 packages are EN `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32` / ES `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`; deterministic package tests and focused `BundledUserGuideTests` passed. | Current iOS and macOS screenshots/process evidence remains the preserved v147 run in [current-ios-qa](current-ios-qa/README.md) and [current-macos-qa](current-macos-qa/README.md); #415 Finder evidence is linked from [document-icons-415](../document-icons-415/README.md). No new GUI was run during this reconciliation. Physical/TestFlight Help acceptance remains a beta/stable gate. |
 
 Hosted exact-head checks are recorded by CI rather than repeated in this
-documentation-only repair. The current iOS evidence README records the local
-generic compile and 11 focused tests; it also preserves the XcodeBuildMCP log
-paths and teardown identities. No screenshot event time was persisted, so the
-new sidecars intentionally expose that limitation instead of deriving a
-capture time from file metadata.
+documentation/package reconciliation. The preserved iOS evidence README
+records the local generic compile and 11 focused tests; it also preserves the
+XcodeBuildMCP log paths and teardown identities. The new focused native guide
+test records the v156 package/revision after the #415 merge. No screenshot
+event time was persisted, so the sidecars intentionally expose that limitation
+instead of deriving a capture time from file metadata.
 
 ## Release cleanup gate
 

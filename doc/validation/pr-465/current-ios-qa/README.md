@@ -1,12 +1,16 @@
-# Current-head iOS QA
+# Preserved current-head iOS QA
 
 Date: 2026-11-26 (CET)
 
-This evidence was captured from the reconciled candidate at commit
+This evidence was captured from the reconciled mobile implementation at commit
 `fd7b8b116f36e2bec360ffccecf2d0992387a3cd`, based on
-`origin/main` `32efc6f211380c91944f17873993af27e406b67a`. The app was built
-from the isolated worktree with the repository recorder and installed without
-rebuilding during the visual run:
+`origin/main` `32efc6f211380c91944f17873993af27e406b67a`. It used the then
+current Guide v147 package. After #415 added the Finder/icon chapter to main,
+the bilingual sources were merged and repackaged as Guide v156 without a new
+simulator run; the preserved runtime evidence below therefore remains an
+equivalence record for the unchanged Little Leonardo chapter, not a v156 GUI
+claim. The app was built from the isolated worktree with the repository
+recorder and installed without rebuilding during the visual run:
 
 ```text
 build product: .build/recorder-ios/Build/Products/Debug-iphonesimulator/LittleLeonardo.app
@@ -81,9 +85,13 @@ records the same timestamp limitation.
 - Focused iOS Simulator tests through the recorder:
   `MobileDemoStoreTests` (9 passed) and `MobileExtensionRecommendationsTests`
   (2 passed), 11 passed / 0 failures, build delta 19.
-- The regenerated Guide v147 packages used by the candidate are EN
+- The preserved runtime run used Guide v147 packages EN
   `69b9811c51634422a15a1a2ea0203ab21d0ed5b7ab5f10745260537a2b401a82` and ES
   `da3d046493102110c33bf334fdb707bcd1833231ca881dcb84dd71d9b88ea45a`.
+- The reconciled Guide v156 packages include the same Little Leonardo chapter
+  plus the merged #415 Finder chapter. Deterministic package validation records
+  EN `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32` and
+  ES `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
 
 Physical-device/TestFlight acceptance and the coordinator's fresh judge remain
 separate gates; no merge was performed.

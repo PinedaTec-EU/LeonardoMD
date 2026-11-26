@@ -21,22 +21,32 @@
 <key>CFBundleTypeName</key><string>Markdown document</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Alternate</string>
-<key>LSItemContentTypes</key><array><string>net.daringfireball.markdown</string><string>public.plain-text</string></array>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
+<key>LSItemContentTypes</key><array><string>net.daringfireball.markdown</string></array>
+</dict>
+<dict>
+<key>CFBundleTypeName</key><string>Plain text document</string>
+<key>CFBundleTypeRole</key><string>Editor</string>
+<key>LSHandlerRank</key><string>Alternate</string>
+<key>LSItemContentTypes</key><array><string>public.plain-text</string></array>
 </dict>
 <dict>
 <key>CFBundleTypeName</key><string>Leonardo document</string>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Owner</string>
 <key>LSItemContentTypes</key><array><string>eu.pinedatec.leonardomd.mdlf</string></array>
 </dict>
 <dict>
 <key>CFBundleTypeName</key><string>Leonardo form response</string>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Owner</string>
 <key>LSItemContentTypes</key><array><string>eu.pinedatec.leonardomd.mdlr</string></array>
 </dict>
 <dict>
 <key>CFBundleTypeName</key><string>Leonardo package</string>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Owner</string>
 <key>LSItemContentTypes</key><array><string>eu.pinedatec.leonardomd.mdlz</string></array>
@@ -44,6 +54,7 @@
 </array>
 <key>UTImportedTypeDeclarations</key><array><dict>
 <key>UTTypeIdentifier</key><string>net.daringfireball.markdown</string>
+<key>UTTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>UTTypeConformsTo</key><array><string>public.plain-text</string></array>
 <key>UTTypeDescription</key><string>Markdown</string>
 <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>md</string><string>markdown</string></array></dict>
@@ -51,18 +62,21 @@
 <key>UTExportedTypeDeclarations</key><array>
 <dict>
 <key>UTTypeIdentifier</key><string>eu.pinedatec.leonardomd.mdlf</string>
+<key>UTTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>UTTypeConformsTo</key><array><string>public.plain-text</string></array>
 <key>UTTypeDescription</key><string>Leonardo document</string>
 <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>mdlf</string></array></dict>
 </dict>
 <dict>
 <key>UTTypeIdentifier</key><string>eu.pinedatec.leonardomd.mdlr</string>
+<key>UTTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>UTTypeConformsTo</key><array><string>public.plain-text</string></array>
 <key>UTTypeDescription</key><string>Leonardo form response</string>
 <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>mdlr</string></array></dict>
 </dict>
 <dict>
 <key>UTTypeIdentifier</key><string>eu.pinedatec.leonardomd.mdlz</string>
+<key>UTTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>UTTypeConformsTo</key><array><string>public.zip-archive</string><string>public.content</string></array>
 <key>UTTypeDescription</key><string>Leonardo package</string>
 <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>mdlz</string></array></dict>

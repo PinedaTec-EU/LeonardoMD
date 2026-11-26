@@ -397,3 +397,21 @@ each criterion to implementation sources, focused tests, current captures and
 historical visuals; it keeps remote/on-demand, physical-device and TestFlight
 acceptance separate from the bundled local Demo evidence. No new GUI run was
 performed because the owner deferred repeated probes to beta/stable.
+
+# 2026-11-26: PR #465 refreshed after #415 reached main
+
+PR #465 was reconciled with `origin/main`
+`06a93b2ab252d7439236ff92ae9c31d1acd73ff5`, retaining the #465 mobile
+implementation and all prior simulator/macOS evidence while incorporating the
+#415 chapter-1 Finder/icon guidance. The bilingual guide was deliberately
+advanced to unused revision v156 (v155 is reserved by #497). Guide v156 hashes
+are EN `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
+and ES `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
+
+The v147 iOS/macOS runtime records remain explicitly historical/equivalence
+evidence for the unchanged Little Leonardo chapter; no GUI or simulator was
+repeated. #415's real Finder evidence remains linked from
+`doc/validation/document-icons-415/README.md`. Deterministic package tests and
+focused `BundledUserGuideTests` validate both v156 packages. Any later #497
+merge may require a fresh documentation-only reload if it changes the guide
+body; this handoff does not wait for or merge #497.
