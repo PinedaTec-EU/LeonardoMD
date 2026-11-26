@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2309
+
+- #596 Fixed: style the remote computer rename dialog ([#597](https://github.com/PinedaTec-EU/LeonardoMD/pull/597))
+
+<p>The remote computer rename dialog now uses the same field and button styles as the rest of LeonardoMD.</p>
+
+Source: `559a4a2dd242d8b19a5fb730565d85dc7e66a008`. Delta: `{"build": 2}`.
+
 ## 0.3.2307
 
 - #604 Fixed: separate opening and managing remote projects ([#605](https://github.com/PinedaTec-EU/LeonardoMD/pull/605))

@@ -1389,9 +1389,19 @@
       "pr": 605,
       "summary": "Favorites, Remote items and Recents have illustrated headings. Open a shared project from its row or use its separate menu to manage offline availability and temporary downloads.",
       "to_version": "0.3.2307"
+    },
+    {
+      "delta": {
+        "build": 2
+      },
+      "from_version": "0.3.2307",
+      "merge_sha": "559a4a2dd242d8b19a5fb730565d85dc7e66a008",
+      "pr": 597,
+      "summary": "The remote computer rename dialog now uses the same field and button styles as the rest of LeonardoMD.",
+      "to_version": "0.3.2309"
     }
   ],
-  "current_version": "0.3.2307",
+  "current_version": "0.3.2309",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
