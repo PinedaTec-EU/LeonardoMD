@@ -31,7 +31,8 @@ and reports those failures in the selected language.
 Guide v153 remains the previous packaged baseline and v147 remains the
 previous #465 mobile-help package; existing guide copies and practice answers
 are never overwritten.
-Guide v165 hashes are recorded below after deterministic package generation.
+Guide v165 EN SHA-256: `2ce0213997f7c05ece09860097c8aeeb6ac4b4de1ab97ab5fc07d02d55859ca7`
+and ES SHA-256: `f8f68c9c3bbff9b71bb592295fa437a5b82801d4dbb70d4bc327089225d8334b`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
