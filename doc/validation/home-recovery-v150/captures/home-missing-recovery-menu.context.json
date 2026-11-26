@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-26T08:56:49Z",
+  "route": "Home",
+  "screen": "Home missing-project recovery menu",
+  "browser_name": "LeonardoMD QA (macOS native)",
+  "browser_version": "0.3.2318 / macOS native",
+  "state": "Disposable synthetic fixture; warning menu exposes Retry saved location and Locate moved item actions.",
+  "viewport_css": {"width": 2520, "height": 1700},
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic"
+}

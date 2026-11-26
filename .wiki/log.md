@@ -11,7 +11,7 @@
 - 2026-11-21: [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517) adds the MDLF v2 guided-signing contract and protected sidecar foundation. The native and plugin validators select matching v1/v2 schemas; the session tracks exact source-order occurrences, per-position rubric reuse, late first assignment only for still-pending positions, salted identity commitments, external trust and chained detached proofs. Persistence uses locked CAS transactions, size/type checks before reads and 0600 atomic publication. Focused Swift verification is pending a source PR/ledger entry; plugin tests pass 39/39.
 
 - 2026-11-21: Follow-up for [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517), [#522](https://github.com/PinedaTec-EU/LeonardoMD/issues/522) and [#523](https://github.com/PinedaTec-EU/LeonardoMD/issues/523): macOS guided signing captures use a signing-only rubric canvas and assigned fields reject the generic insertion path. Verified completed positions render occurrence-keyed rubric overlays without mutating the source snapshot. Little Leonardo keeps credential enrollment as a separate, explicitly labeled control outside the credential picker hit target; bilingual Guide v109 documents the consent boundary and explicit exchange.
-- 2026-11-21: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) explains unavailable saved locations on Home and adds retry and path repair. Shared source relocation requires confirmation and retains the share identifier and scope. The English and Spanish guides describe the recovery; the reconciled candidate packages it as Guide v146 (EN `f44d1ef1ffd5929e09e93cc0d88e6d0de29749b3b6432b083d4c7f064527d77c`, ES `e8fbecd5e8d76d17f85eb92457c11d713302ab93234abff8eb96b71ceaa97264`).
+- 2026-11-21: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) explains unavailable saved locations on Home and adds retry and path repair. Shared source relocation requires confirmation and retains the share identifier and scope. The English and Spanish guides describe the recovery; the reconciled candidate packages it as Guide v150 (EN `5a1f977777180d52b40d5d577b7f212fcc7b120b54bf98dab1dde6d3edb7fd83`, ES `22c7954087c889d48faa6e3b5acb00643ecfa1e68b87df7a1c7ec119a03ac197`).
 
 - 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) CI triage: the
   document-recent regression was coupled to the hosted process-global AppKit
@@ -20,6 +20,25 @@
   stale-source removal, destination deduplication and ordering without touching
   host recents. The rebased candidate on `727a7446` passes the five focused Home
   availability/persistence tests; full current-head CI remains pending.
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) was
+  reconciled again onto current `origin/main` `32efc6f2`, retaining merged #499's
+  exact Guide v146 table-pagination baseline and regenerating Guide v150 from
+  the combined table-pagination and Home-recovery sources. No new GUI/native
+  Help claim is made; regenerated v150 requires current-head packaged smoke.
+
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) final
+  packaged QA ran on exact draft source `724390f75e36e923866efee9857e8b9dc2c5e963`
+  (version `0.3.2318`, ledger build 20). Native Home smoke covered missing,
+  warning-menu, intentional Cancel and successful `Use this location` recovery
+  using only a synthetic project. Native Help opened Guide v150 chapter 7 in
+  English and Spanish; exact working-copy hashes are EN
+  `0e17463a0052718973fde8591255226bb9ec9f0e27d1f2ef2686e438b748e9f4` and ES
+  `2e344eb7e182afb2d44f02a3a077b459b6e003a9b4c8ba1e4da5c557cf6d8ddd`.
+  Durable scoped captures and metadata are in
+  `doc/validation/home-recovery-v150/captures/`. QA PID 94241 was quit through
+  the native application menu and the exact executable/helper path check at
+  `2026-11-26T10:07:43+01:00` found no task-owned process.
 
 - 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
 
@@ -341,6 +360,7 @@ head CI, exact-source alert captures and strict review are pending; Beta Help
 and tab/window/app-quit acceptance remain required after integration because
 local screen capture again returned `ScreenCaptureKit -3811`. See
 `doc/validation/preview-sync/448/README.md`.
+
 PR #473 visibility follow-up (18 Nov 2026): the strict review found local search
 and remote “New files” notices bypassed the shared non-document preference.
 Search now composes file visibility with the existing authorization filter and
@@ -376,56 +396,3 @@ action. `AppSessionTests` (49 cases), `RubricSessionTests` (10 cases), and
 `LocalizationTests` (8 cases) pass; the PR #520 compilation ledger is 110.
 Packaged Help/GUI smoke acceptance is
 not claimed in this source-only handoff.
-
-PR #465 reconciliation (25 Nov 2026): the five device-local built-in
-extensions, consent recommendations and Demo v2 were retained while the old
-Guide-v94 resources and UI-capture XCTest were removed in favor of the current
-main Guide v147 package and product tests. The source branch's simulator and
-Help records remain historical; this reconciliation made no device or GUI claim.
-The recorder correction for nested release-ledger deltas is retained under
-[#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467), and the separate
-hosted preview CI issue remains [#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468).
-
-# 2026-11-26: PR #465 evidence and context repair
-
-The evidence review kept the reconciled implementation at
-`fd7b8b116f36e2bec360ffccecf2d0992387a3cd` (based on `origin/main`
-`32efc6f211380c91944f17873993af27e406b67a`) and treated PR head
-`c626cbc6f67ebe5d67422179c515c95b62a63ccd` as the documentation/evidence
-head. The current iPhone 17 Simulator screenshots and the packaged macOS
-English/Spanish Help smoke are linked from
-`doc/validation/pr-465/current-ios-qa/README.md` and
-`doc/validation/pr-465/current-macos-qa/README.md`.
-
-Per-capture JSON sidecars record only observed route, state, viewport, image
-digest and source facts. The original screenshot event timestamp was not
-persisted, so each current iOS sidecar explicitly marks the capture time as
-unrecorded and labels the filesystem mtime as artifact metadata, not capture
-time. The #464 acceptance matrix in `doc/validation/pr-465/README.md` maps
-each criterion to implementation sources, focused tests, current captures and
-historical visuals; it keeps remote/on-demand, physical-device and TestFlight
-acceptance separate from the bundled local Demo evidence. No new GUI run was
-performed because the owner deferred repeated probes to beta/stable.
-
-# 2026-11-26: PR #465 refreshed after #415 reached main
-
-PR #465 was reconciled with `origin/main`
-`06a93b2ab252d7439236ff92ae9c31d1acd73ff5`, retaining the #465 mobile
-implementation and all prior simulator/macOS evidence while incorporating the
-#415 chapter-1 Finder/icon guidance. The bilingual guide was deliberately
-advanced to unused revision v156 (v155 is reserved by #497). Guide v156 hashes
-are EN `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
-and ES `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
-
-The v147 iOS/macOS runtime records remain explicitly historical/equivalence
-evidence for the unchanged Little Leonardo chapter; no GUI or simulator was
-repeated. #415's real Finder evidence remains linked from
-`doc/validation/document-icons-415/README.md`. Deterministic package tests and
-focused `BundledUserGuideTests` validate both v156 packages. Any later #497
-merge may require a fresh documentation-only reload if it changes the guide
-body; this handoff does not wait for or merge #497.
-
-- 2026-11-26: PR #497 was reconciled after #465. Combined Guide v158 retains
-  the Little Leonardo extension chapter and documents selection and confirmed
-  deletion of saved rubrics. The equivalent native rubric QA remains recorded
-  on [PR #497](https://github.com/PinedaTec-EU/LeonardoMD/pull/497).

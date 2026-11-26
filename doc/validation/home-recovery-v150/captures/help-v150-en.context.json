@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-26T09:06:32Z",
+  "route": "Help",
+  "screen": "Guide v150 English chapter 7",
+  "browser_name": "LeonardoMD QA (macOS native)",
+  "browser_version": "0.3.2318 / macOS native",
+  "state": "Guide-v150-en.mdlz working copy in Preview; chapter 7 is visible with Home, recent-items and Locate moved item guidance.",
+  "viewport_css": {"width": 2520, "height": 1700},
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic"
+}

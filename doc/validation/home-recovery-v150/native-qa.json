@@ -1,130 +1,158 @@
 {
   "pr": 516,
   "issue": 514,
-  "sourceRevision": "017636506dbdfc6f12df7c5330e47b659b567a08",
-  "version": "0.3.2307",
-  "build": 2307,
-  "compilationLedgerDelta": 15,
-  "bundlePath": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-80p8igvh/LeonardoMDQA.app",
-  "bundleIdentifier": "eu.pinedatec.LeonardoMD.qa.0656a57a00b44edcb26965ad1335b52b",
+  "sourceRevision": "724390f75e36e923866efee9857e8b9dc2c5e963",
+  "version": "0.3.2318",
+  "build": 2318,
+  "compilationLedgerDelta": 20,
+  "bundlePath": "/tmp/leonardo-516-qa-final.rBC6Gq/tmp/leonardo-native-qa-89mzr1xg/LeonardoMDQA.app",
+  "bundleIdentifier": "eu.pinedatec.LeonardoMD.qa.360d37d10cc3497b9ce4cf73ef70498e",
+  "bundleExecutable": "LeonardoMD",
+  "xctestLinked": false,
   "freshProcess": {
-    "pid": 32201,
+    "pid": 94241,
+    "startedAt": "2026-11-26T09:52:47+01:00",
     "startupReady": "application_ready",
-    "disposableHome": "/tmp/leonardo-516-qa.gajRv4/home",
-    "teardown": "native application-menu quit; exact bundle and task-owned helper absent at final check"
+    "disposableHome": "/tmp/leonardo-516-qa-final.rBC6Gq/home",
+    "teardown": "native application-menu quit at 2026-11-26T10:07:43+01:00; exact PID, bundle and task-owned helper absent at final check"
   },
   "syntheticFixture": {
-    "base": "/tmp/leonardo-516-qa.gajRv4",
-    "missingPath": "/tmp/leonardo-516-qa.gajRv4/Old Project",
-    "recoveredPath": "/tmp/leonardo-516-qa.gajRv4/New Project",
+    "base": "/tmp/leonardo-516-qa-final.rBC6Gq/fixture",
+    "missingPath": "/tmp/leonardo-516-qa-final.rBC6Gq/fixture/Old Project",
+    "recoveredPath": "/tmp/leonardo-516-qa-final.rBC6Gq/fixture/New Project",
     "cancel": "native folder chooser Cancel preserved the disabled row and old path",
-    "success": "native Use this location changed the row and opened New Project"
+    "success": "native Use this location changed the row and opened New Project, showing README.md and relocation-note.md"
   },
   "guides": {
     "en": {
-      "workingCopy": "/tmp/leonardo-516-qa.gajRv4/home/Library/Application Support/LeonardoMD/User Guides/v150/en/Guide-v150-en.mdlz",
-      "sha256": "5a1f977777180d52b40d5d577b7f212fcc7b120b54bf98dab1dde6d3edb7fd83",
-      "heading": "7. Home, recent items and favorites"
+      "workingCopy": "/tmp/leonardo-516-qa-final.rBC6Gq/home/Library/Application Support/LeonardoMD/User Guides/v150/en/Guide-v150-en.mdlz",
+      "sha256": "0e17463a0052718973fde8591255226bb9ec9f0e27d1f2ef2686e438b748e9f4",
+      "heading": "7. Home, recent items and favorites",
+      "capture": "captures/help-v150-en.jpeg"
     },
     "es": {
-      "workingCopy": "/tmp/leonardo-516-qa.gajRv4/home/Library/Application Support/LeonardoMD/User Guides/v150/es/Guide-v150-es.mdlz",
-      "sha256": "22c7954087c889d48faa6e3b5acb00643ecfa1e68b87df7a1c7ec119a03ac197",
-      "heading": "7. Inicio, recientes y favoritos"
+      "workingCopy": "/tmp/leonardo-516-qa-final.rBC6Gq/home/Library/Application Support/LeonardoMD/User Guides/v150/es/Guide-v150-es.mdlz",
+      "sha256": "2e344eb7e182afb2d44f02a3a077b459b6e003a9b4c8ba1e4da5c557cf6d8ddd",
+      "heading": "7. Inicio, recientes y favoritos",
+      "capture": "captures/help-v150-es.jpeg"
     }
   },
+  "homeFlow": {
+    "missingRow": "captures/home-missing-row.jpeg",
+    "recoveryMenu": "captures/home-missing-recovery-menu.jpeg",
+    "relocatedRow": "captures/home-relocated-row.jpeg",
+    "observations": [
+      "Missing saved project was disabled and showed the checked stale path and warning.",
+      "Warning menu exposed Retry saved location and Locate moved item.",
+      "Cancel in the native folder chooser preserved the disabled row and stale path.",
+      "Use this location changed the row to New Project and opening it showed the synthetic files."
+    ]
+  },
+  "captures": [
+    {
+      "path": "captures/home-missing-row.jpeg",
+      "sha256": "c5294cfba9b33f30ff7b72b1629606be2c97bd6bbcf9c09533e9a3cec3b76d46",
+      "metadata": "captures/home-missing-row.jpeg.json",
+      "context": "captures/home-missing-row.context.json"
+    },
+    {
+      "path": "captures/home-missing-recovery-menu.jpeg",
+      "sha256": "ab235ab06ab4b4d4ce38c74cd9adac509d77bbd37dbe88c32680affd1b728592",
+      "metadata": "captures/home-missing-recovery-menu.jpeg.json",
+      "context": "captures/home-missing-recovery-menu.context.json"
+    },
+    {
+      "path": "captures/home-relocated-row.jpeg",
+      "sha256": "3b2ce409ebebd679b9178ffe21950eec5f66186186257d91bddfada9fee299fc",
+      "metadata": "captures/home-relocated-row.jpeg.json",
+      "context": "captures/home-relocated-row.context.json"
+    },
+    {
+      "path": "captures/help-v150-en.jpeg",
+      "sha256": "c97d66a609fe55b241a7e890f3ec64024666af476e7982f33126b32b204300d5",
+      "metadata": "captures/help-v150-en.jpeg.json",
+      "context": "captures/help-v150-en.context.json"
+    },
+    {
+      "path": "captures/help-v150-es.jpeg",
+      "sha256": "6289137b2ad6e67d276ed965824aa49bf74bc56524abe5c5ba3200bc52e0f7d8",
+      "metadata": "captures/help-v150-es.jpeg.json",
+      "context": "captures/help-v150-es.context.json"
+    }
+  ],
   "scope": {
     "realProjectsTouched": false,
     "realSyncGrantsChanged": false,
     "realPreferencesChanged": false,
-    "practiceFormRerun": false
-  },
-  "visualRetake": {
-    "pid": 43997,
-    "fixtureBase": "/tmp/leonardo-516-qa.gajRv4",
-    "missingFixturePath": "/tmp/leonardo-516-qa.gajRv4/Old Project (moved marker)",
-    "relocatedFixturePath": "/tmp/leonardo-516-qa.gajRv4/Old Project (visual relocated)",
-    "missingRowScreenshotObserved": true,
-    "relocatedRowScreenshotObserved": true,
-    "method": "CUA native-window getScreenshot",
-    "durableArtifacts": [],
-    "durableArtifactNote": "Screenshot observations were made through CUA, but no image files or durable links were retained in this repository; no attachment claim is made.",
-    "observations": [
-      "Missing row was disabled and exposed the warning recovery menu.",
-      "Locate moved item… followed by Use this location enabled the relocated row and removed the stale row.",
-      "Synthetic project pane showed README.md and relocation-note.md."
-    ],
     "practiceFormRerun": false,
-    "teardown": "native application-menu quit issued; exact PID and bundle/helper absence verified"
+    "extensionRecommendation": "dismissed with Not now/Ahora no"
   },
   "processInventory": [
     {
       "pid": 30766,
       "source": "app.log",
-      "startedAt": "2026-11-26T01:00:20+01:00",
       "role": "direct non-isolated initial attempt",
-      "startupReady": "application_ready",
-      "finalState": "absent from final exact-bundle ps",
+      "finalState": "absent from final exact-bundle check",
       "quitMethod": "not attributed"
     },
     {
       "pid": 32201,
       "source": "app-isolated.log",
-      "startedAt": "2026-11-26T01:02:03+01:00",
       "role": "valid isolated packaged QA",
-      "startupReady": "application_ready",
-      "finalState": "absent from final exact-bundle ps",
+      "finalState": "absent from final exact-bundle check",
       "quitMethod": "native application-menu quit"
     },
     {
       "pid": 32723,
       "source": "app-envcheck.log",
-      "startedAt": "2026-11-26T01:02:47+01:00",
-      "role": "environment control",
-      "startupReady": false,
-      "finalState": "absent from final exact-bundle ps",
+      "role": "environment control; no application_ready",
+      "finalState": "absent from final exact-bundle check",
       "quitMethod": "not attributed"
     },
     {
       "pid": 33207,
       "source": "coordinator ps observation",
-      "observedAt": "2026-11-26T01:03:29+01:00",
       "role": "unattributed exact-bundle process",
       "provenance": "unknown; no durable startup log or launch command",
-      "finalState": "absent from final exact-bundle ps",
+      "finalState": "absent from final exact-bundle check",
       "quitMethod": "unknown"
     },
     {
       "pid": 36725,
       "source": "coordinator ps observation",
-      "observedAt": "2026-11-26T01:07:16+01:00",
       "role": "unattributed exact-bundle process",
       "provenance": "unknown; no durable startup log or launch command",
-      "finalState": "absent from final exact-bundle ps",
+      "finalState": "absent from final exact-bundle check",
       "quitMethod": "unknown"
     },
     {
       "pid": 39722,
       "source": "exact-bundle ps observation after CUA rebind",
-      "observedAt": "2026-11-26T01:09:12+01:00",
       "role": "unattributed exact-bundle rebind",
-      "provenance": "no durable startup log",
-      "finalState": "absent from final exact-bundle ps",
+      "finalState": "absent from final exact-bundle check",
       "quitMethod": "not attributed"
     },
     {
       "pid": 43997,
-      "source": "isolated visual-retake launch ps",
-      "startedAt": "2026-11-26T01:15:23+01:00",
+      "source": "isolated visual-retake launch observation",
       "role": "focused visual Home retake",
-      "provenance": "CFFIXED_USER_HOME/HOME/TMPDIR with open -n -a; native Home window reached",
-      "finalState": "absent from final exact-bundle ps",
+      "finalState": "absent from final exact-bundle check",
       "quitMethod": "native application-menu quit issued"
+    },
+    {
+      "pid": 94241,
+      "source": "launch.sh --qa process record",
+      "startedAt": "2026-11-26T09:52:47+01:00",
+      "role": "exact candidate Home and bilingual Help QA",
+      "finalState": "absent from final exact-bundle check",
+      "quitMethod": "native application-menu quit at 2026-11-26T10:07:43+01:00"
     }
   ],
   "finalProcessCheck": {
-    "observedAt": "2026-11-26T01:19:53+01:00",
-    "bundlePath": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-80p8igvh/LeonardoMDQA.app",
+    "observedAt": "2026-11-26T10:07:43+01:00",
+    "bundlePath": "/tmp/leonardo-516-qa-final.rBC6Gq/tmp/leonardo-native-qa-89mzr1xg/LeonardoMDQA.app",
     "bundleProcesses": 0,
-    "taskOwnedSyncHelpers": 0
+    "taskOwnedSyncHelpers": 0,
+    "method": "exact executable-path ps query; no force-kill or name-wide termination"
   }
 }

@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-26T09:04:41Z",
+  "route": "Help",
+  "screen": "Guía v150 en español, capítulo 7",
+  "browser_name": "LeonardoMD QA (macOS native)",
+  "browser_version": "0.3.2318 / macOS native",
+  "state": "Guide-v150-es.mdlz working copy in Preview; chapter 7 is visible with Inicio, recientes and Localizar el elemento guidance.",
+  "viewport_css": {"width": 2520, "height": 1700},
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic"
+}
