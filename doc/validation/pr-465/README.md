@@ -161,16 +161,15 @@ The reconciled candidate packages are EN SHA-256
 head native iOS validation opened the integrated bilingual Help route and
 checked the document-extension and frequency guidance. The exact simulator
 flow, process teardown, screenshots and logs are in
-[current-ios-qa/README.md](current-ios-qa/README.md). A fresh native macOS
-process still needs to open both v147 package copies.
+[current-ios-qa/README.md](current-ios-qa/README.md). The fresh native macOS
+v147 Help smoke, including English and Spanish routes, isolated personal-copy
+hashes and exact process teardown, is in
+[current-macos-qa/README.md](current-macos-qa/README.md).
 
-At the pre-launch process check on 2026-11-17, PID 16139 was already running
-`/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-cjlxt5nj/LeonardoMDQA.app/Contents/MacOS/LeonardoMD`
-(QA bundle ID `eu.pinedatec.LeonardoMD.qa.ae4d439124594d638ab21e949f7c91ca`,
-build 1884; started 18:21:04 CET). It is not an instance created by this
-validation, and LeonardoMD uses product-wide single-instance ownership. It was
-left running; no new Help smoke or first-window readiness is claimed for the
-reconciled hashes.
+The earlier 2026-11-17 process note is historical only. The current v147
+validation created and closed its own PID 13267 from the fresh QA bundle; see
+[current-macos-qa/README.md](current-macos-qa/README.md) for the exact path,
+hashes and termination log evidence.
 
 ## Release cleanup gate
 
