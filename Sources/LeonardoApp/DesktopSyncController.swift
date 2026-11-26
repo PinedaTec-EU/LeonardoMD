@@ -239,8 +239,19 @@ final class DesktopSyncController {
     private func applyGlobalUpdate(_ requested: GlobalPreferences,
                                    baseline: GlobalPreferences,
                                    currentMatches: @Sendable @escaping (GlobalPreferences) -> Bool = { _ in true }) async throws -> DesktopSyncUpdateResult {
+        var pendingClaims: [InstancePathOwnership.PendingClaim] = []
+        var committed = false
+        defer {
+            if committed {
+                InstancePathOwnership.shared.promotePending(pendingClaims)
+            } else {
+                InstancePathOwnership.shared.rollbackPending(pendingClaims)
+            }
+        }
         var updated = requested
-        try InstancePathOwnership.shared.claim(storageRoot)
+        if let pending = try InstancePathOwnership.shared.reservePending(storageRoot) {
+            pendingClaims.append(pending)
+        }
         if !updated.mobileSync.privateOverlayEnabled,
            let host = updated.mobileSync.host,
            LocalNetworkAddress.isPrivateOverlay(host) {
@@ -248,7 +259,9 @@ final class DesktopSyncController {
         }
         for project in updated.mobileSync.projects {
             _ = try CorpusSelection(folders: project.folders, documents: project.documents)
-            try InstancePathOwnership.shared.claim(project.rootURL)
+            if let pending = try InstancePathOwnership.shared.reservePending(project.rootURL) {
+                pendingClaims.append(pending)
+            }
         }
         let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
         // The helper switch is owned by its lifecycle controller, not a stale sharing form.
@@ -257,6 +270,7 @@ final class DesktopSyncController {
             updated: updated, baseline: baseline, at: preferencesURL,
             currentMatches: currentMatches
         )
+        committed = true
         settings = persisted.mobileSync
         projectSettingsLoaded = true
         running = nil; invitationURL = nil

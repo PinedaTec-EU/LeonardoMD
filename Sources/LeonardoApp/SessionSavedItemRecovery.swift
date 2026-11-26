@@ -73,6 +73,7 @@ extension AppSession {
                 updated: requested, baseline: beforeBaseline, at: globalPreferencesURL,
                 currentMatches: { current in
                     SavedItemRecentPathRepair.contains(item, in: current)
+                        && (item.kind != .project || !SavedItemRecentPathRepair.hasSharedProject(item.url, in: current))
                 }
             )
         } catch {
@@ -291,6 +292,10 @@ enum SavedItemRecentPathRepair {
             return true
         }
         return preferences.favorites.contains(where: { $0.matches(item) })
+    }
+
+    static func hasSharedProject(_ url: URL, in preferences: GlobalPreferences) -> Bool {
+        preferences.mobileSync.projects.contains { sameIdentity($0.rootURL, url) }
     }
 
     static func replacing(source: URL, with destination: URL, in paths: [URL]) -> [URL] {

@@ -10,12 +10,17 @@ import OSLog
 final class InstancePathOwnership {
     static let shared = InstancePathOwnership()
     struct InUse: Error {}
+    struct PendingClaim {
+        fileprivate let key: String
+        fileprivate let token: UUID
+    }
     private struct Claim {
         let url: URL
         let lock: ProcessFileLock
     }
     private let directory: URL
     private var claims: [String: Claim] = [:]
+    private var pendingClaims: [String: UUID] = [:]
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "instance-paths")
 
     init(directory: URL = ProcessFileLock.coordinationDirectory.appendingPathComponent("Paths", isDirectory: true)) {
@@ -49,6 +54,43 @@ final class InstancePathOwnership {
             try Data(canonical.path.utf8).write(to: location)
             claims[name] = Claim(url: canonical, lock: lock)
             logger.info("instance_path_claimed count=\(self.claims.count, privacy: .public)")
+        }
+    }
+
+    /// Reserve a path before a durable transaction while retaining the ability
+    /// to release only claims created by that transaction if its compare-and-
+    /// commit fails. Existing process-lifetime claims are never returned as
+    /// pending and therefore cannot be rolled back by a later failure.
+    @discardableResult
+    func reservePending(_ url: URL) throws -> PendingClaim? {
+        let canonical = ProcessFileLock.canonicalURL(url)
+        guard !claims.values.contains(where: { Self.contains($0.url, canonical) }) else {
+            return nil
+        }
+        try claim(url)
+        let key = ProcessFileLock.key(for: canonical) + ".claim"
+        let token = UUID()
+        pendingClaims[key] = token
+        return PendingClaim(key: key, token: token)
+    }
+
+    /// Promote claims after the protected write succeeds. Promotion merely
+    /// removes their rollback marker; the existing process-lifetime claim and
+    /// kernel lock remain in force.
+    func promotePending(_ claims: [PendingClaim]) {
+        for claim in claims where pendingClaims[claim.key] == claim.token {
+            pendingClaims.removeValue(forKey: claim.key)
+        }
+    }
+
+    /// Release only still-pending claims created by the failed transaction.
+    /// A promoted or otherwise-owned claim is deliberately left untouched.
+    func rollbackPending(_ claims: [PendingClaim]) {
+        for claim in claims where pendingClaims[claim.key] == claim.token {
+            pendingClaims.removeValue(forKey: claim.key)
+            guard let owned = self.claims.removeValue(forKey: claim.key) else { continue }
+            _ = owned
+            try? FileManager.default.removeItem(at: directory.appendingPathComponent(claim.key))
         }
     }
 

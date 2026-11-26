@@ -48,6 +48,8 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         let saved = try await ConfigurationStore().loadGlobalPreferences(at: fixture.preferences)
         XCTAssertEqual(saved.mobileSync.projects, [expected])
         XCTAssertNotNil(controller.error)
+        let otherInstance = InstancePathOwnership()
+        XCTAssertThrowsError(try otherInstance.claim(fixture.destination))
     }
 
     func testRelocationPersistsSyncAndHomeChangesInOneGlobalSnapshot() async throws {
@@ -107,6 +109,9 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         let saved = try await store.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertEqual(saved.mobileSync.projects.first?.rootURL, competing.mobileSync.projects.first?.rootURL)
         XCTAssertEqual(controller.settings.projects, [fixture.project])
+        let otherInstance = InstancePathOwnership()
+        XCTAssertNoThrow(try otherInstance.claim(fixture.destination))
+        XCTAssertThrowsError(try otherInstance.claim(fixture.projectRoot))
     }
 
     func testSharedRecoveryPreservesHomeChangeMadeWhileConfirmationIsOpen() async throws {
@@ -452,6 +457,36 @@ final class SavedItemRecoveryPersistenceTests: XCTestCase {
         XCTAssertTrue(saved.favorites.isEmpty)
         XCTAssertTrue(saved.recentProjectPaths.isEmpty)
         XCTAssertTrue(session.globalPreferences.favorites.contains(where: { $0.matches(fixture.item) }))
+        XCTAssertNotNil(session.errorMessage)
+    }
+
+    func testHomeProjectRecoveryRejectsAConcurrentDurableShare() async throws {
+        let fixture = try SavedItemRecoveryFixture(kind: .project)
+        defer { fixture.cleanup() }
+        try await fixture.savePreferences()
+
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = true
+        defer { InstanceRuntime.isAdditional = previous }
+        let session = AppSession(preferencesURL: fixture.preferences)
+        defer { session.stop() }
+        session.authorizeSavedItemPath = { _, _ in }
+        let store = ConfigurationStore()
+        let sharedProject = MobileSharedProject(rootURL: fixture.source, name: "OldProject")
+        session.beforeSavedItemPersistence = {
+            guard var current = try? await store.loadGlobalPreferences(at: fixture.preferences) else { return }
+            current.mobileSync.projects = [sharedProject]
+            try? await store.saveGlobalPreferences(current, at: fixture.preferences)
+        }
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+                                                configurations: ConfigurationStore(), usesHelper: false)
+
+        await session.repairSavedItem(fixture.item, at: fixture.destination, sharing: controller)
+
+        let saved = try await store.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertEqual(saved.favorites, [fixture.item])
+        XCTAssertEqual(saved.recentProjectPaths, [fixture.source])
+        XCTAssertEqual(saved.mobileSync.projects, [sharedProject])
         XCTAssertNotNil(session.errorMessage)
     }
 
