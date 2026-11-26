@@ -170,7 +170,7 @@ renderer are reused without writing the source document.
 The optional worker selects an already-installed real Python 3.9+ interpreter
 from supported macOS locations and never executes the `/usr/bin/python3`
 developer-tools installer shim; ordinary Sync remains independent. Preview
-registration rejects documents below the managed `DesktopPeers` and `MobileSync`
-roots, so remote cache and revoked content stay behind the authorized native
-Sync access path. Guide v152 documents the prerequisite and recovery path in
-both locales.
+registration rejects documents and canonical local resources below the managed
+`DesktopPeers` and `MobileSync` roots, so remote cache and revoked content stay
+behind the authorized native Sync access path. Guide v152 documents the
+prerequisite and recovery path in both locales.
