@@ -248,6 +248,41 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: elsewhere.appendingPathComponent("image-ABC.png").path))
     }
 
+    func testRubricLayoutSupportsUndoRedoAndPersistsOriginalAnswer() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("form.mdlr")
+        let document = LeonardoDocument(body: "# Approval\n\n{{field:signature}}",
+            metadata: .init(fields: ["signature": .init(type: .rubric)], values: ["signature": try XCTUnwrap(ink.jsonValue)]))
+        try LeonardoFormatParser.serialize(document).write(to: url, atomically: true, encoding: .utf8)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("prefs.json"))
+        session.authorizePath = { _, _ in }
+        defer { session.stop() }
+        await session.openDocument(url)
+        let placement = LeonardoRubricPlacement(page: 1, x: 70, y: 120, rotation: 90)
+        let edit = LeonardoRubricLayoutEdit(fieldID: "signature", placement: placement, size: .init(width: 150, height: 50))
+        XCTAssertFalse(session.applyRubricLayout(expected: session.content, edit: edit))
+        session.isProtected = false
+        session.mode = .preview
+        let before = session.content
+        XCTAssertFalse(session.applyRubricLayout(expected: "", edit: edit))
+        let invalid = LeonardoRubricLayoutEdit(fieldID: "signature",
+            placement: .init(page: 1, x: 70, y: 120, rotation: 45), size: edit.size)
+        XCTAssertFalse(session.applyRubricLayout(expected: before, edit: invalid))
+        XCTAssertTrue(session.applyRubricLayout(expected: before, edit: edit))
+        XCTAssertEqual(session.leonardoFieldDefinition("signature")?.rubricPlacement, placement)
+        await session.undoDocument()
+        XCTAssertEqual(session.content, before)
+        await session.redoDocument()
+        await session.save()
+        let reopened = try LeonardoFormatParser.parse(String(contentsOf: url, encoding: .utf8))
+        XCTAssertEqual(reopened.body, document.body)
+        XCTAssertEqual(reopened.metadata.fields["signature"]?.rubricPlacement, placement)
+        XCTAssertEqual(reopened.metadata.fields["signature"]?.rubricSize, edit.size)
+        XCTAssertEqual(LeonardoRubric.decode(reopened.metadata.values["signature"]), ink)
+    }
+
     func testProtectedFormOpensOnlyDeclaredWritableRubricFields() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

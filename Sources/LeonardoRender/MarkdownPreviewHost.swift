@@ -18,6 +18,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     var onRejectedTableResize: (() -> Void)?
     private var tableResizeTask: Task<Bool, Never>?
     var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
+    var onRubricLayout: ((String, LeonardoRubricLayoutEdit) -> Bool)?
     var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
     var onRejectedObjectAction: (() -> Void)?
     var onGraphicSelection: ((String, String?, Bool) -> Void)?
@@ -807,7 +808,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             completeObjectMessageBarrier(identifier, succeeded: true)
             return
         }
-        let hasAction = body["fieldID"] != nil || body["object"] != nil || body["remove"] != nil
+        let hasAction = body["fieldID"] != nil || body["object"] != nil || body["remove"] != nil || body["rubricLayout"] != nil
         guard configuration.allowsLeonardoFormat else {
             if hasAction { onRejectedObjectAction?() }
             return
@@ -839,6 +840,13 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
         guard configuration.allowsEditing, !configuration.allowsFormFilling, expected == content else {
             onRejectedObjectAction?()
+            scheduleContentUpdate(immediately: true)
+            return
+        }
+        if let raw = body["rubricLayout"] {
+            let edit = (try? JSONSerialization.data(withJSONObject: raw, options: .fragmentsAllowed))
+                .flatMap { try? JSONDecoder().decode(LeonardoRubricLayoutEdit.self, from: $0) }
+            if edit.map({ onRubricLayout?(expected, $0) == true }) != true { onRejectedObjectAction?() }
             scheduleContentUpdate(immediately: true)
             return
         }

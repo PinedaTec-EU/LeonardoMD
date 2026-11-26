@@ -44,3 +44,5 @@ selects obscured images. The bilingual help includes the inspector illustrations
 native component evidence must not be confused with packaged-process acceptance.
 
 The local rubric library serializes read-latest mutations with a nonblocking stable sidecar lock across app instances; a busy or corrupt library is never overwritten. Opening the editor refreshes its list. Regression tracked in [#318](https://github.com/PinedaTec-EU/LeonardoMD/issues/318).
+
+- 2026-11-20: Rubric fields can retain inline placement or store a physical page origin and quarter-turn rotation on the field definition. The first marker uses the stored placement. Fill and export reuse the field and its answer. [#500](https://github.com/PinedaTec-EU/LeonardoMD/issues/500).
