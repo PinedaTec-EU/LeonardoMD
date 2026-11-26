@@ -304,7 +304,7 @@ def main() -> int:
     except PreviewUnavailable:
         parser.exit(
             1,
-            "Leonardo preview unavailable. Enable Leonardo Sync and install a supported "
+            "Leonardo preview unavailable. Enable Leonardo Sync. If it remains unavailable, install a supported "
             "Python 3.9+ interpreter from a trusted source (for example Homebrew or "
             "python.org); macOS /usr/bin/python3 is not used. Restart Leonardo Sync "
             "and retry.\n",
