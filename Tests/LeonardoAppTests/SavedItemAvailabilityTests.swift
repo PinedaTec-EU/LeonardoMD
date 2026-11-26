@@ -1,8 +1,25 @@
-import AppKit
 import Foundation
 import LeonardoCore
 import XCTest
 @testable import LeonardoApp
+
+@MainActor
+private final class InMemoryRecentDocumentStore: RecentDocumentStore {
+    var recentDocumentURLs: [URL]
+
+    init(_ recentDocumentURLs: [URL]) {
+        self.recentDocumentURLs = recentDocumentURLs
+    }
+
+    func clear() {
+        recentDocumentURLs.removeAll()
+    }
+
+    func note(_ url: URL) {
+        recentDocumentURLs.removeAll { $0.standardizedFileURL == url.standardizedFileURL }
+        recentDocumentURLs.insert(url, at: 0)
+    }
+}
 
 @MainActor
 final class SavedItemAvailabilityTests: XCTestCase {
@@ -36,33 +53,16 @@ final class SavedItemAvailabilityTests: XCTestCase {
         XCTAssertEqual(replaced, [destination, other])
     }
 
-    func testDocumentRecentReplacementRemovesStaleAndDuplicateDestinationPaths() throws {
-        _ = NSApplication.shared
-        let controller = NSDocumentController.shared
-        let original = controller.recentDocumentURLs
+    func testDocumentRecentReplacementRemovesStaleAndDuplicateDestinationPaths() {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let source = root.appendingPathComponent("old.md")
         let destination = root.appendingPathComponent("new.md")
+        let duplicateDestination = destination.appendingPathComponent("")
         let other = root.appendingPathComponent("other.md")
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        for url in [source, destination, other] {
-            try Data().write(to: url)
-        }
-        defer {
-            controller.clearRecentDocuments(nil)
-            for url in original.reversed() {
-                controller.noteNewRecentDocumentURL(url)
-            }
-            try? FileManager.default.removeItem(at: root)
-        }
+        let store = InMemoryRecentDocumentStore([other, duplicateDestination, destination, source])
+        SavedItemRecentPathRepair.replaceRecentDocument(source, with: destination, store: store)
 
-        controller.clearRecentDocuments(nil)
-        for url in [other, destination, source].reversed() {
-            controller.noteNewRecentDocumentURL(url)
-        }
-        SavedItemRecentPathRepair.replaceRecentDocument(source, with: destination, controller: controller)
-
-        let identities = controller.recentDocumentURLs.map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
+        let identities = store.recentDocumentURLs.map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
         let destinationIdentity = destination.standardizedFileURL.resolvingSymlinksInPath().path
         let sourceIdentity = source.standardizedFileURL.resolvingSymlinksInPath().path
         let otherIdentity = other.standardizedFileURL.resolvingSymlinksInPath().path

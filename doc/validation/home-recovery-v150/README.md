@@ -69,3 +69,21 @@ the durable startup logs or observed during the task:
 No `LeonardoMDQA.app` process or task-owned `LeonardoSyncHelper` remained at
 the final exact-path check. The synthetic fixtures and isolated package were
 left intact for hash and audit reproduction.
+
+## Current-main CI regression triage
+
+After rebasing the draft onto current `origin/main` `727a7446`, macOS job
+`139604476331` exposed a host-dependent regression in
+`SavedItemAvailabilityTests.testDocumentRecentReplacementRemovesStaleAndDuplicateDestinationPaths`:
+the test changed the process-global AppKit `NSDocumentController` recent store
+and read it immediately, so the hosted store could still be empty. This was a
+test-environment dependency, not a relocation defect. Production behavior still
+uses the native AppKit store through `AppKitRecentDocumentStore`.
+
+The focused regression now injects an in-memory `RecentDocumentStore`, retaining
+the same stale-source removal, destination deduplication and ordering contract
+without touching host recents or preferences. The recorded command
+`python3 scripts/compile-and-record.py --pr-number 516 -- swift test --filter
+'(SavedItemAvailabilityTests|SavedItemRecoveryPersistenceTests)'` passed all
+5 tests; the PR ledger is at build delta 18. Full current-head CI remains the
+authoritative suite gate.

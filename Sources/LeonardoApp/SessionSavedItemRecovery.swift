@@ -30,7 +30,9 @@ extension AppSession {
                     source: item.url, with: url, in: globalPreferences.recentProjectPaths
                 )
             } else {
-                SavedItemRecentPathRepair.replaceRecentDocument(item.url, with: url)
+                SavedItemRecentPathRepair.replaceRecentDocument(
+                    item.url, with: url, store: AppKitRecentDocumentStore()
+                )
             }
             if let previous = favorite(item.url, kind: item.kind),
                let index = globalPreferences.favorites.firstIndex(where: { $0.matches(item) }) {
@@ -74,6 +76,29 @@ extension AppSession {
     }
 }
 
+/// The native AppKit adapter keeps the production path on
+/// `NSDocumentController` while allowing the repair algorithm to be verified
+/// without mutating the process-global recent-document store.
+@MainActor
+protocol RecentDocumentStore {
+    var recentDocumentURLs: [URL] { get }
+    func clear()
+    func note(_ url: URL)
+}
+
+@MainActor
+struct AppKitRecentDocumentStore: RecentDocumentStore {
+    private let controller: NSDocumentController
+
+    init(controller: NSDocumentController = .shared) {
+        self.controller = controller
+    }
+
+    var recentDocumentURLs: [URL] { controller.recentDocumentURLs }
+    func clear() { controller.clearRecentDocuments(nil) }
+    func note(_ url: URL) { controller.noteNewRecentDocumentURL(url) }
+}
+
 /// Keeps a successful Home relocation from leaving the old location in a
 /// recent-items collection. Project recents are persisted by
 /// `GlobalPreferences`; document recents are owned by AppKit and must be
@@ -100,21 +125,21 @@ enum SavedItemRecentPathRepair {
 
     @MainActor
     static func replaceRecentDocument(_ source: URL, with destination: URL,
-                                      controller: NSDocumentController = .shared) {
+                                      store: any RecentDocumentStore) {
         let sourceIdentity = identity(of: source)
         let destinationIdentity = identity(of: destination)
-        let existing = controller.recentDocumentURLs
+        let existing = store.recentDocumentURLs
         guard existing.contains(where: { identity(of: $0) == sourceIdentity }) else { return }
 
         let retained = existing.filter {
             let pathIdentity = identity(of: $0)
             return pathIdentity != sourceIdentity && pathIdentity != destinationIdentity
         }
-        controller.clearRecentDocuments(nil)
+        store.clear()
         for url in retained.reversed() {
-            controller.noteNewRecentDocumentURL(url)
+            store.note(url)
         }
-        controller.noteNewRecentDocumentURL(destination)
+        store.note(destination)
     }
 
     private static func identity(of url: URL) -> String {

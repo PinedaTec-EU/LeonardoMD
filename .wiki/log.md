@@ -13,6 +13,14 @@
 - 2026-11-21: Follow-up for [#517](https://github.com/PinedaTec-EU/LeonardoMD/issues/517), [#522](https://github.com/PinedaTec-EU/LeonardoMD/issues/522) and [#523](https://github.com/PinedaTec-EU/LeonardoMD/issues/523): macOS guided signing captures use a signing-only rubric canvas and assigned fields reject the generic insertion path. Verified completed positions render occurrence-keyed rubric overlays without mutating the source snapshot. Little Leonardo keeps credential enrollment as a separate, explicitly labeled control outside the credential picker hit target; bilingual Guide v109 documents the consent boundary and explicit exchange.
 - 2026-11-21: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) explains unavailable saved locations on Home and adds retry and path repair. Shared source relocation requires confirmation and retains the share identifier and scope. The English and Spanish guides describe the recovery; the reconciled candidate packages it as Guide v146 (EN `f44d1ef1ffd5929e09e93cc0d88e6d0de29749b3b6432b083d4c7f064527d77c`, ES `e8fbecd5e8d76d17f85eb92457c11d713302ab93234abff8eb96b71ceaa97264`).
 
+- 2026-11-26: [#514](https://github.com/PinedaTec-EU/LeonardoMD/issues/514) CI triage: the
+  document-recent regression was coupled to the hosted process-global AppKit
+  `NSDocumentController` store. The production path remains native through an
+  AppKit adapter; the focused test now injects an in-memory store and covers
+  stale-source removal, destination deduplication and ordering without touching
+  host recents. The rebased candidate on `727a7446` passes the five focused Home
+  availability/persistence tests; full current-head CI remains pending.
+
 - 2026-11-20: [#505](https://github.com/PinedaTec-EU/LeonardoMD/issues/505) selects macOS, iOS, packaging and plugin checks from an immutable PR comparison. Additive labels can request more validation. The aggregate check enforces the plan and pushes to main run every suite. See [CI suite selection](../doc/ci-validation.md).
 
 - 2026-11-20: [#502](https://github.com/PinedaTec-EU/LeonardoMD/issues/502) splits `.github/workflows/ci.yml` into concurrent macOS test, Little Leonardo simulator, and package jobs. The existing `test` check requires success in all three. Little Leonardo installs the test build and seeds recovery before running the selected unit and UI cases in one XCTest invocation.
