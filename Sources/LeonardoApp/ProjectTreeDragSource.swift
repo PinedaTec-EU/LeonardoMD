@@ -185,8 +185,15 @@ final class ProjectTreeDragSourceRegistry {
         self.monitor = nil
     }
 
+    static func canReceiveMouseEvent(_ view: ProjectTreeDragSourceView, event: NSEvent) -> Bool {
+        guard view.isActiveTab, !view.isHiddenOrHasHiddenAncestor,
+              let window = view.window, window === event.window,
+              window.isVisible, !window.isMiniaturized else { return false }
+        return true
+    }
+
     static func canCapture(_ view: ProjectTreeDragSourceView, event: NSEvent) -> Bool {
-        guard view.isActiveTab, !view.isHidden, view.window === event.window else { return false }
+        guard canReceiveMouseEvent(view, event: event) else { return false }
         return view.bounds.contains(view.convert(event.locationInWindow, from: nil))
     }
 
@@ -200,8 +207,14 @@ final class ProjectTreeDragSourceRegistry {
             dragStartEvent = target == nil ? nil : event
             target?.onMouseDown?(event.modifierFlags, event.clickCount)
         case .leftMouseDragged:
-            guard let target = activeView, target.window === event.window,
-                  let dragStartPoint, let dragStartEvent else { return }
+            guard let target = activeView else { return }
+            guard Self.canReceiveMouseEvent(target, event: event),
+                  let dragStartPoint, let dragStartEvent else {
+                activeView = nil
+                self.dragStartPoint = nil
+                self.dragStartEvent = nil
+                return
+            }
             let point = target.convert(event.locationInWindow, from: nil)
             let dx = point.x - dragStartPoint.x
             let dy = point.y - dragStartPoint.y
@@ -211,8 +224,7 @@ final class ProjectTreeDragSourceRegistry {
             self.dragStartEvent = nil
             target.beginDrag(with: dragStartEvent)
         case .leftMouseUp:
-            if let target = activeView, target.window === event.window,
-               target.bounds.contains(target.convert(event.locationInWindow, from: nil)) {
+            if let target = activeView, Self.canCapture(target, event: event) {
                 target.onMouseUp?(event.modifierFlags, event.clickCount)
             }
             activeView = nil
