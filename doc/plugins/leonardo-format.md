@@ -1,6 +1,6 @@
 # Leonardo Format agent plugin
 
-`plugins/leonardo-format` is a skills-only plugin for agents that work with
+`plugins/leonardo-format` is a plugin for agents that work with
 the open Leonardo document contract. It teaches an agent to recognize `.mdlf`
 editable documents, `.mdlr` form exports, and `.mdlz` ZIP transport while
 keeping `.md` on the standard Markdown path. The format contract and schema in
@@ -14,8 +14,9 @@ modules are `mdlf_schema.py`, `mdlf_semantics.py`, `mdlz.py`, and
 descriptor-relative extraction boundary. The root
 `plugin.json` is the portable manifest. The
 `.claude-plugin/plugin.json` file supports direct Claude Code plugin loading,
-and `.codex-plugin/plugin.json` supplies the Codex compatibility overlay. No
-MCP server, credentials, hooks, or network service are required.
+and `.codex-plugin/plugin.json` supplies the Codex compatibility overlay. Reading, validating, filling and repackaging work offline without an MCP server
+or a background service. Browser previews use the local Leonardo Sync helper,
+and automatic preview links also require Codex to trust the Stop hook.
 
 ## Preview in Codex
 
