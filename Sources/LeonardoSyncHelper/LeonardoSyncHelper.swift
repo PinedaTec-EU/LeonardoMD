@@ -79,7 +79,7 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
                         previewWarningShown = false
                     }
                 } catch {
-                    try? await preview.reconcile(enabled: false)
+                    _ = try? await preview.reconcile(enabled: false)
                     if !previewWarningShown {
                         logger.error("sync_preview_unavailable reason=helper_start_failed")
                         previewWarningShown = true
