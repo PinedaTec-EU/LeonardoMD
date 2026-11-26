@@ -43,7 +43,29 @@ re-run because this PR changes Home recovery and bundled Help packaging, not
 practice behavior; deterministic guide/package tests cover the packaged
 resources.
 
-After the final Help check, the QA app was quit through its native application
-menu. A process check found no remaining `LeonardoMDQA.app` or task-owned
-`LeonardoSyncHelper` process. The synthetic fixture and isolated package were
+## Focused visual retake and process identity reconciliation
+
+An authorized focused retake used the same packaged bundle and a synthetic
+fixture only. Through the native Home window, CUA screenshots captured both
+the disabled `Old Project (moved marker)` row with its warning menu (`Retry
+saved location` / `Locate moved item…`) and the enabled `Old Project (visual
+relocated)` row after choosing the moved folder. The project pane showed the
+synthetic `README.md` and `relocation-note.md`. The retake used no user data,
+projects, Sync grants or real preferences.
+
+The final process reconciliation covered every exact-bundle PID present in
+the durable startup logs or observed during the task:
+
+| PID | Evidence and role | Final state |
+| --- | --- | --- |
+| `30766` | `app.log`, direct non-isolated startup at 01:00:20 CET; reached `application_ready` | Exact bundle absent at final check; quit method not attributed. |
+| `32201` | `app-isolated.log`, valid isolated packaged QA at 01:02:03 CET; reached `application_ready` | Native application-menu quit was used for this isolated flow; exact bundle absent at final check. |
+| `32723` | `app-envcheck.log`, environment-control process at 01:02:47 CET; no `application_ready` | Exact bundle absent at final check; quit method not attributed. |
+| `33207` | Coordinator `ps` observation at 01:03:29 CET; no durable startup log or launch command | Exact bundle absent at final check; provenance and quit method unknown, so neither is claimed. |
+| `36725` | Coordinator `ps` observation at 01:07:16 CET; no durable startup log or launch command | Exact bundle absent at final check; provenance and quit method unknown, so neither is claimed. |
+| `39722` | Exact-bundle `ps` observation at 01:09:12 CET after a CUA rebind; no durable startup log | Exact bundle absent at final check; provenance and quit method not attributed. |
+| `43997` | Focused visual retake launched at 01:15:23 CET with the isolated `open -n -a` flow; native Home window reached | Native application-menu quit issued; exact PID and bundle/helper absence verified at 01:19:53 CET. |
+
+No `LeonardoMDQA.app` process or task-owned `LeonardoSyncHelper` remained at
+the final exact-path check. The synthetic fixtures and isolated package were
 left intact for hash and audit reproduction.

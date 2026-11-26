@@ -11,7 +11,7 @@
     "pid": 32201,
     "startupReady": "application_ready",
     "disposableHome": "/tmp/leonardo-516-qa.gajRv4/home",
-    "teardown": "normal application-menu quit; no QA bundle or task-owned helper remained"
+    "teardown": "native application-menu quit; exact bundle and task-owned helper absent at final check"
   },
   "syntheticFixture": {
     "base": "/tmp/leonardo-516-qa.gajRv4",
@@ -37,5 +37,92 @@
     "realSyncGrantsChanged": false,
     "realPreferencesChanged": false,
     "practiceFormRerun": false
+  },
+  "visualRetake": {
+    "pid": 43997,
+    "fixtureBase": "/tmp/leonardo-516-qa.gajRv4",
+    "missingFixturePath": "/tmp/leonardo-516-qa.gajRv4/Old Project (moved marker)",
+    "relocatedFixturePath": "/tmp/leonardo-516-qa.gajRv4/Old Project (visual relocated)",
+    "missingRowScreenshotObserved": true,
+    "relocatedRowScreenshotObserved": true,
+    "method": "CUA native-window getScreenshot",
+    "observations": [
+      "Missing row was disabled and exposed the warning recovery menu.",
+      "Locate moved item… followed by Use this location enabled the relocated row and removed the stale row.",
+      "Synthetic project pane showed README.md and relocation-note.md."
+    ],
+    "practiceFormRerun": false,
+    "teardown": "native application-menu quit issued; exact PID and bundle/helper absence verified"
+  },
+  "processInventory": [
+    {
+      "pid": 30766,
+      "source": "app.log",
+      "startedAt": "2026-11-26T01:00:20+01:00",
+      "role": "direct non-isolated initial attempt",
+      "startupReady": "application_ready",
+      "finalState": "absent from final exact-bundle ps",
+      "quitMethod": "not attributed"
+    },
+    {
+      "pid": 32201,
+      "source": "app-isolated.log",
+      "startedAt": "2026-11-26T01:02:03+01:00",
+      "role": "valid isolated packaged QA",
+      "startupReady": "application_ready",
+      "finalState": "absent from final exact-bundle ps",
+      "quitMethod": "native application-menu quit"
+    },
+    {
+      "pid": 32723,
+      "source": "app-envcheck.log",
+      "startedAt": "2026-11-26T01:02:47+01:00",
+      "role": "environment control",
+      "startupReady": false,
+      "finalState": "absent from final exact-bundle ps",
+      "quitMethod": "not attributed"
+    },
+    {
+      "pid": 33207,
+      "source": "coordinator ps observation",
+      "observedAt": "2026-11-26T01:03:29+01:00",
+      "role": "unattributed exact-bundle process",
+      "provenance": "unknown; no durable startup log or launch command",
+      "finalState": "absent from final exact-bundle ps",
+      "quitMethod": "unknown"
+    },
+    {
+      "pid": 36725,
+      "source": "coordinator ps observation",
+      "observedAt": "2026-11-26T01:07:16+01:00",
+      "role": "unattributed exact-bundle process",
+      "provenance": "unknown; no durable startup log or launch command",
+      "finalState": "absent from final exact-bundle ps",
+      "quitMethod": "unknown"
+    },
+    {
+      "pid": 39722,
+      "source": "exact-bundle ps observation after CUA rebind",
+      "observedAt": "2026-11-26T01:09:12+01:00",
+      "role": "unattributed exact-bundle rebind",
+      "provenance": "no durable startup log",
+      "finalState": "absent from final exact-bundle ps",
+      "quitMethod": "not attributed"
+    },
+    {
+      "pid": 43997,
+      "source": "isolated visual-retake launch ps",
+      "startedAt": "2026-11-26T01:15:23+01:00",
+      "role": "focused visual Home retake",
+      "provenance": "CFFIXED_USER_HOME/HOME/TMPDIR with open -n -a; native Home window reached",
+      "finalState": "absent from final exact-bundle ps",
+      "quitMethod": "native application-menu quit issued"
+    }
+  ],
+  "finalProcessCheck": {
+    "observedAt": "2026-11-26T01:19:53+01:00",
+    "bundlePath": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-80p8igvh/LeonardoMDQA.app",
+    "bundleProcesses": 0,
+    "taskOwnedSyncHelpers": 0
   }
 }
