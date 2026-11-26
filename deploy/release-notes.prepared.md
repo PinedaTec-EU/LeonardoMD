@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.2336
+
+- #414 Added: brand macOS document icons ([#415](https://github.com/PinedaTec-EU/LeonardoMD/pull/415))
+
+<p>Leonardo document types and Markdown now declare a Leonardo icon for Finder; the displayed icon can depend on macOS and the chosen default app.</p>
+
+Source: `06a93b2ab252d7439236ff92ae9c31d1acd73ff5`. Delta: `{"build": 18}`.
+
 ## 0.3.2318
 
 - #495 Fixed: paginate oversized Markdown tables by row ([#499](https://github.com/PinedaTec-EU/LeonardoMD/pull/499))
