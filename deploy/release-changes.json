@@ -1460,6 +1460,17 @@
       "pr": 610,
       "summary": "Leonardo Format opens local MDLF, MDLR and MDLZ previews in Codex through the Leonardo Sync helper, even with the editor closed.",
       "to_version": "0.4.2399"
+    },
+    {
+      "delta": {
+        "build": 77,
+        "feature": 1
+      },
+      "from_version": "0.4.2399",
+      "merge_sha": "eb39876f0bcd59f82604905822280f207158d613",
+      "pr": 471,
+      "summary": "Select and drag multiple project files and folders together; hold Option to copy them.",
+      "to_version": "0.5.2476"
     }
   ],
   "initial_version": "0.1.56",
@@ -1470,5 +1481,5 @@
     "feature",
     "build"
   ],
-  "version": "0.4.2399"
+  "version": "0.5.2476"
 }
