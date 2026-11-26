@@ -1450,6 +1450,16 @@
       "pr": 501,
       "summary": "In an unlocked form, drag a rubric field to position it, resize it from a corner, or rotate it in 90° steps. The drawing canvas stays horizontal and the page shows the resulting ink at the saved angle.",
       "to_version": "0.4.2379"
+    },
+    {
+      "delta": {
+        "build": 20
+      },
+      "from_version": "0.4.2379",
+      "merge_sha": "73fa40752b070544fd3e28d48e7d026a3d3894a1",
+      "pr": 610,
+      "summary": "Leonardo Format opens local MDLF, MDLR and MDLZ previews in Codex through the Leonardo Sync helper, even with the editor closed.",
+      "to_version": "0.4.2399"
     }
   ],
   "initial_version": "0.1.56",
@@ -1460,5 +1470,5 @@
     "feature",
     "build"
   ],
-  "version": "0.4.2379"
+  "version": "0.4.2399"
 }

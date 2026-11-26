@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.4.2399
+
+- #474 Added: serve Codex previews through Leonardo Sync ([#610](https://github.com/PinedaTec-EU/LeonardoMD/pull/610))
+
+<p>Leonardo Format opens local MDLF, MDLR and MDLZ previews in Codex through the Leonardo Sync helper, even with the editor closed.</p>
+
+Source: `73fa40752b070544fd3e28d48e7d026a3d3894a1`. Delta: `{"build": 20}`.
+
 ## 0.4.2379
 
 - #500 Added: move resize and rotate rubric fields ([#501](https://github.com/PinedaTec-EU/LeonardoMD/pull/501))
