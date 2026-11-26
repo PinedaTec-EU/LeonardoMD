@@ -141,6 +141,38 @@ final class TablePaginationTests: XCTestCase {
         }
     }
 
+    func testInteractiveTableHeaderMarksOverflowAndRejectsPDF() async throws {
+        let body = "| Form header | Detail |\n| --- | --- |\n"
+            + String(repeating: "| Record | Description |\n", count: 3)
+            + "\n<!-- leonardo:page-break -->\n\nAfter the table"
+        try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 80, 80, 80])], height: 180) { host, web in
+            let probe = try await web.evaluateJavaScript("""
+            (() => {
+              const header = document.querySelector('table thead th');
+              const field = document.createElement('input');
+              field.className = 'leonardo-form-field';
+              header.append(field);
+              window.LeonardoObjects.refresh();
+              return {
+                headersWithField: document.querySelectorAll('table thead .leonardo-form-field').length,
+                fragmented: document.querySelectorAll('.table-fragmented').length,
+                overflow: document.querySelectorAll('.leonardo-page[data-overflow]').length
+              };
+            })()
+            """) as? [String: Any]
+            let result = try XCTUnwrap(probe)
+            XCTAssertEqual(result["headersWithField"] as? Int, 1)
+            XCTAssertEqual(result["fragmented"] as? Int, 0)
+            XCTAssertGreaterThan(result["overflow"] as? Int ?? 0, 0)
+            do {
+                _ = try await host.exportPDF()
+                XCTFail("Tables with interactive headers must not be clipped silently")
+            } catch {
+                XCTAssertTrue(error.localizedDescription.contains("Content exceeds page height"))
+            }
+        }
+    }
+
     func testOneOverHeightRowStopsPDFWithoutDroppingLaterRows() async throws {
         let body = "| Header |\n| --- |\n| Tall row |\n| Next row |\n\n<!-- leonardo:page-break -->\n\nAfterwards"
         try await withPreview(body, tables: [.init(occurrence: 1, rowHeights: [24, 300, 24])]) { host, web in

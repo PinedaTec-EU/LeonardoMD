@@ -1,4 +1,4 @@
 {
-  "build": 8,
+  "build": 9,
   "summary": "Fixes overflowing Markdown tables in paginated preview and PDF by continuing whole rows across pages with consistent column widths and repeated headers."
 }
