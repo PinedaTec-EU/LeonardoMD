@@ -63,6 +63,24 @@ final class GraphicSelectionRuntimeTests: XCTestCase {
         _ = try await web.evaluateJavaScript("window.webkit.messageHandlers.leonardoObject.postMessage({source: \(oldSourceJSON), selection:'graphic', inspect:true}); void 0")
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertFalse(inspected, "Stale inspection requests cannot open an inspector")
+
+        var multipage = try LeonardoFormatParser.parse(currentSource)
+        multipage.body += "\n\n<!-- leonardo:page-break -->\n\n# Second page"
+        currentSource = try LeonardoFormatParser.serialize(multipage)
+        host.apply(content: currentSource, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        try await wait("document.querySelectorAll('.leonardo-page').length === 2", web)
+        _ = try await web.evaluateJavaScript("window.scrollTo(0, document.body.scrollHeight)")
+        try await wait("window.scrollY > 500", web)
+
+        let inserted = LeonardoGraphic(id: "inserted", label: "Inserted", rubric: ink)
+        multipage.metadata.layout?.objects.append(inserted)
+        currentSource = try LeonardoFormatParser.serialize(multipage)
+        config.selectedGraphicID = inserted.id
+        host.apply(content: currentSource, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        try await wait("""
+            document.querySelector('.leonardo-object-selected')?.dataset.object === 'inserted' &&
+            document.querySelector('.leonardo-object-selected').getBoundingClientRect().top >= 0
+            """, web)
     }
 
     private func wait(_ expression: String, _ web: WKWebView) async throws {

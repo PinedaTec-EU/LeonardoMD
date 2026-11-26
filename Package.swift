@@ -13,7 +13,7 @@ let package = Package(
         .target(name: "LeonardoCore", dependencies: ["CLeonardoZlib"], resources: [.process("Resources")]),
         .target(name: "CLeonardoZlib", linkerSettings: [.linkedLibrary("z")]),
         .target(name: "LeonardoSync", dependencies: ["LeonardoCore"]),
-        .target(name: "LeonardoSyncUI", dependencies: ["LeonardoSync", "LeonardoRender"]),
+        .target(name: "LeonardoSyncUI", dependencies: ["LeonardoCore", "LeonardoSync", "LeonardoRender"]),
         .target(name: "LeonardoSyncTransport", dependencies: ["LeonardoSync"]),
         .target(name: "LeonardoDesktopSync", dependencies: ["LeonardoCore", "LeonardoSync", "LeonardoSyncTransport"]),
         .executableTarget(name: "LeonardoSyncHelper", dependencies: ["LeonardoCore", "LeonardoSync", "LeonardoDesktopSync"]),

@@ -1,0 +1,7 @@
+# PR #415 native validation evidence
+
+The guide images show a fresh QA process (PID 21587), build 0.3.1233, from source 91896cb9dc20d7353694f6b59b71d468b84b911f. The subsequent changes are compilation accounting and these evidence files. The English and Spanish personal guide copies matched their packaged v50 resources by SHA-256; personal practice files remained unchanged. In temporary form copies, fictional EN and ES answers survived save, close and reopen. With Math disabled, both guides displayed the literal one-line and multiline TeX including the tagged equation; Math and English were restored. The images show the live tagged equation and Vega-Lite chart.
+
+The Finder image is a diagnostic **failure/limitation**, not a positive acceptance screenshot. It shows real extensions while Finder previews are enabled and the old installed app owns the active exported types. A separate candidate, temporarily signed with the same Developer ID and registered without replacing the installed app, supplied the expected icon paths but its real type declarations were marked inactive and untrusted. The old installed registration remained active. The temporary candidate registration was removed and the sync helper was left running. This test does not establish what happens after a real signed application upgrade.
+
+Image sidecars record observed capture times, raw JPEG dimensions, SHA-256, screen and build context. There is no browser or CSS viewport for these native windows.

@@ -1,21 +1,35 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v154-en.mdlz` and `Guide-v154-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v162-en.mdlz` and `Guide-v162-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v154/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v162/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v154 describes moving, resizing and rotating rubric fields in chapter 10. Package SHA-256: EN `198a59924f0141fddab8186822452b6ef9ffe8494a662ceb253129fec8128fb2`, ES `866bcef7a6f09d6925a5c6b8a3e265464d4b1e47c1dce3a130b77810beb3c456`.
+Guide v162 documents moving, resizing and quarter-turn rotation of rubric
+fields on unlocked forms. Chapter 10 explains persisted page placement,
+the first-marker rule and the horizontal drawing canvas. The selected
+page-rubric and library deletion flows from v158 remain in place.
+Guide v162 EN SHA-256: `b4209d9417cbe0455ccea871652991a1cdadb5a687d6e9d3c193aaac436b9ac5` and ES SHA-256: `fab3d4d62a1f5106464ec905dd94a23e6172871592a63638c0a7a52d3b7b1418`.
 
-Guide v146 documents the shared Home selector, the separate remote project menu,
-its offline actions and direct remote access in chapter 7, and explains Markdown
-table continuation across paginated preview and PDF pages.
-Guide v146 EN SHA-256: `3b863449ff6fe5cbc1051b7fe57bb3fb823b0ae818c234aa61c97030274a1489`
-and ES SHA-256: `a063da2b8f0a6a30afecaeea56cdf8012bf2d0ef135a9110a9211e642577c480`.
+Guide v158 adds automatic selection and inspection of inserted page rubrics
+and confirmation for saved-rubric deletion in chapter 10. It retains
+the v156 Little Leonardo guidance, v153 Finder guidance and v146
+table pagination guidance.
+Guide v158 EN SHA-256: `9d10e0b71fac6eec128135add85a201d302d1092f090433f8df0d5655537be89` and ES SHA-256: `1e6dfd235aab23d60dba3483d171438505516372164aceebf8db84f58e35b1d7`.
 
-Guide v145 is retained as the previous packaged baseline. Its chapter 7
-content is included in v146 together with the table-pagination guidance.
+Guide v156 carries forward the current shared Home selector, separate
+remote-project menu, offline actions, direct remote access and Markdown table
+continuation across paginated preview and PDF pages. It includes the #415
+Finder icon guidance without changing default applications, the #499 table
+pagination guidance, and the reconciled Little Leonardo extension settings,
+consent flow, synchronization frequency and bundled Demo coverage in both
+locales. The #465 mobile chapter remains in the current bilingual bodies.
+Guide v153 remains the previous packaged baseline and v147 remains the
+previous #465 mobile-help package; existing guide copies and practice answers
+are never overwritten.
+Guide v156 EN SHA-256: `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
+and ES SHA-256: `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
@@ -140,8 +154,8 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v146 with a new
-resource name and personal-copy directory; no existing guide copy is overwritten.
+historical review record. Current artifacts and their personal-copy directory
+are listed above.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific

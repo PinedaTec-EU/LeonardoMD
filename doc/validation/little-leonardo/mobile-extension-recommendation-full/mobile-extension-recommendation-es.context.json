@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-11-17T13:26:50.572Z",
+  "route": "/little-leonardo/demo/Demo-es.mdlr/extensions-recommendation",
+  "screen": "Extension recommendation sheet",
+  "browser_name": "Little Leonardo on iOS Simulator",
+  "browser_version": "iOS 27.0, iPhone 17 Simulator",
+  "state": "Demo-es.mdlr; all five built-in extensions disabled and detected; all selection switches off; device-local scope; no warning suppression; synthetic bundled demo content",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "width": 402,
+    "height": 874
+  },
+  "os": "iOS 27.0 Simulator",
+  "source_sha": "d00d6d804d5285b8f5dda240b95ffa3ec54ba6ec",
+  "source_worktree": "tracked changes present; product rebuilt from this worktree before capture"
+}

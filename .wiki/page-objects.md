@@ -45,4 +45,10 @@ native component evidence must not be confused with packaged-process acceptance.
 
 The local rubric library serializes read-latest mutations with a nonblocking stable sidecar lock across app instances; a busy or corrupt library is never overwritten. Opening the editor refreshes its list. Regression tracked in [#318](https://github.com/PinedaTec-EU/LeonardoMD/issues/318).
 
-- 2026-11-20: Rubric fields can retain inline placement or store a physical page origin and quarter-turn rotation on the field definition. The first marker uses the stored placement. Fill and export reuse the field and its answer. [#500](https://github.com/PinedaTec-EU/LeonardoMD/issues/500).
+Page rubric insertion selects the new object and opens the inspector; insertion
+from Edit switches to Split. Rubric fields can retain inline placement or store a
+physical page origin and quarter-turn rotation on the field definition. The first
+marker uses the stored placement. Fill and export reuse the field and its answer.
+See [#500](https://github.com/PinedaTec-EU/LeonardoMD/issues/500).
+Deleting a saved library entry requires confirmation and preserves embedded
+copies. See [#496](https://github.com/PinedaTec-EU/LeonardoMD/issues/496).

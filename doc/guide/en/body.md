@@ -110,6 +110,8 @@ Check the format, storage and mode indicators before saving:
 
 Use **Save** (⌘S) to persist changes. Undo and Redo apply to document edits. Closing or navigating with pending changes invokes the normal save decisions. Saving an incomplete draft does not mean its answers are complete or correct.
 
+Finder can display Leonardo’s icon for Markdown and Leonardo files. The icon may differ when another app is the default, Finder shows a preview, or macOS has cached an older registration. To choose the default app, select a file in Finder, choose File → Get Info, select Leonardo under Open with, and use Change All if you want that choice for the type. Leonardo does not change your default app automatically.
+
 ## 2. Choose a format
 
 | Format | Contents | Choose it for |
@@ -505,15 +507,21 @@ save the document to retain it. Raster images have no ink-color control. Delete
 an object from the inspector. If a value is invalid or the object changed,
 select it again and retry. Close the inspector to give the document more space.
 
-![Rubric canvas and local library](assets/rubric-canvas.png)
+![Drawing canvas and saved rubric thumbnails](assets/rubric-canvas.png)
 
-*Production drawing-dialog component with synthetic saved ink; not a signed document.*
+*Drawing canvas with a sample saved rubric and its library trash button.*
 
 **Insert → New rubric…** opens a drawing canvas: enter a label, choose color,
 stroke width and Solid/Brush, draw, Undo or Clear. New rubrics created here are
 always saved in your local library. Pick a saved thumbnail to insert another
-copy. The dialog's Delete removes only the library entry, never ink already
-inserted in documents. The library holds up to 100 entries on this Mac. A Mac
+copy. After insertion, drag the selected rubric to a side or the center of
+the page, or drag its corner handle to resize it. The Object inspector lets
+you enter the page, position and size directly. In Edit mode, insertion opens
+Split so you can see the page.
+
+To delete a saved rubric, click the trash icon below its thumbnail and confirm
+**Delete**. This permanently removes the library entry. Copies already inserted
+in documents remain. The library holds up to 100 entries on this Mac. A Mac
 with the current Leonardo Sync helper can also choose **Use a linked Little
 Leonardo** and target one explicitly capable, read-only device. This sends a
 single request; it does not broadcast to the linked group or grant document
@@ -548,7 +556,7 @@ are visual rubrics, not digital certificates.
 *Production linked-rubric section showing an offline helper; no device is paired in this illustration.*
 
 To lay out a rubric field, unlock the form and select the field in **Preview**
-or **Split view**. Drag the field to place it on the page. Drag its corner
+or **Split**. Drag the field to place it on the page. Drag its corner
 handle to change its size, or click the circular arrow to rotate it by 90°
 clockwise. Moving or rotating pins the field to the page, so check for overlaps
 after editing nearby text. If the marker is repeated, the first occurrence can
@@ -556,7 +564,7 @@ be positioned and the others stay in the text. Save the form to keep the layout.
 The drawing canvas stays horizontal and the field displays the ink at its saved
 angle.
 
-For a rubric form field, use **Fill** and click its area. The expanded dialog
+For a rubric form field, use **Fill form** and click its area. The expanded dialog
 lets you choose saved ink or draw new ink; **Save in my rubrics** controls whether
 new form ink also enters the library. **Remove rubric** clears the current field answer. The answer stays inside the author's
 field area and is saved with the response. A source padlock does not prevent
@@ -613,7 +621,7 @@ To share one Dock and ⌘Tab entry, enable **Group instances in Dock and app swi
 
 ## 12. The five built-in extensions
 
-These extensions are included with Leonardo, work locally and are initially disabled. They are separate from the `leonardo-format` skill for external AI agents. Enable only what you want in Preferences → Extensions, globally or for this project; project inheritance follows global settings.
+These extensions are included with Leonardo, work locally and are initially disabled. They are separate from the `leonardo-format` skill for external AI agents. On macOS, enable only what you want in Preferences → Extensions, globally or for this project; project inheritance follows global settings. Little Leonardo keeps its own device-wide extension preferences.
 
 | Extension | Recognized content | What to check |
 | --- | --- | --- |
@@ -627,7 +635,9 @@ These extensions are included with Leonardo, work locally and are initially disa
 
 ![Leonardo asks which detected built-in extensions to enable](assets/activation-switch.png)
 
-*English dialog component with Mermaid and Charts selected in a synthetic document. A project dialog identifies project scope. No third-party plugins are proposed.*
+*English macOS dialog component with Mermaid and Charts selected in a synthetic document. A project dialog identifies project scope. No third-party plugins are proposed.*
+
+On iPhone and iPad, Little Leonardo uses a device-local sheet for the same consent choice. The switch list includes only detected built-in extensions; select what to enable or choose **Not now**.
 
 Detection recommends only Leonardo's five built-in extensions. It is a recommendation, not a full syntax validator: code examples that merely describe syntax do not require activation. Each switch selects one extension for **Enable selected**; **Not now** discards those selections and prevents another recommendation during the current opening. The separate global switch hides recommendations across documents. **Preferences → Extensions → Reset extension warnings** restores them and clears older per-extension suppressions without changing enabled extensions. Check the scope shown in the dialog before enabling.
 
@@ -798,6 +808,16 @@ sends or clears the rubric. Preview and **Enviar rúbrica** (send rubric) remain
 explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
 
 ![Full-screen landscape rubric canvas in Leonardo Classic. Actual simulator capture with a synthetic request and Spanish interface; reduced thumbnail.](assets/ios-rubric-classic-landscape.png)
+
+### Built-in extensions on iPhone and iPad
+
+In Little Leonardo, open **Sync settings → Document extensions** to enable Mermaid, Math (KaTeX), Charts (Vega-Lite), Citations or Markdown extras. These switches are global to Little Leonardo on this device and stay in its local preferences; they are not sent to the Mac. They apply to received documents whether a file is opened on demand or retained for offline reading. The files stay read-only. The bundled Demo also follows these preferences and offers the same consent choice for detected disabled extensions. Its current content revision demonstrates all five extensions with bundled local data and images; its practice copy and answers stay on this device.
+
+The **Frequency** section in Sync settings offers **Manual only** or **Every 1, 5, 15, 30 or 60 min**. This choice is saved on this device. The interval controls repeated refreshes while Little Leonardo stays active; the app also synchronizes once when it becomes active.
+
+When Preview finds a supported extension that is disabled, Little Leonardo offers only the built-ins detected in that document, including the bundled Demo. Select the extensions you want and choose **Enable selected**, or choose **Not now** to dismiss the recommendation for the current opening. **Do not show this warning again** hides later recommendations. Use **Sync settings → Document extensions → Reset extension warnings** to show them again; resetting does not change the enabled extensions. The mobile reader keeps remote images blocked and loads only authorized local project images.
+
+The examples in [chapter 12](#12-the-five-built-in-extensions) show what each extension recognizes and how disabled syntax falls back to ordinary source. For example, a `mermaid` fence needs Mermaid enabled, and a `vega-lite` JSON fence needs Charts enabled.
 
 ### If mobile synchronization is interrupted
 
@@ -1001,9 +1021,9 @@ This guide covers current macOS workflows. External service labels were checked 
 
 ## Little Leonardo: bundled demo and local practice
 
-The library separates **Connected Macs** from items **On this device**. Expand a Mac to review its projects, then expand a project to see its files and use **…** to manage the cache. **Demo** appears under **On this device**: open it, then choose **Demo-es.mdlr · Español** or **Demo-en.mdlr · English**. Each document becomes a personal practice copy when first opened. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
+The library separates **Connected Macs** from items **On this device**. Expand a Mac to review its projects, then expand a project to see its files and use **…** to manage the cache. **Demo** appears under **On this device**: open it, then choose **Demo-es.mdlr · Español** or **Demo-en.mdlr · English**. Each document becomes a personal practice copy when first opened. No account, Mac or camera/local-network permission is needed. The Demo includes a local cover image, table, Mermaid diagram, inline and display math, a chart with bundled data, a local citation and bibliography, a footnote and a GitHub-style callout. The document uses the same device-local extension settings as received files: accept the recommendation for selected engines or leave them disabled and read their normal source fallback. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
 
 Under **Opciones / Options**, **Ver texto / View source** shows Markdown and metadata; **Restablecer / Reset** asks for confirmation and resets only the selected language's practice. If saving fails, keep the screen open and retry; do not assume answers are saved without confirmation. For real projects, return to **Conectar** and follow the synchronization chapter. Practice does not enable general synchronized-project editing or replace Mac rubric requests.
 
 
-To remove any project from this device, swipe its row left and tap **Eliminar / Delete**. For a received project, this removes it from this device’s library and prevents it from downloading again; it does not change the Mac grant or its files. Swiping alone never deletes. The Demo project disappears like any other project. Recover it at any time from **Ajustes de sincronización → Recuperar demo / Restore demo**; saved answers are retained. It stays removed across restarts and app updates with the same demo content revision. A newer bundled demo content revision makes Demo available again, using new practice copies while retaining earlier copies. This recovery does not reset answers; use **Restablecer / Reset** inside a language document for that.
+To remove any project from this device, swipe its row left and tap **Eliminar / Delete**. For a received project, this removes it from this device’s library and prevents it from downloading again; it does not change the Mac grant or its files. Swiping alone never deletes. The Demo project disappears like any other project. Recover it at any time from **Ajustes de sincronización → Recuperar demo / Restore demo**; saved answers are retained. It stays removed across restarts and app updates with the same demo content revision. A newer bundled demo content revision makes Demo available again. Revision 2 creates new practice copies for the updated extension examples and keeps earlier v1 copies and answers on this device. Recovery does not reset answers; use **Restablecer / Reset** inside a language document for that.
