@@ -419,3 +419,27 @@ repeated. #415's real Finder evidence remains linked from
 focused `BundledUserGuideTests` validate both v156 packages. Any later #497
 merge may require a fresh documentation-only reload if it changes the guide
 body; this handoff does not wait for or merge #497.
+
+- 2026-11-26: PR #497 was reconciled after #465. Combined Guide v158 retains
+  the Little Leonardo extension chapter and documents selection and confirmed
+  deletion of saved rubrics. The equivalent native rubric QA remains recorded
+  on [PR #497](https://github.com/PinedaTec-EU/LeonardoMD/pull/497).
+
+# 2026-11-26: PR #610 reconciled after #497
+
+PR #610 was reconciled onto the #497 product changes from `031bcea28e1a82c4f65d76efe60f57e1bea83e73`; the current release-ledger descendant is
+`dab6e5cf4e5ebe6f573f4f73be36e2272bed14db`. Guide v164 combines the local
+Leonardo Format preview instructions with the current rubric, mobile extension,
+Finder icon and table-pagination help. EN and ES package hashes are recorded in
+`doc/guide/README.md`.
+
+Deterministic guide packaging (3 tests), the 52 plugin tests, four
+`BundledUserGuideTests`, and seven `SyncHelperHostTests` passed. The real
+`LeonardoSyncHelper` was also exercised from a Developer ID signed QA copy in
+an isolated `HOME`/`CFFIXED_USER_HOME`: `host=0.0.0.0` rejected desktop TLS
+startup before credential materialization, while the bundled Python worker
+published a loopback endpoint under a task-owned 0700 `Preview` leaf with a
+0600 endpoint. The exact helper and worker processes exited; the task-owned
+endpoint was removed, the user's real `Preview` leaf stayed absent, and no
+launchd registration, host setting or credential was changed. Browser, Stop-hook
+trust and installed-helper acceptance remain Beta scope.

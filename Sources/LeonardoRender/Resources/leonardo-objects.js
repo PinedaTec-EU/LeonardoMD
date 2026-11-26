@@ -195,6 +195,8 @@
   }
   function apply(nextRoot, nextPayload) {
     const nextSelection = nextPayload.selectedGraphicID;
+    const previousObjects = payload.leonardo?.layout?.objects || [];
+    const revealInsertion = root && nextSelection && !previousObjects.some(item => item.id === nextSelection);
     restoreTables = [];
     clear(false); root = nextRoot; payload = {...nextPayload, selectedGraphicID: nextSelection};
     root.classList.remove("leonardo-paginated");
@@ -211,6 +213,7 @@
     renderLegacyImages();
     renderObjects(objects);
     setSelection(payload.selectedGraphicID);
+    if (revealInsertion) selected?.scrollIntoView({block: "nearest", inline: "nearest"});
   }
   function renderLegacyImages() {
     const page = root.querySelector(":scope > .leonardo-page");

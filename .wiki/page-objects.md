@@ -44,3 +44,9 @@ selects obscured images. The bilingual help includes the inspector illustrations
 native component evidence must not be confused with packaged-process acceptance.
 
 The local rubric library serializes read-latest mutations with a nonblocking stable sidecar lock across app instances; a busy or corrupt library is never overwritten. Opening the editor refreshes its list. Regression tracked in [#318](https://github.com/PinedaTec-EU/LeonardoMD/issues/318).
+
+Page rubric insertion selects the new object and opens the inspector; insertion
+from Edit switches to Split. Form rubric fields retain their authored geometry
+and are handled separately by [#500](https://github.com/PinedaTec-EU/LeonardoMD/issues/500).
+Deleting a saved library entry requires confirmation and preserves embedded
+copies. See [#496](https://github.com/PinedaTec-EU/LeonardoMD/issues/496).

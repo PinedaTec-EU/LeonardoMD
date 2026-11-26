@@ -529,16 +529,23 @@ Elimina un objeto desde el inspector. Si un valor no es válido o el objeto camb
 vuelve a seleccionarlo e inténtalo otra vez. Cierra el panel para dar más espacio
 al documento.
 
-![Lienzo de rúbricas y biblioteca local](assets/rubric-canvas.png)
+![Lienzo de dibujo y miniaturas guardadas](assets/rubric-canvas.png)
 
-*Componente real del diálogo con trazos guardados ficticios; no es un documento firmado.*
+*Lienzo de dibujo con una rúbrica de ejemplo y su papelera.*
 
 **Insertar → Nueva rúbrica…** abre el lienzo: indica una etiqueta, elige color,
 grosor y estilo Uniforme/Pincel, dibuja y usa Deshacer o Borrar trazos.
 Las nuevas rúbricas creadas aquí siempre se guardan en tu biblioteca local.
-Elige una miniatura guardada para insertar otra copia. Eliminar en el diálogo
-borra solo la entrada de biblioteca, nunca rúbricas ya insertadas. La biblioteca
-admite hasta 100 entradas en este Mac. Un Mac con el asistente actual de
+Elige una miniatura guardada para insertar otra copia. Al insertarla, arrastra la rúbrica seleccionada a un lateral o al
+centro de la página. Para cambiar su tamaño, arrastra el tirador de la esquina.
+En el Inspector de objetos puedes indicar directamente la página, la posición
+y el tamaño. Si estás en Editar, al insertar se abre la vista **Dividir** para que
+veas la página.
+
+Para borrar una rúbrica guardada, pulsa la papelera bajo su miniatura y confirma
+**Eliminar**. La entrada se elimina definitivamente de la biblioteca. Las copias
+ya insertadas en documentos se conservan. La biblioteca admite hasta 100
+entradas en este Mac. Un Mac con el asistente actual de
 Leonardo Sync también puede elegir **Usar un Little Leonardo enlazado** y dirigir
 una petición a un único dispositivo explícitamente compatible y de solo lectura.
 No se difunde al grupo enlazado ni concede edición de documentos. Se muestran

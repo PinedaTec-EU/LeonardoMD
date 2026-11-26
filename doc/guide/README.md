@@ -1,28 +1,17 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v161-en.mdlz` and `Guide-v161-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v164-en.mdlz` and `Guide-v164-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v161/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v164/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v161 explains local Leonardo Format previews in Codex, the Leonardo Sync
-and Python requirements, temporary read-only links and optional Stop-hook trust.
-It retains the v156 mobile extensions, Finder and table pagination guidance.
-Guide v161 EN SHA-256: `df6013f69f0587764298deac4caf481acdfc1dba76b00dd6235901036681d9e2` and ES SHA-256: `19cfa3979f2eb364a7ff2125a2e5438bd00570acbaa394b0940c210217f2a185`.
-
-Guide v156 carries forward the current shared Home selector, separate
-remote-project menu, offline actions, direct remote access and Markdown table
-continuation across paginated preview and PDF pages. It includes the #415
-Finder icon guidance without changing default applications, the #499 table
-pagination guidance, and the reconciled Little Leonardo extension settings,
-consent flow, synchronization frequency and bundled Demo coverage in both
-locales. The #465 mobile chapter remains in the current bilingual bodies.
-Guide v153 remains the previous packaged baseline and v147 remains the
-previous #465 mobile-help package; existing guide copies and practice answers
-are never overwritten.
-Guide v156 EN SHA-256: `3299b5faa869f34d6aa2b2aefeb0068d430b159a5d246d1355c94b4bb25cca32`
-and ES SHA-256: `7027ef6d34f631b2d7158eb7d54a5b680073ca8f846c99a815252aec99190fea`.
+Guide v164 combines the persistent local Leonardo Format preview instructions
+from #610/#475, #496's inserted-rubric and saved-rubric deletion guidance,
+the #465 mobile extension chapter, #415 Finder icon guidance and #499 table
+pagination. Existing guide copies and practice answers are never overwritten.
+Guide v164 EN SHA-256: `cc4bb5464817fd293f5ee851b529c4c128a0c9ec8583ad06e218af1c17391fab`
+and ES SHA-256: `66496f6a7fc6f5b9ee38a942669221805d0a0b031b61c8627ea5544f85d489f6`.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 
