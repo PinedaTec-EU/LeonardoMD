@@ -1,0 +1,4 @@
+{
+  "build": 1,
+  "summary": "Ledger policy requests use the central queue that keeps only the newest pending validation per repository."
+}

@@ -53,7 +53,7 @@ class RequestPolicyTests(unittest.TestCase):
                 request = send.call_args.args[0]
                 self.assertEqual(request.full_url, 'https://api.github.com/repos/PinedaTec-EU/pinedatec-ci/dispatches')
                 payload = json.loads(request.data)
-                self.assertEqual(payload['event_type'], 'private-release-ledger')
+                self.assertEqual(payload['event_type'], 'private-release-ledger-validation')
                 self.assertEqual(payload['client_payload'], {'target_repository': REPOSITORY,
                     'operation': 'validate', 'pilot_request_id': 'leonardo-pr65-run123'})
                 self.assertNotIn('fake-dispatch-token', output)
