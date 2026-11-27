@@ -54,7 +54,7 @@ jobs:
           if not token:
               sys.exit("PINEDATEC_CI_DISPATCH_TOKEN is required.")
           payload = {
-              "event_type": "private-release-ledger",
+              "event_type": "private-release-ledger-validation",
               "client_payload": {
                   "target_repository": repository,
                   "operation": "validate",
